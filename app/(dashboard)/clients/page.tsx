@@ -19,7 +19,8 @@ import {
     RotateCcw,
     ChevronRight,
     TrendingUp,
-    Users
+    Users,
+    Target
 } from 'lucide-react'
 import {
     Tabs,
@@ -78,6 +79,7 @@ export default function ClientsPage() {
     const [branchFilter, setBranchFilter] = React.useState('all')
     const [ptFilter, setPtFilter] = React.useState('all')
     const [regTypeFilter, setRegTypeFilter] = React.useState('all')
+    const [sourceFilter, setSourceFilter] = React.useState('all')
 
     const clearFilters = () => {
         setSearchTerm('')
@@ -85,6 +87,7 @@ export default function ClientsPage() {
         setBranchFilter('all')
         setPtFilter('all')
         setRegTypeFilter('all')
+        setSourceFilter('all')
         toast.info('Đã xóa tất cả bộ lọc')
     }
 
@@ -170,19 +173,30 @@ export default function ClientsPage() {
         toast.success('Đã xuất file Excel thành công')
     }
 
-    const filteredClients = clients?.filter(client => {
-        const matchesSearch =
-            client.member_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            client.phone?.includes(searchTerm) ||
-            client.id?.toLowerCase().includes(searchTerm.toLowerCase())
+    // First, filter by everything EXCEPT status to get accurate counts for the tabs
+    const baseFilteredClients = React.useMemo(() => {
+        if (!clients) return []
+        return clients.filter(client => {
+            const matchesSearch =
+                client.member_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                client.phone?.includes(searchTerm) ||
+                client.id?.toLowerCase().includes(searchTerm.toLowerCase())
 
-        const matchesStatus = statusFilter === 'all' || client.status === statusFilter
-        const matchesBranch = branchFilter === 'all' || client.branch_id === branchFilter
-        const matchesPT = ptFilter === 'all' || client.pt_name === ptFilter
-        const matchesRegType = regTypeFilter === 'all' || client.registration_type === regTypeFilter
+            const matchesBranch = branchFilter === 'all' || client.branch_id === branchFilter
+            const matchesPT = ptFilter === 'all' || client.pt_name === ptFilter
+            const matchesRegType = regTypeFilter === 'all' || client.registration_type === regTypeFilter
+            const matchesSource = sourceFilter === 'all' || client.source === sourceFilter
 
-        return matchesSearch && matchesStatus && matchesBranch && matchesPT && matchesRegType
-    })
+            return matchesSearch && matchesBranch && matchesPT && matchesRegType && matchesSource
+        })
+    }, [clients, searchTerm, branchFilter, ptFilter, regTypeFilter, sourceFilter])
+
+    // Then, filter by status for the table display
+    const filteredClients = React.useMemo(() => {
+        return statusFilter === 'all'
+            ? baseFilteredClients
+            : baseFilteredClients.filter(c => c.status === statusFilter)
+    }, [baseFilteredClients, statusFilter])
 
     // Get unique values for filters
     const ptOptions = React.useMemo(() => {
@@ -195,6 +209,12 @@ export default function ClientsPage() {
         if (!clients) return []
         const types = clients.map((c: any) => c.registration_type).filter(Boolean)
         return Array.from(new Set(types))
+    }, [clients])
+
+    const sourceOptions = React.useMemo(() => {
+        if (!clients) return []
+        const sources = clients.map((c: any) => c.source).filter(Boolean)
+        return Array.from(new Set(sources))
     }, [clients])
 
     const toggleRow = (id: string) => {
@@ -212,305 +232,194 @@ export default function ClientsPage() {
     }
 
     const stats = React.useMemo(() => {
-        if (!clients) return { total: 0, active: 0, pending: 0, paused: 0, stopped: 0 }
         return {
-            total: clients.length,
-            active: clients.filter((c: any) => c.status === 'Đang tập').length,
-            pending: clients.filter((c: any) => c.status === 'Chốt đăng kí').length,
-            paused: clients.filter((c: any) => c.status === 'Tạm dừng').length,
-            stopped: clients.filter((c: any) => c.status === 'Đã nghỉ').length,
+            total: baseFilteredClients.length,
+            active: baseFilteredClients.filter((c: any) => c.status === 'Đang tập').length,
+            pending: baseFilteredClients.filter((c: any) => c.status === 'Chốt đăng kí').length,
+            paused: baseFilteredClients.filter((c: any) => c.status === 'Tạm dừng').length,
+            stopped: baseFilteredClients.filter((c: any) => c.status === 'Đã nghỉ').length,
         }
-    }, [clients])
-
-    const StatusCard = ({ title, count, icon: Icon, colorClass }: any) => (
-        <Card className={cn("p-4 border-none shadow-sm rounded-2xl flex flex-col gap-2 min-w-[140px]", colorClass)}>
-            <div className="flex items-center justify-between">
-                <div className="p-2 rounded-xl bg-white/20">
-                    <Icon className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-2xl font-semibold text-white leading-none">{count}</span>
-            </div>
-            <span className="text-[10px] font-medium text-white/80 uppercase tracking-widest">{title}</span>
-        </Card>
-    )
+    }, [baseFilteredClients])
 
     return (
-        <div className="space-y-6 lg:space-y-8 max-w-[1600px] mx-auto font-inter px-1 sm:px-0">
-            <ClientDetailsSheet
-                client={selectedClient}
-                open={isDetailsOpen}
-                onOpenChange={setIsDetailsOpen}
-                onSuccess={refetch}
-            />
-
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 px-1">
+        <div className="space-y-1.5 max-w-[1600px] mx-auto font-inter pb-10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-1">
                 <div className="space-y-1">
-                    <h1 className="text-2xl lg:text-3xl font-medium tracking-tight text-gray-900 dark:text-gray-50">Quản lý Khách hàng</h1>
-                    <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 font-medium">Theo dõi chỉ số, mục tiêu và lộ trình tập luyện của hội viên.</p>
+                    <h1 className="text-3xl font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                        <Users className="w-8 h-8 text-red-500" />
+                        Khách hàng
+                    </h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Quản lý và theo dõi thông tin hội viên chi tiết.</p>
                 </div>
-                <div className="flex items-center gap-2 lg:gap-3 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
+                <div className="flex items-center gap-3">
                     <AnimatePresence>
                         {selectedRows.length > 0 && (
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                className="hidden lg:block"
                             >
                                 <Button
                                     variant="ghost"
                                     onClick={handleBulkDelete}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 font-medium px-4"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 font-medium px-4 h-11 rounded-xl border border-red-100 dark:border-red-900/30"
                                 >
                                     <Trash className="w-4 h-4 mr-2" />
-                                    Xóa ({selectedRows.length})
+                                    <span className="hidden sm:inline">Xóa ({selectedRows.length})</span>
+                                    <span className="sm:hidden">{selectedRows.length}</span>
                                 </Button>
                             </motion.div>
                         )}
                     </AnimatePresence>
-                    <div className="flex gap-2 min-w-max">
+                    <div className="flex gap-2">
                         <ImportExcelClientDialog onSuccess={refetch} />
                         <Button
                             variant="ghost"
                             onClick={exportToExcel}
-                            className="rounded-xl text-gray-600 dark:text-gray-300 font-medium h-10 lg:h-11 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-red-600 transition-all border border-gray-100 dark:border-gray-800"
+                            className="rounded-xl border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300 h-11 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
                         >
-                            <FileDown className="w-4 h-4 lg:w-4.5 lg:h-4.5 mr-2" />
-                            <span className="text-xs lg:text-sm">Xuất Excel</span>
+                            <FileDown className="w-4.5 h-4.5 mr-2" />
+                            <span className="hidden sm:inline">Xuất Excel</span>
                         </Button>
                         <AddClientDialog onSuccess={refetch} />
                     </div>
                 </div>
             </div>
 
-            {/* Mobile Stats & Tabs Section */}
-            <div className="lg:hidden space-y-6">
-                <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
-                    <StatusCard title="Tổng số" count={stats.total} icon={Users} colorClass="bg-gray-900 dark:bg-gray-800" />
-                    <StatusCard title="Đang tập" count={stats.active} icon={Activity} colorClass="bg-green-600" />
-                    <StatusCard title="Chốt ĐK" count={stats.pending} icon={TrendingUp} colorClass="bg-blue-600" />
-                    <StatusCard title="Tạm dừng" count={stats.paused} icon={RotateCcw} colorClass="bg-amber-500" />
-                    <StatusCard title="Đã nghỉ" count={stats.stopped} icon={Trash2} colorClass="bg-rose-500" />
-                </div>
+            {/* Status Tabs */}
+            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+                <TabsList className="bg-transparent h-auto p-0 flex flex-nowrap overflow-x-auto no-scrollbar gap-1 px-1 mb-1 w-full justify-start">
+                    {[
+                        { label: 'Tất cả', value: 'all', count: stats.total, color: 'text-gray-600', bg: 'bg-gray-100' },
+                        { label: 'Đang tập', value: 'Đang tập', count: stats.active, color: 'text-green-600', bg: 'bg-green-50' },
+                        { label: 'Chốt ĐK', value: 'Chốt đăng kí', count: stats.pending, color: 'text-blue-600', bg: 'bg-blue-50' },
+                        { label: 'Tạm dừng', value: 'Tạm dừng', count: stats.paused, color: 'text-amber-600', bg: 'bg-amber-50' },
+                        { label: 'Đã nghỉ', value: 'Đã nghỉ', count: stats.stopped, color: 'text-rose-600', bg: 'bg-rose-50' },
+                    ].map((tab) => (
+                        <TabsTrigger
+                            key={tab.value}
+                            value={tab.value}
+                            className={cn(
+                                "flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm border-none",
+                                statusFilter === tab.value ? tab.color : "text-gray-500 hover:text-gray-700"
+                            )}
+                        >
+                            {tab.label}
+                            <span className={cn("px-1.5 py-0.5 rounded-full text-[10px] font-bold", tab.bg, tab.color)}>
+                                {tab.count}
+                            </span>
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
+            </Tabs>
 
-                <div className="space-y-4">
-                    <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-red-600 transition-colors" />
-                        <input
-                            placeholder="Tìm kiếm hội viên..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl focus:ring-2 focus:ring-red-500 text-sm h-12 outline-none shadow-sm"
-                        />
-                    </div>
-
-                    <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-                        <TabsList className="w-full bg-gray-100/50 dark:bg-gray-800/50 p-1 rounded-2xl h-12 flex items-center justify-between border border-gray-100 dark:border-gray-800 overflow-x-auto scrollbar-hide">
-                            <TabsTrigger value="all" className="flex-1 rounded-xl text-[10px] font-semibold uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:text-red-600 dark:data-[state=active]:text-red-400 h-10">Tất cả</TabsTrigger>
-                            <TabsTrigger value="Chốt đăng kí" className="flex-1 rounded-xl text-[10px] font-semibold uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:text-red-600 dark:data-[state=active]:text-red-400 h-10 shrink-0">Chốt ĐK</TabsTrigger>
-                            <TabsTrigger value="Đang tập" className="flex-1 rounded-xl text-[10px] font-semibold uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:text-red-600 dark:data-[state=active]:text-red-400 h-10 shrink-0">Đang tập</TabsTrigger>
-                            <TabsTrigger value="Tạm dừng" className="flex-1 rounded-xl text-[10px] font-semibold uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:text-red-600 dark:data-[state=active]:text-red-400 h-10 shrink-0">Tạm dừng</TabsTrigger>
-                            <TabsTrigger value="Đã nghỉ" className="flex-1 rounded-xl text-[10px] font-semibold uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-gray-950 data-[state=active]:text-red-600 dark:data-[state=active]:text-red-400 h-10 shrink-0">Đã nghỉ</TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-                </div>
-
-                <div className="space-y-3 pb-24">
-                    {isLoading ? (
-                        Array.from({ length: 3 }).map((_, i) => (
-                            <Card key={i} className="p-4 rounded-3xl border-none shadow-sm animate-pulse bg-gray-50 dark:bg-gray-900 h-24" />
-                        ))
-                    ) : filteredClients?.length === 0 ? (
-                        <div className="text-center py-12">
-                            <Search className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                            <p className="text-sm text-gray-400 font-medium">Không tìm thấy hội viên nào</p>
-                        </div>
-                    ) : (
-                        filteredClients?.map((client) => (
-                            <motion.div
-                                key={client.id}
-                                layout
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                onClick={(e) => handleRowClick(client, e)}
-                            >
-                                <Card className="p-4 rounded-3xl border-none shadow-sm bg-white dark:bg-gray-900 active:scale-[0.98] transition-all group overflow-hidden relative">
-                                    <div className={cn(
-                                        "absolute top-0 left-0 w-1.5 h-full",
-                                        client.status === 'Chốt đăng kí' && "bg-blue-500",
-                                        client.status === 'Đang tập' && "bg-green-500",
-                                        client.status === 'Tạm dừng' && "bg-amber-500",
-                                        client.status === 'Đã nghỉ' && "bg-rose-500"
-                                    )} />
-                                    <div className="flex items-start justify-between">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-semibold text-gray-900 dark:text-gray-50">{client.member_name}</span>
-                                                {client.status === 'Đang tập' && (
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                                )}
-                                            </div>
-                                            <div className="flex flex-col gap-0.5">
-                                                <span className="text-[10px] font-semibold text-red-600 dark:text-red-500 uppercase tracking-widest">{client.id}</span>
-                                                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                                    <Phone className="w-3 h-3" />
-                                                    {client.phone || 'N/A'}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-2">
-                                            <Badge
-                                                variant="secondary"
-                                                className={cn(
-                                                    "border-none rounded-lg px-2 py-0.5 text-[9px] font-semibold uppercase tracking-widest",
-                                                    client.status === 'Chốt đăng kí' && "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-                                                    client.status === 'Đang tập' && "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
-                                                    client.status === 'Tạm dừng' && "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-                                                    client.status === 'Đã nghỉ' && "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
-                                                )}
-                                            >
-                                                {client.status}
-                                            </Badge>
-                                            <ChevronRight className="w-4 h-4 text-gray-300" />
-                                        </div>
-                                    </div>
-                                    <div className="mt-3 pt-3 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between">
-                                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-400">
-                                            <Dumbbell className="w-3.5 h-3.5 text-red-600/30" />
-                                            PT: <span className="text-gray-900 dark:text-gray-200">{client.pt_name || 'N/A'}</span>
-                                        </div>
-                                        <div className="text-[11px] font-medium text-gray-400">
-                                            {client.weight ? `${client.weight}kg` : '-'} → {client.target_weight ? `${client.target_weight}kg` : '-'}
-                                        </div>
-                                    </div>
-                                </Card>
-                            </motion.div>
-                        ))
-                    )}
-                </div>
-            </div>
-
-            {/* Desktop Table View */}
-            <Card className="hidden lg:block border-none shadow-[0_20px_50px_rgba(0,0,0,0.05)] dark:shadow-none rounded-[2rem] overflow-visible bg-white dark:bg-gray-900 transition-all duration-500">
-                <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50/10 dark:bg-gray-800/20">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <div className="relative group w-full md:w-64">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-red-600 transition-colors" />
-                            <input
-                                placeholder="Tìm kiếm hội viên..."
+            {/* Optimized Compact Filter Section */}
+            <Card className="border-none shadow-sm rounded-xl overflow-visible bg-white dark:bg-gray-900 transition-all duration-300">
+                <div className="py-0 px-1 sm:px-1.5 border-gray-100 dark:border-gray-800 bg-gray-50/10 dark:bg-gray-800/20 rounded-xl">
+                    <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2">
+                        {/* Search Input */}
+                        <div className="relative group flex-1 min-w-[200px]">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-red-600 transition-colors" />
+                            <Input
+                                placeholder="Tìm tên, SĐT..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-12 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm h-12 transition-all shadow-sm outline-none"
+                                className="pl-10 h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-sm"
                             />
                         </div>
 
-                        <div className="w-44">
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="h-12 rounded-2xl border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-red-500">
-                                    <SelectValue placeholder="Trạng thái" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-gray-100 dark:border-gray-700">
-                                    <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                                    <SelectItem value="Chốt đăng kí">Chốt đăng kí</SelectItem>
-                                    <SelectItem value="Đang tập">Đang tập</SelectItem>
-                                    <SelectItem value="Tạm dừng">Tạm dừng</SelectItem>
-                                    <SelectItem value="Đã nghỉ">Đã nghỉ</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="w-44">
+                        {/* Filters Grid: Balanced on mobile, fixed-width on desktop */}
+                        <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center">
                             <Select value={branchFilter} onValueChange={setBranchFilter}>
-                                <SelectTrigger className="h-12 rounded-2xl border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-red-500">
+                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
                                     <SelectValue placeholder="Chi nhánh" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-gray-100 dark:border-gray-700">
-                                    <SelectItem value="all">Tất cả chi nhánh</SelectItem>
-                                    {branches?.map((branch: any) => (
-                                        <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                    <SelectItem value="all">Tất cả Chi nhánh</SelectItem>
+                                    {branches?.map((b: any) => (
+                                        <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                        </div>
 
-                        <div className="w-44">
                             <Select value={ptFilter} onValueChange={setPtFilter}>
-                                <SelectTrigger className="h-12 rounded-2xl border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-red-500">
-                                    <SelectValue placeholder="PT phụ trách" />
+                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
+                                    <SelectValue placeholder="PT" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-gray-100 dark:border-gray-700">
+                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
                                     <SelectItem value="all">Tất cả PT</SelectItem>
-                                    {ptOptions.map((pt: string) => (
-                                        <SelectItem key={pt} value={pt}>{pt}</SelectItem>
-                                    ))}
+                                    {ptOptions.map(pt => <SelectItem key={pt} value={pt}>{pt}</SelectItem>)}
                                 </SelectContent>
                             </Select>
-                        </div>
 
-                        <div className="w-44">
                             <Select value={regTypeFilter} onValueChange={setRegTypeFilter}>
-                                <SelectTrigger className="h-12 rounded-2xl border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-red-500">
-                                    <SelectValue placeholder="Loại đăng ký" />
+                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
+                                    <SelectValue placeholder="Gói tập" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-gray-100 dark:border-gray-700">
-                                    <SelectItem value="all">Tất cả loại hình</SelectItem>
-                                    {regTypeOptions.map((type: string) => (
-                                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                                    ))}
+                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                    <SelectItem value="all">Tất cả Gói tập</SelectItem>
+                                    {regTypeOptions.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+
+                            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
+                                    <SelectValue placeholder="Nguồn khách" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                    <SelectItem value="all">Tất cả Nguồn</SelectItem>
+                                    {sourceOptions.map(source => <SelectItem key={source} value={source}>{source}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
 
+                        {/* Reset Button */}
                         <Button
                             variant="ghost"
                             onClick={clearFilters}
-                            className="h-12 px-4 rounded-2xl text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-all"
+                            className="h-9 px-3 rounded-lg text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 dark:hover:border-red-900/30 transition-all shrink-0"
+                            title="Làm mới"
                         >
-                            <RotateCcw className="w-4 h-4 mr-2" />
-                            Xóa bộ lọc
+                            <RotateCcw className="w-4 h-4" />
+                            <span className="lg:hidden ml-2 text-sm">Làm mới</span>
                         </Button>
                     </div>
                 </div>
+            </Card>
 
+            {/* Table Section */}
+            <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-gray-900 transition-all duration-500">
                 <div className="overflow-x-auto">
                     <Table>
-                        <TableHeader className="bg-gray-50 dark:bg-gray-800/50">
-                            <TableRow className="border-gray-100 dark:border-gray-800 hover:bg-transparent">
-                                <TableHead className="w-14 pl-6">
+                        <TableHeader>
+                            <TableRow className="border-gray-50 dark:border-gray-800 hover:bg-transparent border-t-0">
+                                <TableHead className="w-12 pl-6 h-9">
                                     <Checkbox
                                         checked={selectedRows.length === (filteredClients?.length || 0) && (filteredClients?.length || 0) > 0}
                                         onCheckedChange={toggleAll}
                                         className="rounded-lg border-gray-300 dark:border-gray-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                                     />
                                 </TableHead>
-                                <TableHead className="font-medium text-gray-600 dark:text-gray-400 uppercase tracking-widest text-[10px] py-6">Hội viên</TableHead>
-                                <TableHead className="font-medium text-gray-600 dark:text-gray-400 uppercase tracking-widest text-[10px]">Liên hệ</TableHead>
-                                <TableHead className="font-medium text-gray-600 dark:text-gray-400 uppercase tracking-widest text-[10px]">Chỉ số & PT</TableHead>
-                                <TableHead className="font-medium text-gray-600 dark:text-gray-400 uppercase tracking-widest text-[10px]">Trạng thái</TableHead>
-                                <TableHead className="font-medium text-gray-600 dark:text-gray-400 uppercase tracking-widest text-[10px] text-right pr-8">Tùy chọn</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-gray-500 h-9">Hội viên</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-gray-500 h-9 hidden md:table-cell">Liên hệ</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-gray-500 h-9 hidden sm:table-cell">Chỉ số & PT</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-gray-500 h-9 hidden lg:table-cell">Gói tập</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-gray-500 h-9">Trạng thái</TableHead>
+                                <TableHead className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-gray-500 h-9">Tùy chọn</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-64 text-center">
-                                        <div className="flex flex-col items-center gap-4">
-                                            <div className="relative">
-                                                <div className="w-12 h-12 border-4 border-red-50 border-t-red-600 rounded-full animate-spin" />
-                                            </div>
-                                            <span className="text-gray-400 font-medium text-sm">Đang tải hồ sơ hội viên...</span>
-                                        </div>
+                                    <TableCell colSpan={6} className="h-32 text-center text-gray-400 text-sm">
+                                        <Loader2 className="w-6 h-6 animate-spin mx-auto text-red-500" />
+                                        <p className="mt-2">Đang tải dữ liệu...</p>
                                     </TableCell>
                                 </TableRow>
                             ) : filteredClients?.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-64 text-center">
-                                        <div className="flex flex-col items-center gap-4">
-                                            <div className="w-16 h-16 bg-gray-50 rounded-3xl flex items-center justify-center">
-                                                <Search className="w-8 h-8 text-gray-200" />
-                                            </div>
-                                            <p className="text-gray-400 text-sm font-medium">Không tìm thấy hội viên nào khớp với yêu cầu.</p>
-                                        </div>
+                                    <TableCell colSpan={6} className="h-32 text-center text-gray-400 text-sm">
+                                        Không tìm thấy hội viên nào
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -519,86 +428,87 @@ export default function ClientsPage() {
                                         key={client.id}
                                         onClick={(e) => handleRowClick(client, e)}
                                         className={cn(
-                                            "border-gray-50 dark:border-gray-800 hover:bg-gray-50/60 dark:hover:bg-gray-800/20 transition-all group cursor-pointer",
+                                            "border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 cursor-pointer group transition-colors",
                                             selectedRows.includes(client.id) && "bg-red-50/30 dark:bg-red-950/20"
                                         )}
                                     >
-                                        <TableCell className="pl-6">
+                                        <TableCell className="pl-6" onClick={(e) => e.stopPropagation()}>
                                             <Checkbox
                                                 checked={selectedRows.includes(client.id)}
                                                 onCheckedChange={() => toggleRow(client.id)}
-                                                className="rounded-lg border-gray-300 dark:border-gray-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                                                className="rounded-lg"
                                             />
                                         </TableCell>
-                                        <TableCell className="py-6">
+                                        <TableCell className="py-2">
                                             <div className="flex flex-col">
-                                                <span className="font-medium text-gray-900 dark:text-gray-50 flex items-center gap-2">
+                                                <span className="text-sm font-normal text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
                                                     {client.member_name}
-                                                    {client.status === 'Đang tập' && (
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
-                                                    )}
+                                                    {client.status === 'Đang tập' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
                                                 </span>
-                                                <span className="text-[10px] font-medium text-red-600 dark:text-red-500 uppercase tracking-widest mt-0.5 opacity-80">{client.id}</span>
+                                                <span className="text-[10px] text-gray-400 font-medium">{client.id}</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col gap-1.5">
-                                                <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200 text-sm font-medium">
-                                                    <Phone className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                                        <TableCell className="hidden md:table-cell">
+                                            <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Phone className="w-3 h-3 text-gray-400" />
                                                     {client.phone || '-'}
                                                 </div>
-                                                <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
-                                                    <Mail className="w-3 h-3 text-gray-300 dark:text-gray-600" />
-                                                    <span className="truncate max-w-[150px]">{client.email || 'N/A'}</span>
+                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
+                                                    <Mail className="w-3 h-3" />
+                                                    {client.email || 'N/A'}
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col gap-1.5">
-                                                <div className="flex items-center gap-2 text-gray-900 dark:text-gray-100 text-[13px] font-medium">
-                                                    <Dumbbell className="w-3.5 h-3.5 text-red-600/40" />
+                                        <TableCell className="hidden sm:table-cell">
+                                            <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Dumbbell className="w-3 h-3 text-red-500/20" />
                                                     {client.pt_name || 'Chưa gán PT'}
                                                 </div>
-                                                <div className="flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-400 font-medium">
-                                                    <Activity className="w-3.5 h-3.5 text-blue-500/40" />
-                                                    <span>{client.weight ? `${client.weight}kg` : '-'} → {client.target_weight ? `${client.target_weight}kg` : '-'}</span>
+                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
+                                                    <Activity className="w-3 h-3" />
+                                                    {client.weight ? `${client.weight}kg` : '-'} → {client.target_weight ? `${client.target_weight}kg` : '-'}
                                                 </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="hidden lg:table-cell">
+                                            <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
+                                                <Target className="w-3 h-3 text-red-500/20" />
+                                                {client.registration_type || 'N/A'}
                                             </div>
                                         </TableCell>
                                         <TableCell>
                                             <Badge
                                                 variant="secondary"
                                                 className={cn(
-                                                    "border-none rounded-xl px-3 py-1 text-[10px] font-medium uppercase tracking-widest shadow-sm",
-                                                    client.status === 'Chốt đăng kí' && "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200",
-                                                    client.status === 'Đang tập' && "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-200",
-                                                    client.status === 'Tạm dừng' && "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-200",
-                                                    client.status === 'Đã nghỉ' && "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                                                    "border-none rounded-xl px-2.5 py-0.5 text-[9px] font-medium uppercase tracking-widest",
+                                                    client.status === 'Chốt đăng kí' && "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30",
+                                                    client.status === 'Đang tập' && "bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400 border border-green-100 dark:border-green-900/30",
+                                                    client.status === 'Tạm dừng' && "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30",
+                                                    client.status === 'Đã nghỉ' && "bg-gray-100 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400"
                                                 )}
                                             >
                                                 {client.status}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right pr-8">
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center justify-end gap-1">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    onClick={() => {
-                                                        setSelectedClient(client)
-                                                        setIsDetailsOpen(true)
-                                                    }}
-                                                    className="h-9 w-9 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600 transition-all"
+                                                    onClick={(e) => { e.stopPropagation(); setSelectedClient(client); setIsDetailsOpen(true); }}
+                                                    className="w-8 h-8 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600"
                                                 >
-                                                    <Edit2 className="h-4 w-4" />
+                                                    <Edit2 className="h-3.5 w-3.5" />
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    onClick={() => handleDelete(client.id)}
-                                                    className="h-9 w-9 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 transition-all"
+                                                    onClick={(e) => { e.stopPropagation(); handleDelete(client.id); }}
+                                                    className="w-8 h-8 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600"
                                                 >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    <Trash2 className="h-3.5 w-3.5" />
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -608,21 +518,14 @@ export default function ClientsPage() {
                         </TableBody>
                     </Table>
                 </div>
-
-                <div className="p-6 border-t border-gray-50 dark:border-gray-800 bg-gray-50/10 dark:bg-gray-800/10 flex items-center justify-between">
-                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
-                        Tổng cộng: {filteredClients?.length || 0} hội viên
-                    </p>
-                    <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" className="rounded-xl h-10 px-6 font-medium text-xs text-gray-400 disabled:opacity-20 transition-all" disabled>
-                            Trang trước
-                        </Button>
-                        <Button variant="ghost" size="sm" className="rounded-xl h-10 px-6 font-medium text-xs text-gray-400 disabled:opacity-20 transition-all" disabled>
-                            Trang tiếp
-                        </Button>
-                    </div>
-                </div>
             </Card>
+
+            <ClientDetailsSheet
+                client={selectedClient}
+                open={isDetailsOpen}
+                onOpenChange={setIsDetailsOpen}
+                onSuccess={refetch}
+            />
         </div>
     )
 }

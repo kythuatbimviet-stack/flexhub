@@ -53,6 +53,8 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                     address: row['Địa chỉ'] || row['address'] || '',
                     status: row['Trạng thái'] || row['status'] || 'Chốt đăng kí',
                     pt_name: row['PT Phụ trách'] || row['pt_name'] || '',
+                    registration_type: row['Loại đăng ký'] || row['Gói tập'] || row['registration_type'] || '',
+                    source: row['Nguồn khách'] || row['source'] || '',
                     age: row['Tuổi'] || row['age'] ? parseInt(row['Tuổi'] || row['age']) : null,
                     height: row['Chiều cao'] || row['height'] ? parseFloat(row['Chiều cao'] || row['height']) : null,
                     weight: row['Cân nặng'] || row['weight'] ? parseFloat(row['Cân nặng'] || row['weight']) : null,
@@ -89,6 +91,8 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                 'Địa chỉ': '123 Đường ABC, Hà Nội',
                 'Trạng thái': 'Chốt đăng kí',
                 'PT Phụ trách': 'Coach Hải',
+                'Loại đăng ký': 'Gói 12 tháng',
+                'Nguồn khách': 'Facebook',
                 'Tuổi': 25,
                 'Chiều cao': 170,
                 'Cân nặng': 70,
@@ -106,7 +110,7 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" className="rounded-xl border border-gray-100 dark:border-gray-800 text-gray-500 hover:text-gray-900 transition-all">
+                <Button variant="ghost" className="rounded-xl border border-gray-100 dark:border-gray-800 text-gray-500 hover:text-gray-900 transition-all font-medium h-11 px-4">
                     <FileUp className="w-4 h-4 mr-2" />
                     Nhập Excel
                 </Button>

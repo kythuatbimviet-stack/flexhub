@@ -54,7 +54,7 @@ export function MobileNav() {
     }
 
     return (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-2 py-2 flex items-center justify-around shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)]">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-2 py-2 flex items-center justify-around shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)]">
             {mobileMainItems.map((item) => {
                 const isActive = pathname === item.href
                 return (

@@ -62,6 +62,7 @@ const clientSchema = z.object({
     weight: z.coerce.number().optional(),
     target_weight: z.coerce.number().optional(),
     registration_type: z.string().optional(),
+    source: z.string().optional(),
     goal: z.string().optional(),
     medical_history: z.string().optional(),
     notes: z.string().optional(),
@@ -96,6 +97,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
             weight: undefined,
             target_weight: undefined,
             registration_type: '',
+            source: '',
             goal: '',
             medical_history: '',
             notes: '',
@@ -132,9 +134,10 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="bg-[#e11d48] hover:bg-red-700 text-white rounded-xl px-6">
+                <Button className="bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 h-10 transition-colors shadow-sm font-medium">
                     <Plus className="w-4 h-4 mr-2" />
-                    Thêm Khách hàng
+                    <span className="hidden sm:inline">Thêm Khách hàng</span>
+                    <span className="sm:hidden">Thêm mới</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border-none shadow-2xl">
@@ -365,7 +368,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                 <Dumbbell className="w-4 h-4" />
                                 Huấn luyện & Gói tập
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <FormField
                                     control={form.control}
                                     name="pt_name"
@@ -386,7 +389,20 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                         <FormItem>
                                             <FormLabel className="text-xs text-gray-500 font-medium">Loại đăng ký</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="VD: Gói 12 tháng, PT 1-1..." {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                                <Input placeholder="VD: Gói 12 tháng..." {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="source"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs text-gray-500 font-medium">Nguồn khách</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="VD: Facebook, Zalo..." {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
