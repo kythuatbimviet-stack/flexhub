@@ -87,7 +87,7 @@ export function CustomerDetailsSheet({ customer, open, onOpenChange, onSuccess }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
-        setFormData(prev => ({ ...prev, [name]: value }))
+        setFormData((prev: any) => ({ ...prev, [name]: value }))
     }
 
     const InfoRow = ({ icon: Icon, label, value, name, type = "text" }: any) => (

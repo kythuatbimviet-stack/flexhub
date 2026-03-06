@@ -1,0 +1,80 @@
+id,data_name,categories,nam,value,default
+CAIDAT001,Client,Trạng thái,Đã khảo sát,1,1
+CAIDAT002,Client,Trạng thái,Đang tập thử,2,
+CAIDAT003,Client,Trạng thái,Đang tư vấn,3,
+CAIDAT004,Client,Trạng thái,Tư vấn & không tham gia,4,
+CAIDAT005,Client,Trạng thái,Không tham gia,5,
+CAIDAT006,Client,Trạng thái,Chốt đăng kí,6,
+CAIDAT008,Contract,Trạng thái,Chờ ký HĐ,1,1
+CAIDAT009,Contract,Trạng thái,Đã ký HĐ,2,
+CAIDAT010,Contract,Trạng thái,Đợi kích hoạt HĐ,3,
+CAIDAT011,Contract,Trạng thái,Bảo lưu,4,
+CAIDAT012,Contract,Trạng thái,Huỷ HĐ,5,
+CAIDAT013,Contract,Trạng thái,Hết hạn HĐ,6,
+CAIDAT015,Contract,Phân loại,Gói cơ bản,1,1
+CAIDAT016,Contract,Phân loại,Gói nâng cao,2,
+CAIDAT017,Contract,Phân loại,Gói PT,3,
+CAIDAT018,Contract,Phân loại,Gói khoán cân,4,
+CAIDAT022,Contract,Nguồn,Page,1,1
+CAIDAT023,Contract,Nguồn,Facebook,2,
+CAIDAT024,Contract,Nguồn,Tiktok,3,
+CAIDAT025,Contract,Nguồn,PR,4,
+CAIDAT026,Contract,Nguồn,Google map,5,
+CAIDAT027,Contract,Nguồn,Hội nhóm,6,
+CAIDAT028,Contract,Nguồn,Liên kết,7,
+CAIDAT029,Contract,Nguồn,WI,8,
+CAIDAT030,Contract,Nguồn,Outdoor,9,
+CAIDAT031,Contract,Nguồn,Renew,10,
+CAIDAT036,Contract,Hình thức HLV,1 kèm 1,1,1
+CAIDAT037,Contract,Hình thức HLV,1 kèm 2,2,
+CAIDAT038,Contract,Hình thức HLV,1 kèm 3,3,
+CAIDAT039,Contract,Hình thức HLV,Nhóm >=5,4,
+CAIDAT049,Client,Nguồn,Page,1,1
+CAIDAT050,Client,Nguồn,Facebook,2,
+CAIDAT051,Client,Nguồn,Tiktok,3,
+CAIDAT052,Client,Nguồn,Google map,4,
+CAIDAT053,Client,Nguồn,Hội nhóm,5,
+CAIDAT054,Client,Nguồn,Liên kết,6,
+CAIDAT055,Client,Nguồn,WI,7,
+CAIDAT056,Client,Nguồn,Outdoor,8,
+CAIDAT057,Client,Nguồn,Renew,9,
+CAIDAT062,Client,Mục tiêu,Giảm cân,1,1
+CAIDAT063,Client,Mục tiêu,Giảm mỡ,2,
+CAIDAT064,Client,Mục tiêu,Tăng cơ - giảm mỡ,3,
+CAIDAT065,Client,Mục tiêu,Tăng cân,4,
+CAIDAT066,Client,Mục tiêu,Khoẻ,5,
+CAIDAT070,Client,Thời gian tập luyện,30,1,1
+CAIDAT071,Client,Thời gian tập luyện,60,2,
+CAIDAT072,Client,Thời gian tập luyện,90,3,
+CAIDAT073,Client,Thời gian tập luyện,120,4,
+CAIDAT074,Client,Thời gian tập luyện,180,5,
+CAIDAT075,Client,Thời gian tập luyện,270,6,
+CAIDAT079,Client,Lộ trình đăng ký,Cơ bản,1,1
+CAIDAT080,Client,Lộ trình đăng ký,Nâng cao,2,
+CAIDAT081,Client,Lộ trình đăng ký,PT,3,
+CAIDAT082,Client,Lộ trình đăng ký,Khoán cân nặng,4,
+CAIDAT088,Event,Nhóm sự kiện,Sinh nhật,1,1
+CAIDAT089,Event,Nhóm sự kiện,Sự kiện cố định,2,
+CAIDAT090,Event,Nhóm sự kiện,Sự kiện đặc biệt,3,
+CAIDAT093,Chiphi,Trạng thái,Chờ duyệt,1,1
+CAIDAT094,Chiphi,Trạng thái,Đã duyệt,2,
+CAIDAT095,Chiphi,Trạng thái,Từ chối,3,
+CAIDAT101,TAICHINH,Phân loại - Chi,Lương,1,1
+CAIDAT102,TAICHINH,Phân loại - Chi,BHXH,2,
+CAIDAT103,TAICHINH,Phân loại - Chi,Hoa hồng,3,
+CAIDAT104,TAICHINH,Phân loại - Chi,Chạy QC,4,
+CAIDAT105,TAICHINH,Phân loại - Chi,Khác,5,
+CAIDAT106,TAICHINH,Phân loại - Chi,Phải trả lại khách hàng,6,
+CAIDAT108,TAICHINH,Phân loại - Thu,Hợp đồng KH,1,1
+CAIDAT109,TAICHINH,Phân loại - Thu,Thu NCC,2,
+CAIDAT110,TAICHINH,Phân loại - Thu,Khác,3,
+CAIDAT115,TAICHINH,Hình thức thanh toán,Tiền mặt,1,1
+CAIDAT116,TAICHINH,Hình thức thanh toán,Chuyển khoản,2,
+CAIDAT118,TAICHINH,Hình thức thanh toán,Ví điện tử,3,
+CAIDAT120,TAICHINH,Chuyển khoản,BIDV - 3181000034086,1,1
+CAIDAT121,TAICHINH,Chuyển khoản,MB - 0987726236,2,
+CAIDAT122,TAICHINH,Chuyển khoản,ACB - 0906726236,3,
+CAIDAT127,TAICHINH,Ví điện tử,Momo - 0987726236,1,1
+CAIDAT128,TAICHINH,Ví điện tử,Zalopay - 0987726236,2,
+CAIDAT129,TAICHINH,Ví điện tử,VNPay - 034245545,3,
+CAIDAT130,TAICHINH,Ví điện tử,MyVietel - 09252336,4,

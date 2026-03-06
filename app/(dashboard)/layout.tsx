@@ -9,6 +9,8 @@ import { ThemeToggle } from '@/components/layout/theme-toggle'
 import { UserMenu } from '@/components/layout/user-menu'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { MobileNav } from '@/components/mobile/mobile-nav'
+import { MobileHeader } from '@/components/mobile/mobile-header'
 import Link from 'next/link'
 
 export default function DashboardLayout({
@@ -60,7 +62,8 @@ export default function DashboardLayout({
             </div>
 
             <div className="lg:pl-72 flex flex-col flex-1">
-                <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+                <MobileHeader />
+                <header className="hidden lg:flex sticky top-0 z-40 h-16 shrink-0 items-center gap-x-4 border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 transition-colors duration-300">
                     <div className="flex flex-1 items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2 px-2 py-1 rounded-lg">
@@ -109,11 +112,12 @@ export default function DashboardLayout({
                     </div>
                 </header>
 
-                <main className="py-10">
-                    <div className="px-4 sm:px-6 lg:px-8">
+                <main className="py-6 lg:py-10">
+                    <div className="px-4 sm:px-6 lg:px-8 pb-20 lg:pb-0">
                         {children}
                     </div>
                 </main>
+                <MobileNav />
             </div>
         </div>
     )

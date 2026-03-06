@@ -20,8 +20,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Aury Leather ERP",
-  description: "Hệ thống quản trị doanh nghiệp chuyên biệt cho Auryleather",
+  title: "Lady Fit ERP",
+  description: "Hệ thống quản trị doanh nghiệp chuyên biệt cho Lady Fit",
 };
 
 export default function RootLayout({

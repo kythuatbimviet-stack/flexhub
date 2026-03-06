@@ -1,0 +1,174 @@
+'use client'
+
+import * as React from 'react'
+import { FileUp, Loader2, Download } from 'lucide-react'
+import * as XLSX from 'xlsx'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
+import { importClients } from '@/app/actions/clients'
+
+interface ImportExcelClientDialogProps {
+    onSuccess: () => void
+}
+
+export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogProps) {
+    const [open, setOpen] = React.useState(false)
+    const [isUploading, setIsUploading] = React.useState(false)
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setIsUploading(true)
+        const reader = new FileReader()
+
+        reader.onload = async (evt) => {
+            try {
+                const bstr = evt.target?.result
+                const wb = XLSX.read(bstr, { type: 'binary' })
+                const wsname = wb.SheetNames[0]
+                const ws = wb.Sheets[wsname]
+                const data = XLSX.utils.sheet_to_json(ws)
+
+                if (data.length === 0) {
+                    toast.error('File Excel không có dữ liệu')
+                    setIsUploading(false)
+                    return
+                }
+
+                const clientsToInsert = data.map((row: any) => ({
+                    id: row['Mã KH'] || row['id'] || `LF-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+                    member_name: row['Tên hội viên'] || row['member_name'] || '',
+                    phone: row['Số điện thoại'] || row['phone'] || '',
+                    email: row['Email'] || row['email'] || '',
+                    address: row['Địa chỉ'] || row['address'] || '',
+                    status: row['Trạng thái'] || row['status'] || 'Chốt đăng kí',
+                    pt_name: row['PT Phụ trách'] || row['pt_name'] || '',
+                    age: row['Tuổi'] || row['age'] ? parseInt(row['Tuổi'] || row['age']) : null,
+                    height: row['Chiều cao'] || row['height'] ? parseFloat(row['Chiều cao'] || row['height']) : null,
+                    weight: row['Cân nặng'] || row['weight'] ? parseFloat(row['Cân nặng'] || row['weight']) : null,
+                    target_weight: row['Mục tiêu cân nặng'] || row['target_weight'] ? parseFloat(row['Mục tiêu cân nặng'] || row['target_weight']) : null,
+                    goal: row['Mục tiêu'] || row['goal'] || '',
+                    notes: row['Ghi chú'] || row['notes'] || '',
+                }))
+
+                const result = await importClients(clientsToInsert)
+
+                if (!result.success) throw new Error(result.error)
+
+                toast.success(`Đã nhập thành công ${clientsToInsert.length} khách hàng`)
+                setOpen(false)
+                onSuccess()
+            } catch (error: any) {
+                console.error('Import error:', error)
+                toast.error('Lỗi khi nhập dữ liệu từ Excel: ' + error.message)
+            } finally {
+                setIsUploading(false)
+            }
+        }
+
+        reader.readAsBinaryString(file)
+    }
+
+    const downloadTemplate = () => {
+        const template = [
+            {
+                'Mã KH': 'LF001',
+                'Tên hội viên': 'Nguyễn Văn A',
+                'Số điện thoại': '0901234567',
+                'Email': 'a@gmail.com',
+                'Địa chỉ': '123 Đường ABC, Hà Nội',
+                'Trạng thái': 'Chốt đăng kí',
+                'PT Phụ trách': 'Coach Hải',
+                'Tuổi': 25,
+                'Chiều cao': 170,
+                'Cân nặng': 70,
+                'Mục tiêu cân nặng': 65,
+                'Mục tiêu': 'Giảm cân',
+                'Ghi chú': 'Đã thanh toán cọc',
+            }
+        ]
+        const ws = XLSX.utils.json_to_sheet(template)
+        const wb = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wb, ws, 'Template')
+        XLSX.writeFile(wb, 'ladyfit_client_template.xlsx')
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" className="rounded-xl border border-gray-100 dark:border-gray-800 text-gray-500 hover:text-gray-900 transition-all">
+                    <FileUp className="w-4 h-4 mr-2" />
+                    Nhập Excel
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md rounded-3xl border-none shadow-2xl p-8">
+                <DialogHeader className="space-y-3">
+                    <DialogTitle className="text-xl font-bold text-gray-900 leading-tight">Nhập liệu hàng loạt</DialogTitle>
+                    <DialogDescription className="text-gray-500 text-sm">
+                        Tải lên file Excel mẫu của Lady Fit để cập nhật danh sách hội viên nhanh chóng.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-8">
+                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-3xl p-12 bg-gray-50/30 hover:bg-red-50/30 transition-all cursor-pointer group relative overflow-hidden">
+                        <input
+                            type="file"
+                            accept=".xlsx, .xls"
+                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                            onChange={handleFileUpload}
+                            disabled={isUploading}
+                        />
+                        <div className="relative z-0 flex flex-col items-center">
+                            {isUploading ? (
+                                <Loader2 className="h-12 w-12 text-red-600 animate-spin" />
+                            ) : (
+                                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                    <FileUp className="h-8 w-8 text-red-600" />
+                                </div>
+                            )}
+                            <p className="mt-4 text-sm font-bold text-gray-700">
+                                {isUploading ? 'Đang tải lên...' : 'Chọn file Excel'}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-400">Kéo thả file vào đây</p>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 p-5 bg-gray-50/50 rounded-2xl border border-gray-50 flex items-start gap-4">
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0">
+                            <Download className="w-5 h-5 text-gray-400" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-sm font-bold text-gray-900">Mẫu nhập liệu</p>
+                            <p className="text-xs text-gray-500 mt-1 leading-relaxed">Hãy sử dụng đúng định dạng của Lady Fit để tránh lỗi dữ liệu.</p>
+                            <Button
+                                variant="link"
+                                className="p-0 h-auto text-red-600 text-xs font-bold mt-2 hover:no-underline"
+                                onClick={downloadTemplate}
+                            >
+                                Tải xuống file mẫu (.xlsx)
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button
+                        variant="ghost"
+                        onClick={() => setOpen(false)}
+                        className="rounded-xl font-semibold text-gray-400"
+                    >
+                        Đóng
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
