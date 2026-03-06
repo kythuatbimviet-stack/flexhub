@@ -27,7 +27,7 @@ export function ImportMembershipsDialog({ onSuccess }: { onSuccess: () => void }
     React.useEffect(() => {
         if (open) {
             fetchBranches().then(res => {
-                if (res.success) setBranches(res.data)
+                if (res.success) setBranches(res.data || [])
             })
         }
     }, [open])

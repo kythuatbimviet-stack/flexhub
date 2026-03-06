@@ -53,7 +53,7 @@ const userFormSchema = z.object({
     position: z.string().optional(),
     department: z.string().optional(),
     role_id: z.string().optional(),
-    status: z.string().default('Activated'),
+    status: z.string().min(1, { message: 'Trạng thái không được để trống' }),
 })
 
 export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
@@ -79,7 +79,7 @@ export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
         if (open) {
             const loadData = async () => {
                 const branchesRes = await fetchBranches()
-                if (branchesRes.success) setBranches(branchesRes.data)
+                if (branchesRes.success) setBranches(branchesRes.data || [])
             }
             loadData()
         }
