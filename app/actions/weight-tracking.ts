@@ -1,29 +1,24 @@
 'use server'
 
-import { createAdminClient } from '@/lib/supabase-server'
+import { createClient, createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 
 export async function fetchWeightRecords() {
     try {
-        const adminClient = await createAdminClient()
-        const { data, error } = await adminClient
+        const supabase = await createClient()
+        // Try simple select first to see if data flows at all
+        const { data, error } = await supabase
             .from('weight_tracking')
-            .select(`
-                *,
-                clients (
-                    member_name
-                ),
-                contracts (
-                    registration_type
-                )
-            `)
+            .select('*')
             .order('measurement_date', { ascending: false })
 
         if (error) {
             console.error('Fetch Weight Records Error:', error)
-            return { success: false, error: error.message }
+            return { success: false, error: `${error.code}: ${error.message} - ${error.details}` }
         }
 
+        // If simple select works, try to fetch joined data manually or in next step
+        // For now, let's see if we get ANY data
         return { success: true, data }
     } catch (error: any) {
         console.error('Unexpected Fetch Error:', error)
@@ -110,6 +105,48 @@ export async function fetchWeightChartData(clientId: string) {
         return { success: true, data }
     } catch (error: any) {
         console.error('Unexpected Chart Data Fetch Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+export async function upsertWeightRecord(clientId: string, date: string, field: 'weight' | 'height', value: number, contractId?: string | null) {
+    try {
+        const adminClient = await createAdminClient()
+
+        // Check if record exists for this client and date
+        const { data: existing, error: fetchError } = await adminClient
+            .from('weight_tracking')
+            .select('id')
+            .eq('client_id', clientId)
+            .eq('measurement_date', date)
+            .maybeSingle()
+
+        if (fetchError) throw fetchError
+
+        if (existing) {
+            // Update
+            const { error: updateError } = await adminClient
+                .from('weight_tracking')
+                .update({ [field]: value })
+                .eq('id', existing.id)
+            if (updateError) throw updateError
+        } else {
+            // Insert
+            const { error: insertError } = await adminClient
+                .from('weight_tracking')
+                .insert({
+                    id: crypto.randomUUID(),
+                    client_id: clientId,
+                    contract_id: contractId,
+                    measurement_date: date,
+                    [field]: value
+                })
+            if (insertError) throw insertError
+        }
+
+        revalidatePath('/weight-tracking')
+        return { success: true }
+    } catch (error: any) {
+        console.error('Upsert Weight Record Error:', error)
         return { success: false, error: error.message }
     }
 }

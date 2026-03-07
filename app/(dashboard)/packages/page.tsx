@@ -196,7 +196,7 @@ export default function PackagesPage() {
     }
 
     return (
-        <div className="space-y-8 max-w-[1600px] mx-auto font-inter pb-10">
+        <div className="space-y-1.5 font-inter pb-10">
             <MembershipDetailsSheet
                 pkg={selectedPkg}
                 open={isDetailsOpen}

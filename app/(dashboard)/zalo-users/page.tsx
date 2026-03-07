@@ -185,7 +185,7 @@ export default function ZaloUsersPage() {
     }
 
     return (
-        <div className="space-y-1.5 max-w-[1600px] mx-auto font-inter pb-10">
+        <div className="space-y-1.5 font-inter pb-10">
             <ZaloUserDetailsSheet
                 user={selectedUser}
                 open={isDetailsOpen}

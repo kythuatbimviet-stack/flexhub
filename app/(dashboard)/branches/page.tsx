@@ -164,7 +164,7 @@ export default function BranchesPage() {
     }
 
     return (
-        <div className="space-y-8 max-w-[1600px] mx-auto font-inter pb-10">
+        <div className="space-y-8 font-inter pb-10">
             <BranchDetailsSheet
                 branch={selectedBranch}
                 open={isDetailsOpen}

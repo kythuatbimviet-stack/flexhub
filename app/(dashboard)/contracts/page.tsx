@@ -209,7 +209,7 @@ export default function ContractsPage() {
     }
 
     return (
-        <div className="space-y-1.5 max-w-[1600px] mx-auto font-inter pb-10">
+        <div className="space-y-1.5 font-inter pb-10">
             <ContractDetailsSheet
                 contract={selectedContract}
                 open={isDetailsOpen}

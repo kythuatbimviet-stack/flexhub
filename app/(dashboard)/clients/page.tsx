@@ -243,7 +243,7 @@ export default function ClientsPage() {
     }, [baseFilteredClients])
 
     return (
-        <div className="space-y-1.5 max-w-[1600px] mx-auto font-inter pb-10">
+        <div className="space-y-1.5 font-inter pb-10">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-1">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">

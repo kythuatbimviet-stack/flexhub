@@ -71,11 +71,16 @@ interface AddWeightDialogProps {
     onSuccess?: () => void
     clients: any[]
     initialClientId?: string
+    initialDate?: string
     isQuickAction?: boolean
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function AddWeightDialog({ onSuccess, clients, initialClientId, isQuickAction }: AddWeightDialogProps) {
-    const [open, setOpen] = React.useState(false)
+export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDate, isQuickAction, open: controlledOpen, onOpenChange }: AddWeightDialogProps) {
+    const [internalOpen, setInternalOpen] = React.useState(false)
+    const open = controlledOpen !== undefined ? controlledOpen : internalOpen
+    const setOpen = onOpenChange || setInternalOpen
     const [loading, setLoading] = React.useState(false)
 
     const form = useForm<WeightFormValues>({
@@ -83,12 +88,25 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, isQuickAc
         defaultValues: {
             client_id: initialClientId || '',
             contract_id: null,
-            measurement_date: format(new Date(), 'yyyy-MM-dd'),
+            measurement_date: initialDate || format(new Date(), 'yyyy-MM-dd'),
             weight: 0,
             measurements: '',
             next_measurement_date: null,
         },
     })
+
+    React.useEffect(() => {
+        if (open) {
+            form.reset({
+                client_id: initialClientId || '',
+                contract_id: null,
+                measurement_date: initialDate || format(new Date(), 'yyyy-MM-dd'),
+                weight: 0,
+                measurements: '',
+                next_measurement_date: null,
+            })
+        }
+    }, [open, initialClientId, initialDate, form])
 
     const selectedClientId = form.watch('client_id')
 
@@ -126,18 +144,20 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, isQuickAc
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button
-                    className={cn(
-                        isQuickAction
-                            ? "h-20 rounded-2xl flex-col gap-2 border-slate-100 dark:border-slate-800 hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all font-medium text-xs text-slate-600 dark:text-slate-400 hover:text-emerald-600 bg-transparent shadow-none border"
-                            : "bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 h-10 transition-colors shadow-sm"
-                    )}
-                >
-                    <Plus className={cn(isQuickAction ? "w-5 h-5" : "w-4 h-4 mr-2")} />
-                    {initialClientId ? 'Cập nhật cân nặng' : 'Thêm mới'}
-                </Button>
-            </DialogTrigger>
+            {onOpenChange === undefined && (
+                <DialogTrigger asChild>
+                    <Button
+                        className={cn(
+                            isQuickAction
+                                ? "h-20 rounded-2xl flex-col gap-2 border-slate-100 dark:border-slate-800 hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all font-medium text-xs text-slate-600 dark:text-slate-400 hover:text-emerald-600 bg-transparent shadow-none border"
+                                : "bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 h-10 transition-colors shadow-sm"
+                        )}
+                    >
+                        <Plus className={cn(isQuickAction ? "w-5 h-5" : "w-4 h-4 mr-2")} />
+                        {initialClientId ? 'Cập nhật cân nặng' : 'Thêm mới'}
+                    </Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="max-w-xl rounded-3xl border-none shadow-2xl bg-white dark:bg-gray-900">
                 <DialogHeader>
                     <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">

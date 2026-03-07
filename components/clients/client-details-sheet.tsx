@@ -30,6 +30,7 @@ import {
     ClipboardList
 } from 'lucide-react'
 import { updateClient, bulkDeleteClients } from '@/app/actions/clients'
+import { fetchSettings } from '@/app/actions/settings'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
@@ -43,7 +44,13 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchBranches } from '@/app/actions/branches'
 import { AddContractDialog } from '@/components/contracts/add-contract-dialog'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
-import { FileText, PlusCircle } from 'lucide-react'
+import { FileText, PlusCircle, ChevronDown } from 'lucide-react'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface ClientDetailsSheetProps {
     client: any | null
@@ -72,6 +79,18 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
             return result.data
         },
     })
+
+    const { data: settingsResult } = useQuery({
+        queryKey: ['settings'],
+        queryFn: fetchSettings
+    })
+
+    const clientStatuses = React.useMemo(() => {
+        if (!settingsResult?.data) return []
+        return settingsResult.data
+            .filter((s: any) => s.data_name === 'client' && s.categories === 'Trạng thái')
+            .map((s: any) => s.nam)
+    }, [settingsResult])
 
     if (!client || !formData) return null
 
@@ -185,6 +204,73 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                     </div>
                                 </div>
                             </div>
+                            {!isEditing && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all font-medium text-[11px] gap-2 px-3 border border-slate-200 dark:border-slate-700"
+                                            disabled={loading}
+                                        >
+                                            Chuyển trạng thái
+                                            <ChevronDown className="w-3.5 h-3.5 opacity-50" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-[180px] rounded-xl border-slate-200 dark:border-slate-800 p-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-100">
+                                        <div className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Trạng thái mới</div>
+                                        {clientStatuses.length > 0 ? (
+                                            clientStatuses.map((status: string) => (
+                                                <DropdownMenuItem
+                                                    key={status}
+                                                    onSelect={() => {
+                                                        const newFormData = { ...formData, status };
+                                                        setFormData(newFormData);
+                                                        updateClient(client.id, newFormData).then(res => {
+                                                            if (res.success) {
+                                                                toast.success(`Đã chuyển trạng thái sang: ${status}`);
+                                                                onSuccess();
+                                                            } else {
+                                                                toast.error('Lỗi khi cập nhật trạng thái');
+                                                            }
+                                                        });
+                                                    }}
+                                                    className={cn(
+                                                        "rounded-lg text-[13px] font-medium px-3 py-2 cursor-pointer transition-colors",
+                                                        formData.status === status ? "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                    )}
+                                                >
+                                                    {status}
+                                                </DropdownMenuItem>
+                                            ))
+                                        ) : (
+                                            ['Chốt đăng kí', 'Đang tập', 'Tạm dừng', 'Đã nghỉ'].map((status) => (
+                                                <DropdownMenuItem
+                                                    key={status}
+                                                    onSelect={() => {
+                                                        const newFormData = { ...formData, status };
+                                                        setFormData(newFormData);
+                                                        updateClient(client.id, newFormData).then(res => {
+                                                            if (res.success) {
+                                                                toast.success(`Đã chuyển trạng thái sang: ${status}`);
+                                                                onSuccess();
+                                                            } else {
+                                                                toast.error('Lỗi khi cập nhật trạng thái');
+                                                            }
+                                                        });
+                                                    }}
+                                                    className={cn(
+                                                        "rounded-lg text-[13px] font-medium px-3 py-2 cursor-pointer transition-colors",
+                                                        formData.status === status ? "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                    )}
+                                                >
+                                                    {status}
+                                                </DropdownMenuItem>
+                                            ))
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
                         </div>
                     </SheetHeader>
                 </div>
@@ -243,13 +329,23 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                 {isEditing ? (
                                     <Select onValueChange={handleStatusChange} value={formData.status}>
                                         <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 text-sm focus:ring-2 focus:ring-red-500 shadow-sm border-2">
-                                            <SelectValue />
+                                            <SelectValue placeholder="Chọn trạng thái" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-xl">
-                                            <SelectItem value="Chốt đăng kí">Chốt đăng kí</SelectItem>
-                                            <SelectItem value="Đang tập">Đang tập</SelectItem>
-                                            <SelectItem value="Tạm dừng">Tạm dừng</SelectItem>
-                                            <SelectItem value="Đã nghỉ">Đã nghỉ</SelectItem>
+                                            {clientStatuses.length > 0 ? (
+                                                clientStatuses.map((status: string) => (
+                                                    <SelectItem key={status} value={status}>
+                                                        {status}
+                                                    </SelectItem>
+                                                ))
+                                            ) : (
+                                                <>
+                                                    <SelectItem value="Chốt đăng kí">Chốt đăng kí</SelectItem>
+                                                    <SelectItem value="Đang tập">Đang tập</SelectItem>
+                                                    <SelectItem value="Tạm dừng">Tạm dừng</SelectItem>
+                                                    <SelectItem value="Đã nghỉ">Đã nghỉ</SelectItem>
+                                                </>
+                                            )}
                                         </SelectContent>
                                     </Select>
                                 ) : (

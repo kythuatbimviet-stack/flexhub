@@ -103,10 +103,22 @@ export function EditWeightDialog({ open, onOpenChange, record, onSuccess, client
         queryFn: async () => {
             const result = await fetchContracts()
             if (!result.success) throw new Error(result.error)
-            return (result.data || []).filter((c: any) => c.client_id === selectedClientId)
+            const list = (result.data || []).filter((c: any) => c.client_id === selectedClientId)
+            // Sort by start_date descending to get latest
+            return list.sort((a: any, b: any) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime())
         },
         enabled: !!selectedClientId,
     })
+
+    // Auto-select contract if missing
+    React.useEffect(() => {
+        if (contractsResult && contractsResult.length > 0) {
+            const currentContractId = form.getValues('contract_id')
+            if (!currentContractId) {
+                form.setValue('contract_id', contractsResult[0].id)
+            }
+        }
+    }, [contractsResult, form])
 
     async function onSubmit(values: WeightFormValues) {
         setLoading(true)

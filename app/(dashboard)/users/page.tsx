@@ -202,7 +202,7 @@ export default function UsersPage() {
     }
 
     return (
-        <div className="space-y-8 max-w-[1600px] mx-auto font-inter">
+        <div className="space-y-1.5 font-inter pb-10">
             <UserDetailsSheet
                 user={selectedUser}
                 open={isDetailsOpen}
