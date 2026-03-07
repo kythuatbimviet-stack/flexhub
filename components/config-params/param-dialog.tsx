@@ -55,7 +55,7 @@ export function ParamDialog({ open, onOpenChange, tableName, item, groupColor, g
     const queryClient = useQueryClient()
     const isEditing = !!item
 
-    const form = useForm<ParamFormValues>({
+    const form = useForm<any>({
         resolver: zodResolver(paramSchema),
         defaultValues: {
             nam: '',
