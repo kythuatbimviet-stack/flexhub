@@ -79,18 +79,18 @@ export function AddSettingDialog({ defaultDataName = '', defaultCategory = '' }:
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="rounded-xl text-indigo-600 hover:bg-indigo-50 font-bold text-xs h-9">
+                <Button variant="ghost" size="sm" className="rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 font-bold text-xs h-9 transition-all">
                     <Plus className="w-4 h-4 mr-2" />
                     Thêm mới
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden font-inter text-gray-900">
-                <div className="p-8 bg-gradient-to-br from-indigo-50/50 to-white border-b border-gray-100">
+            <DialogContent className="max-w-md rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden font-inter text-slate-900 dark:text-white bg-white dark:bg-slate-900">
+                <div className="p-8 bg-gradient-to-br from-red-50/50 to-white dark:from-red-950/10 dark:to-slate-900 border-b border-slate-100 dark:border-slate-800">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-bold text-gray-900">
+                        <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
                             Thêm Thông số mới
                         </DialogTitle>
-                        <DialogDescription className="text-gray-500">
+                        <DialogDescription className="text-slate-500 dark:text-slate-400">
                             Khai báo thông số mới cho hệ thống.
                         </DialogDescription>
                     </DialogHeader>
@@ -103,11 +103,11 @@ export function AddSettingDialog({ defaultDataName = '', defaultCategory = '' }:
                             name="data_name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-500">Module (Data Name)</FormLabel>
+                                    <FormLabel className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Module (Data Name)</FormLabel>
                                     <FormControl>
                                         <div className="relative">
-                                            <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500" />
-                                            <Input placeholder="Ví dụ: Client" {...field} className="rounded-xl border-gray-100 bg-gray-50/50 pl-10 h-11 focus:ring-indigo-500" />
+                                            <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500" />
+                                            <Input placeholder="Ví dụ: Client" {...field} className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 pl-10 h-10 focus:ring-red-500 transition-all text-sm" />
                                         </div>
                                     </FormControl>
                                     <FormMessage />
@@ -120,11 +120,11 @@ export function AddSettingDialog({ defaultDataName = '', defaultCategory = '' }:
                             name="categories"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-500">Danh mục (Categories)</FormLabel>
+                                    <FormLabel className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Danh mục (Categories)</FormLabel>
                                     <FormControl>
                                         <div className="relative">
-                                            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500" />
-                                            <Input placeholder="Ví dụ: Trạng thái" {...field} className="rounded-xl border-gray-100 bg-gray-50/50 pl-10 h-11 focus:ring-indigo-500" />
+                                            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500" />
+                                            <Input placeholder="Ví dụ: Trạng thái" {...field} className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 pl-10 h-10 focus:ring-red-500 transition-all text-sm" />
                                         </div>
                                     </FormControl>
                                     <FormMessage />
@@ -137,11 +137,11 @@ export function AddSettingDialog({ defaultDataName = '', defaultCategory = '' }:
                             name="nam"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-500">Tên hiển thị (Nam)</FormLabel>
+                                    <FormLabel className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Tên hiển thị (Nam)</FormLabel>
                                     <FormControl>
                                         <div className="relative">
-                                            <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500" />
-                                            <Input placeholder="Ví dụ: Đã chốt" {...field} className="rounded-xl border-gray-100 bg-gray-50/50 pl-10 h-11 focus:ring-indigo-500" />
+                                            <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500" />
+                                            <Input placeholder="Ví dụ: Đã chốt" {...field} className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 pl-10 h-10 focus:ring-red-500 transition-all text-sm" />
                                         </div>
                                     </FormControl>
                                     <FormMessage />
@@ -155,11 +155,11 @@ export function AddSettingDialog({ defaultDataName = '', defaultCategory = '' }:
                                 name="value"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-500">Giá trị (Value)</FormLabel>
+                                        <FormLabel className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Giá trị (Value)</FormLabel>
                                         <FormControl>
                                             <div className="relative">
-                                                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500" />
-                                                <Input type="number" {...field} className="rounded-xl border-gray-100 bg-gray-50/50 pl-10 h-11 focus:ring-indigo-500" />
+                                                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500" />
+                                                <Input type="number" {...field} className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 pl-10 h-10 focus:ring-red-500 transition-all text-sm" />
                                             </div>
                                         </FormControl>
                                         <FormMessage />
@@ -171,11 +171,11 @@ export function AddSettingDialog({ defaultDataName = '', defaultCategory = '' }:
                                 name="default"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-500">Mặc định (Default)</FormLabel>
+                                        <FormLabel className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Mặc định (Default)</FormLabel>
                                         <FormControl>
                                             <div className="relative">
-                                                <Star className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500" />
-                                                <Input type="number" {...field} value={field.value || ''} placeholder="1 hoặc Trống" className="rounded-xl border-gray-100 bg-gray-50/50 pl-10 h-11 focus:ring-indigo-500" />
+                                                <Star className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500" />
+                                                <Input type="number" {...field} value={field.value || ''} placeholder="1 hoặc Trống" className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 pl-10 h-10 focus:ring-red-500 transition-all text-sm" />
                                             </div>
                                         </FormControl>
                                         <FormMessage />
@@ -196,7 +196,7 @@ export function AddSettingDialog({ defaultDataName = '', defaultCategory = '' }:
                             <Button
                                 type="submit"
                                 disabled={mutation.isPending}
-                                className="rounded-xl px-8 bg-indigo-600 text-white hover:bg-indigo-700 transition-all font-semibold h-11 shadow-lg shadow-indigo-500/20"
+                                className="rounded-xl px-8 bg-red-600 text-white hover:bg-red-700 transition-all font-semibold h-11 shadow-lg shadow-red-500/20"
                             >
                                 {mutation.isPending ? 'Đang thêm...' : 'Lưu thông số'}
                             </Button>

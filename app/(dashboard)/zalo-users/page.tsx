@@ -18,7 +18,8 @@ import {
     CheckCircle2,
     Star,
     MessageSquare,
-    UserStar
+    UserStar,
+    RotateCcw
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -64,6 +65,14 @@ export default function ZaloUsersPage() {
     // Filter states
     const [filterUserType, setFilterUserType] = React.useState('all')
     const [filterFollowing, setFilterFollowing] = React.useState('all')
+    const [showMobileFilters, setShowMobileFilters] = React.useState(false)
+
+    const clearFilters = () => {
+        setSearchTerm('')
+        setFilterUserType('all')
+        setFilterFollowing('all')
+        toast.info('Đã xóa tất cả bộ lọc')
+    }
 
     const { data: zaloUsers, isLoading, refetch } = useQuery({
         queryKey: ['zalo-users'],
@@ -176,7 +185,7 @@ export default function ZaloUsersPage() {
     }
 
     return (
-        <div className="space-y-8 max-w-[1600px] mx-auto font-inter">
+        <div className="space-y-1.5 max-w-[1600px] mx-auto font-inter pb-10">
             <ZaloUserDetailsSheet
                 user={selectedUser}
                 open={isDetailsOpen}
@@ -184,7 +193,7 @@ export default function ZaloUsersPage() {
                 onSuccess={refetch}
             />
 
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 px-1">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 px-1">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-gray-50 flex items-center gap-3">
                         <UserStar className="w-8 h-8 text-blue-600" />
@@ -211,80 +220,110 @@ export default function ZaloUsersPage() {
                             </motion.div>
                         )}
                     </AnimatePresence>
-                    <Button onClick={handleExport} variant="outline" className="rounded-xl h-12 px-6 font-semibold border-2 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all">
-                        <FileDown className="w-4 h-4 mr-2 text-slate-500" />
+                    <Button onClick={handleExport} variant="outline" className="rounded-xl h-11 px-4 font-semibold border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all">
+                        <FileDown className="w-4.5 h-4.5 mr-2 text-slate-500" />
                         Xuất Excel
                     </Button>
                 </div>
             </div>
 
-            <Card className="border-none shadow-2xl dark:shadow-none rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900 transition-all duration-500">
-                <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-800/20">
-                    <div className="flex flex-col xl:flex-row gap-4 justify-between items-center">
-                        <div className="relative w-full xl:max-w-xs group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-                            <input
-                                placeholder="Tìm kiếm Zalo user..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-12 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm h-12 transition-all shadow-sm outline-none"
-                            />
+            {/* Optimized Compact Filter Section */}
+            <Card className="border-none shadow-sm rounded-xl overflow-visible bg-white dark:bg-slate-900 transition-all duration-300 py-0">
+                <div className="py-1 px-1 sm:px-1.5 border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-800/20 rounded-xl">
+                    <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2">
+                        {/* Search & Toggle Row */}
+                        <div className="flex items-center gap-2 flex-1">
+                            <div className="relative group flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                                <input
+                                    placeholder="Tìm kiếm Zalo user..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-10 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm h-9 transition-all outline-none"
+                                />
+                            </div>
+
+                            {/* Mobile Filter Toggle */}
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                                className={cn(
+                                    "lg:hidden h-9 w-9 rounded-lg border-gray-200 dark:border-gray-800 transition-all",
+                                    showMobileFilters ? "bg-blue-50 text-blue-600 border-blue-200 shadow-sm" : "bg-white dark:bg-gray-800/50"
+                                )}
+                            >
+                                <Filter className="w-4 h-4" />
+                            </Button>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-                            <Select value={filterUserType} onValueChange={setFilterUserType}>
-                                <SelectTrigger className="w-full sm:w-[150px] rounded-xl border-2 border-slate-100 dark:border-slate-800 h-11 bg-white dark:bg-slate-900 text-xs font-medium">
-                                    <SelectValue placeholder="Loại người dùng" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                    <SelectItem value="all">Tất cả loại</SelectItem>
-                                    {userTypes.map(t => (
-                                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            <Select value={filterFollowing} onValueChange={setFilterFollowing}>
-                                <SelectTrigger className="w-full sm:w-[180px] rounded-xl border-2 border-slate-100 dark:border-slate-800 h-11 bg-white dark:bg-slate-900 text-xs font-medium">
-                                    <SelectValue placeholder="Trạng thái quan tâm" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                    <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                                    <SelectItem value="following">Đang quan tâm</SelectItem>
-                                    <SelectItem value="unfollowing">Không quan tâm</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            {(filterUserType !== 'all' || filterFollowing !== 'all' || searchTerm !== '') && (
-                                <Button
-                                    variant="ghost"
-                                    onClick={resetFilters}
-                                    className="h-11 px-3 text-xs font-semibold text-slate-400 hover:text-blue-600 transition-colors"
+                        {/* Filters Content */}
+                        <AnimatePresence>
+                            {(showMobileFilters || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
+                                <motion.div
+                                    initial={typeof window !== 'undefined' && window.innerWidth < 1024 ? { height: 0, opacity: 0 } : false}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2"
                                 >
-                                    <XCircle className="w-4 h-4 mr-2" />
-                                    Xóa lọc
-                                </Button>
+                                    <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
+                                        <Select value={filterUserType} onValueChange={setFilterUserType}>
+                                            <SelectTrigger className="w-full lg:w-[150px] rounded-lg border border-slate-100 dark:border-slate-800 h-9 bg-white dark:bg-slate-900 text-xs font-medium shadow-none">
+                                                <SelectValue placeholder="Loại người dùng" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                                <SelectItem value="all">Tất cả loại</SelectItem>
+                                                {userTypes.map(t => (
+                                                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+
+                                        <Select value={filterFollowing} onValueChange={setFilterFollowing}>
+                                            <SelectTrigger className="w-full lg:w-[180px] rounded-lg border border-slate-100 dark:border-slate-800 h-9 bg-white dark:bg-slate-900 text-xs font-medium shadow-none">
+                                                <SelectValue placeholder="Trạng thái quan tâm" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                                <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                                                <SelectItem value="following">Đang quan tâm</SelectItem>
+                                                <SelectItem value="unfollowing">Không quan tâm</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+
+                                        <Button
+                                            variant="ghost"
+                                            onClick={clearFilters}
+                                            className="h-9 px-3 rounded-lg text-blue-600 dark:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/30 transition-all shrink-0 col-span-2 lg:col-span-1 justify-center lg:w-auto"
+                                        >
+                                            <RotateCcw className="w-4 h-4 mr-2 lg:mr-0" />
+                                            <span className="lg:hidden text-sm font-medium">Làm mới bộ lọc</span>
+                                        </Button>
+                                    </div>
+                                </motion.div>
                             )}
-                        </div>
+                        </AnimatePresence>
                     </div>
                 </div>
+            </Card>
 
+            {/* Table Section */}
+            <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-slate-900 transition-all duration-500">
                 <div className="overflow-x-auto">
                     <Table>
-                        <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
-                            <TableRow className="border-slate-100 dark:border-slate-800 hover:bg-transparent">
-                                <TableHead className="w-14 pl-8">
+                        <TableHeader>
+                            <TableRow className="border-slate-100 dark:border-slate-800 hover:bg-transparent border-t-0 bg-slate-50/50 dark:bg-slate-800/50">
+                                <TableHead className="w-14 pl-6 h-9">
                                     <Checkbox
                                         checked={selectedRows.length === (filteredUsers?.length || 0) && (filteredUsers?.length || 0) > 0}
                                         onCheckedChange={toggleAll}
-                                        className="rounded-lg border-slate-300 dark:border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 shadow-sm"
+                                        className="rounded-lg border-slate-300 dark:border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                                     />
                                 </TableHead>
-                                <TableHead className="font-semibold text-slate-600 dark:text-slate-400 text-xs py-7">Người dùng Zalo</TableHead>
-                                <TableHead className="font-semibold text-slate-600 dark:text-slate-400 text-xs">Phân loại & Thẻ</TableHead>
-                                <TableHead className="font-semibold text-slate-600 dark:text-slate-400 text-xs">Tương tác cuối</TableHead>
-                                <TableHead className="font-semibold text-slate-600 dark:text-slate-400 text-xs">Trạng thái</TableHead>
-                                <TableHead className="font-semibold text-slate-600 dark:text-slate-400 text-xs text-right pr-10">Tùy chọn</TableHead>
+                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Người dùng Zalo</TableHead>
+                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Phân loại & Thẻ</TableHead>
+                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Tương tác cuối</TableHead>
+                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Trạng thái</TableHead>
+                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9 text-right pr-8">Tùy chọn</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -321,50 +360,50 @@ export default function ZaloUsersPage() {
                                             selectedRows.includes(user.id) && "bg-blue-50/20 dark:bg-blue-950/10"
                                         )}
                                     >
-                                        <TableCell className="pl-8">
+                                        <TableCell className="pl-6 py-2">
                                             <Checkbox
                                                 checked={selectedRows.includes(user.id)}
                                                 onCheckedChange={() => toggleRow(user.id)}
                                                 className="rounded-lg border-slate-300 dark:border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 shadow-sm"
                                             />
                                         </TableCell>
-                                        <TableCell className="py-7">
-                                            <div className="flex items-center gap-5">
-                                                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-600 font-bold text-sm ring-2 ring-transparent group-hover:ring-blue-100 dark:group-hover:ring-blue-900/40 transition-all overflow-hidden bg-cover bg-center shadow-sm" style={{ backgroundImage: user.avatar_url ? `url(${user.avatar_url})` : 'none' }}>
+                                        <TableCell className="py-2">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-600 font-bold text-xs ring-1 ring-transparent group-hover:ring-blue-100 dark:group-hover:ring-blue-900/40 transition-all overflow-hidden bg-cover bg-center shadow-sm" style={{ backgroundImage: user.avatar_url ? `url(${user.avatar_url})` : 'none' }}>
                                                     {!user.avatar_url && (user.display_name?.charAt(0) || 'U')}
                                                 </div>
                                                 <div className="flex flex-col gap-0.5">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="font-semibold text-slate-900 dark:text-slate-50 text-[15px] group-hover:text-blue-600 transition-colors">{user.display_name}</span>
+                                                        <span className="font-semibold text-slate-900 dark:text-slate-50 text-sm group-hover:text-blue-600 transition-colors">{user.display_name}</span>
                                                         {user.is_sensitive && <Shield className="w-3.5 h-3.5 text-rose-500" />}
                                                     </div>
-                                                    <span className="text-xs text-slate-500 dark:text-gray-400 font-medium">ID: {user.zalo_user_id}</span>
+                                                    <span className="text-[10px] text-slate-400 font-medium">ID: {user.zalo_user_id}</span>
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell className="py-2">
                                             <div className="flex flex-col gap-1">
-                                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{user.user_type || 'Chưa định nghĩa'}</span>
+                                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{user.user_type || 'Chưa định nghĩa'}</span>
                                                 <div className="flex flex-wrap gap-1">
                                                     {user.tags?.split(',').map((tag: string, i: number) => (
-                                                        <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded-md">
+                                                        <span key={i} className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded-md font-medium">
                                                             {tag.trim()}
                                                         </span>
                                                     ))}
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell className="py-2">
                                             <div className="flex flex-col gap-1">
-                                                <span className="text-[13px] text-slate-600 dark:text-slate-300 font-medium">
+                                                <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
                                                     {user.last_interaction_date ? new Date(user.last_interaction_date).toLocaleDateString('vi-VN') : '-'}
                                                 </span>
-                                                {user.alias && <span className="text-[11px] text-slate-400 italic">"{user.alias}"</span>}
+                                                {user.alias && <span className="text-[10px] text-slate-400 italic font-medium">"{user.alias}"</span>}
                                             </div>
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell className="py-2">
                                             <div className={cn(
-                                                "inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-semibold shadow-sm",
+                                                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold tracking-wide shadow-sm",
                                                 user.is_following
                                                     ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
                                                     : "bg-slate-50 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
@@ -373,14 +412,14 @@ export default function ZaloUsersPage() {
                                                 {user.is_following ? 'Đang quan tâm' : 'Bỏ quan tâm'}
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-right pr-10">
-                                            <div className="flex items-center justify-end gap-2">
+                                        <TableCell className="text-right pr-8 py-2">
+                                            <div className="flex items-center justify-end gap-1">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-9 w-9 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 transition-all"
+                                                    className="h-8 w-8 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 transition-all"
                                                 >
-                                                    <MessageSquare className="h-4 w-4" />
+                                                    <MessageSquare className="h-3.5 w-3.5" />
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
@@ -389,17 +428,17 @@ export default function ZaloUsersPage() {
                                                         setSelectedUser(user)
                                                         setIsDetailsOpen(true)
                                                     }}
-                                                    className="h-9 w-9 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600 transition-all"
+                                                    className="h-8 w-8 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600 transition-all"
                                                 >
-                                                    <Edit2 className="h-4 w-4" />
+                                                    <Edit2 className="h-3.5 w-3.5" />
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => handleDelete(user.id)}
-                                                    className="h-9 w-9 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 transition-all"
+                                                    className="h-8 w-8 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 transition-all"
                                                 >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    <Trash2 className="h-3.5 w-3.5" />
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -410,15 +449,15 @@ export default function ZaloUsersPage() {
                     </Table>
                 </div>
 
-                <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-800/20 flex items-center justify-between">
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium bg-white dark:bg-slate-900 px-4 py-2 rounded-xl shadow-sm border border-slate-50 dark:border-slate-800">
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-800/20 flex items-center justify-between">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg shadow-sm border border-slate-50 dark:border-slate-800">
                         Hiển thị <span className="font-bold text-slate-900 dark:text-white px-1">{filteredUsers?.length || 0}</span> người dùng Zalo
                     </p>
-                    <div className="flex gap-3">
-                        <Button variant="outline" size="sm" className="rounded-xl h-11 px-8 font-semibold text-xs text-slate-400 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 disabled:opacity-30" disabled>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="rounded-lg h-9 px-4 font-semibold text-xs text-slate-400 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 disabled:opacity-30" disabled>
                             Trang trước
                         </Button>
-                        <Button variant="outline" size="sm" className="rounded-xl h-11 px-8 font-semibold text-xs text-slate-400 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 disabled:opacity-30" disabled>
+                        <Button variant="outline" size="sm" className="rounded-lg h-9 px-4 font-semibold text-xs text-slate-400 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 disabled:opacity-30" disabled>
                             Trang kế
                         </Button>
                     </div>

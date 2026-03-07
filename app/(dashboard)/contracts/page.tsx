@@ -69,6 +69,7 @@ export default function ContractsPage() {
     const [branchFilter, setBranchFilter] = React.useState('all')
     const [ptFilter, setPtFilter] = React.useState('all')
     const [contractTypeFilter, setContractTypeFilter] = React.useState('all')
+    const [showMobileFilters, setShowMobileFilters] = React.useState(false)
 
     const clearFilters = () => {
         setSearchTerm('')
@@ -208,7 +209,7 @@ export default function ContractsPage() {
     }
 
     return (
-        <div className="space-y-8 max-w-[1600px] mx-auto font-inter">
+        <div className="space-y-1.5 max-w-[1600px] mx-auto font-inter pb-10">
             <ContractDetailsSheet
                 contract={selectedContract}
                 open={isDetailsOpen}
@@ -216,10 +217,13 @@ export default function ContractsPage() {
                 onSuccess={refetch}
             />
 
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 px-1">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-1">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-medium tracking-tight text-gray-900 dark:text-gray-50">Quản lý Hợp đồng</h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Theo dõi và quản lý các hợp đồng dịch vụ của hội viên Lady Fit.</p>
+                    <h1 className="text-3xl font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                        <FileText className="w-8 h-8 text-red-500" />
+                        Hợp đồng
+                    </h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Theo dõi và quản lý các hợp đồng dịch vụ của hội viên.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <AnimatePresence>
@@ -240,115 +244,144 @@ export default function ContractsPage() {
                             </motion.div>
                         )}
                     </AnimatePresence>
-                    <ImportExcelContractDialog onSuccess={refetch} />
-                    <Button
-                        variant="ghost"
-                        onClick={exportToExcel}
-                        className="rounded-xl text-gray-600 dark:text-gray-300 font-medium h-11 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-red-600 transition-all border border-gray-100 dark:border-gray-800"
-                    >
-                        <FileDown className="w-4.5 h-4.5 mr-2" />
-                        Xuất Excel
-                    </Button>
-                    <AddContractDialog onSuccess={refetch} />
+                    <div className="flex gap-2">
+                        <ImportExcelContractDialog onSuccess={refetch} />
+                        <Button
+                            variant="ghost"
+                            onClick={exportToExcel}
+                            className="rounded-xl border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300 h-11 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                        >
+                            <FileDown className="w-4.5 h-4.5 mr-2" />
+                            <span className="hidden sm:inline">Xuất Excel</span>
+                        </Button>
+                        <AddContractDialog onSuccess={refetch} />
+                    </div>
                 </div>
             </div>
 
-            <Card className="border-none shadow-[0_20px_50px_rgba(0,0,0,0.05)] dark:shadow-none rounded-[2rem] overflow-visible bg-white dark:bg-gray-900 transition-all duration-500">
-                <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50/10 dark:bg-gray-800/20">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <div className="relative group w-full md:w-64">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-red-600 transition-colors" />
-                            <input
-                                placeholder="Tìm kiếm hợp đồng..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-12 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm h-12 transition-all shadow-sm outline-none"
-                            />
+            {/* Optimized Compact Filter Section */}
+            <Card className="border-none shadow-sm rounded-xl overflow-visible bg-white dark:bg-gray-900 transition-all duration-300 py-0">
+                <div className="py-1 px-1 sm:px-1.5 border-gray-100 dark:border-gray-800 bg-gray-50/10 dark:bg-gray-800/20 rounded-xl">
+                    <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2">
+                        {/* Search & Toggle Row */}
+                        <div className="flex items-center gap-2 flex-1">
+                            <div className="relative group flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-red-600 transition-colors" />
+                                <input
+                                    placeholder="Tìm kiếm hợp đồng..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-10 h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-sm outline-none"
+                                />
+                            </div>
+
+                            {/* Mobile Filter Toggle */}
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                                className={cn(
+                                    "lg:hidden h-9 w-9 rounded-lg border-gray-200 dark:border-gray-800 transition-all",
+                                    showMobileFilters ? "bg-red-50 text-red-600 border-red-200 shadow-sm" : "bg-white dark:bg-gray-800/50"
+                                )}
+                            >
+                                <Filter className="w-4 h-4" />
+                            </Button>
                         </div>
 
-                        <div className="w-44">
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="h-12 rounded-2xl border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-red-500">
-                                    <SelectValue placeholder="Trạng thái" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-gray-100 dark:border-gray-800">
-                                    <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                                    <SelectItem value="Đang thực hiện">Đang thực hiện</SelectItem>
-                                    <SelectItem value="Hoàn thành">Hoàn thành</SelectItem>
-                                    <SelectItem value="Đã hủy">Đã hủy</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        {/* Filters Content */}
+                        <AnimatePresence>
+                            {(showMobileFilters || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
+                                <motion.div
+                                    initial={typeof window !== 'undefined' && window.innerWidth < 1024 ? { height: 0, opacity: 0 } : false}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2"
+                                >
 
-                        <div className="w-44">
-                            <Select value={branchFilter} onValueChange={setBranchFilter}>
-                                <SelectTrigger className="h-12 rounded-2xl border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-red-500">
-                                    <SelectValue placeholder="Chi nhánh" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-gray-100 dark:border-gray-800">
-                                    <SelectItem value="all">Tất cả chi nhánh</SelectItem>
-                                    {branches?.map((branch: any) => (
-                                        <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                    <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
+                                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3 shadow-none">
+                                                <SelectValue placeholder="Trạng thái" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                                                <SelectItem value="Đang thực hiện">Đang thực hiện</SelectItem>
+                                                <SelectItem value="Hoàn thành">Hoàn thành</SelectItem>
+                                                <SelectItem value="Đã hủy">Đã hủy</SelectItem>
+                                            </SelectContent>
+                                        </Select>
 
-                        <div className="w-44">
-                            <Select value={ptFilter} onValueChange={setPtFilter}>
-                                <SelectTrigger className="h-12 rounded-2xl border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-red-500">
-                                    <SelectValue placeholder="PT phụ trách" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-gray-100 dark:border-gray-800">
-                                    <SelectItem value="all">Tất cả PT</SelectItem>
-                                    {ptOptions.map((pt: string) => (
-                                        <SelectItem key={pt} value={pt}>{pt}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                        <Select value={branchFilter} onValueChange={setBranchFilter}>
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3 shadow-none">
+                                                <SelectValue placeholder="Chi nhánh" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                <SelectItem value="all">Tất cả chi nhánh</SelectItem>
+                                                {branches?.map((branch: any) => (
+                                                    <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
 
-                        <div className="w-44">
-                            <Select value={contractTypeFilter} onValueChange={setContractTypeFilter}>
-                                <SelectTrigger className="h-12 rounded-2xl border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-red-500">
-                                    <SelectValue placeholder="Loại hợp đồng" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-gray-100 dark:border-gray-800">
-                                    <SelectItem value="all">Tất cả loại</SelectItem>
-                                    {typeOptions.map((type: string) => (
-                                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                        <Select value={ptFilter} onValueChange={setPtFilter}>
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3 shadow-none">
+                                                <SelectValue placeholder="PT phụ trách" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                <SelectItem value="all">Tất cả PT</SelectItem>
+                                                {ptOptions.map((pt: string) => (
+                                                    <SelectItem key={pt} value={pt}>{pt}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
 
-                        <Button
-                            variant="ghost"
-                            onClick={clearFilters}
-                            className="h-12 px-4 rounded-2xl text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-all"
-                        >
-                            <RotateCcw className="w-4 h-4 mr-2" />
-                            Xóa bộ lọc
-                        </Button>
+                                        <Select value={contractTypeFilter} onValueChange={setContractTypeFilter}>
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3 shadow-none">
+                                                <SelectValue placeholder="Loại hợp đồng" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                <SelectItem value="all">Tất cả loại</SelectItem>
+                                                {typeOptions.map((type: string) => (
+                                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+
+                                        <Button
+                                            variant="ghost"
+                                            onClick={clearFilters}
+                                            className="h-9 px-3 rounded-lg text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 dark:hover:border-red-900/30 transition-all shrink-0 col-span-2 lg:col-span-1 justify-center lg:w-auto"
+                                        >
+                                            <RotateCcw className="w-4 h-4 mr-2 lg:mr-0" />
+                                            <span className="lg:hidden text-sm font-medium">Làm mới bộ lọc</span>
+                                        </Button>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
+            </Card>
 
+            {/* Table Section */}
+            <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-gray-900 transition-all duration-500">
                 <div className="overflow-x-auto">
                     <Table>
-                        <TableHeader className="bg-gray-50 dark:bg-gray-800/50">
-                            <TableRow className="border-gray-100 dark:border-gray-800 hover:bg-transparent">
-                                <TableHead className="w-14 pl-6">
+                        <TableHeader>
+                            <TableRow className="border-gray-50 dark:border-gray-800 hover:bg-transparent border-t-0">
+                                <TableHead className="w-12 pl-6 h-9">
                                     <Checkbox
                                         checked={selectedRows.length === (filteredContracts?.length || 0) && (filteredContracts?.length || 0) > 0}
                                         onCheckedChange={toggleAll}
                                         className="rounded-lg border-gray-300 dark:border-gray-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                                     />
                                 </TableHead>
-                                <TableHead className="font-medium text-gray-600 dark:text-gray-400 tracking-tight text-[11px] py-6">Hợp đồng & Hội viên</TableHead>
-                                <TableHead className="font-medium text-gray-600 dark:text-gray-400 tracking-tight text-[11px]">Dịch vụ & Gói tập</TableHead>
-                                <TableHead className="font-medium text-gray-600 dark:text-gray-400 tracking-tight text-[11px]">Giá trị & Thanh toán</TableHead>
-                                <TableHead className="font-medium text-gray-600 dark:text-gray-400 tracking-tight text-[11px]">Chi nhánh & Ngày ký</TableHead>
-                                <TableHead className="font-medium text-gray-600 dark:text-gray-400 tracking-tight text-[11px] text-right pr-8">Tùy chọn</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Hợp đồng & Hội viên</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Dịch vụ & Gói tập</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Giá trị & Thanh toán</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Chi nhánh & Ngày ký</TableHead>
+                                <TableHead className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Tùy chọn</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -380,82 +413,80 @@ export default function ContractsPage() {
                                         key={contract.id}
                                         onClick={(e) => handleRowClick(contract, e)}
                                         className={cn(
-                                            "border-gray-50 dark:border-gray-800 hover:bg-gray-50/60 dark:hover:bg-gray-800/20 transition-all group cursor-pointer",
+                                            "border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 cursor-pointer group transition-colors",
                                             selectedRows.includes(contract.id) && "bg-red-50/30 dark:bg-red-950/20"
                                         )}
                                     >
-                                        <TableCell className="pl-6">
+                                        <TableCell className="pl-6" onClick={(e) => e.stopPropagation()}>
                                             <Checkbox
                                                 checked={selectedRows.includes(contract.id)}
                                                 onCheckedChange={() => toggleRow(contract.id)}
-                                                className="rounded-lg border-gray-300 dark:border-gray-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                                                className="rounded-lg"
                                             />
                                         </TableCell>
-                                        <TableCell className="py-6">
+                                        <TableCell className="py-2">
                                             <div className="flex flex-col">
-                                                <span className="font-medium text-gray-900 dark:text-gray-50 flex items-center gap-2 text-sm">
+                                                <span className="text-sm font-normal text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
                                                     {contract.member_name}
-                                                    <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-50" />
+                                                    <BadgeCheck className="w-3.5 h-3.5 text-blue-500 fill-blue-50" />
                                                 </span>
-                                                <span className="text-[10px] font-medium text-red-600 dark:text-red-500 tracking-tight mt-0.5 opacity-80">{contract.id}</span>
+                                                <span className="text-[10px] text-gray-400 font-medium">{contract.id}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="flex flex-col gap-1.5">
-                                                <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200 text-sm font-medium">
-                                                    <Package className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                                            <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Package className="w-3 h-3 text-gray-400" />
                                                     {contract.package_name || 'Chưa chọn gói'}
                                                 </div>
-                                                <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 font-medium">
-                                                    <Clock className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
+                                                    <Clock className="w-3 h-3" />
                                                     {contract.contract_type || 'Dịch vụ'}
                                                 </div>
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="flex flex-col gap-1.5">
+                                            <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
                                                 <span className="text-sm font-medium text-red-600">
                                                     {contract.total_amount ? Number(contract.total_amount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
                                                 </span>
-                                                <div className="flex items-center gap-2 text-[10px] text-gray-400 dark:text-gray-500 font-medium tracking-tight">
+                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
                                                     <CreditCard className="w-3 h-3" />
                                                     {contract.payment_method || 'N/A'}
                                                 </div>
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="flex flex-col gap-1.5">
-                                                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 text-[13px] font-medium">
-                                                    <Building2 className="w-3.5 h-3.5 text-gray-400 dark:text-gray-600" />
+                                            <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Building2 className="w-3 h-3 text-gray-400" />
                                                     {contract.branches?.name || 'Văn phòng'}
                                                 </div>
-                                                <div className="flex items-center gap-2 text-[11px] text-gray-400 dark:text-gray-500">
+                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
                                                     <Calendar className="w-3 h-3" />
                                                     {contract.start_date ? new Date(contract.start_date).toLocaleDateString('vi-VN') : '-'}
                                                 </div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right pr-8">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-10 w-10 p-0 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-2xl text-gray-400 transition-colors">
-                                                        <MoreHorizontal className="h-5 w-5" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-56 rounded-[1.25rem] border-gray-100 dark:border-gray-800 shadow-2xl bg-white dark:bg-gray-900 p-2 z-50">
-                                                    <DropdownMenuLabel className="px-3 py-2 text-[10px] font-medium text-gray-400 tracking-tight">Thao tác</DropdownMenuLabel>
-                                                    <DropdownMenuItem className="cursor-pointer gap-3 px-4 py-3 rounded-xl transition-all focus:bg-red-50 dark:focus:bg-red-950/30 text-gray-800 dark:text-gray-200 font-medium text-sm">
-                                                        <Edit2 className="w-4 h-4 text-red-600" /> Xem chi tiết
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator className="bg-gray-100 dark:bg-gray-800 mx-1 my-1" />
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleDelete(contract.id)}
-                                                        className="text-red-600 cursor-pointer gap-3 px-4 py-3 rounded-xl transition-all focus:bg-red-50 dark:focus:bg-red-950/30 font-medium text-sm"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" /> Hủy hợp đồng
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                            <div className="flex items-center justify-end gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={(e) => { e.stopPropagation(); setSelectedContract(contract); setIsDetailsOpen(true); }}
+                                                    className="w-8 h-8 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600"
+                                                >
+                                                    <Edit2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={(e) => { e.stopPropagation(); handleDelete(contract.id); }}
+                                                    className="w-8 h-8 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600"
+                                                >
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -464,15 +495,15 @@ export default function ContractsPage() {
                     </Table>
                 </div>
 
-                <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/20 flex items-center justify-between">
+                <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between bg-white dark:bg-gray-900">
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium tracking-tight">
                         Tổng số: {filteredContracts?.length || 0} hợp đồng
                     </p>
                     <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" className="rounded-xl h-10 px-6 font-medium text-xs text-gray-400 disabled:opacity-20 transition-all" disabled>
+                        <Button variant="ghost" size="sm" className="rounded-lg h-9 px-4 font-medium text-xs text-gray-400 disabled:opacity-20 transition-all border border-gray-100 dark:border-gray-800" disabled>
                             Trước
                         </Button>
-                        <Button variant="ghost" size="sm" className="rounded-xl h-10 px-6 font-medium text-xs text-gray-400 disabled:opacity-20 transition-all" disabled>
+                        <Button variant="ghost" size="sm" className="rounded-lg h-9 px-4 font-medium text-xs text-gray-400 disabled:opacity-20 transition-all border border-gray-100 dark:border-gray-800" disabled>
                             Tiếp theo
                         </Button>
                     </div>

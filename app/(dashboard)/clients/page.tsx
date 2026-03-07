@@ -22,6 +22,7 @@ import {
     Users,
     Target
 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
     Tabs,
     TabsList,
@@ -52,7 +53,6 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
-import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { fetchClients, bulkDeleteClients } from '@/app/actions/clients'
 import { fetchBranches } from '@/app/actions/branches'
@@ -80,6 +80,7 @@ export default function ClientsPage() {
     const [ptFilter, setPtFilter] = React.useState('all')
     const [regTypeFilter, setRegTypeFilter] = React.useState('all')
     const [sourceFilter, setSourceFilter] = React.useState('all')
+    const [showMobileFilters, setShowMobileFilters] = React.useState(false)
 
     const clearFilters = () => {
         setSearchTerm('')
@@ -314,81 +315,105 @@ export default function ClientsPage() {
             </Tabs>
 
             {/* Optimized Compact Filter Section */}
-            <Card className="border-none shadow-sm rounded-xl overflow-visible bg-white dark:bg-gray-900 transition-all duration-300">
-                <div className="py-0 px-1 sm:px-1.5 border-gray-100 dark:border-gray-800 bg-gray-50/10 dark:bg-gray-800/20 rounded-xl">
+            <Card className="border-none shadow-sm rounded-xl overflow-visible bg-white dark:bg-gray-900 transition-all duration-300 py-0">
+                <div className="py-1 px-1 sm:px-1.5 border-gray-100 dark:border-gray-800 bg-gray-50/10 dark:bg-gray-800/20 rounded-xl">
                     <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2">
-                        {/* Search Input */}
-                        <div className="relative group flex-1 min-w-[200px]">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-red-600 transition-colors" />
-                            <Input
-                                placeholder="Tìm tên, SĐT..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-sm"
-                            />
+                        {/* Search & Toggle Button Row */}
+                        <div className="flex items-center gap-2 flex-1">
+                            <div className="relative group flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-red-600 transition-colors" />
+                                <Input
+                                    placeholder="Tìm tên, SĐT..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10 h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-sm"
+                                />
+                            </div>
+
+                            {/* Mobile Filter Toggle */}
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                                className={cn(
+                                    "lg:hidden h-9 w-9 rounded-lg border-gray-200 dark:border-gray-800 transition-all",
+                                    showMobileFilters ? "bg-red-50 text-red-600 border-red-200" : "bg-white dark:bg-gray-800/50"
+                                )}
+                            >
+                                <Filter className="w-4 h-4" />
+                            </Button>
                         </div>
 
-                        {/* Filters Grid: Balanced on mobile, fixed-width on desktop */}
-                        <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center">
-                            <Select value={branchFilter} onValueChange={setBranchFilter}>
-                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
-                                    <SelectValue placeholder="Chi nhánh" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                    <SelectItem value="all">Tất cả Chi nhánh</SelectItem>
-                                    {branches?.map((b: any) => (
-                                        <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                        {/* Filters Content */}
+                        <AnimatePresence>
+                            {(showMobileFilters || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
+                                <motion.div
+                                    initial={typeof window !== 'undefined' && window.innerWidth < 1024 ? { height: 0, opacity: 0 } : false}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2"
+                                >
+                                    <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
+                                        <Select value={branchFilter} onValueChange={setBranchFilter}>
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
+                                                <SelectValue placeholder="Chi nhánh" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                <SelectItem value="all">Tất cả Chi nhánh</SelectItem>
+                                                {branches?.map((b: any) => (
+                                                    <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
 
-                            <Select value={ptFilter} onValueChange={setPtFilter}>
-                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
-                                    <SelectValue placeholder="PT" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                    <SelectItem value="all">Tất cả PT</SelectItem>
-                                    {ptOptions.map(pt => <SelectItem key={pt} value={pt}>{pt}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
+                                        <Select value={ptFilter} onValueChange={setPtFilter}>
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
+                                                <SelectValue placeholder="PT" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                <SelectItem value="all">Tất cả PT</SelectItem>
+                                                {ptOptions.map(pt => <SelectItem key={pt} value={pt}>{pt}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
 
-                            <Select value={regTypeFilter} onValueChange={setRegTypeFilter}>
-                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
-                                    <SelectValue placeholder="Gói tập" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                    <SelectItem value="all">Tất cả Gói tập</SelectItem>
-                                    {regTypeOptions.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
+                                        <Select value={regTypeFilter} onValueChange={setRegTypeFilter}>
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
+                                                <SelectValue placeholder="Gói tập" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                <SelectItem value="all">Tất cả Gói tập</SelectItem>
+                                                {regTypeOptions.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
 
-                            <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
-                                    <SelectValue placeholder="Nguồn khách" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                    <SelectItem value="all">Tất cả Nguồn</SelectItem>
-                                    {sourceOptions.map(source => <SelectItem key={source} value={source}>{source}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                        <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
+                                                <SelectValue placeholder="Nguồn khách" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                <SelectItem value="all">Tất cả Nguồn</SelectItem>
+                                                {sourceOptions.map(source => <SelectItem key={source} value={source}>{source}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
 
-                        {/* Reset Button */}
-                        <Button
-                            variant="ghost"
-                            onClick={clearFilters}
-                            className="h-9 px-3 rounded-lg text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 dark:hover:border-red-900/30 transition-all shrink-0"
-                            title="Làm mới"
-                        >
-                            <RotateCcw className="w-4 h-4" />
-                            <span className="lg:hidden ml-2 text-sm">Làm mới</span>
-                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            onClick={clearFilters}
+                                            className="h-9 px-3 rounded-lg text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 dark:hover:border-red-900/30 transition-all shrink-0 col-span-2 lg:col-span-1 justify-center"
+                                        >
+                                            <RotateCcw className="w-4 h-4 mr-2 lg:mr-0" />
+                                            <span className="lg:hidden text-sm">Làm mới bộ lọc</span>
+                                        </Button>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
             </Card>
 
             {/* Table Section */}
-            <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-gray-900 transition-all duration-500">
+            < Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-gray-900 transition-all duration-500" >
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
@@ -400,12 +425,12 @@ export default function ClientsPage() {
                                         className="rounded-lg border-gray-300 dark:border-gray-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                                     />
                                 </TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-gray-500 h-9">Hội viên</TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-gray-500 h-9 hidden md:table-cell">Liên hệ</TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-gray-500 h-9 hidden sm:table-cell">Chỉ số & PT</TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-gray-500 h-9 hidden lg:table-cell">Gói tập</TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-gray-500 h-9">Trạng thái</TableHead>
-                                <TableHead className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-gray-500 h-9">Tùy chọn</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Hội viên</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 hidden md:table-cell">Liên hệ</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 hidden sm:table-cell">Chỉ số & PT</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 hidden lg:table-cell">Gói tập</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Trạng thái</TableHead>
+                                <TableHead className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Tùy chọn</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -518,7 +543,7 @@ export default function ClientsPage() {
                         </TableBody>
                     </Table>
                 </div>
-            </Card>
+            </Card >
 
             <ClientDetailsSheet
                 client={selectedClient}
@@ -526,6 +551,6 @@ export default function ClientsPage() {
                 onOpenChange={setIsDetailsOpen}
                 onSuccess={refetch}
             />
-        </div>
+        </div >
     )
 }

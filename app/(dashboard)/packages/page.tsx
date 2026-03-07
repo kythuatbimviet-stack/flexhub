@@ -16,7 +16,8 @@ import {
     XCircle,
     TrendingUp,
     Clock,
-    AlertCircle
+    AlertCircle,
+    RotateCcw
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -63,6 +64,7 @@ export default function PackagesPage() {
     const [selectedRows, setSelectedRows] = React.useState<string[]>([])
     const [selectedPkg, setSelectedPkg] = React.useState<any | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
+    const [showMobileFilters, setShowMobileFilters] = React.useState(false)
 
     const { data: packages, isLoading, refetch, isError, error } = useQuery({
         queryKey: ['memberships'],
@@ -203,10 +205,13 @@ export default function PackagesPage() {
             />
 
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 px-1">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 px-1">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Gói tập</h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Danh mục các gói dịch vụ và chương trình tập luyện của Lady Fit.</p>
+                    <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                        <Package className="w-8 h-8 text-red-600" />
+                        Gói tập
+                    </h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Danh mục các gói dịch vụ Lady Fit.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <AnimatePresence>
@@ -219,7 +224,7 @@ export default function PackagesPage() {
                                 <Button
                                     variant="ghost"
                                     onClick={handleBulkDelete}
-                                    className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 font-semibold px-4 rounded-xl h-12"
+                                    className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 font-semibold px-4 rounded-xl h-11 transition-all"
                                 >
                                     <Trash className="w-4 h-4 mr-2" />
                                     Xóa ({selectedRows.length})
@@ -231,9 +236,9 @@ export default function PackagesPage() {
                     <ImportMembershipsDialog onSuccess={refetch} />
 
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         onClick={exportToExcel}
-                        className="rounded-xl h-12 px-6 font-semibold border-2 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all text-slate-600 dark:text-slate-300"
+                        className="rounded-xl h-11 px-4 font-semibold border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all text-slate-600 dark:text-slate-300"
                     >
                         <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-500" />
                         Xuất Excel
@@ -243,76 +248,103 @@ export default function PackagesPage() {
                 </div>
             </div>
 
-            <Card className="border-none shadow-2xl dark:shadow-none rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900 transition-all duration-500">
-                {/* Search & Filter Bar */}
-                <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-800/20">
-                    <div className="flex flex-col xl:flex-row gap-4 justify-between items-center">
-                        <div className="relative w-full xl:max-w-md group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-red-500 transition-colors" />
-                            <input
-                                placeholder="Tìm theo tên hoặc mã gói tập..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-12 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 text-sm h-12 transition-all shadow-sm outline-none"
-                            />
+            <Card className="border-none shadow-sm rounded-xl overflow-visible bg-white dark:bg-slate-900 transition-all duration-300 py-0">
+                <div className="py-1 px-1 sm:px-1.5 border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-800/20 rounded-xl">
+                    <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2">
+                        {/* Search & Toggle Row */}
+                        <div className="flex items-center gap-2 flex-1">
+                            <div className="relative group flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-red-500 transition-colors" />
+                                <input
+                                    placeholder="Tìm theo tên hoặc mã gói tập..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-10 bg-white dark:bg-slate-800 border-none rounded-lg focus:ring-1 focus:ring-red-500 text-sm h-9 transition-all outline-none"
+                                />
+                            </div>
+
+                            {/* Mobile Filter Toggle */}
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                                className={cn(
+                                    "lg:hidden h-9 w-9 rounded-lg border-gray-200 dark:border-gray-800 transition-all",
+                                    showMobileFilters ? "bg-red-50 text-red-600 border-red-200 shadow-sm" : "bg-white dark:bg-gray-800/50"
+                                )}
+                            >
+                                <Filter className="w-4 h-4" />
+                            </Button>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-                            <Select value={filterBranch} onValueChange={setFilterBranch}>
-                                <SelectTrigger className="w-full sm:w-[180px] rounded-xl border-2 border-slate-100 dark:border-slate-800 h-11 bg-white dark:bg-slate-950 text-xs font-medium">
-                                    <SelectValue placeholder="Chi nhánh" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                    <SelectItem value="all">Tất cả chi nhánh</SelectItem>
-                                    {branches?.map((branch: any) => (
-                                        <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            <Select value={filterType} onValueChange={setFilterType}>
-                                <SelectTrigger className="w-full sm:w-[180px] rounded-xl border-2 border-slate-100 dark:border-slate-800 h-11 bg-white dark:bg-slate-950 text-xs font-medium">
-                                    <SelectValue placeholder="Hình thức" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                    <SelectItem value="all">Tất cả hình thức</SelectItem>
-                                    <SelectItem value="Trực tiếp">Trực tiếp</SelectItem>
-                                    <SelectItem value="Online">Online</SelectItem>
-                                    <SelectItem value="Hybrid">Hybrid</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            {(searchTerm !== '' || filterBranch !== 'all' || filterType !== 'all') && (
-                                <Button
-                                    variant="ghost"
-                                    onClick={resetFilters}
-                                    className="h-11 px-3 text-xs font-semibold text-slate-400 hover:text-red-600 transition-colors"
+                        {/* Filters Content */}
+                        <AnimatePresence>
+                            {(showMobileFilters || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
+                                <motion.div
+                                    initial={typeof window !== 'undefined' && window.innerWidth < 1024 ? { height: 0, opacity: 0 } : false}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2"
                                 >
-                                    <XCircle className="w-4 h-4 mr-2" />
-                                    Xóa lọc
-                                </Button>
+                                    <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
+                                        <Select value={filterBranch} onValueChange={setFilterBranch}>
+                                            <SelectTrigger className="w-full lg:w-[150px] rounded-lg border-none h-9 bg-white dark:bg-slate-800 text-xs font-medium focus:ring-1 focus:ring-red-500 shadow-none">
+                                                <SelectValue placeholder="Chi nhánh" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                                <SelectItem value="all">Tất cả chi nhánh</SelectItem>
+                                                {branches?.map((branch: any) => (
+                                                    <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+
+                                        <Select value={filterType} onValueChange={setFilterType}>
+                                            <SelectTrigger className="w-full lg:w-[150px] rounded-lg border-none h-9 bg-white dark:bg-slate-800 text-xs font-medium focus:ring-1 focus:ring-red-500 shadow-none">
+                                                <SelectValue placeholder="Hình thức" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                                <SelectItem value="all">Tất cả hình thức</SelectItem>
+                                                <SelectItem value="Trực tiếp">Trực tiếp</SelectItem>
+                                                <SelectItem value="Online">Online</SelectItem>
+                                                <SelectItem value="Hybrid">Hybrid</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+
+                                        <Button
+                                            variant="ghost"
+                                            onClick={resetFilters}
+                                            className="h-9 px-3 rounded-lg text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 dark:hover:border-red-900/30 transition-all shrink-0 col-span-2 lg:col-span-1 justify-center lg:w-auto"
+                                        >
+                                            <RotateCcw className="w-4 h-4 mr-2 lg:mr-0" />
+                                            <span className="lg:hidden text-sm font-medium">Làm mới bộ lọc</span>
+                                        </Button>
+                                    </div>
+                                </motion.div>
                             )}
-                        </div>
+                        </AnimatePresence>
                     </div>
                 </div>
+            </Card>
 
-                {/* Table Section */}
+            {/* Table Section */}
+            <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-slate-900 transition-all duration-500">
                 <div className="overflow-x-auto">
                     <Table>
-                        <TableHeader className="bg-slate-50/50 dark:bg-slate-900/50">
-                            <TableRow className="border-slate-100 dark:border-slate-800 hover:bg-transparent">
-                                <TableHead className="w-14 pl-8">
+                        <TableHeader>
+                            <TableRow className="border-slate-100 dark:border-slate-800 hover:bg-transparent border-t-0">
+                                <TableHead className="w-14 pl-8 h-9">
                                     <Checkbox
                                         checked={selectedRows.length === (filteredPackages?.length || 0) && (filteredPackages?.length || 0) > 0}
                                         onCheckedChange={toggleAll}
                                         className="rounded-lg border-slate-300 dark:border-slate-700 data-[state=checked]:bg-slate-950 dark:data-[state=checked]:bg-red-600 data-[state=checked]:border-slate-950 dark:data-[state=checked]:border-red-600"
                                     />
                                 </TableHead>
-                                <TableHead className="font-semibold text-slate-500 dark:text-slate-400 text-xs py-6">Gói tập & Mã</TableHead>
-                                <TableHead className="font-semibold text-slate-500 dark:text-slate-400 text-xs">Chi nhánh</TableHead>
-                                <TableHead className="font-semibold text-slate-500 dark:text-slate-400 text-xs">Phân loại</TableHead>
-                                <TableHead className="font-semibold text-slate-500 dark:text-slate-400 text-xs text-right">Giá niêm yết</TableHead>
-                                <TableHead className="font-semibold text-slate-500 dark:text-slate-400 text-xs text-right pr-10">Tùy chọn</TableHead>
+                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Gói tập & Mã</TableHead>
+                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Chi nhánh</TableHead>
+                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Phân loại</TableHead>
+                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9 text-right">Giá niêm yết</TableHead>
+                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9 text-right pr-10">Tùy chọn</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -351,14 +383,14 @@ export default function PackagesPage() {
                                             selectedRows.includes(pkg.id) && "bg-red-50/20 dark:bg-red-950/10"
                                         )}
                                     >
-                                        <TableCell className="pl-8">
+                                        <TableCell className="pl-8 py-2">
                                             <Checkbox
                                                 checked={selectedRows.includes(pkg.id)}
                                                 onCheckedChange={() => toggleRow(pkg.id)}
                                                 className="rounded-lg border-slate-300 dark:border-slate-700 data-[state=checked]:bg-slate-950 dark:data-[state=checked]:bg-red-600 data-[state=checked]:border-slate-950 dark:data-[state=checked]:border-red-600"
                                             />
                                         </TableCell>
-                                        <TableCell className="py-7">
+                                        <TableCell className="py-2">
                                             <div className="flex flex-col gap-1">
                                                 <span className="font-semibold text-slate-900 dark:text-white text-[15px]">
                                                     {pkg.package_name}
@@ -433,15 +465,15 @@ export default function PackagesPage() {
                     </Table>
                 </div>
 
-                <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-800/20 flex items-center justify-between">
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-800/20 flex items-center justify-between">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg shadow-sm border border-slate-50 dark:border-slate-800">
                         Tổng cộng: {filteredPackages?.length || 0} gói tập
                     </p>
                     <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="rounded-xl h-10 px-5 font-semibold text-xs border-slate-200 dark:border-slate-800 text-slate-400 disabled:opacity-20" disabled>
+                        <Button variant="outline" size="sm" className="rounded-lg h-9 px-4 font-semibold text-xs border-slate-200 dark:border-slate-800 text-slate-400 bg-white dark:bg-slate-900 disabled:opacity-20 transition-all" disabled>
                             Trang trước
                         </Button>
-                        <Button variant="outline" size="sm" className="rounded-xl h-10 px-5 font-semibold text-xs border-slate-200 dark:border-slate-800 text-slate-400 disabled:opacity-20" disabled>
+                        <Button variant="outline" size="sm" className="rounded-lg h-9 px-4 font-semibold text-xs border-slate-200 dark:border-slate-800 text-slate-400 bg-white dark:bg-slate-900 disabled:opacity-20 transition-all" disabled>
                             Trang tiếp
                         </Button>
                     </div>

@@ -93,7 +93,7 @@ export default function DashboardLayout({
                                     <span className="text-white text-[10px] font-bold">ERP</span>
                                 </div>
                                 <span className="font-bold text-gray-900 dark:text-white text-base tracking-tight hidden sm:block">
-                                    Nền Tảng ERP
+                                    Quản trị khách hàng Phòng Gym Chuyên nghiệp
                                 </span>
                             </div>
 
