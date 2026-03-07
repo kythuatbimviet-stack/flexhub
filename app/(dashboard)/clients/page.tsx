@@ -54,10 +54,8 @@ import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 import { cn } from '@/lib/utils'
-import { fetchClients, bulkDeleteClients } from '@/app/actions/clients'
-import { fetchBranches } from '@/app/actions/branches'
-
 import { AddClientDialog } from '@/components/clients/add-client-dialog'
+import { fetchClientConfigs } from '@/app/actions/config-params'
 import { ClientDetailsSheet } from '@/components/clients/client-details-sheet'
 import { ImportExcelClientDialog } from '@/components/clients/import-excel-client-dialog'
 import {
@@ -67,6 +65,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
+import { fetchClients, bulkDeleteClients } from '@/app/actions/clients'
+import { fetchBranches } from '@/app/actions/branches'
 
 export default function ClientsPage() {
     const [searchTerm, setSearchTerm] = React.useState('')
@@ -81,6 +81,15 @@ export default function ClientsPage() {
     const [regTypeFilter, setRegTypeFilter] = React.useState('all')
     const [sourceFilter, setSourceFilter] = React.useState('all')
     const [showMobileFilters, setShowMobileFilters] = React.useState(false)
+
+    const { data: configResult } = useQuery({
+        queryKey: ['client-configs'],
+        queryFn: fetchClientConfigs
+    })
+
+    const clientStatuses = React.useMemo(() => {
+        return configResult?.data?.statuses || []
+    }, [configResult])
 
     const clearFilters = () => {
         setSearchTerm('')
@@ -233,14 +242,14 @@ export default function ClientsPage() {
     }
 
     const stats = React.useMemo(() => {
-        return {
-            total: baseFilteredClients.length,
-            active: baseFilteredClients.filter((c: any) => c.status === 'Đang tập').length,
-            pending: baseFilteredClients.filter((c: any) => c.status === 'Chốt đăng kí').length,
-            paused: baseFilteredClients.filter((c: any) => c.status === 'Tạm dừng').length,
-            stopped: baseFilteredClients.filter((c: any) => c.status === 'Đã nghỉ').length,
+        const counts: Record<string, number> = {
+            total: baseFilteredClients.length
         }
-    }, [baseFilteredClients])
+        clientStatuses.forEach(s => {
+            counts[s.nam] = baseFilteredClients.filter((c: any) => c.status === s.nam).length
+        })
+        return counts
+    }, [baseFilteredClients, clientStatuses])
 
     return (
         <div className="space-y-1.5 font-inter pb-10">
@@ -290,24 +299,28 @@ export default function ClientsPage() {
             {/* Status Tabs */}
             <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
                 <TabsList className="bg-transparent h-auto p-0 flex flex-nowrap overflow-x-auto no-scrollbar gap-1 px-1 mb-1 w-full justify-start">
-                    {[
-                        { label: 'Tất cả', value: 'all', count: stats.total, color: 'text-gray-600', bg: 'bg-gray-100' },
-                        { label: 'Đang tập', value: 'Đang tập', count: stats.active, color: 'text-green-600', bg: 'bg-green-50' },
-                        { label: 'Chốt ĐK', value: 'Chốt đăng kí', count: stats.pending, color: 'text-blue-600', bg: 'bg-blue-50' },
-                        { label: 'Tạm dừng', value: 'Tạm dừng', count: stats.paused, color: 'text-amber-600', bg: 'bg-amber-50' },
-                        { label: 'Đã nghỉ', value: 'Đã nghỉ', count: stats.stopped, color: 'text-rose-600', bg: 'bg-rose-50' },
-                    ].map((tab) => (
+                    <TabsTrigger
+                        value="all"
+                        className={cn(
+                            "flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm border-none text-gray-600 hover:text-gray-700 data-[state=active]:text-red-600"
+                        )}
+                    >
+                        Tất cả
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600">
+                            {stats.total}
+                        </span>
+                    </TabsTrigger>
+                    {clientStatuses.map((s) => (
                         <TabsTrigger
-                            key={tab.value}
-                            value={tab.value}
+                            key={s.id}
+                            value={s.nam}
                             className={cn(
-                                "flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm border-none",
-                                statusFilter === tab.value ? tab.color : "text-gray-500 hover:text-gray-700"
+                                "flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm border-none text-gray-500 hover:text-gray-700 data-[state=active]:text-red-600"
                             )}
                         >
-                            {tab.label}
-                            <span className={cn("px-1.5 py-0.5 rounded-full text-[10px] font-bold", tab.bg, tab.color)}>
-                                {tab.count}
+                            {s.nam}
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-600">
+                                {stats[s.nam] || 0}
                             </span>
                         </TabsTrigger>
                     ))}

@@ -101,3 +101,22 @@ export async function bulkCreateUsers(users: any[]) {
         return { success: false, error: error.message }
     }
 }
+
+export async function fetchCurrentUserProfile() {
+    const supabase = await createClient()
+    try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        if (authError || !user) return { success: false, error: 'Not authenticated' }
+
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', user.email)
+            .single()
+
+        if (error) return { success: false, error: 'User profile not found' }
+        return { success: true, data }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}

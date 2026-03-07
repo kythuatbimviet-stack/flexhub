@@ -16,6 +16,16 @@ import {
 } from '@/components/ui/dialog'
 import { useQuery } from '@tanstack/react-query'
 import { fetchBranches } from '@/app/actions/branches'
+import { fetchClientConfigs } from '@/app/actions/config-params'
+import { fetchCurrentUserProfile } from '@/app/actions/users'
+import { fetchZaloUsers } from '@/app/actions/zalo-users'
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
 import {
     Form,
     FormControl,
@@ -35,7 +45,14 @@ import {
     Dumbbell,
     HeartPulse,
     Target,
-    Activity
+    Activity,
+    UserCheck,
+    Star,
+    MessageSquare,
+    UserStar,
+    RotateCcw,
+    Search,
+    Check
 } from 'lucide-react'
 import { createClient } from '@/app/actions/clients'
 import {
@@ -62,6 +79,7 @@ const clientSchema = z.object({
     weight: z.coerce.number().optional(),
     target_weight: z.coerce.number().optional(),
     registration_type: z.string().optional(),
+    training_time: z.string().optional(),
     source: z.string().optional(),
     goal: z.string().optional(),
     medical_history: z.string().optional(),
@@ -78,6 +96,38 @@ interface AddClientDialogProps {
 export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
     const [open, setOpen] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
+    const { data: configResult } = useQuery({
+        queryKey: ['client-configs'],
+        queryFn: fetchClientConfigs
+    })
+
+    const { data: currentUserResult } = useQuery({
+        queryKey: ['current-user-profile'],
+        queryFn: fetchCurrentUserProfile
+    })
+
+    const { data: zaloUsersResult } = useQuery({
+        queryKey: ['zalo-users'],
+        queryFn: fetchZaloUsers
+    })
+
+    const [zaloSearchTerm, setZaloSearchTerm] = React.useState('')
+    const [zaloOpen, setZaloOpen] = React.useState(false)
+
+    const clientStatuses = React.useMemo(() => configResult?.data?.statuses || [], [configResult])
+    const clientSources = React.useMemo(() => configResult?.data?.sources || [], [configResult])
+    const clientGoals = React.useMemo(() => configResult?.data?.goals || [], [configResult])
+    const clientTrainingTimes = React.useMemo(() => configResult?.data?.trainingTimes || [], [configResult])
+    const clientRegistrationTypes = React.useMemo(() => configResult?.data?.registrationTypes || [], [configResult])
+    const zaloUsers = React.useMemo(() => zaloUsersResult?.data || [], [zaloUsersResult])
+
+    const filteredZaloUsers = React.useMemo(() => {
+        if (!zaloSearchTerm) return zaloUsers
+        return zaloUsers.filter((user: any) =>
+            user.display_name?.toLowerCase().includes(zaloSearchTerm.toLowerCase()) ||
+            user.zalo_user_id?.toLowerCase().includes(zaloSearchTerm.toLowerCase())
+        )
+    }, [zaloUsers, zaloSearchTerm])
 
     const form = useForm<any>({
         resolver: zodResolver(clientSchema),
@@ -89,7 +139,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
             address: '',
             zalo_id: '',
             facebook_id: '',
-            status: 'Chốt đăng kí',
+            status: '',
             assigned_pt: '',
             pt_name: '',
             age: undefined,
@@ -97,6 +147,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
             weight: undefined,
             target_weight: undefined,
             registration_type: '',
+            training_time: '',
             source: '',
             goal: '',
             medical_history: '',
@@ -104,6 +155,39 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
             branch_id: null,
         },
     })
+
+    // Set default values after config data loads
+    React.useEffect(() => {
+        if (clientStatuses.length > 0) {
+            const def = clientStatuses.find(s => s.is_default)?.nam || clientStatuses[0].nam
+            if (def) form.setValue('status', def)
+        }
+        if (clientSources.length > 0) {
+            const def = clientSources.find(s => s.is_default)?.nam
+            if (def) form.setValue('source', def)
+        }
+        if (clientGoals.length > 0) {
+            const def = clientGoals.find(s => s.is_default)?.nam
+            if (def) form.setValue('goal', def)
+        }
+        if (clientTrainingTimes.length > 0) {
+            const def = clientTrainingTimes.find(s => s.is_default)?.nam
+            if (def) form.setValue('training_time', def)
+        }
+        if (clientRegistrationTypes.length > 0) {
+            const def = clientRegistrationTypes.find(s => s.is_default)?.nam
+            if (def) form.setValue('registration_type', def)
+        }
+    }, [clientStatuses, clientSources, clientGoals, clientTrainingTimes, clientRegistrationTypes, form])
+
+    // Set current user as PT by default
+    React.useEffect(() => {
+        if (currentUserResult?.success && currentUserResult.data) {
+            const user = currentUserResult.data
+            if (user.name) form.setValue('pt_name', user.name)
+            if (user.id) form.setValue('assigned_pt', user.id)
+        }
+    }, [currentUserResult, form])
 
     const { data: branches } = useQuery({
         queryKey: ['branches'],
@@ -219,15 +303,25 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                             <FormLabel className="text-xs text-gray-500 font-medium">Trạng thái</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="rounded-xl border-gray-100 bg-gray-50/50 text-sm">
+                                                    <SelectTrigger className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm">
                                                         <SelectValue placeholder="Chọn trạng thái" />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="rounded-xl border-gray-100">
-                                                    <SelectItem value="Chốt đăng kí">Chốt đăng kí</SelectItem>
-                                                    <SelectItem value="Đang tập">Đang tập</SelectItem>
-                                                    <SelectItem value="Tạm dừng">Tạm dừng</SelectItem>
-                                                    <SelectItem value="Đã nghỉ">Đã nghỉ</SelectItem>
+                                                    {clientStatuses.length > 0 ? (
+                                                        clientStatuses.map((s) => (
+                                                            <SelectItem key={s.id} value={s.nam}>
+                                                                {s.nam}
+                                                            </SelectItem>
+                                                        ))
+                                                    ) : (
+                                                        <>
+                                                            <SelectItem value="Chốt đăng kí">Chốt đăng kí</SelectItem>
+                                                            <SelectItem value="Đang tập">Đang tập</SelectItem>
+                                                            <SelectItem value="Tạm dừng">Tạm dừng</SelectItem>
+                                                            <SelectItem value="Đã nghỉ">Đã nghỉ</SelectItem>
+                                                        </>
+                                                    )}
                                                 </SelectContent>
                                             </Select>
                                             <FormMessage />
@@ -242,7 +336,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                             <FormLabel className="text-xs text-gray-500 font-medium">Chi nhánh</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value || undefined} defaultValue={field.value || undefined}>
                                                 <FormControl>
-                                                    <SelectTrigger className="rounded-xl border-gray-100 bg-gray-50/50 text-sm">
+                                                    <SelectTrigger className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm">
                                                         <SelectValue placeholder="Chọn chi nhánh" />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -262,11 +356,92 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     control={form.control}
                                     name="zalo_id"
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Zalo ID</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="ID Zalo" {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
-                                            </FormControl>
+                                        <FormItem className="flex flex-col">
+                                            <FormLabel className="text-xs text-gray-500 font-medium text-blue-600 flex items-center gap-1">
+                                                <MessageSquare className="w-3 h-3" />
+                                                Liên kết Zalo
+                                            </FormLabel>
+                                            <Popover open={zaloOpen} onOpenChange={(open) => {
+                                                setZaloOpen(open)
+                                                if (!open) setZaloSearchTerm('')
+                                            }}>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button
+                                                            variant="outline"
+                                                            role="combobox"
+                                                            className={cn(
+                                                                "w-full justify-between rounded-xl border-gray-100 bg-gray-50/50 text-sm font-normal h-10 px-3",
+                                                                !field.value && "text-muted-foreground"
+                                                            )}
+                                                        >
+                                                            {field.value
+                                                                ? zaloUsers.find((u: any) => u.zalo_user_id === field.value)?.display_name
+                                                                : "Chọn Zalo Khách Hàng"}
+                                                            <RotateCcw className="ml-2 h-4 w-4 shrink-0 opacity-50 hidden" />
+                                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                                {field.value && (
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="w-5 h-5 rounded-full bg-slate-100 bg-cover bg-center" style={{ backgroundImage: `url(${zaloUsers.find((u: any) => u.zalo_user_id === field.value)?.avatar_url})` }} />
+                                                                        <span className="truncate max-w-[150px]">
+                                                                            {zaloUsers.find((u: any) => u.zalo_user_id === field.value)?.display_name}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                {!field.value && ""}
+                                                            </div>
+                                                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-gray-100" align="start">
+                                                    <div className="p-2 border-b border-gray-50">
+                                                        <div className="relative">
+                                                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                                            <Input
+                                                                placeholder="Tìm kiếm..."
+                                                                value={zaloSearchTerm}
+                                                                onChange={(e) => setZaloSearchTerm(e.target.value)}
+                                                                className="pl-8 h-9 border-none bg-gray-50/50 rounded-lg focus-visible:ring-0"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <ScrollArea className="h-[250px]">
+                                                        <div className="p-1">
+                                                            {filteredZaloUsers.length === 0 && (
+                                                                <div className="p-4 text-center text-xs text-gray-500">
+                                                                    Không tìm thấy kết quả
+                                                                </div>
+                                                            )}
+                                                            {filteredZaloUsers.map((user: any) => (
+                                                                <button
+                                                                    key={user.id}
+                                                                    type="button"
+                                                                    className={cn(
+                                                                        "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-50 transition-colors",
+                                                                        field.value === user.zalo_user_id && "bg-blue-50/50 text-blue-600"
+                                                                    )}
+                                                                    onClick={() => {
+                                                                        form.setValue('zalo_id', user.zalo_user_id)
+                                                                        setZaloOpen(false)
+                                                                    }}
+                                                                >
+                                                                    <div className="w-8 h-8 rounded-full bg-slate-100 flex-shrink-0 bg-cover bg-center" style={{ backgroundImage: user.avatar_url ? `url(${user.avatar_url})` : 'none' }}>
+                                                                        {!user.avatar_url && user.display_name?.charAt(0)}
+                                                                    </div>
+                                                                    <div className="flex flex-col items-start min-w-0">
+                                                                        <span className="font-medium truncate w-full">{user.display_name}</span>
+                                                                        <span className="text-[10px] text-gray-400 truncate w-full">{user.zalo_user_id}</span>
+                                                                    </div>
+                                                                    {field.value === user.zalo_user_id && (
+                                                                        <Check className="ml-auto h-4 w-4" />
+                                                                    )}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </ScrollArea>
+                                                </PopoverContent>
+                                            </Popover>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -353,9 +528,20 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className="text-xs text-gray-500 font-medium">Mục tiêu tập luyện</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="VD: Giảm cân, tăng cơ..." {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
-                                        </FormControl>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm">
+                                                    <SelectValue placeholder="Chọn mục tiêu" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="rounded-xl border-gray-100">
+                                                {clientGoals.map((g) => (
+                                                    <SelectItem key={g.id} value={g.nam}>
+                                                        {g.nam}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -368,7 +554,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                 <Dumbbell className="w-4 h-4" />
                                 Huấn luyện & Gói tập
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField
                                     control={form.control}
                                     name="pt_name"
@@ -376,7 +562,10 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                         <FormItem>
                                             <FormLabel className="text-xs text-gray-500 font-medium">PT Phụ trách</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Tên Huấn luyện viên" {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                                <div className="relative">
+                                                    <Input placeholder="Tên Huấn luyện viên" {...field} className="rounded-xl border-gray-100 bg-gray-50/50 pl-10" />
+                                                    <UserCheck className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                                </div>
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -388,9 +577,44 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel className="text-xs text-gray-500 font-medium">Loại đăng ký</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="VD: Gói 12 tháng..." {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
-                                            </FormControl>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm">
+                                                        <SelectValue placeholder="Chọn gói tập" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="rounded-xl border-gray-100">
+                                                    {clientRegistrationTypes.map((t) => (
+                                                        <SelectItem key={t.id} value={t.nam}>
+                                                            {t.nam}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="training_time"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs text-gray-500 font-medium">Thời gian tập</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm">
+                                                        <SelectValue placeholder="Chọn thời gian" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="rounded-xl border-gray-100">
+                                                    {clientTrainingTimes.map((t) => (
+                                                        <SelectItem key={t.id} value={t.nam}>
+                                                            {t.nam}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -401,9 +625,20 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel className="text-xs text-gray-500 font-medium">Nguồn khách</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="VD: Facebook, Zalo..." {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
-                                            </FormControl>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm">
+                                                        <SelectValue placeholder="Chọn nguồn khách" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="rounded-xl border-gray-100">
+                                                    {clientSources.map((s) => (
+                                                        <SelectItem key={s.id} value={s.nam}>
+                                                            {s.nam}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}

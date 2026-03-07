@@ -13,6 +13,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
+    type ConfigItem,
+    fetchClientConfigs
+} from '@/app/actions/config-params'
+import {
     User,
     MapPin,
     Mail,
@@ -30,7 +34,6 @@ import {
     ClipboardList
 } from 'lucide-react'
 import { updateClient, bulkDeleteClients } from '@/app/actions/clients'
-import { fetchSettings } from '@/app/actions/settings'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
@@ -80,17 +83,26 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
         },
     })
 
-    const { data: settingsResult } = useQuery({
-        queryKey: ['settings'],
-        queryFn: fetchSettings
+    const { data: configResult } = useQuery({
+        queryKey: ['client-configs'],
+        queryFn: fetchClientConfigs
     })
 
-    const clientStatuses = React.useMemo(() => {
-        if (!settingsResult?.data) return []
-        return settingsResult.data
-            .filter((s: any) => s.data_name === 'client' && s.categories === 'Trạng thái')
-            .map((s: any) => s.nam)
-    }, [settingsResult])
+    const clientStatuses = React.useMemo<ConfigItem[]>(() => {
+        return configResult?.data?.statuses || []
+    }, [configResult])
+
+    const clientSources = React.useMemo<ConfigItem[]>(() => {
+        return configResult?.data?.sources || []
+    }, [configResult])
+
+    const clientGoals = React.useMemo<ConfigItem[]>(() => {
+        return configResult?.data?.goals || []
+    }, [configResult])
+
+    const clientRegistrationTypes = React.useMemo<ConfigItem[]>(() => {
+        return configResult?.data?.registrationTypes || []
+    }, [configResult])
 
     if (!client || !formData) return null
 
@@ -220,15 +232,15 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                     <DropdownMenuContent align="end" className="w-[180px] rounded-xl border-slate-200 dark:border-slate-800 p-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-100">
                                         <div className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Trạng thái mới</div>
                                         {clientStatuses.length > 0 ? (
-                                            clientStatuses.map((status: string) => (
+                                            clientStatuses.map((s: any) => (
                                                 <DropdownMenuItem
-                                                    key={status}
+                                                    key={s.id}
                                                     onSelect={() => {
-                                                        const newFormData = { ...formData, status };
+                                                        const newFormData = { ...formData, status: s.nam };
                                                         setFormData(newFormData);
                                                         updateClient(client.id, newFormData).then(res => {
                                                             if (res.success) {
-                                                                toast.success(`Đã chuyển trạng thái sang: ${status}`);
+                                                                toast.success(`Đã chuyển trạng thái sang: ${s.nam}`);
                                                                 onSuccess();
                                                             } else {
                                                                 toast.error('Lỗi khi cập nhật trạng thái');
@@ -237,10 +249,10 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                     }}
                                                     className={cn(
                                                         "rounded-lg text-[13px] font-medium px-3 py-2 cursor-pointer transition-colors",
-                                                        formData.status === status ? "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                        formData.status === s.nam ? "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                                                     )}
                                                 >
-                                                    {status}
+                                                    {s.nam}
                                                 </DropdownMenuItem>
                                             ))
                                         ) : (
@@ -327,15 +339,18 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                     Trạng thái
                                 </Label>
                                 {isEditing ? (
-                                    <Select onValueChange={handleStatusChange} value={formData.status}>
-                                        <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 text-sm focus:ring-2 focus:ring-red-500 shadow-sm border-2">
+                                    <Select
+                                        onValueChange={handleStatusChange}
+                                        value={formData.status}
+                                    >
+                                        <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 text-sm focus:ring-2 focus:ring-red-500 shadow-sm border-2">
                                             <SelectValue placeholder="Chọn trạng thái" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-xl">
                                             {clientStatuses.length > 0 ? (
-                                                clientStatuses.map((status: string) => (
-                                                    <SelectItem key={status} value={status}>
-                                                        {status}
+                                                clientStatuses.map((s) => (
+                                                    <SelectItem key={s.id} value={s.nam}>
+                                                        {s.nam}
                                                     </SelectItem>
                                                 ))
                                             ) : (
@@ -358,8 +373,11 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                     Chi nhánh
                                 </Label>
                                 {isEditing ? (
-                                    <Select onValueChange={handleBranchChange} value={formData.branch_id || undefined}>
-                                        <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 text-sm focus:ring-2 focus:ring-red-500 shadow-sm border-2">
+                                    <Select
+                                        onValueChange={handleBranchChange}
+                                        value={formData.branch_id || undefined}
+                                    >
+                                        <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 text-sm focus:ring-2 focus:ring-red-500 shadow-sm border-2">
                                             <SelectValue placeholder="Chọn chi nhánh" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-xl">
