@@ -42,7 +42,7 @@ import { vi } from 'date-fns/locale'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { AddWeightDialog } from './add-weight-dialog'
-import { EditWeightDialog } from './edit-weight-dialog'
+import { WeightDetailsSheet } from './weight-details-sheet'
 
 interface WeightGanttViewProps {
     records: any[]
@@ -75,8 +75,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
 
     // Dialog state
     const [isAddOpen, setIsAddOpen] = React.useState(false)
-    const [isEditOpen, setIsEditOpen] = React.useState(false)
-    const [editingRecord, setEditingRecord] = React.useState<any>(null)
+    const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
+    const [selectedRecord, setSelectedRecord] = React.useState<any>(null)
     const [prefilledDate, setPrefilledDate] = React.useState<string | null>(null)
 
     const visibleCount = [showTarget, showActual, showHeight].filter(Boolean).length
@@ -211,8 +211,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
         )
 
         if (existing) {
-            setEditingRecord(existing)
-            setIsEditOpen(true)
+            setSelectedRecord(existing)
+            setIsDetailsOpen(true)
         } else {
             setPrefilledDate(dateStr)
             setSelectedClientId(clientId)
@@ -701,13 +701,13 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                 clients={clients}
             />
 
-            <EditWeightDialog
-                open={isEditOpen}
-                onOpenChange={setIsEditOpen}
-                record={editingRecord}
+            <WeightDetailsSheet
+                open={isDetailsOpen}
+                onOpenChange={setIsDetailsOpen}
+                record={selectedRecord}
                 onSuccess={() => {
                     onSuccess?.()
-                    setIsEditOpen(false)
+                    setIsDetailsOpen(false)
                 }}
                 clients={clients}
             />

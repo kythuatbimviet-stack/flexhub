@@ -38,6 +38,7 @@ import {
 import { fetchBranches } from '@/app/actions/branches'
 import { toast } from 'sonner'
 import { updateContract, deleteContract } from '@/app/actions/contracts'
+import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
 import { cn } from '@/lib/utils'
 
 interface ContractDetailsSheetProps {
@@ -57,14 +58,23 @@ export function ContractDetailsSheet({
     const [loading, setLoading] = React.useState(false)
     const [formData, setFormData] = React.useState<any>({})
     const [branches, setBranches] = React.useState<any[]>([])
+    const [statuses, setStatuses] = React.useState<ConfigItem[]>([])
+
+    const defaultStatus = React.useMemo(() => {
+        return statuses.find(s => s.is_default)?.nam || statuses[0]?.nam || 'Đang thực hiện'
+    }, [statuses])
 
     React.useEffect(() => {
         if (open) {
-            const loadBranches = async () => {
-                const res = await fetchBranches()
-                if (res.success) setBranches(res.data || [])
+            const loadData = async () => {
+                const [branchesRes, statusRes] = await Promise.all([
+                    fetchBranches(),
+                    fetchConfigParams('config_contract_status')
+                ])
+                if (branchesRes.success) setBranches(branchesRes.data || [])
+                if (statusRes.success) setStatuses(statusRes.data || [])
             }
-            loadBranches()
+            loadData()
         }
     }, [open])
 
@@ -229,10 +239,10 @@ export function ContractDetailsSheet({
                                 <div className="flex flex-wrap items-center gap-2 mt-3">
                                     <div className={cn(
                                         "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
-                                        formData.status === 'Đang thực hiện' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" : "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
+                                        (formData.status || defaultStatus) === defaultStatus ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" : "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
                                     )}>
-                                        <div className={cn("w-1.5 h-1.5 rounded-full", formData.status === 'Đang thực hiện' ? "bg-emerald-500" : "bg-slate-400")} />
-                                        {formData.status || 'Đang thực hiện'}
+                                        <div className={cn("w-1.5 h-1.5 rounded-full", (formData.status || defaultStatus) === defaultStatus ? "bg-emerald-500" : "bg-slate-400")} />
+                                        {formData.status || defaultStatus}
                                     </div>
                                     <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30">
                                         {branches?.find((b: any) => b.id === formData.branch_id)?.name || contract.branches?.name || 'Chi nhánh'}
@@ -320,13 +330,13 @@ export function ContractDetailsSheet({
                                                 <SelectValue placeholder="Chọn trạng thái" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="Đang thực hiện">Đang thực hiện</SelectItem>
-                                                <SelectItem value="Hoàn thành">Hoàn thành</SelectItem>
-                                                <SelectItem value="Đã hủy">Đã hủy</SelectItem>
+                                                {statuses.map(status => (
+                                                    <SelectItem key={status.id} value={status.nam}>{status.nam}</SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     ) : (
-                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">{formData.status || 'Đang thực hiện'}</p>
+                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">{formData.status || defaultStatus}</p>
                                     )}
                                 </div>
                             </div>

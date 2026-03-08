@@ -28,6 +28,8 @@ import {
     UserCircle,
     Dumbbell,
     Activity,
+    Star,
+    MoreVertical,
     Target,
     HeartPulse,
     MessageSquare,
@@ -47,7 +49,14 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchBranches } from '@/app/actions/branches'
 import { AddContractDialog } from '@/components/contracts/add-contract-dialog'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
-import { FileText, PlusCircle, ChevronDown } from 'lucide-react'
+import { fetchZaloUsers } from '@/app/actions/zalo-users'
+import { FileText, PlusCircle, ChevronDown, Search, Check } from 'lucide-react'
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -82,6 +91,22 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
             return result.data
         },
     })
+
+    const { data: zaloUsersResult } = useQuery({
+        queryKey: ['zalo-users'],
+        queryFn: fetchZaloUsers,
+    })
+    const zaloUsers = React.useMemo(() => zaloUsersResult?.data || [], [zaloUsersResult])
+
+    const [zaloOpen, setZaloOpen] = React.useState(false)
+    const [zaloSearchTerm, setZaloSearchTerm] = React.useState('')
+    const filteredZaloUsers = React.useMemo(() => {
+        if (!zaloSearchTerm) return zaloUsers
+        return zaloUsers.filter((u: any) =>
+            u.display_name?.toLowerCase().includes(zaloSearchTerm.toLowerCase()) ||
+            u.zalo_user_id?.toLowerCase().includes(zaloSearchTerm.toLowerCase())
+        )
+    }, [zaloUsers, zaloSearchTerm])
 
     const { data: configResult } = useQuery({
         queryKey: ['client-configs'],
@@ -144,7 +169,28 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
         const { name, value } = e.target
         const type = (e.target as any).type
         const finalValue = type === 'number' ? parseFloat(value) : value
-        setFormData((prev: any) => ({ ...prev, [name]: finalValue }))
+
+        setFormData((prev: any) => {
+            const newData = { ...prev, [name]: finalValue }
+
+            // Auto-calculate age if dob changes
+            if (name === 'dob' && value) {
+                const birthDate = new Date(value as string)
+                const today = new Date()
+                let age = today.getFullYear() - birthDate.getFullYear()
+                const m = today.getMonth() - birthDate.getMonth()
+                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                    age--
+                }
+                if (age >= 0) {
+                    newData.age = age
+                }
+            } else if (name === 'dob' && !value) {
+                newData.age = null
+            }
+
+            return newData
+        })
     }
 
     const handleStatusChange = (value: string) => {
@@ -189,7 +235,8 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                         step={type === 'number' ? '0.1' : undefined}
                         value={formData[name] ?? ''}
                         onChange={handleChange}
-                        className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        readOnly={name === 'age'}
+                        className={cn("rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-blue-500 shadow-sm", name === 'age' && "bg-slate-50 dark:bg-slate-800/50 text-slate-500 cursor-not-allowed")}
                     />
                 )
             ) : (
@@ -207,6 +254,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                 showCloseButton={false}
                 className="w-full sm:max-w-[480px] border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
             >
+                <SheetTitle className="sr-only">Thông tin khách hàng: {client?.member_name}</SheetTitle>
                 {/* Sticky Header */}
                 <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
@@ -411,9 +459,107 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                 <InfoRow label="Số điện thoại" value={formData.phone} name="phone" />
                                 <InfoRow label="Email" value={formData.email} name="email" />
                             </div>
+                            <div className="grid grid-cols-2 gap-5">
+                                <InfoRow label="Ngày sinh" value={formData.dob} name="dob" type="date" />
+                                <InfoRow label="Tuổi" value={formData.age} name="age" type="number" />
+                            </div>
                             <InfoRow label="Địa chỉ" value={formData.address} name="address" />
                             <div className="grid grid-cols-2 gap-5">
-                                <InfoRow label="Zalo ID" value={formData.zalo_id} name="zalo_id" />
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Zalo</Label>
+                                    {isEditing ? (
+                                        <Popover open={zaloOpen} onOpenChange={(open) => {
+                                            setZaloOpen(open)
+                                            if (!open) setZaloSearchTerm('')
+                                        }}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    className={cn(
+                                                        "w-full justify-between rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm font-normal px-3 shadow-sm focus:ring-2 focus:ring-blue-500",
+                                                        !formData.zalo_id && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-2 overflow-hidden">
+                                                        {formData.zalo_id ? (
+                                                            <>
+                                                                <div className="w-5 h-5 rounded-full bg-slate-100 flex-shrink-0 bg-cover bg-center" style={{ backgroundImage: zaloUsers.find((u: any) => u.zalo_user_id === formData.zalo_id)?.avatar_url ? `url(${zaloUsers.find((u: any) => u.zalo_user_id === formData.zalo_id)?.avatar_url})` : 'none' }} />
+                                                                <span className="truncate">{zaloUsers.find((u: any) => u.zalo_user_id === formData.zalo_id)?.display_name || formData.zalo_id}</span>
+                                                            </>
+                                                        ) : (
+                                                            <span>Chọn Zalo...</span>
+                                                        )}
+                                                    </div>
+                                                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-slate-100 dark:border-slate-800" align="start">
+                                                <div className="p-2 border-b border-slate-50 dark:border-slate-800">
+                                                    <div className="relative">
+                                                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                                        <Input
+                                                            placeholder="Tìm kiếm..."
+                                                            value={zaloSearchTerm}
+                                                            onChange={(e) => setZaloSearchTerm(e.target.value)}
+                                                            className="pl-8 h-9 border-none bg-slate-50/50 dark:bg-slate-900 rounded-lg focus-visible:ring-0"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <ScrollArea className="h-[220px]">
+                                                    <div className="p-1">
+                                                        <button
+                                                            type="button"
+                                                            className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                                            onClick={() => {
+                                                                setFormData((prev: any) => ({ ...prev, zalo_id: '' }))
+                                                                setZaloOpen(false)
+                                                            }}
+                                                        >
+                                                            <span className="text-slate-400 italic text-xs">-- Xóa chọn --</span>
+                                                        </button>
+                                                        {filteredZaloUsers.length === 0 && (
+                                                            <div className="p-4 text-center text-xs text-slate-500">Không tìm thấy kết quả</div>
+                                                        )}
+                                                        {filteredZaloUsers.map((user: any) => (
+                                                            <button
+                                                                key={user.id || user.zalo_user_id}
+                                                                type="button"
+                                                                className={cn(
+                                                                    "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors",
+                                                                    formData.zalo_id === user.zalo_user_id && "bg-blue-50/50 text-blue-600 dark:bg-blue-950/30"
+                                                                )}
+                                                                onClick={() => {
+                                                                    setFormData((prev: any) => ({ ...prev, zalo_id: user.zalo_user_id }))
+                                                                    setZaloOpen(false)
+                                                                }}
+                                                            >
+                                                                <div className="w-8 h-8 rounded-full bg-slate-100 flex-shrink-0 bg-cover bg-center" style={{ backgroundImage: user.avatar_url ? `url(${user.avatar_url})` : 'none' }}>
+                                                                    {!user.avatar_url && <span className="flex items-center justify-center w-full h-full text-xs font-medium text-slate-500">{user.display_name?.charAt(0)}</span>}
+                                                                </div>
+                                                                <div className="flex flex-col items-start min-w-0">
+                                                                    <span className="font-medium truncate w-full">{user.display_name}</span>
+                                                                    <span className="text-[10px] text-slate-400 truncate w-full">{user.zalo_user_id}</span>
+                                                                </div>
+                                                                {formData.zalo_id === user.zalo_user_id && (
+                                                                    <Check className="ml-auto h-4 w-4 flex-shrink-0" />
+                                                                )}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </ScrollArea>
+                                            </PopoverContent>
+                                        </Popover>
+                                    ) : (
+                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                                            {formData.zalo_id
+                                                ? (zaloUsers.find((zu: any) => zu.zalo_user_id === formData.zalo_id)?.display_name || formData.zalo_id)
+                                                : <span className="text-slate-300 italic font-normal text-sm">Chưa cập nhật</span>
+                                            }
+                                        </p>
+                                    )}
+                                </div>
                                 <InfoRow label="Facebook ID" value={formData.facebook_id} name="facebook_id" />
                             </div>
                         </div>
@@ -421,8 +567,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
 
                     {/* Section: Chỉ số cơ thể */}
                     <CardSection title="Chỉ số cơ thể & Mục tiêu" icon={Activity}>
-                        <div className="grid grid-cols-2 gap-5 mb-5">
-                            <InfoRow label="Tuổi" value={formData.age} name="age" type="number" />
+                        <div className="grid grid-cols-3 gap-5 mb-5">
                             <InfoRow label="Chiều cao (cm)" value={formData.height} name="height" type="number" />
                             <InfoRow label="Cân nặng (kg)" value={formData.weight} name="weight" type="number" />
                             <InfoRow label="Mục tiêu (kg)" value={formData.target_weight} name="target_weight" type="number" />
@@ -445,6 +590,16 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                 <InfoRow label="Chu kỳ khách" value={formData.customer_cycle} name="customer_cycle" />
                             </div>
                             <InfoRow label="Ghi chú thêm" value={formData.notes} name="notes" type="textarea" />
+                        </div>
+                    </CardSection>
+
+                    {/* Section: Nguồn khách */}
+                    <CardSection title="Nguồn khách" icon={Star}>
+                        <div className="space-y-5">
+                            <div className="grid grid-cols-2 gap-5">
+                                <InfoRow label="Nguồn khách hàng" value={formData.source} name="source" />
+                                <InfoRow label="Người giới thiệu" value={formData.referrer} name="referrer" />
+                            </div>
                         </div>
                     </CardSection>
                 </div>

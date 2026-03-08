@@ -51,7 +51,7 @@ import { fetchClients } from '@/app/actions/clients'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchMemberships } from '@/app/actions/memberships'
 import { addDays } from 'date-fns'
-
+import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
 const contractFormSchema = z.object({
     id: z.string().min(2, { message: 'Mã hợp đồng phải có ít nhất 2 ký tự' }),
     client_id: z.string().min(1, { message: 'Vui lòng chọn khách hàng' }),
@@ -71,14 +71,26 @@ const contractFormSchema = z.object({
     trainer_name: z.string().optional(),
     center_representative: z.string().optional(),
     status: z.string().optional(),
+    facility_name: z.string().optional(),
+    short_name: z.string().optional(),
+    address: z.string().optional(),
+    center_phone: z.string().optional(),
+    account_number: z.string().optional(),
+    account_holder: z.string().optional(),
+    bank_name: z.string().optional(),
 })
 
-export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, triggerOverride }: { onSuccess: () => void, initialClientId?: string, isQuickAction?: boolean, triggerOverride?: React.ReactNode }) {
+export function AddContractDialog({ onSuccess, initialClientId, initialClient, isQuickAction, triggerOverride }: { onSuccess: () => void, initialClientId?: string, initialClient?: any, isQuickAction?: boolean, triggerOverride?: React.ReactNode }) {
     const [open, setOpen] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
-    const [clients, setClients] = React.useState<any[]>([])
-    const [branches, setBranches] = React.useState<any[]>([])
+    const [clients, setClients] = React.useState<any[]>(initialClient ? [initialClient] : [])
+    const [branches, setBranches] = React.useState<any[]>(
+        initialClient?.branch_id
+            ? [{ id: initialClient.branch_id, name: initialClient.branch_name || initialClient.branch_id }]
+            : []
+    )
     const [packages, setPackages] = React.useState<any[]>([])
+    const [statuses, setStatuses] = React.useState<ConfigItem[]>([])
 
     const form = useForm<z.infer<typeof contractFormSchema>>({
         resolver: zodResolver(contractFormSchema),
@@ -101,23 +113,60 @@ export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, t
             trainer_name: '',
             center_representative: '',
             status: 'Đang thực hiện',
+            facility_name: '',
+            short_name: '',
+            address: '',
+            center_phone: '',
+            account_number: '',
+            account_holder: '',
+            bank_name: '',
         },
     })
 
     React.useEffect(() => {
         if (open) {
+            // Instantly pre-fill customer info if passed from parent
+            if (initialClient) {
+                form.setValue('client_id', initialClient.id)
+                form.setValue('member_name', initialClient.member_name)
+                form.setValue('phone', initialClient.phone || '')
+                form.setValue('email', initialClient.email || '')
+                form.setValue('member_address', initialClient.address || '')
+                form.setValue('trainer_name', initialClient.pt_name || '')
+                if (initialClient.branch_id) {
+                    form.setValue('branch_id', initialClient.branch_id)
+                }
+            }
+
             const loadData = async () => {
-                const [clientsRes, branchesRes, packagesRes] = await Promise.all([
+                const [clientsRes, branchesRes, packagesRes, statusRes] = await Promise.all([
                     fetchClients(),
                     fetchBranches(),
-                    fetchMemberships()
+                    fetchMemberships(),
+                    fetchConfigParams('config_contract_status')
                 ])
+                if (statusRes.success && statusRes.data) {
+                    setStatuses(statusRes.data)
+                    // Set default status if not already set or is default
+                    const currentStatus = form.getValues('status')
+                    if (currentStatus === 'Đang thực hiện' || !currentStatus) {
+                        const defaultStatus = statusRes.data.find(s => s.is_default) || statusRes.data[0]
+                        if (defaultStatus) {
+                            form.setValue('status', defaultStatus.nam)
+                        }
+                    }
+                }
+
                 if (clientsRes.success) {
                     const clientList = clientsRes.data || []
-                    setClients(clientList)
 
-                    // Pre-select client if initialClientId is provided
-                    if (initialClientId) {
+                    // Merge initial client if not present in the fetched list, just to be safe
+                    const fetchedIds = new Set(clientList.map((c: any) => c.id))
+                    const initialArray = initialClient && !fetchedIds.has(initialClient.id) ? [initialClient] : []
+                    setClients([...initialArray, ...clientList])
+
+                    // Pre-select client if initialClientId is provided but no initialClient object is present
+                    if (initialClientId && !initialClient) {
                         form.setValue('client_id', initialClientId)
                         const client = clientList.find((c: any) => c.id === initialClientId)
                         if (client) {
@@ -126,15 +175,38 @@ export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, t
                             form.setValue('email', client.email || '')
                             form.setValue('member_address', client.address || '')
                             form.setValue('trainer_name', client.pt_name || '')
+
+                            if (client.branch_id) {
+                                form.setValue('branch_id', client.branch_id)
+                            }
                         }
                     }
                 }
-                if (branchesRes.success) setBranches(branchesRes.data || [])
+
+                if (branchesRes.success) {
+                    const branchList = branchesRes.data || []
+                    setBranches(branchList)
+
+                    const currentBranchId = form.getValues('branch_id')
+                    if (currentBranchId) {
+                        const branch = branchList.find((b: any) => b.id === currentBranchId)
+                        if (branch) {
+                            form.setValue('facility_name', branch.name)
+                            form.setValue('short_name', branch.short_name || '')
+                            form.setValue('address', branch.address || '')
+                            form.setValue('center_phone', branch.phone || '')
+                            form.setValue('account_number', branch.account_number?.toString() || '')
+                            form.setValue('account_holder', branch.account_holder || '')
+                            form.setValue('bank_name', branch.bank_name || '')
+                        }
+                    }
+                }
+
                 if (packagesRes.success) setPackages(packagesRes.data || [])
             }
             loadData()
         }
-    }, [open, initialClientId, form])
+    }, [open, initialClientId, initialClient, form])
 
     const onClientChange = (clientId: string) => {
         const client = clients.find(c => c.id === clientId)
@@ -144,6 +216,25 @@ export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, t
             form.setValue('email', client.email || '')
             form.setValue('member_address', client.address || '')
             form.setValue('trainer_name', client.pt_name || '')
+
+            // Auto-select branch from client
+            if (client.branch_id) {
+                form.setValue('branch_id', client.branch_id)
+                onBranchChange(client.branch_id)
+            }
+        }
+    }
+
+    const onBranchChange = (branchId: string) => {
+        const branch = branches.find(b => b.id === branchId)
+        if (branch) {
+            form.setValue('facility_name', branch.name)
+            form.setValue('short_name', branch.short_name || '')
+            form.setValue('address', branch.address || '')
+            form.setValue('center_phone', branch.phone || '')
+            form.setValue('account_number', branch.account_number?.toString() || '')
+            form.setValue('account_holder', branch.account_holder || '')
+            form.setValue('bank_name', branch.bank_name || '')
         }
     }
 
@@ -203,7 +294,10 @@ export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, t
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl border-none shadow-2xl font-inter bg-white dark:bg-gray-950">
+            <DialogContent
+                className="max-w-4xl max-h-[85vh] overflow-y-auto rounded-3xl border-none shadow-2xl font-inter bg-white dark:bg-gray-950"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-medium text-gray-950 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-4 mb-2">
                         Tạo Hợp đồng mới
@@ -241,16 +335,16 @@ export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, t
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Trạng thái HĐ</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <Select onValueChange={field.onChange} value={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="w-full rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11">
-                                                        <SelectValue placeholder="Chọn trạng thái" />
+                                                    <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11 overflow-hidden">
+                                                        <SelectValue placeholder="Chọn trạng thái" className="truncate" />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                    <SelectItem value="Đang thực hiện">Đang thực hiện</SelectItem>
-                                                    <SelectItem value="Hoàn thành">Hoàn thành</SelectItem>
-                                                    <SelectItem value="Đã hủy">Đã hủy</SelectItem>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800" position="popper" sideOffset={4}>
+                                                    {statuses.map(status => (
+                                                        <SelectItem key={`status-${status.id}`} value={status.nam}>{status.nam}</SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                             <FormMessage />
@@ -263,15 +357,22 @@ export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, t
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Chi nhánh ký</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <Select
+                                                onValueChange={(val) => {
+                                                    field.onChange(val)
+                                                    onBranchChange(val)
+                                                }}
+                                                value={field.value || ""}
+                                                disabled
+                                            >
                                                 <FormControl>
-                                                    <SelectTrigger className="w-full rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11">
-                                                        <SelectValue placeholder="Chọn chi nhánh" />
+                                                    <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11 overflow-hidden">
+                                                        <SelectValue placeholder="Chọn chi nhánh" className="truncate text-left" />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800" position="popper" sideOffset={4}>
                                                     {branches.map(branch => (
-                                                        <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                                                        <SelectItem key={`branch-${branch.id}`} value={branch.id}>{branch.name}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
@@ -287,8 +388,8 @@ export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, t
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Loại hợp đồng</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="w-full rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11">
-                                                        <SelectValue placeholder="Chọn loại" />
+                                                    <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11 overflow-hidden">
+                                                        <SelectValue placeholder="Chọn loại" className="truncate" />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
@@ -322,16 +423,17 @@ export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, t
                                                     field.onChange(val)
                                                     onClientChange(val)
                                                 }}
-                                                defaultValue={field.value}
+                                                value={field.value || ""}
+                                                disabled={!!initialClientId || !!initialClient}
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger className="w-full rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11">
-                                                        <SelectValue placeholder="Tìm khách hàng..." />
+                                                    <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11 overflow-hidden disabled:opacity-75 disabled:cursor-not-allowed">
+                                                        <SelectValue placeholder="Tìm khách hàng..." className="truncate text-left" />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800 max-h-60">
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800 max-h-60 w-[--radix-select-trigger-width]" position="popper" sideOffset={4}>
                                                     {clients.map(client => (
-                                                        <SelectItem key={client.id} value={client.id}>{client.member_name} - {client.phone}</SelectItem>
+                                                        <SelectItem key={`client-${client.id}`} value={client.id}>{client.member_name} - {client.phone}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
@@ -400,18 +502,18 @@ export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, t
                                 <Package className="w-4 h-4" />
                                 Gói dịch vụ & Thanh toán
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <FormItem className="md:col-span-1">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormItem>
                                     <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Chọn Gói tập (Sẵn có)</FormLabel>
                                     <Select onValueChange={onPackageChange}>
                                         <FormControl>
-                                            <SelectTrigger className="w-full rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11">
-                                                <SelectValue placeholder="Chọn gói tập..." />
+                                            <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11 overflow-hidden">
+                                                <SelectValue placeholder="Chọn gói tập..." className="truncate" />
                                             </SelectTrigger>
                                         </FormControl>
-                                        <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                        <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800" position="popper" sideOffset={4}>
                                             {packages.map(pkg => (
-                                                <SelectItem key={pkg.id} value={pkg.id}>
+                                                <SelectItem key={`pkg-${pkg.id}`} value={pkg.id}>
                                                     {pkg.package_name} ({pkg.duration_days} ngày)
                                                 </SelectItem>
                                             ))}
@@ -422,7 +524,7 @@ export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, t
                                     control={form.control}
                                     name="package_name"
                                     render={({ field }) => (
-                                        <FormItem className="md:col-span-2">
+                                        <FormItem>
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Tên gói tập (Thủ công)</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="Gói VIP 12 tháng..." {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
@@ -439,8 +541,8 @@ export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, t
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Phương thức thanh toán</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="w-full rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11">
-                                                        <SelectValue placeholder="Chọn PT" />
+                                                    <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11 overflow-hidden">
+                                                        <SelectValue placeholder="Chọn PT" className="truncate" />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
@@ -449,6 +551,19 @@ export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, t
                                                     <SelectItem value="Quẹt thẻ">Quẹt thẻ</SelectItem>
                                                 </SelectContent>
                                             </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="total_amount"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Tổng giá trị (VNĐ)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="0" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-red-50/30 dark:bg-red-950/10 h-11 font-medium text-red-600" />
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -474,19 +589,6 @@ export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, t
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Ngày kết thúc (Dự kiến)</FormLabel>
                                             <FormControl>
                                                 <Input type="date" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="total_amount"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Tổng giá trị (VNĐ)</FormLabel>
-                                            <FormControl>
-                                                <Input type="number" placeholder="0" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-red-50/30 dark:bg-red-950/10 h-11 font-medium text-red-600" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

@@ -45,6 +45,7 @@ import { fetchBranches } from '@/app/actions/branches'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 import { cn } from '@/lib/utils'
+import { motion, AnimatePresence } from 'framer-motion'
 import { AddRevenueDialog } from '@/components/financial/add-revenue-dialog'
 import { ImportExcelRevenueDialog } from '@/components/financial/import-revenue-dialog'
 import { RevenueDetailsSheet } from '@/components/financial/revenue-details-sheet'
@@ -57,6 +58,7 @@ export default function RevenuePage() {
     const [selectedRevenues, setSelectedRevenues] = React.useState<string[]>([])
     const [viewingRevenue, setViewingRevenue] = React.useState<any>(null)
     const [detailSheetOpen, setDetailSheetOpen] = React.useState(false)
+    const [showMobileFilters, setShowMobileFilters] = React.useState(false)
 
     const { data: revenueData, refetch } = useQuery({
         queryKey: ['revenue'],
@@ -153,155 +155,175 @@ export default function RevenuePage() {
     }
 
     return (
-        <div className="flex flex-col gap-8 p-8 bg-gray-50/50 min-h-screen font-inter">
+        <div className="space-y-1.5 font-inter pb-10">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-1">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-950 flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                            <DollarSign className="text-white w-6 h-6" />
-                        </div>
-                        Quản lý Khoản thu
+                    <h1 className="text-3xl font-medium tracking-tight text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                        <DollarSign className="w-8 h-8 text-emerald-600" />
+                        Khoản thu
                     </h1>
-                    <p className="text-gray-500 text-sm pl-1">Theo dõi và quản lý mọi dòng tiền đi vào hệ thống.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Theo dõi và quản lý mọi dòng tiền đi vào hệ thống.</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <ImportExcelRevenueDialog onSuccess={refetch} />
                     <AddRevenueDialog onSuccess={refetch} />
                 </div>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="rounded-[2rem] border-none shadow-sm bg-white dark:bg-gray-900 overflow-hidden relative group">
-                    <div className="absolute top-0 right-0 p-8 opacity-10 transition-transform group-hover:scale-110">
-                        <DollarSign className="w-16 h-16 text-emerald-600" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-1">
+                <Card className="rounded-2xl border-none shadow-sm bg-white dark:bg-gray-900 overflow-hidden relative group p-5">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 transition-transform group-hover:scale-110">
+                        <DollarSign className="w-12 h-12 text-emerald-600" />
                     </div>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Tổng thu (Lọc)</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-emerald-600">
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tổng thu (Lọc)</p>
+                        <div className="text-2xl font-black text-emerald-600">
                             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalAmount)}
                         </div>
-                        <p className="text-xs text-gray-500 mt-2 font-medium">Từ {filteredRevenue.length} giao dịch</p>
-                    </CardContent>
+                        <p className="text-[11px] text-gray-500 font-medium">Từ {filteredRevenue.length} giao dịch</p>
+                    </div>
                 </Card>
-                {/* Add more summary cards here if needed (e.g. Daily, Monthly) */}
             </div>
 
-            {/* Filters & Table Section */}
-            <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-gray-200/50 bg-white dark:bg-gray-900 overflow-hidden">
-                <div className="p-8 border-b border-gray-50 dark:border-gray-800 space-y-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div className="flex flex-1 items-center gap-4 max-w-xl">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            {/* Optimized Compact Filter Section */}
+            <Card className="border-none shadow-sm rounded-xl overflow-visible bg-white dark:bg-gray-900 transition-all duration-300 py-0">
+                <div className="py-1 px-1 sm:px-1.5 border-gray-100 dark:border-gray-800 bg-gray-50/10 dark:bg-gray-800/20 rounded-xl">
+                    <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2">
+                        {/* Search & Toggle Button Row */}
+                        <div className="flex items-center gap-2 flex-1">
+                            <div className="relative group flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-emerald-600 transition-colors" />
                                 <Input
-                                    placeholder="Tìm kiếm mã, khách hàng, diễn giải..."
-                                    className="pl-11 h-12 bg-gray-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-emerald-500 transition-all font-medium"
+                                    placeholder="Tìm mã, khách, diễn giải..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-10 h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-emerald-500 text-sm"
                                 />
                             </div>
+
                             <Button
                                 variant="outline"
-                                className="h-12 w-12 rounded-2xl border-gray-100 dark:border-gray-800 p-0 text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all"
+                                size="icon"
                                 onClick={handleExportExcel}
+                                className="h-9 w-9 rounded-lg border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-gray-400 hover:text-emerald-600"
                             >
-                                <FileDown className="w-5 h-5" />
+                                <FileDown className="w-4 h-4" />
+                            </Button>
+
+                            {/* Mobile Filter Toggle */}
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                                className={cn(
+                                    "lg:hidden h-9 w-9 rounded-lg border-gray-200 dark:border-gray-800 transition-all",
+                                    showMobileFilters ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-white dark:bg-gray-800/50"
+                                )}
+                            >
+                                <Filter className="w-4 h-4" />
                             </Button>
                         </div>
-                        <div className="flex flex-wrap items-center gap-3">
-                            <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 p-1.5 rounded-2xl border border-gray-100 dark:border-gray-800">
-                                <div className="p-1.5 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                    <Building2 className="w-4 h-4 text-emerald-600" />
-                                </div>
-                                <Select value={branchFilter} onValueChange={setBranchFilter}>
-                                    <SelectTrigger className="w-[160px] border-none bg-transparent shadow-none h-9 text-xs font-bold focus:ring-0">
-                                        <SelectValue placeholder="Chi nhánh" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-gray-100">
-                                        <SelectItem value="all">Tất cả chi nhánh</SelectItem>
-                                        {branches?.map((branch: any) => (
-                                            <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 p-1.5 rounded-2xl border border-gray-100 dark:border-gray-800">
-                                <div className="p-1.5 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                    <Filter className="w-4 h-4 text-emerald-600" />
-                                </div>
-                                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                                    <SelectTrigger className="w-[160px] border-none bg-transparent shadow-none h-9 text-xs font-bold focus:ring-0">
-                                        <SelectValue placeholder="Danh mục" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-gray-100">
-                                        <SelectItem value="all">Tất cả danh mục</SelectItem>
-                                        {categories?.map((cat: any) => (
-                                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
+
+                        {/* Filters Content */}
+                        <AnimatePresence>
+                            {(showMobileFilters || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
+                                <motion.div
+                                    initial={typeof window !== 'undefined' && window.innerWidth < 1024 ? { height: 0, opacity: 0 } : false}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2"
+                                >
+                                    <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
+                                        <Select value={branchFilter} onValueChange={setBranchFilter}>
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-emerald-500 text-xs sm:text-sm lg:w-44 px-3">
+                                                <SelectValue placeholder="Chi nhánh" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                <SelectItem value="all">Tất cả chi nhánh</SelectItem>
+                                                {branches?.map((branch: any) => (
+                                                    <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+
+                                        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-emerald-500 text-xs sm:text-sm lg:w-44 px-3">
+                                                <SelectValue placeholder="Danh mục" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                <SelectItem value="all">Tất cả danh mục</SelectItem>
+                                                {categories?.map((cat: any) => (
+                                                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
                     {selectedRevenues.length > 0 && (
-                        <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-100 dark:border-red-900/30 animate-in fade-in slide-in-from-top-2">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-red-500/20">
-                                    {selectedRevenues.length}
-                                </div>
-                                <span className="text-sm font-bold text-red-700 dark:text-red-400">Giao dịch đã chọn</span>
+                        <div className="mt-2 flex items-center justify-between p-3 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-100 dark:border-red-900/30 animate-in fade-in slide-in-from-top-1">
+                            <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 bg-red-600 rounded text-[10px] font-bold text-white uppercase tracking-wider">
+                                    {selectedRevenues.length} đã chọn
+                                </span>
                             </div>
                             <Button
-                                variant="destructive"
+                                variant="ghost"
                                 size="sm"
                                 onClick={handleBulkDelete}
-                                className="rounded-xl px-4 bg-red-600 hover:bg-red-700 font-bold text-xs uppercase tracking-widest"
+                                className="h-8 text-[11px] font-bold uppercase tracking-widest text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40 px-3"
                             >
-                                <Trash2 className="w-4 h-4 mr-2" />
+                                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
                                 Xóa tất cả
                             </Button>
                         </div>
                     )}
                 </div>
+            </Card>
 
+            {/* Table Section */}
+            <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-gray-900">
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow className="hover:bg-transparent border-gray-50 dark:border-gray-800">
-                                <TableHead className="w-[50px] pl-8">
+                            <TableRow className="hover:bg-transparent border-gray-100/50 dark:border-gray-800/50 h-10 uppercase tracking-wider text-[11px] font-medium">
+                                <TableHead className="w-[40px] px-1 text-center">
                                     <Checkbox
                                         checked={selectedRevenues.length === filteredRevenue.length && filteredRevenue.length > 0}
                                         onCheckedChange={toggleSelectAll}
                                         className="rounded-md border-gray-300"
                                     />
                                 </TableHead>
-                                <TableHead className="text-xs font-bold uppercase tracking-widest text-gray-400 py-6">Ngày</TableHead>
-                                <TableHead className="text-xs font-bold uppercase tracking-widest text-gray-400 py-6">Mã / Khách hàng</TableHead>
-                                <TableHead className="text-xs font-bold uppercase tracking-widest text-gray-400 py-6">Danh mục</TableHead>
-                                <TableHead className="text-xs font-bold uppercase tracking-widest text-gray-400 py-6">Số tiền</TableHead>
-                                <TableHead className="text-xs font-bold uppercase tracking-widest text-gray-400 py-6">Hình thức</TableHead>
-                                <TableHead className="text-xs font-bold uppercase tracking-widest text-gray-400 py-6 text-right pr-8">Thao tác</TableHead>
+                                <TableHead className="text-gray-400">Ngày</TableHead>
+                                <TableHead className="text-gray-400">Mã / Khách hàng</TableHead>
+                                <TableHead className="text-gray-400">Danh mục</TableHead>
+                                <TableHead className="text-gray-400">Số tiền</TableHead>
+                                <TableHead className="text-gray-400">Hình thức</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filteredRevenue.map((item: any) => (
                                 <TableRow
                                     key={item.id}
-                                    className="group hover:bg-gray-50/50 dark:hover:bg-gray-800/30 border-gray-50 dark:border-gray-800 transition-colors"
+                                    className="group hover:bg-gray-50/50 dark:hover:bg-gray-800/30 border-gray-100/50 dark:border-gray-800/50 transition-colors cursor-pointer"
+                                    onClick={() => {
+                                        setViewingRevenue(item)
+                                        setDetailSheetOpen(true)
+                                    }}
                                 >
-                                    <TableCell className="pl-8">
+                                    <TableCell className="px-1 text-center" onClick={(e) => e.stopPropagation()}>
                                         <Checkbox
                                             checked={selectedRevenues.includes(item.id)}
                                             onCheckedChange={() => toggleSelect(item.id)}
                                             className="rounded-md border-gray-300 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
                                         />
                                     </TableCell>
-                                    <TableCell className="py-4">
+                                    <TableCell className="py-3">
                                         <div className="flex flex-col">
                                             <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
                                                 {new Date(item.recorded_at).toLocaleDateString('vi-VN')}
@@ -311,73 +333,29 @@ export default function RevenuePage() {
                                             </span>
                                         </div>
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="py-3">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 font-bold text-xs uppercase">
-                                                {item.customers?.name?.charAt(0) || <User className="w-4 h-4" />}
+                                            <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 font-bold text-[10px] uppercase">
+                                                {item.customers?.name?.charAt(0) || <User className="w-3 h-3" />}
                                             </div>
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{item.customers?.name || 'Khách vãng lai'}</span>
-                                                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{item.branches?.name}</span>
+                                                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">{item.branches?.name}</span>
                                             </div>
                                         </div>
                                     </TableCell>
-                                    <TableCell>
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                    <TableCell className="py-3">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 uppercase">
                                             {item.financial_categories?.name || 'Phổ thông'}
                                         </span>
                                     </TableCell>
-                                    <TableCell>
-                                        <span className="text-sm font-heavy text-emerald-600 dark:text-emerald-400 font-black tracking-tight">
-                                            {new Intl.NumberFormat('vi-VN').format(item.amount)}
-                                        </span>
+                                    <TableCell className="py-3 text-sm font-black text-emerald-600 dark:text-emerald-400">
+                                        {new Intl.NumberFormat('vi-VN').format(item.amount)}
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="py-3">
                                         <div className="flex items-center gap-2">
-                                            <CreditCard className="w-3.5 h-3.5 text-gray-400" />
-                                            <span className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">{item.payment_method}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right pr-8">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="w-9 h-9 rounded-xl text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                                                onClick={() => {
-                                                    setViewingRevenue(item)
-                                                    setDetailSheetOpen(true)
-                                                }}
-                                            >
-                                                <Eye className="w-4 h-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="w-9 h-9 rounded-xl text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                                                onClick={() => {
-                                                    setViewingRevenue(item)
-                                                    setDetailSheetOpen(true)
-                                                }}
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="w-9 h-9 rounded-xl text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20"
-                                                onClick={async () => {
-                                                    if (confirm('Bạn có chắc muốn xóa khoản thu này?')) {
-                                                        const result = await bulkDeleteRevenue([item.id])
-                                                        if (result.success) {
-                                                            toast.success('Đã xóa thành công')
-                                                            refetch()
-                                                        }
-                                                    }
-                                                }}
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
+                                            <CreditCard className="w-3 h-3 text-gray-400" />
+                                            <span className="text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest">{item.payment_method}</span>
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -389,7 +367,7 @@ export default function RevenuePage() {
                                             <div className="w-16 h-16 bg-gray-50 rounded-3xl flex items-center justify-center">
                                                 <DollarSign className="w-8 h-8 text-gray-200" />
                                             </div>
-                                            <p className="text-sm font-bold text-gray-400">Không tìm thấy khoản thu nào</p>
+                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Không tìm thấy khoản thu</p>
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -405,6 +383,6 @@ export default function RevenuePage() {
                 onOpenChange={setDetailSheetOpen}
                 onSuccess={refetch}
             />
-        </div>
+        </div >
     )
 }

@@ -45,18 +45,22 @@ import { fetchClients } from '@/app/actions/clients'
 import { fetchContracts } from '@/app/actions/contracts'
 import { WeightChart } from '@/components/weight-tracking/weight-chart'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
-import { EditWeightDialog } from '@/components/weight-tracking/edit-weight-dialog'
+import { WeightDetailsSheet } from '@/components/weight-tracking/weight-details-sheet'
 import { WeightGanttView } from '../../../components/weight-tracking/weight-gantt-view'
 import * as XLSX from 'xlsx'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useSearchParams } from 'next/navigation'
 
 export default function WeightTrackingPage() {
-    const [selectedClientId, setSelectedClientId] = React.useState<string>('all')
+    const searchParams = useSearchParams()
+    const urlClientId = searchParams.get('clientId')
+
+    const [selectedClientId, setSelectedClientId] = React.useState<string>(urlClientId || 'all')
     const [startDate, setStartDate] = React.useState<string>('')
     const [endDate, setEndDate] = React.useState<string>('')
-    const [editingRecord, setEditingRecord] = React.useState<any>(null)
-    const [isEditOpen, setIsEditOpen] = React.useState(false)
+    const [selectedRecord, setSelectedRecord] = React.useState<any>(null)
+    const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
     const [showMobileFilters, setShowMobileFilters] = React.useState(false)
     const [viewMode, setViewMode] = React.useState<'table' | 'gantt'>('table')
     const [searchTerm, setSearchTerm] = React.useState('')
@@ -129,6 +133,7 @@ export default function WeightTrackingPage() {
             }
 
             // Categorical Filters
+            if (selectedClientId !== 'all' && record.client_id !== selectedClientId) return false
             if (filterBranch !== 'all' && contract?.facility_name !== filterBranch) return false
             if (filterPT !== 'all' && contract?.trainer_name !== filterPT) return false
             if (filterPackage !== 'all' && contract?.registration_type !== filterPackage) return false
@@ -230,10 +235,10 @@ export default function WeightTrackingPage() {
 
     return (
         <div className="space-y-1.5 font-inter">
-            <EditWeightDialog
-                open={isEditOpen}
-                onOpenChange={setIsEditOpen}
-                record={editingRecord}
+            <WeightDetailsSheet
+                open={isDetailsOpen}
+                onOpenChange={setIsDetailsOpen}
+                record={selectedRecord}
                 onSuccess={refetchAll}
                 clients={clients}
             />
@@ -500,7 +505,14 @@ export default function WeightTrackingPage() {
                                                                         </TableHeader>
                                                                         <TableBody>
                                                                             {group.allRecords.map((record: any) => (
-                                                                                <TableRow key={record.id} className="border-gray-100/50 dark:border-gray-800/50 hover:bg-white dark:hover:bg-gray-800/80 transition-colors">
+                                                                                <TableRow
+                                                                                    key={record.id}
+                                                                                    className="border-gray-100/50 dark:border-gray-800/50 hover:bg-white dark:hover:bg-gray-800/80 transition-colors cursor-pointer"
+                                                                                    onClick={() => {
+                                                                                        setSelectedRecord(record)
+                                                                                        setIsDetailsOpen(true)
+                                                                                    }}
+                                                                                >
                                                                                     <TableCell className="py-2 pl-4 text-xs font-medium text-gray-600 dark:text-gray-300">
                                                                                         {format(new Date(record.measurement_date), 'dd/MM/yyyy')}
                                                                                     </TableCell>
@@ -517,8 +529,8 @@ export default function WeightTrackingPage() {
                                                                                                 size="icon"
                                                                                                 onClick={(e) => {
                                                                                                     e.stopPropagation()
-                                                                                                    setEditingRecord(record)
-                                                                                                    setIsEditOpen(true)
+                                                                                                    setSelectedRecord(record)
+                                                                                                    setIsDetailsOpen(true)
                                                                                                 }}
                                                                                                 className="w-7 h-7 rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600"
                                                                                             >

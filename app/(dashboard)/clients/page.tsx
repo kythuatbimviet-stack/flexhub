@@ -20,7 +20,8 @@ import {
     ChevronRight,
     TrendingUp,
     Users,
-    Target
+    Target,
+    UserStar
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -67,12 +68,17 @@ import {
 } from '@/components/ui/select'
 import { fetchClients, bulkDeleteClients } from '@/app/actions/clients'
 import { fetchBranches } from '@/app/actions/branches'
+import { AddContractDialog } from '@/components/contracts/add-contract-dialog'
+import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
+import { useRouter } from 'next/navigation'
+import { FilePlus2, ExternalLink } from 'lucide-react'
 
 export default function ClientsPage() {
     const [searchTerm, setSearchTerm] = React.useState('')
     const [selectedRows, setSelectedRows] = React.useState<string[]>([])
     const [selectedClient, setSelectedClient] = React.useState<any | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
+    const router = useRouter()
 
     // Filter states
     const [statusFilter, setStatusFilter] = React.useState('all')
@@ -536,18 +542,97 @@ export default function ClientsPage() {
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={(e) => { e.stopPropagation(); setSelectedClient(client); setIsDetailsOpen(true); }}
-                                                    className="w-8 h-8 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600"
+                                                    className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500"
+                                                    title="Chỉnh sửa"
                                                 >
                                                     <Edit2 className="h-3.5 w-3.5" />
                                                 </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={(e) => { e.stopPropagation(); handleDelete(client.id); }}
-                                                    className="w-8 h-8 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600"
-                                                >
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                </Button>
+
+                                                <AddContractDialog
+                                                    onSuccess={refetch}
+                                                    initialClientId={client.id}
+                                                    initialClient={client}
+                                                    triggerOverride={
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500"
+                                                            title="Thêm hợp đồng"
+                                                        >
+                                                            <FilePlus2 className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    }
+                                                />
+
+                                                <AddWeightDialog
+                                                    onSuccess={refetch}
+                                                    clients={filteredClients || []}
+                                                    initialClientId={client.id}
+                                                    triggerOverride={
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500"
+                                                            title="Thêm lộ trình"
+                                                        >
+                                                            <Activity className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    }
+                                                />
+
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-400"
+                                                        >
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-gray-100 dark:border-gray-800">
+                                                        <DropdownMenuLabel className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 py-2">Tác vụ hội viên</DropdownMenuLabel>
+                                                        <DropdownMenuItem
+                                                            onClick={(e) => { e.stopPropagation(); setSelectedClient(client); setIsDetailsOpen(true); }}
+                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-gray-50 dark:focus:bg-gray-800 rounded-lg mx-1"
+                                                        >
+                                                            <Edit2 className="w-3.5 h-3.5 text-blue-500" />
+                                                            <span className="text-sm font-medium">Chỉnh sửa hồ sơ</span>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onClick={(e) => { e.stopPropagation(); router.push(`/weight-tracking?clientId=${client.id}`); }}
+                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-gray-50 dark:focus:bg-gray-800 rounded-lg mx-1"
+                                                        >
+                                                            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                                                            <span className="text-sm font-medium">Xem lộ trình</span>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator className="bg-gray-100 dark:bg-gray-800 my-1 mx-1" />
+                                                        <DropdownMenuItem
+                                                            onClick={(e) => { e.stopPropagation(); window.open(`tel:${client.phone}`, '_self'); }}
+                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-gray-50 dark:focus:bg-gray-800 rounded-lg mx-1"
+                                                        >
+                                                            <Phone className="w-3.5 h-3.5 text-indigo-500" />
+                                                            <span className="text-sm font-medium">Gọi điện</span>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onClick={(e) => { e.stopPropagation(); router.push('/zalo-users'); }}
+                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-gray-50 dark:focus:bg-gray-800 rounded-lg mx-1"
+                                                        >
+                                                            <UserStar className="w-3.5 h-3.5 text-sky-500" />
+                                                            <span className="text-sm font-medium">Mời quan tâm Zalo</span>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator className="bg-gray-100 dark:bg-gray-800 my-1 mx-1" />
+                                                        <DropdownMenuItem
+                                                            onClick={(e) => { e.stopPropagation(); handleDelete(client.id); }}
+                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-rose-50 dark:focus:bg-rose-950/20 text-rose-600 rounded-lg mx-1"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                            <span className="text-sm font-medium">Xóa hồ sơ</span>
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </div>
                                         </TableCell>
                                     </TableRow>

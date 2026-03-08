@@ -62,7 +62,7 @@ export default function DashboardLayout({
 
     if (loading) {
         return (
-            <div className="flex h-screen w-screen items-center justify-center bg-white dark:bg-gray-950">
+            <div suppressHydrationWarning className="flex h-screen w-screen items-center justify-center bg-white dark:bg-gray-950">
                 <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
             </div>
         )
@@ -71,7 +71,7 @@ export default function DashboardLayout({
     const isAppStore = pathname === '/app-store'
 
     return (
-        <div className="flex h-[100dvh] bg-[#F8FAFC] dark:bg-gray-900 overflow-hidden transition-colors duration-300 font-sans">
+        <div suppressHydrationWarning className="flex h-[100dvh] bg-[#F8FAFC] dark:bg-gray-900 overflow-hidden transition-colors duration-300 font-sans">
             <MobileNav />
             <div className={cn(
                 "hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col transition-all duration-300 ease-in-out",
