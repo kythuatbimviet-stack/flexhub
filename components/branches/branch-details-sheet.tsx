@@ -97,10 +97,22 @@ export function BranchDetailsSheet({
         }
     }
 
-    const InfoRow = ({ icon: Icon, label, value, name, type = 'text' }: any) => (
-        <div className="space-y-2">
-            <Label className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                <Icon className="w-4 h-4 text-red-500/80 dark:text-red-400" />
+    const CardSection = ({ title, icon: Icon, children }: any) => (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
+                    <Icon className="w-4 h-4" />
+                </div>
+                <h3 className="text-[12px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">{title}</h3>
+            </div>
+            {children}
+        </div>
+    )
+
+    const DetailRow = ({ label, value, name, type = 'text', icon: Icon }: any) => (
+        <div className="space-y-1.5">
+            <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                {Icon && <Icon className="w-3 h-3" />}
                 {label}
             </Label>
             {isEditing ? (
@@ -109,10 +121,10 @@ export function BranchDetailsSheet({
                     type={type}
                     value={formData[name] || ''}
                     onChange={handleInputChange}
-                    className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 text-sm focus:ring-2 focus:ring-red-500 shadow-sm border-2"
+                    className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
                 />
             ) : (
-                <p className="text-base font-medium text-slate-900 dark:text-slate-100 pl-6 border-l-2 border-red-50 dark:border-red-900/30 ml-2">
+                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
                     {value || '-'}
                 </p>
             )}
@@ -121,109 +133,153 @@ export function BranchDetailsSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-xl border-none shadow-2xl p-0 flex flex-col h-full bg-white dark:bg-gray-950 font-inter">
-                <div className="p-8 bg-gradient-to-br from-red-50/50 to-white dark:from-red-950/10 dark:to-gray-950 border-b border-gray-100 dark:border-gray-800">
-                    <SheetHeader className="space-y-1">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-5">
-                                <div className="w-16 h-16 rounded-[1.25rem] bg-red-600 flex items-center justify-center text-white shadow-2xl shadow-red-200 dark:shadow-red-900/40 transition-transform hover:scale-105">
-                                    <Building2 className="w-10 h-10" />
-                                </div>
-                                <div>
-                                    <SheetTitle className="text-2xl font-semibold text-slate-950 dark:text-white">
-                                        {isEditing ? 'Chỉnh sửa chi nhánh' : branch.name}
-                                    </SheetTitle>
-                                    <div className="flex items-center gap-3 mt-1.5">
-                                        <span className="text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded-md">
-                                            {branch.id}
-                                        </span>
-                                        {branch.short_name && (
-                                            <>
-                                                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
-                                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                                    {branch.short_name}
-                                                </span>
-                                            </>
-                                        )}
+            <SheetContent
+                side="right"
+                showCloseButton={false}
+                className="w-full sm:max-w-[480px] border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
+            >
+                {/* Sticky Header */}
+                <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+                            <Building2 className="w-6 h-6" />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                                {isEditing ? 'Chỉnh sửa chi nhánh' : branch.name}
+                            </span>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">ID: {branch.id}</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        {!isEditing && (
+                            <>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleDelete}
+                                    className="sm:hidden rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                    disabled={loading}
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setIsEditing(true)}
+                                    className="sm:hidden rounded-full text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                                    disabled={loading}
+                                >
+                                    <Edit2 className="w-5 h-5" />
+                                </Button>
+                            </>
+                        )}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onOpenChange(false)}
+                            className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                        >
+                            <X className="w-5 h-5 text-slate-400" />
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4">
+                    {/* Top Profile Card */}
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-start gap-5">
+                            <div className="w-20 h-20 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20 shrink-0">
+                                <Building2 className="w-12 h-12" />
+                            </div>
+                            <div className="flex-1 min-w-0 pt-1">
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">
+                                    {branch.name}
+                                </h2>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 truncate italic">
+                                    {branch.short_name || 'Chi nhánh ladyfit'}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-2 mt-3">
+                                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                        Đang hoạt động
+                                    </div>
+                                    <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30">
+                                        {branch.id}
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </SheetHeader>
-                </div>
+                    </div>
 
-                <div className="flex-1 overflow-y-auto px-8 py-10 space-y-12">
                     {/* Section: Thông tin cơ bản */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <Building2 className="w-5 h-5 text-red-600 dark:text-red-500" />
-                            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Thông tin cơ bản</h3>
+                    <CardSection title="Thông tin cơ bản" icon={Building2}>
+                        <div className="space-y-5">
+                            <DetailRow label="Tên chi nhánh" value={formData.name} name="name" icon={Building2} />
+                            <div className="grid grid-cols-2 gap-5">
+                                <DetailRow label="Tên viết tắt" value={formData.short_name} name="short_name" icon={Building2} />
+                                <DetailRow label="Số điện thoại" value={formData.phone} name="phone" icon={Phone} />
+                            </div>
+                            <DetailRow label="Người đại diện" value={formData.representative} name="representative" icon={User} />
+                            <DetailRow label="Địa chỉ" value={formData.address} name="address" icon={MapPin} />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                            <InfoRow icon={Building2} label="Tên chi nhánh" value={formData.name} name="name" />
-                            <InfoRow icon={Building2} label="Tên viết tắt" value={formData.short_name} name="short_name" />
-                            <InfoRow icon={User} label="Người đại diện" value={formData.representative} name="representative" />
-                            <InfoRow icon={Phone} label="Số điện thoại" value={formData.phone} name="phone" />
-                        </div>
-                        <InfoRow icon={MapPin} label="Địa chỉ chi nhánh" value={formData.address} name="address" />
-                    </div>
+                    </CardSection>
 
-                    {/* Section: Tài khoản ngân hàng */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <CreditCard className="w-5 h-5 text-red-600 dark:text-red-500" />
-                            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Thông tin thanh toán</h3>
+                    {/* Section: Thông tin thanh toán */}
+                    <CardSection title="Thông tin thanh toán" icon={CreditCard}>
+                        <div className="space-y-5">
+                            <div className="grid grid-cols-2 gap-5">
+                                <DetailRow label="Ngân hàng" value={formData.bank_name} name="bank_name" icon={CreditCard} />
+                                <DetailRow label="Số tài khoản" value={formData.account_number} name="account_number" type="number" icon={CreditCard} />
+                            </div>
+                            <DetailRow label="Chủ tài khoản" value={formData.account_holder} name="account_holder" icon={User} />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                            <InfoRow icon={CreditCard} label="Ngân hàng" value={formData.bank_name} name="bank_name" />
-                            <InfoRow icon={CreditCard} label="Số tài khoản" value={formData.account_number} name="account_number" type="number" />
-                        </div>
-                        <InfoRow icon={User} label="Chủ tài khoản" value={formData.account_holder} name="account_holder" />
-                    </div>
+                    </CardSection>
                 </div>
 
-                <div className="p-8 bg-slate-50/30 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-6">
-                    {isEditing ? (
-                        <>
+                {/* Sticky Footer */}
+                <div className="sticky bottom-0 bg-white dark:bg-gray-950 border-t border-slate-100 dark:border-slate-800 p-4 flex items-center justify-between gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0">
+                    <Button
+                        variant="ghost"
+                        onClick={() => onOpenChange(false)}
+                        className="rounded-xl h-11 px-6 font-bold text-[13px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-inter"
+                        disabled={loading}
+                    >
+                        Đóng
+                    </Button>
+
+                    <div className="flex items-center gap-2">
+                        {!isEditing && (
                             <Button
-                                variant="ghost"
-                                onClick={() => setIsEditing(false)}
-                                className="flex-1 rounded-xl h-12 font-semibold text-xs text-slate-500 hover:bg-white dark:hover:bg-slate-800 transition-all"
+                                variant="outline"
+                                onClick={handleDelete}
+                                className="rounded-xl h-11 px-4 font-bold text-[13px] border-red-50 text-red-500 hover:bg-red-50 hover:text-red-600 dark:border-red-900/30 dark:hover:bg-red-950/20 transition-all font-inter border-2"
                                 disabled={loading}
                             >
-                                <X className="w-4 h-4 mr-2" />
-                                Hủy bỏ
+                                <Trash2 className="w-4 h-4" />
                             </Button>
+                        )}
+
+                        {isEditing ? (
                             <Button
                                 onClick={handleSave}
-                                className="flex-1 rounded-xl h-12 font-semibold text-xs bg-slate-950 dark:bg-red-600 text-white hover:bg-black dark:hover:bg-red-700 shadow-2xl shadow-slate-200 dark:shadow-red-900/20 transition-all active:scale-95"
+                                className="rounded-xl h-11 px-8 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
                                 disabled={loading}
                             >
                                 <Save className="w-4 h-4 mr-2" />
-                                {loading ? 'Đang lưu...' : 'Lưu cập nhật'}
+                                {loading ? 'Đang lưu...' : 'Lưu lại'}
                             </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button
-                                variant="ghost"
-                                onClick={handleDelete}
-                                className="flex-1 rounded-xl h-12 font-semibold text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
-                                disabled={loading}
-                            >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Xóa chi nhánh
-                            </Button>
+                        ) : (
                             <Button
                                 onClick={() => setIsEditing(true)}
-                                className="flex-1 rounded-xl h-12 font-semibold text-xs bg-slate-950 dark:bg-slate-800 text-white hover:bg-black dark:hover:bg-gray-700 shadow-2xl shadow-slate-200 transition-all active:scale-95"
+                                className="rounded-xl h-11 px-10 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
                                 disabled={loading}
                             >
                                 <Edit2 className="w-4 h-4 mr-2" />
-                                Chỉnh sửa thông tin
+                                Sửa thông tin
                             </Button>
-                        </>
-                    )}
+                        )}
+                    </div>
                 </div>
             </SheetContent>
         </Sheet>

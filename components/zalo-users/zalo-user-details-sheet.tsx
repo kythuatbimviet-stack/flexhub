@@ -106,10 +106,22 @@ export function ZaloUserDetailsSheet({
         }
     }
 
-    const InfoRow = ({ icon: Icon, label, value, name, type = 'input' }: any) => (
-        <div className="space-y-2">
-            <Label className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                <Icon className="w-4 h-4 text-blue-500/80 dark:text-blue-400" />
+    const CardSection = ({ title, icon: Icon, children }: any) => (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
+                    <Icon className="w-4 h-4" />
+                </div>
+                <h3 className="text-[12px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">{title}</h3>
+            </div>
+            {children}
+        </div>
+    )
+
+    const DetailRow = ({ label, value, name, type = 'input', icon: Icon }: any) => (
+        <div className="space-y-1.5 text-left">
+            <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                {Icon && <Icon className="w-3 h-3" />}
                 {label}
             </Label>
             {isEditing ? (
@@ -118,18 +130,18 @@ export function ZaloUserDetailsSheet({
                         name={name}
                         value={formData[name] || ''}
                         onChange={handleInputChange}
-                        className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[100px] text-sm focus:ring-2 focus:ring-blue-500 shadow-sm border-2"
+                        className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 min-h-[100px] text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
                     />
                 ) : (
                     <Input
                         name={name}
                         value={formData[name] || ''}
                         onChange={handleInputChange}
-                        className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 text-sm focus:ring-2 focus:ring-blue-500 shadow-sm border-2"
+                        className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
                     />
                 )
             ) : (
-                <p className="text-base font-medium text-slate-900 dark:text-slate-100 pl-6 border-l-2 border-blue-50 dark:border-blue-900/30 ml-2">
+                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
                     {value || '-'}
                 </p>
             )}
@@ -138,139 +150,182 @@ export function ZaloUserDetailsSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-2xl border-none shadow-2xl p-0 flex flex-col h-full bg-white dark:bg-gray-950 font-inter">
-                <div className="p-8 bg-gradient-to-br from-blue-50/50 to-white dark:from-blue-950/10 dark:to-gray-950 border-b border-gray-100 dark:border-gray-800">
-                    <SheetHeader className="space-y-1">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-5">
-                                <div className="w-16 h-16 rounded-[1.25rem] bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden bg-cover bg-center shadow-2xl transition-transform hover:scale-105" style={{ backgroundImage: user.avatar_url ? `url(${user.avatar_url})` : 'none' }}>
-                                    {!user.avatar_url && <UserStar className="w-10 h-10 text-slate-400" />}
-                                </div>
-                                <div>
-                                    <SheetTitle className="text-2xl font-semibold text-slate-950 dark:text-white flex items-center gap-2">
-                                        {isEditing ? 'Chỉnh sửa Zalo User' : user.display_name}
-                                        {user.is_sensitive && <Shield className="w-5 h-5 text-rose-500" />}
-                                    </SheetTitle>
-                                    <div className="flex items-center gap-3 mt-1.5">
-                                        <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 px-2 py-0.5 rounded-md">
-                                            {user.user_type || 'Chưa định nghĩa'}
-                                        </span>
-                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
-                                        <div className={cn(
-                                            "flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-semibold",
-                                            user.is_following
-                                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
-                                                : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                                        )}>
-                                            <div className={cn("w-1.5 h-1.5 rounded-full", user.is_following ? "bg-emerald-600" : "bg-slate-400")} />
-                                            {user.is_following ? 'Đang quan tâm' : 'Đã bỏ quan tâm'}
-                                        </div>
+            <SheetContent
+                side="right"
+                showCloseButton={false}
+                className="w-full sm:max-w-[480px] border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
+            >
+                {/* Sticky Header */}
+                <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 overflow-hidden">
+                            {user.avatar_url ? (
+                                <img src={user.avatar_url} alt={user.display_name} className="w-full h-full object-cover" />
+                            ) : (
+                                <UserStar className="w-6 h-6" />
+                            )}
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight flex items-center gap-1.5">
+                                {isEditing ? 'Chỉnh sửa Zalo User' : user.display_name}
+                                {user.is_sensitive && <Shield className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
+                            </span>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">ID: {user.zalo_user_id?.slice(0, 12)}...</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        {!isEditing && (
+                            <>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleDelete}
+                                    className="sm:hidden rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                    disabled={loading}
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setIsEditing(true)}
+                                    className="sm:hidden rounded-full text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                                    disabled={loading}
+                                >
+                                    <Edit2 className="w-5 h-5" />
+                                </Button>
+                            </>
+                        )}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onOpenChange(false)}
+                            className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                        >
+                            <X className="w-5 h-5 text-slate-400" />
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4">
+                    {/* Top Profile Card */}
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-start gap-5">
+                            <div className="w-20 h-20 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20 shrink-0 overflow-hidden">
+                                {user.avatar_url ? (
+                                    <img src={user.avatar_url} alt={user.display_name} className="w-full h-full object-cover" />
+                                ) : (
+                                    <UserStar className="w-12 h-12" />
+                                )}
+                            </div>
+                            <div className="flex-1 min-w-0 pt-1">
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">
+                                    {user.display_name}
+                                </h2>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 truncate italic">
+                                    {user.alias || 'Chưa đặt biệt danh'}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-2 mt-3">
+                                    <div className={cn(
+                                        "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                                        user.is_following ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" : "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:border-slate-700"
+                                    )}>
+                                        <div className={cn("w-1.5 h-1.5 rounded-full", user.is_following ? "bg-emerald-500" : "bg-slate-400")} />
+                                        {user.is_following ? 'Đang quan tâm' : 'Bỏ quan tâm'}
+                                    </div>
+                                    <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30">
+                                        {user.user_type || 'Zalo OA'}
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </SheetHeader>
-                </div>
-
-                <div className="flex-1 overflow-y-auto px-8 py-10 space-y-12">
-                    {/* Section: Thông tin cơ bản */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <User className="w-5 h-5 text-blue-600 dark:text-blue-500" />
-                            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Thông tin cơ bản</h3>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                            <InfoRow icon={User} label="Tên hiển thị" value={formData.display_name} name="display_name" />
-                            <InfoRow icon={Info} label="Biệt danh (Alias)" value={formData.alias} name="alias" />
-                            <InfoRow icon={UserStar} label="Zalo User ID" value={formData.zalo_user_id} name="zalo_user_id" />
-                            <InfoRow icon={MessageSquare} label="User ID theo App" value={formData.user_id_by_app} name="user_id_by_app" />
-                        </div>
                     </div>
+
+                    {/* Section: Thông tin định danh */}
+                    <CardSection title="Thông tin định danh" icon={User}>
+                        <div className="space-y-5">
+                            <DetailRow label="Tên hiển thị" value={formData.display_name} name="display_name" icon={User} />
+                            <DetailRow label="Biệt danh (Alias)" value={formData.alias} name="alias" icon={Info} />
+                            <div className="grid grid-cols-1 gap-5">
+                                <DetailRow label="Zalo User ID" value={formData.zalo_user_id} name="zalo_user_id" icon={UserStar} />
+                                <DetailRow label="User ID theo App" value={formData.user_id_by_app} name="user_id_by_app" icon={MessageSquare} />
+                            </div>
+                        </div>
+                    </CardSection>
 
                     {/* Section: Phân loại & Ghi chú */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <Tag className="w-5 h-5 text-blue-600 dark:text-blue-500" />
-                            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Phân loại & Ghi chú</h3>
+                    <CardSection title="Phân loại & Ghi chú" icon={Tag}>
+                        <div className="space-y-5">
+                            <div className="grid grid-cols-2 gap-5">
+                                <DetailRow label="Loại người dùng" value={formData.user_type} name="user_type" icon={Building2} />
+                                <DetailRow label="Thẻ (Tags)" value={formData.tags} name="tags" icon={Tag} />
+                            </div>
+                            <DetailRow label="Ghi chú" value={formData.notes} name="notes" type="textarea" icon={StickyNote} />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                            <InfoRow icon={Building2} label="Loại người dùng" value={formData.user_type} name="user_type" />
-                            <InfoRow icon={Tag} label="Thẻ (Tags)" value={formData.tags} name="tags" />
-                        </div>
-                        <InfoRow icon={StickyNote} label="Ghi chú" value={formData.notes} name="notes" type="textarea" />
-                    </div>
+                    </CardSection>
 
                     {/* Section: Hệ thống */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <Clock className="w-5 h-5 text-blue-600 dark:text-blue-500" />
-                            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Dữ liệu hệ thống</h3>
+                    <CardSection title="Dữ liệu hệ thống" icon={Clock}>
+                        <div className="grid grid-cols-2 gap-5">
+                            <DetailRow
+                                label="Tương tác cuối"
+                                value={user.last_interaction_date ? new Date(user.last_interaction_date).toLocaleDateString('vi-VN') : '-'}
+                                name="last_interaction_date"
+                                icon={MessageSquare}
+                            />
+                            <DetailRow
+                                label="Ngày tạo"
+                                value={user.created_at ? new Date(user.created_at).toLocaleDateString('vi-VN') : '-'}
+                                name="created_at"
+                                icon={Calendar}
+                            />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                            <div className="space-y-2">
-                                <Label className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                    <MessageSquare className="w-4 h-4 text-blue-500/80 dark:text-blue-400" />
-                                    Tương tác cuối cùng
-                                </Label>
-                                <p className="text-base font-medium text-slate-900 dark:text-slate-100 pl-6 border-l-2 border-blue-50 dark:border-blue-900/30 ml-2">
-                                    {user.last_interaction_date ? new Date(user.last_interaction_date).toLocaleDateString('vi-VN') : '-'}
-                                </p>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                    <Calendar className="w-4 h-4 text-blue-500/80 dark:text-blue-400" />
-                                    Ngày tạo bản ghi
-                                </Label>
-                                <p className="text-base font-medium text-slate-900 dark:text-slate-100 pl-6 border-l-2 border-blue-50 dark:border-blue-900/30 ml-2">
-                                    {user.created_at ? new Date(user.created_at).toLocaleDateString('vi-VN') : '-'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                    </CardSection>
                 </div>
 
-                <div className="p-8 bg-gray-50/30 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between gap-6">
-                    {isEditing ? (
-                        <>
+                {/* Sticky Footer */}
+                <div className="sticky bottom-0 bg-white dark:bg-gray-950 border-t border-slate-100 dark:border-slate-800 p-4 flex items-center justify-between gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0">
+                    <Button
+                        variant="ghost"
+                        onClick={() => onOpenChange(false)}
+                        className="rounded-xl h-11 px-6 font-bold text-[13px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-inter"
+                        disabled={loading}
+                    >
+                        Đóng
+                    </Button>
+
+                    <div className="flex items-center gap-2">
+                        {!isEditing && (
                             <Button
-                                variant="ghost"
-                                onClick={() => setIsEditing(false)}
-                                className="flex-1 rounded-xl h-12 font-bold text-xs uppercase tracking-widest text-gray-500 hover:bg-white dark:hover:bg-gray-800 transition-all"
+                                variant="outline"
+                                onClick={handleDelete}
+                                className="rounded-xl h-11 px-4 font-bold text-[13px] border-red-50 text-red-500 hover:bg-red-50 hover:text-red-600 dark:border-red-900/30 dark:hover:bg-red-950/20 transition-all font-inter border-2"
                                 disabled={loading}
                             >
-                                <X className="w-4 h-4 mr-2" />
-                                Hủy bỏ
+                                <Trash2 className="w-4 h-4" />
                             </Button>
+                        )}
+
+                        {isEditing ? (
                             <Button
                                 onClick={handleSave}
-                                className="flex-1 rounded-xl h-12 font-bold text-xs uppercase tracking-widest bg-gray-950 dark:bg-blue-600 text-white hover:bg-black dark:hover:bg-blue-700 shadow-2xl shadow-gray-200 dark:shadow-blue-900/20 transition-all active:scale-95"
+                                className="rounded-xl h-11 px-8 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
                                 disabled={loading}
                             >
                                 <Save className="w-4 h-4 mr-2" />
-                                {loading ? 'Đang lưu...' : 'Lưu cập nhật'}
+                                {loading ? 'Đang lưu...' : 'Lưu lại'}
                             </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button
-                                variant="ghost"
-                                onClick={handleDelete}
-                                className="flex-1 rounded-xl h-12 font-bold text-xs uppercase tracking-widest text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
-                                disabled={loading}
-                            >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Xóa người dùng
-                            </Button>
+                        ) : (
                             <Button
                                 onClick={() => setIsEditing(true)}
-                                className="flex-1 rounded-xl h-12 font-bold text-xs uppercase tracking-widest bg-gray-950 dark:bg-gray-800 text-white hover:bg-black dark:hover:bg-gray-700 shadow-2xl shadow-gray-200 transition-all active:scale-95"
+                                className="rounded-xl h-11 px-10 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
                                 disabled={loading}
                             >
                                 <Edit2 className="w-4 h-4 mr-2" />
-                                Chỉnh sửa thông tin
+                                Sửa thông tin
                             </Button>
-                        </>
-                    )}
+                        )}
+                    </div>
                 </div>
             </SheetContent>
         </Sheet>

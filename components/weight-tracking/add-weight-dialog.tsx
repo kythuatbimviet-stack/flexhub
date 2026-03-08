@@ -75,9 +75,10 @@ interface AddWeightDialogProps {
     isQuickAction?: boolean
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    triggerOverride?: React.ReactNode
 }
 
-export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDate, isQuickAction, open: controlledOpen, onOpenChange }: AddWeightDialogProps) {
+export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDate, isQuickAction, open: controlledOpen, onOpenChange, triggerOverride }: AddWeightDialogProps) {
     const [internalOpen, setInternalOpen] = React.useState(false)
     const open = controlledOpen !== undefined ? controlledOpen : internalOpen
     const setOpen = onOpenChange || setInternalOpen
@@ -146,16 +147,18 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
         <Dialog open={open} onOpenChange={setOpen}>
             {onOpenChange === undefined && (
                 <DialogTrigger asChild>
-                    <Button
-                        className={cn(
-                            isQuickAction
-                                ? "h-20 rounded-2xl flex-col gap-2 border-slate-100 dark:border-slate-800 hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all font-medium text-xs text-slate-600 dark:text-slate-400 hover:text-emerald-600 bg-transparent shadow-none border"
-                                : "bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 h-10 transition-colors shadow-sm"
-                        )}
-                    >
-                        <Plus className={cn(isQuickAction ? "w-5 h-5" : "w-4 h-4 mr-2")} />
-                        {initialClientId ? 'Cập nhật cân nặng' : 'Thêm mới'}
-                    </Button>
+                    {triggerOverride || (
+                        <Button
+                            className={cn(
+                                isQuickAction
+                                    ? "h-20 rounded-2xl flex-col gap-2 border-slate-100 dark:border-slate-800 hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all font-medium text-xs text-slate-600 dark:text-slate-400 hover:text-emerald-600 bg-transparent shadow-none border"
+                                    : "bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 h-10 transition-colors shadow-sm"
+                            )}
+                        >
+                            <Plus className={cn(isQuickAction ? "w-5 h-5" : "w-4 h-4 mr-2")} />
+                            {initialClientId ? 'Cập nhật cân nặng' : 'Thêm mới'}
+                        </Button>
+                    )}
                 </DialogTrigger>
             )}
             <DialogContent className="max-w-xl rounded-3xl border-none shadow-2xl bg-white dark:bg-gray-900">

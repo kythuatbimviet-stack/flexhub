@@ -155,10 +155,23 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
         setFormData((prev: any) => ({ ...prev, branch_id: value }))
     }
 
-    const InfoRow = ({ icon: Icon, label, value, name, type = "text" }: any) => (
-        <div className="space-y-2">
-            <Label className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                <Icon className="w-4 h-4 text-red-500/80 dark:text-red-400" />
+    const CardSection = ({ title, icon: Icon, children }: any) => (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden mb-5">
+            <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                    <Icon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="text-[12px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">{title}</h3>
+            </div>
+            <div className="p-5 space-y-5">
+                {children}
+            </div>
+        </div>
+    )
+
+    const InfoRow = ({ label, value, name, type = "text" }: any) => (
+        <div className="space-y-1">
+            <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 {label}
             </Label>
             {isEditing ? (
@@ -167,7 +180,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                         name={name}
                         value={formData[name] || ''}
                         onChange={handleChange}
-                        className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[100px] text-sm focus:ring-2 focus:ring-red-500 shadow-sm border-2"
+                        className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[80px] text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
                     />
                 ) : (
                     <Input
@@ -176,12 +189,12 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                         step={type === 'number' ? '0.1' : undefined}
                         value={formData[name] ?? ''}
                         onChange={handleChange}
-                        className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 text-sm focus:ring-2 focus:ring-red-500 shadow-sm border-2"
+                        className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
                     />
                 )
             ) : (
-                <p className="text-base font-medium text-slate-900 dark:text-slate-100 pl-6 border-l-2 border-red-50 dark:border-red-900/30 ml-2">
-                    {value || <span className="text-slate-300 italic font-normal">Chưa cập nhật</span>}
+                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                    {value || <span className="text-slate-300 italic font-normal text-sm">Chưa cập nhật</span>}
                 </p>
             )}
         </div>
@@ -189,47 +202,100 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-2xl border-none shadow-2xl p-0 flex flex-col h-full bg-white dark:bg-gray-950 font-inter">
-                <div className="p-8 bg-gradient-to-br from-red-50/50 to-white dark:from-red-950/10 dark:to-gray-950 border-b border-gray-100 dark:border-gray-800">
-                    <SheetHeader className="space-y-1">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-5">
-                                <div className="w-16 h-16 rounded-[1.25rem] bg-red-600 flex items-center justify-center text-white shadow-2xl transition-transform hover:scale-105">
-                                    <UserCircle className="w-10 h-10" />
-                                </div>
-                                <div>
-                                    <SheetTitle className="text-2xl font-medium text-slate-950 dark:text-white flex items-center gap-2">
-                                        {isEditing ? 'Chỉnh sửa hồ sơ' : client.member_name}
-                                    </SheetTitle>
-                                    <div className="flex items-center gap-3 mt-1.5">
-                                        <span className="text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded-md uppercase tracking-wider">
-                                            {client.id}
-                                        </span>
-                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
-                                        <div className={cn(
-                                            "flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-medium uppercase tracking-widest",
-                                            client.status === 'Đang tập' ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                                        )}>
-                                            <div className={cn("w-1.5 h-1.5 rounded-full", client.status === 'Đang tập' ? "bg-emerald-600" : "bg-slate-400")} />
-                                            {formData.status}
-                                        </div>
+            <SheetContent
+                side="right"
+                showCloseButton={false}
+                className="w-full sm:max-w-[480px] border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
+            >
+                {/* Sticky Header */}
+                <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+                            <UserCircle className="w-6 h-6" />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{client.member_name}</span>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">{client.email || 'No email provided'}</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        {!isEditing && (
+                            <>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleDelete}
+                                    className="sm:hidden rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                    disabled={loading}
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setIsEditing(true)}
+                                    className="sm:hidden rounded-full text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                                    disabled={loading}
+                                >
+                                    <Edit2 className="w-5 h-5" />
+                                </Button>
+                            </>
+                        )}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onOpenChange(false)}
+                            className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                        >
+                            <X className="w-5 h-5 text-slate-400" />
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4">
+                    {/* Top Profile Card */}
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-start gap-5">
+                            <div className="w-20 h-20 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20 shrink-0">
+                                <UserCircle className="w-12 h-12" />
+                            </div>
+                            <div className="flex-1 min-w-0 pt-1">
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">
+                                    {client.member_name}
+                                </h2>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 truncate italic">
+                                    {client.email || 'Chưa cập nhật email'}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-2 mt-3">
+                                    <div className={cn(
+                                        "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                                        formData.status === 'Đang tập' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" : "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
+                                    )}>
+                                        <div className={cn("w-1.5 h-1.5 rounded-full", formData.status === 'Đang tập' ? "bg-emerald-500" : "bg-slate-400")} />
+                                        {formData.status}
+                                    </div>
+                                    <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30">
+                                        {branches?.find((b: any) => b.id === formData.branch_id)?.name || 'Hệ thống'}
                                     </div>
                                 </div>
                             </div>
-                            {!isEditing && (
+                        </div>
+
+                        {!isEditing && (
+                            <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between gap-3">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button
-                                            variant="ghost"
+                                            variant="outline"
                                             size="sm"
-                                            className="h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all font-medium text-[11px] gap-2 px-3 border border-slate-200 dark:border-slate-700"
+                                            className="flex-1 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all font-bold text-[10px] gap-2 shadow-none border-none"
                                             disabled={loading}
                                         >
-                                            Chuyển trạng thái
+                                            ĐỔI TRẠNG THÁI
                                             <ChevronDown className="w-3.5 h-3.5 opacity-50" />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-[180px] rounded-xl border-slate-200 dark:border-slate-800 p-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-100">
+                                    <DropdownMenuContent align="start" className="w-[200px] rounded-xl border-slate-200 dark:border-slate-800 p-1.5 shadow-xl">
                                         <div className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Trạng thái mới</div>
                                         {clientStatuses.length > 0 ? (
                                             clientStatuses.map((s: any) => (
@@ -249,7 +315,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                     }}
                                                     className={cn(
                                                         "rounded-lg text-[13px] font-medium px-3 py-2 cursor-pointer transition-colors",
-                                                        formData.status === s.nam ? "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                        formData.status === s.nam ? "bg-blue-50 text-blue-600 dark:bg-blue-950/30" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                                                     )}
                                                 >
                                                     {s.nam}
@@ -272,8 +338,8 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                         });
                                                     }}
                                                     className={cn(
-                                                        "rounded-lg text-[13px] font-medium px-3 py-2 cursor-pointer transition-colors",
-                                                        formData.status === status ? "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                        "rounded-lg text-[13px] font-medium px-3 py-2 cursor-pointer",
+                                                        formData.status === status ? "bg-blue-50 text-blue-600" : "text-slate-600"
                                                     )}
                                                 >
                                                     {status}
@@ -282,200 +348,150 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                         )}
                                     </DropdownMenuContent>
                                 </DropdownMenu>
-                            )}
-                        </div>
-                    </SheetHeader>
-                </div>
 
-                <div className="flex-1 overflow-y-auto px-8 py-10 space-y-12">
-                    {/* Section: Quick Actions */}
+                                <div className="w-px h-6 bg-slate-100 dark:bg-slate-800" />
+
+                                <div className="flex-1 flex gap-2">
+                                    {client.phone && (
+                                        <Button
+                                            asChild
+                                            variant="ghost"
+                                            size="sm"
+                                            className="flex-1 h-9 rounded-xl text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20 font-bold text-[10px]"
+                                        >
+                                            <a href={`tel:${client.phone}`}>
+                                                <Phone className="w-3.5 h-3.5 mr-2" />
+                                                GỌI ĐIỆN
+                                            </a>
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     {!isEditing && (
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-                                <Activity className="w-5 h-5 text-red-600 dark:text-red-500" />
-                                <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100">Thao tác nhanh</h3>
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                {client.phone && (
+                        <div className="grid grid-cols-2 gap-3">
+                            <AddContractDialog
+                                initialClientId={client.id}
+                                onSuccess={onSuccess}
+                                isQuickAction={false}
+                                triggerOverride={
                                     <Button
-                                        asChild
                                         variant="outline"
-                                        className="h-20 rounded-2xl flex-col gap-2 border-slate-100 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all font-medium text-xs text-slate-600 dark:text-slate-400 hover:text-blue-600"
+                                        className="h-14 rounded-2xl gap-3 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-blue-50 hover:text-blue-600 transition-all font-bold text-[11px] uppercase tracking-wider shadow-sm border-2"
                                     >
-                                        <a href={`tel:${client.phone}`}>
-                                            <Phone className="w-5 h-5" />
-                                            Gọi khách
-                                        </a>
+                                        <PlusCircle className="w-4 h-4 text-blue-500" />
+                                        Hợp đồng mới
                                     </Button>
-                                )}
-
-                                <AddContractDialog
-                                    initialClientId={client.id}
-                                    onSuccess={onSuccess}
-                                    isQuickAction={true}
-                                />
-
-                                <AddWeightDialog
-                                    clients={[client]}
-                                    initialClientId={client.id}
-                                    onSuccess={onSuccess}
-                                    isQuickAction={true}
-                                />
-                            </div>
+                                }
+                            />
+                            <AddWeightDialog
+                                clients={[client]}
+                                initialClientId={client.id}
+                                onSuccess={onSuccess}
+                                triggerOverride={
+                                    <Button
+                                        variant="outline"
+                                        className="h-14 rounded-2xl gap-3 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-blue-50 hover:text-blue-600 transition-all font-bold text-[11px] uppercase tracking-wider shadow-sm border-2"
+                                    >
+                                        <Activity className="w-4 h-4 text-emerald-500" />
+                                        Cân nặng
+                                    </Button>
+                                }
+                            />
                         </div>
                     )}
 
-                    {/* Section: Thông tin cơ bản */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <User className="w-5 h-5 text-red-600 dark:text-red-500" />
-                            <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100">Thông tin cơ bản</h3>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                            <InfoRow icon={User} label="Họ và Tên hội viên" value={formData.member_name} name="member_name" />
-                            <div className="space-y-2">
-                                <Label className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                    <Activity className="w-4 h-4 text-red-500/80 dark:text-red-400" />
-                                    Trạng thái
-                                </Label>
-                                {isEditing ? (
-                                    <Select
-                                        onValueChange={handleStatusChange}
-                                        value={formData.status}
-                                    >
-                                        <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 text-sm focus:ring-2 focus:ring-red-500 shadow-sm border-2">
-                                            <SelectValue placeholder="Chọn trạng thái" />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl">
-                                            {clientStatuses.length > 0 ? (
-                                                clientStatuses.map((s) => (
-                                                    <SelectItem key={s.id} value={s.nam}>
-                                                        {s.nam}
-                                                    </SelectItem>
-                                                ))
-                                            ) : (
-                                                <>
-                                                    <SelectItem value="Chốt đăng kí">Chốt đăng kí</SelectItem>
-                                                    <SelectItem value="Đang tập">Đang tập</SelectItem>
-                                                    <SelectItem value="Tạm dừng">Tạm dừng</SelectItem>
-                                                    <SelectItem value="Đã nghỉ">Đã nghỉ</SelectItem>
-                                                </>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                ) : (
-                                    <p className="text-base font-medium text-slate-900 dark:text-slate-100 pl-6 border-l-2 border-red-50 dark:border-red-900/30 ml-2">{formData.status}</p>
-                                )}
+                    {/* Section: Thông tin cá nhân */}
+                    <CardSection title="Thông tin cá nhân" icon={User}>
+                        <div className="space-y-5">
+                            <InfoRow label="Họ và Tên" value={formData.member_name} name="member_name" />
+                            <div className="grid grid-cols-2 gap-5">
+                                <InfoRow label="Số điện thoại" value={formData.phone} name="phone" />
+                                <InfoRow label="Email" value={formData.email} name="email" />
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                    <Activity className="w-4 h-4 text-red-500/80 dark:text-red-400" />
-                                    Chi nhánh
-                                </Label>
-                                {isEditing ? (
-                                    <Select
-                                        onValueChange={handleBranchChange}
-                                        value={formData.branch_id || undefined}
-                                    >
-                                        <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 text-sm focus:ring-2 focus:ring-red-500 shadow-sm border-2">
-                                            <SelectValue placeholder="Chọn chi nhánh" />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl">
-                                            {branches?.map((branch: any) => (
-                                                <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                ) : (
-                                    <p className="text-base font-medium text-slate-900 dark:text-slate-100 pl-6 border-l-2 border-red-50 dark:border-red-900/30 ml-2">
-                                        {branches?.find((b: any) => b.id === formData.branch_id)?.name || 'Chưa gán chi nhánh'}
-                                    </p>
-                                )}
+                            <InfoRow label="Địa chỉ" value={formData.address} name="address" />
+                            <div className="grid grid-cols-2 gap-5">
+                                <InfoRow label="Zalo ID" value={formData.zalo_id} name="zalo_id" />
+                                <InfoRow label="Facebook ID" value={formData.facebook_id} name="facebook_id" />
                             </div>
-                            <InfoRow icon={Phone} label="Số điện thoại" value={formData.phone} name="phone" />
-                            <InfoRow icon={Mail} label="Email" value={formData.email} name="email" />
-                            <InfoRow icon={MessageSquare} label="Zalo ID" value={formData.zalo_id} name="zalo_id" />
-                            <InfoRow icon={User} label="Facebook ID" value={formData.facebook_id} name="facebook_id" />
                         </div>
-                        <InfoRow icon={MapPin} label="Địa chỉ cư trú" value={formData.address} name="address" />
-                    </div>
+                    </CardSection>
 
                     {/* Section: Chỉ số cơ thể */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <Activity className="w-5 h-5 text-red-600 dark:text-red-500" />
-                            <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100">Chỉ số cơ thể & Mục tiêu</h3>
+                    <CardSection title="Chỉ số cơ thể & Mục tiêu" icon={Activity}>
+                        <div className="grid grid-cols-2 gap-5 mb-5">
+                            <InfoRow label="Tuổi" value={formData.age} name="age" type="number" />
+                            <InfoRow label="Chiều cao (cm)" value={formData.height} name="height" type="number" />
+                            <InfoRow label="Cân nặng (kg)" value={formData.weight} name="weight" type="number" />
+                            <InfoRow label="Mục tiêu (kg)" value={formData.target_weight} name="target_weight" type="number" />
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-8">
-                            <InfoRow icon={User} label="Tuổi" value={formData.age} name="age" type="number" />
-                            <InfoRow icon={Activity} label="Chiều cao (cm)" value={formData.height} name="height" type="number" />
-                            <InfoRow icon={Activity} label="Cân nặng (kg)" value={formData.weight} name="weight" type="number" />
-                            <InfoRow icon={Target} label="Mục tiêu (kg)" value={formData.target_weight} name="target_weight" type="number" />
+                        <div className="space-y-5">
+                            <InfoRow label="Mục tiêu tập luyện" value={formData.goal} name="goal" type="textarea" />
+                            <InfoRow label="Tiền sử bệnh lý" value={formData.medical_history} name="medical_history" type="textarea" />
                         </div>
-                        <div className="grid grid-cols-1 gap-8">
-                            <InfoRow icon={Target} label="Mục tiêu tập luyện" value={formData.goal} name="goal" type="textarea" />
-                            <InfoRow icon={HeartPulse} label="Tiền sử bệnh lý" value={formData.medical_history} name="medical_history" type="textarea" />
-                        </div>
-                    </div>
+                    </CardSection>
 
-                    {/* Section: PT & Đăng ký */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <Dumbbell className="w-5 h-5 text-red-600 dark:text-red-500" />
-                            <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100">Huấn luyện & Gói tập</h3>
+                    {/* Section: Huấn luyện & Gói tập */}
+                    <CardSection title="Huấn luyện & Gói tập" icon={Dumbbell}>
+                        <div className="space-y-5">
+                            <div className="grid grid-cols-2 gap-5">
+                                <InfoRow label="PT Phụ trách" value={formData.pt_name} name="pt_name" />
+                                <InfoRow label="Loại đăng ký" value={formData.registration_type} name="registration_type" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-5">
+                                <InfoRow label="Thời gian tập" value={formData.training_time} name="training_time" />
+                                <InfoRow label="Chu kỳ khách" value={formData.customer_cycle} name="customer_cycle" />
+                            </div>
+                            <InfoRow label="Ghi chú thêm" value={formData.notes} name="notes" type="textarea" />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                            <InfoRow icon={Dumbbell} label="PT Phụ trách" value={formData.pt_name} name="pt_name" />
-                            <InfoRow icon={ClipboardList} label="Loại đăng ký" value={formData.registration_type} name="registration_type" />
-                            <InfoRow icon={Activity} label="Thời gian tập" value={formData.training_time} name="training_time" />
-                            <InfoRow icon={ClipboardList} label="Chu kỳ khách hàng" value={formData.customer_cycle} name="customer_cycle" />
-                        </div>
-                        <InfoRow icon={ClipboardList} label="Ghi chú thêm" value={formData.notes} name="notes" type="textarea" />
-                    </div>
+                    </CardSection>
                 </div>
 
-                <div className="p-8 bg-gray-50/30 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between gap-6">
-                    {isEditing ? (
-                        <>
+                {/* Sticky Footer */}
+                <div className="sticky bottom-0 bg-white dark:bg-gray-950 border-t border-slate-100 dark:border-slate-800 p-4 flex items-center justify-between gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0">
+                    <Button
+                        variant="ghost"
+                        onClick={() => onOpenChange(false)}
+                        className="rounded-xl h-11 px-6 font-bold text-[13px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-inter"
+                        disabled={loading}
+                    >
+                        Đóng
+                    </Button>
+
+                    <div className="flex items-center gap-2">
+                        {!isEditing && (
                             <Button
-                                variant="ghost"
-                                onClick={() => setIsEditing(false)}
-                                className="flex-1 rounded-xl h-12 font-medium text-xs uppercase tracking-widest text-gray-500 hover:bg-white dark:hover:bg-gray-800 transition-all"
+                                variant="outline"
+                                onClick={handleDelete}
+                                className="rounded-xl h-11 px-4 font-bold text-[13px] border-red-50 text-red-500 hover:bg-red-50 hover:text-red-600 dark:border-red-900/30 dark:hover:bg-red-950/20 transition-all font-inter border-2"
                                 disabled={loading}
                             >
-                                <X className="w-4 h-4 mr-2" />
-                                Hủy bỏ
+                                <Trash2 className="w-4 h-4" />
                             </Button>
+                        )}
+
+                        {isEditing ? (
                             <Button
                                 onClick={handleSave}
-                                className="flex-1 rounded-xl h-12 font-medium text-xs uppercase tracking-widest bg-gray-950 dark:bg-red-600 text-white hover:bg-black dark:hover:bg-red-700 shadow-2xl shadow-gray-200 dark:shadow-red-900/20 transition-all active:scale-95"
+                                className="rounded-xl h-11 px-8 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
                                 disabled={loading}
                             >
                                 <Save className="w-4 h-4 mr-2" />
-                                {loading ? 'Đang lưu...' : 'Lưu cập nhật'}
+                                {loading ? 'Đang lưu...' : 'Lưu lại'}
                             </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button
-                                variant="ghost"
-                                onClick={handleDelete}
-                                className="flex-1 rounded-xl h-12 font-medium text-xs uppercase tracking-widest text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
-                                disabled={loading}
-                            >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Xóa hồ sơ
-                            </Button>
+                        ) : (
                             <Button
                                 onClick={() => setIsEditing(true)}
-                                className="flex-1 rounded-xl h-12 font-medium text-xs uppercase tracking-widest bg-gray-950 dark:bg-gray-800 text-white hover:bg-black dark:hover:bg-gray-700 shadow-2xl shadow-gray-200 transition-all active:scale-95"
+                                className="rounded-xl h-11 px-10 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
                                 disabled={loading}
                             >
                                 <Edit2 className="w-4 h-4 mr-2" />
-                                Chỉnh sửa Hồ sơ
+                                Sửa hồ sơ
                             </Button>
-                        </>
-                    )}
+                        )}
+                    </div>
                 </div>
             </SheetContent>
         </Sheet>

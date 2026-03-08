@@ -73,7 +73,7 @@ const contractFormSchema = z.object({
     status: z.string().optional(),
 })
 
-export function AddContractDialog({ onSuccess, initialClientId, isQuickAction }: { onSuccess: () => void, initialClientId?: string, isQuickAction?: boolean }) {
+export function AddContractDialog({ onSuccess, initialClientId, isQuickAction, triggerOverride }: { onSuccess: () => void, initialClientId?: string, isQuickAction?: boolean, triggerOverride?: React.ReactNode }) {
     const [open, setOpen] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
     const [clients, setClients] = React.useState<any[]>([])
@@ -190,16 +190,18 @@ export function AddContractDialog({ onSuccess, initialClientId, isQuickAction }:
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button
-                    className={cn(
-                        isQuickAction
-                            ? "h-20 rounded-2xl flex-col gap-2 border-slate-100 dark:border-slate-800 hover:border-red-500 hover:bg-red-50/50 dark:hover:bg-red-950/20 transition-all font-medium text-xs text-slate-600 dark:text-slate-400 hover:text-red-600 bg-transparent shadow-none border"
-                            : "bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 h-10 transition-colors shadow-sm"
-                    )}
-                >
-                    <Plus className={cn(isQuickAction ? "w-5 h-5" : "w-4 h-4 mr-2")} />
-                    Tạo hợp đồng
-                </Button>
+                {triggerOverride || (
+                    <Button
+                        className={cn(
+                            isQuickAction
+                                ? "h-20 rounded-2xl flex-col gap-2 border-slate-100 dark:border-slate-800 hover:border-red-500 hover:bg-red-50/50 dark:hover:bg-red-950/20 transition-all font-medium text-xs text-slate-600 dark:text-slate-400 hover:text-red-600 bg-transparent shadow-none border"
+                                : "bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 h-10 transition-colors shadow-sm"
+                        )}
+                    >
+                        <Plus className={cn(isQuickAction ? "w-5 h-5" : "w-4 h-4 mr-2")} />
+                        Tạo hợp đồng
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl border-none shadow-2xl font-inter bg-white dark:bg-gray-950">
                 <DialogHeader>

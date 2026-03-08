@@ -124,10 +124,22 @@ export function ContractDetailsSheet({
         }
     }
 
-    const InfoRow = ({ icon: Icon, label, value, name, type = 'text' }: any) => (
-        <div className="space-y-2">
-            <Label className="text-[10px] font-medium text-gray-400 dark:text-gray-500 tracking-tight flex items-center gap-2">
-                <Icon className="w-3.5 h-3.5" />
+    const CardSection = ({ title, icon: Icon, children }: any) => (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
+                    <Icon className="w-4 h-4" />
+                </div>
+                <h3 className="text-[12px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">{title}</h3>
+            </div>
+            {children}
+        </div>
+    )
+
+    const DetailRow = ({ label, value, name, type = 'text', icon: Icon }: any) => (
+        <div className="space-y-1.5">
+            <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                {Icon && <Icon className="w-3 h-3" />}
                 {label}
             </Label>
             {isEditing ? (
@@ -136,191 +148,244 @@ export function ContractDetailsSheet({
                     type={type}
                     value={formData[name] || ''}
                     onChange={handleInputChange}
-                    className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900 h-10 text-sm focus:ring-2 focus:ring-red-500 shadow-sm outline-none"
+                    className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
                 />
             ) : (
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{value || '-'}</p>
+                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                    {type === 'number' && value ? Number(value).toLocaleString('vi-VN') + ' ₫' : (value || '-')}
+                </p>
             )}
         </div>
     )
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-2xl border-none shadow-2xl p-0 flex flex-col h-full bg-white dark:bg-gray-950 font-inter">
-                <div className="p-8 bg-gradient-to-br from-red-50/50 to-white dark:from-red-950/10 dark:to-gray-950 border-b border-gray-100 dark:border-gray-800">
-                    <SheetHeader className="space-y-1">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-5">
-                                <div className="w-16 h-16 rounded-[1.25rem] bg-gray-900 dark:bg-red-600 flex items-center justify-center text-white shadow-2xl shadow-gray-200 dark:shadow-red-900/40 transition-transform hover:scale-105">
-                                    <FileText className="w-10 h-10" />
-                                </div>
-                                <div>
-                                    <SheetTitle className="text-2xl font-medium text-gray-950 dark:text-white">
-                                        {isEditing ? 'Chỉnh sửa Hợp đồng' : contract.member_name}
-                                    </SheetTitle>
-                                    <div className="flex items-center gap-3 mt-1.5">
-                                        <span className="text-[10px] font-medium text-red-600 dark:text-red-500 tracking-tight">
-                                            {contract.id}
-                                        </span>
-                                        <div className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
-                                        <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 tracking-tight leading-none mt-0.5">
-                                            {contract.status || 'Đang thực hiện'}
-                                        </span>
+            <SheetContent
+                side="right"
+                showCloseButton={false}
+                className="w-full sm:max-w-[480px] border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
+            >
+                {/* Sticky Header */}
+                <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+                            <FileText className="w-6 h-6" />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                                {isEditing ? 'Chỉnh sửa Hợp đồng' : `Hợp đồng: ${contract.member_name}`}
+                            </span>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">ID: {contract.id}</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        {!isEditing && (
+                            <>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleDelete}
+                                    className="sm:hidden rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                    disabled={loading}
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setIsEditing(true)}
+                                    className="sm:hidden rounded-full text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                                    disabled={loading}
+                                >
+                                    <Edit2 className="w-5 h-5" />
+                                </Button>
+                            </>
+                        )}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onOpenChange(false)}
+                            className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                        >
+                            <X className="w-5 h-5 text-slate-400" />
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4">
+                    {/* Top Status Card */}
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-start gap-5">
+                            <div className="w-20 h-20 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20 shrink-0">
+                                <FileText className="w-12 h-12" />
+                            </div>
+                            <div className="flex-1 min-w-0 pt-1">
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">
+                                    {contract.package_name}
+                                </h2>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 truncate italic">
+                                    {contract.member_name}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-2 mt-3">
+                                    <div className={cn(
+                                        "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                                        formData.status === 'Đang thực hiện' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" : "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
+                                    )}>
+                                        <div className={cn("w-1.5 h-1.5 rounded-full", formData.status === 'Đang thực hiện' ? "bg-emerald-500" : "bg-slate-400")} />
+                                        {formData.status || 'Đang thực hiện'}
+                                    </div>
+                                    <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30">
+                                        {branches?.find((b: any) => b.id === formData.branch_id)?.name || contract.branches?.name || 'Chi nhánh'}
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </SheetHeader>
-                </div>
 
-                <div className="flex-1 overflow-y-auto px-8 py-10 space-y-12">
+                        {!isEditing && (
+                            <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between gap-3">
+                                <div className="flex-1 flex flex-col items-center">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Tổng tiền</span>
+                                    <span className="text-lg font-bold text-blue-600">
+                                        {formData.total_amount ? Number(formData.total_amount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
+                                    </span>
+                                </div>
+                                <div className="w-px h-8 bg-slate-100 dark:bg-slate-800" />
+                                <div className="flex-1 flex flex-col items-center text-center">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Kết thúc</span>
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                        {formData.end_date ? new Date(formData.end_date).toLocaleDateString('vi-VN') : '-'}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Section: Thông tin khách hàng */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-3 border-b border-gray-50 dark:border-gray-900 pb-3">
-                            <User className="w-4 h-4 text-red-600" />
-                            <h3 className="text-[10px] font-medium text-gray-400 dark:text-gray-500 tracking-tight">Thông tin Hội viên</h3>
+                    <CardSection title="Thông tin khách hàng" icon={User}>
+                        <div className="space-y-5">
+                            <DetailRow label="Hội viên" value={formData.member_name} name="member_name" icon={User} />
+                            <div className="grid grid-cols-2 gap-5">
+                                <DetailRow label="Số điện thoại" value={formData.phone} name="phone" icon={Phone} />
+                                <DetailRow label="Email" value={formData.email} name="email" icon={Mail} />
+                            </div>
+                            <DetailRow label="Địa chỉ" value={formData.member_address} name="member_address" icon={MapPin} />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                            <InfoRow icon={User} label="Họ và tên" value={formData.member_name} name="member_name" />
-                            <InfoRow icon={Phone} label="Số điện thoại" value={formData.phone} name="phone" />
-                            <InfoRow icon={Mail} label="Email" value={formData.email} name="email" />
-                        </div>
-                        <InfoRow icon={MapPin} label="Địa chỉ" value={formData.member_address} name="member_address" />
-                    </div>
+                    </CardSection>
 
-                    {/* Section: Dịch vụ */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-3 border-b border-gray-50 dark:border-gray-900 pb-3">
-                            <Package className="w-4 h-4 text-red-600" />
-                            <h3 className="text-[10px] font-medium text-gray-400 dark:text-gray-500 tracking-tight">Chi tiết Dịch vụ</h3>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                            <InfoRow icon={Package} label="Gói tập" value={formData.package_name} name="package_name" />
-                            <InfoRow icon={Clock} label="Ngày bắt đầu" value={formData.start_date} name="start_date" type="date" />
-                            <InfoRow icon={Clock} label="Ngày kết thúc" value={formData.end_date} name="end_date" type="date" />
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                    <Building2 className="w-3.5 h-3.5" />
-                                    Chi nhánh
-                                </Label>
-                                {isEditing ? (
-                                    <Select
-                                        value={formData.branch_id}
-                                        onValueChange={(val) => setFormData((prev: any) => ({ ...prev, branch_id: val }))}
-                                    >
-                                        <SelectTrigger className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900 h-10 text-sm">
-                                            <SelectValue placeholder="Chọn chi nhánh" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {branches.map(b => (
-                                                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                ) : (
-                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{contract.branches?.name || 'Văn phòng'}</p>
-                                )}
+                    {/* Section: Chi tiết hợp đồng */}
+                    <CardSection title="Chi tiết hợp đồng" icon={Package}>
+                        <div className="space-y-5">
+                            <DetailRow label="Gói tập" value={formData.package_name} name="package_name" icon={Package} />
+                            <div className="grid grid-cols-2 gap-5">
+                                <DetailRow label="Ngày bắt đầu" value={formData.start_date} name="start_date" type="date" icon={Calendar} />
+                                <DetailRow label="Ngày kết thúc" value={formData.end_date} name="end_date" type="date" icon={Calendar} />
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                    <Clock className="w-3.5 h-3.5" />
-                                    Trạng thái
-                                </Label>
-                                {isEditing ? (
-                                    <Select
-                                        value={formData.status}
-                                        onValueChange={(val) => setFormData((prev: any) => ({ ...prev, status: val }))}
-                                    >
-                                        <SelectTrigger className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900 h-10 text-sm">
-                                            <SelectValue placeholder="Chọn trạng thái" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Đang thực hiện">Đang thực hiện</SelectItem>
-                                            <SelectItem value="Hoàn thành">Hoàn thành</SelectItem>
-                                            <SelectItem value="Đã hủy">Đã hủy</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                ) : (
-                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{formData.status || 'Đang thực hiện'}</p>
-                                )}
+                            <div className="grid grid-cols-2 gap-5">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                        <Building2 className="w-3 h-3" />
+                                        Chi nhánh
+                                    </Label>
+                                    {isEditing ? (
+                                        <Select
+                                            value={formData.branch_id}
+                                            onValueChange={(val) => setFormData((prev: any) => ({ ...prev, branch_id: val }))}
+                                        >
+                                            <SelectTrigger className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm">
+                                                <SelectValue placeholder="Chọn chi nhánh" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {branches.map(b => (
+                                                    <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                                            {branches?.find((b: any) => b.id === formData.branch_id)?.name || contract.branches?.name || '-'}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                        <Clock className="w-3 h-3" />
+                                        Trạng thái
+                                    </Label>
+                                    {isEditing ? (
+                                        <Select
+                                            value={formData.status}
+                                            onValueChange={(val) => setFormData((prev: any) => ({ ...prev, status: val }))}
+                                        >
+                                            <SelectTrigger className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm">
+                                                <SelectValue placeholder="Chọn trạng thái" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Đang thực hiện">Đang thực hiện</SelectItem>
+                                                <SelectItem value="Hoàn thành">Hoàn thành</SelectItem>
+                                                <SelectItem value="Đã hủy">Đã hủy</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">{formData.status || 'Đang thực hiện'}</p>
+                                    )}
+                                </div>
                             </div>
-                            <InfoRow icon={Dumbbell} label="Huấn luyện viên" value={formData.trainer_name} name="trainer_name" />
+                            <DetailRow label="Huấn luyện viên" value={formData.trainer_name} name="trainer_name" icon={Dumbbell} />
                         </div>
-                    </div>
+                    </CardSection>
 
                     {/* Section: Thanh toán */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-3 border-b border-gray-50 dark:border-gray-900 pb-3">
-                            <CreditCard className="w-4 h-4 text-red-600" />
-                            <h3 className="text-[10px] font-medium text-gray-400 dark:text-gray-500 tracking-tight">Thanh toán</h3>
+                    <CardSection title="Thanh toán" icon={CreditCard}>
+                        <div className="grid grid-cols-2 gap-5">
+                            <DetailRow label="Hình thức" value={formData.payment_method} name="payment_method" icon={CreditCard} />
+                            <DetailRow label="Tổng giá trị" value={formData.total_amount} name="total_amount" type="number" icon={CreditCard} />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                            <InfoRow icon={CreditCard} label="Hình thức" value={formData.payment_method} name="payment_method" />
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                    <CreditCard className="w-3.5 h-3.5" />
-                                    Tổng giá trị
-                                </Label>
-                                {isEditing ? (
-                                    <Input
-                                        name="total_amount"
-                                        type="number"
-                                        value={formData.total_amount || ''}
-                                        onChange={handleInputChange}
-                                        className="rounded-xl border-gray-200 dark:border-gray-800 bg-red-50/20 dark:bg-red-950/20 h-10 text-sm font-medium text-red-600 outline-none"
-                                    />
-                                ) : (
-                                    <p className="text-lg font-medium text-red-600">
-                                        {formData.total_amount ? Number(formData.total_amount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                    </CardSection>
                 </div>
 
-                <div className="p-8 bg-gray-50/30 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between gap-6">
-                    {isEditing ? (
-                        <>
+                {/* Sticky Footer */}
+                <div className="sticky bottom-0 bg-white dark:bg-gray-950 border-t border-slate-100 dark:border-slate-800 p-4 flex items-center justify-between gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0">
+                    <Button
+                        variant="ghost"
+                        onClick={() => onOpenChange(false)}
+                        className="rounded-xl h-11 px-6 font-bold text-[13px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-inter"
+                        disabled={loading}
+                    >
+                        Đóng
+                    </Button>
+
+                    <div className="flex items-center gap-2">
+                        {!isEditing && (
                             <Button
-                                variant="ghost"
-                                onClick={() => setIsEditing(false)}
-                                className="flex-1 rounded-xl h-12 font-medium text-xs tracking-tight text-gray-500 hover:bg-white dark:hover:bg-gray-800 transition-all"
+                                variant="outline"
+                                onClick={handleDelete}
+                                className="rounded-xl h-11 px-4 font-bold text-[13px] border-red-50 text-red-500 hover:bg-red-50 hover:text-red-600 dark:border-red-900/30 dark:hover:bg-red-950/20 transition-all font-inter border-2"
                                 disabled={loading}
                             >
-                                <X className="w-4 h-4 mr-2" />
-                                Hủy bỏ
+                                <Trash2 className="w-4 h-4" />
                             </Button>
+                        )}
+
+                        {isEditing ? (
                             <Button
                                 onClick={handleSave}
-                                className="flex-1 rounded-xl h-12 font-medium text-xs tracking-tight bg-gray-950 dark:bg-red-600 text-white hover:bg-black dark:hover:bg-red-700 shadow-2xl shadow-gray-200 dark:shadow-red-900/20 transition-all active:scale-95"
+                                className="rounded-xl h-11 px-8 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
                                 disabled={loading}
                             >
                                 <Save className="w-4 h-4 mr-2" />
-                                {loading ? 'Đang lưu...' : 'Lưu cập nhật'}
+                                {loading ? 'Đang lưu...' : 'Lưu lại'}
                             </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button
-                                variant="ghost"
-                                onClick={handleDelete}
-                                className="flex-1 rounded-xl h-12 font-medium text-xs tracking-tight text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
-                                disabled={loading}
-                            >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Xóa hợp đồng
-                            </Button>
+                        ) : (
                             <Button
                                 onClick={() => setIsEditing(true)}
-                                className="flex-1 rounded-xl h-12 font-medium text-xs tracking-tight bg-gray-950 dark:bg-gray-800 text-white hover:bg-black dark:hover:bg-gray-700 shadow-2xl shadow-gray-200 transition-all active:scale-95"
+                                className="rounded-xl h-11 px-10 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
                                 disabled={loading}
                             >
                                 <Edit2 className="w-4 h-4 mr-2" />
                                 Sửa hợp đồng
                             </Button>
-                        </>
-                    )}
+                        )}
+                    </div>
                 </div>
             </SheetContent>
         </Sheet>
