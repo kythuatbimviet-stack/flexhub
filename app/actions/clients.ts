@@ -23,6 +23,98 @@ export async function fetchClients() {
     }
 }
 
+export async function fetchClientsPage({
+    page = 1,
+    pageSize = 10,
+    search = '',
+    status = '',
+    branch = '',
+    pt = '',
+    source = '',
+    regType = '',
+}: {
+    page?: number
+    pageSize?: number
+    search?: string
+    status?: string
+    branch?: string
+    pt?: string
+    source?: string
+    regType?: string
+} = {}) {
+    try {
+        const adminClient = await createAdminClient()
+        const isAll = pageSize === -1
+
+        // Base filter helper (without status filter)
+        const applyBaseFilters = (q: any) => {
+            if (search) {
+                q = q.or(`member_name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%,id.ilike.%${search}%`)
+            }
+            if (branch) q = q.eq('branch_id', branch)
+            if (pt) q = q.ilike('pt_name', `%${pt}%`)
+            if (source) q = q.eq('source', source)
+            if (regType) q = q.eq('registration_type', regType)
+            return q
+        }
+
+        // 1. Prepare Main Data Query
+        let dataQuery = adminClient
+            .from('clients')
+            .select('*', { count: 'exact' })
+            .order('created_at', { ascending: false })
+
+        if (!isAll) {
+            const from = (page - 1) * pageSize
+            const to = from + pageSize - 1
+            dataQuery = dataQuery.range(from, to)
+        }
+        dataQuery = applyBaseFilters(dataQuery)
+        if (status) dataQuery = dataQuery.eq('status', status)
+
+        // 2. Prepare Status Count Queries
+        const { data: statusConfigs } = await adminClient.from('config_client_status').select('nam')
+        const statusNames = statusConfigs?.map(s => s.nam) || []
+
+        const countPromises = statusNames.map(s => {
+            return applyBaseFilters(adminClient.from('clients').select('*', { count: 'exact', head: true })).eq('status', s)
+        })
+        const totalCountPromise = applyBaseFilters(adminClient.from('clients').select('*', { count: 'exact', head: true }))
+
+        // 3. EXECUTE ALL IN PARALLEL
+        const [mainResult, ...countResults] = await Promise.all([
+            dataQuery,
+            ...countPromises,
+            totalCountPromise
+        ])
+
+        const { data, error, count } = mainResult
+
+        if (error) {
+            console.error('Fetch Clients Page Error:', error)
+            return { success: false, error: error.message }
+        }
+
+        // Process status counts
+        const statusCounts: Record<string, number> = {}
+        statusNames.forEach((s, i) => {
+            statusCounts[s] = countResults[i].count || 0
+        })
+        const totalOverallCount = countResults[statusNames.length].count || 0
+        statusCounts['total'] = totalOverallCount
+
+        return {
+            success: true,
+            data,
+            count: count ?? 0,
+            statusCounts
+        }
+    } catch (error: any) {
+        console.error('Unexpected Fetch Clients Page Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
 export async function importClients(clients: any[]) {
     try {
         const adminClient = await createAdminClient()

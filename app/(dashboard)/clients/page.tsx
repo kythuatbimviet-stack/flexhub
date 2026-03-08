@@ -18,12 +18,15 @@ import {
     Dumbbell,
     RotateCcw,
     ChevronRight,
+    ChevronLeft,
     TrendingUp,
     Users,
     Target,
-    UserStar
+    UserStar,
+    Check
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
     Tabs,
     TabsList,
@@ -66,7 +69,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { fetchClients, bulkDeleteClients } from '@/app/actions/clients'
+import { fetchClients, bulkDeleteClients, fetchClientsPage } from '@/app/actions/clients'
 import { fetchBranches } from '@/app/actions/branches'
 import { AddContractDialog } from '@/components/contracts/add-contract-dialog'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
@@ -75,6 +78,9 @@ import { FilePlus2, ExternalLink } from 'lucide-react'
 
 export default function ClientsPage() {
     const [searchTerm, setSearchTerm] = React.useState('')
+    const [debouncedSearch, setDebouncedSearch] = React.useState('')
+    const [page, setPage] = React.useState(1)
+    const [pageSize, setPageSize] = React.useState(10)
     const [selectedRows, setSelectedRows] = React.useState<string[]>([])
     const [selectedClient, setSelectedClient] = React.useState<any | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
@@ -88,9 +94,24 @@ export default function ClientsPage() {
     const [sourceFilter, setSourceFilter] = React.useState('all')
     const [showMobileFilters, setShowMobileFilters] = React.useState(false)
 
+    // Debounce search
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm)
+            setPage(1) // Reset to page 1 on search
+        }, 500)
+        return () => clearTimeout(timer)
+    }, [searchTerm])
+
+    // Reset page on filter change
+    React.useEffect(() => {
+        setPage(1)
+    }, [statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter, pageSize])
+
     const { data: configResult } = useQuery({
         queryKey: ['client-configs'],
-        queryFn: fetchClientConfigs
+        queryFn: fetchClientConfigs,
+        staleTime: 5 * 60 * 1000 // Cache configs for 5 mins
     })
 
     const clientStatuses = React.useMemo(() => {
@@ -104,17 +125,43 @@ export default function ClientsPage() {
         setPtFilter('all')
         setRegTypeFilter('all')
         setSourceFilter('all')
+        setPage(1)
         toast.info('Đã xóa tất cả bộ lọc')
     }
 
-    const { data: clients, isLoading, refetch } = useQuery({
-        queryKey: ['clients'],
+    const { data: clientsData, isLoading, isFetching, refetch, error: queryError } = useQuery({
+        queryKey: ['clients', page, debouncedSearch, statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter, pageSize],
         queryFn: async () => {
-            const result = await fetchClients()
-            if (!result.success) throw new Error(result.error)
-            return result.data
+            const result = await fetchClientsPage({
+                page,
+                pageSize,
+                search: debouncedSearch,
+                status: statusFilter === 'all' ? '' : statusFilter,
+                branch: branchFilter === 'all' ? '' : branchFilter,
+                pt: ptFilter === 'all' ? '' : ptFilter,
+                source: sourceFilter === 'all' ? '' : sourceFilter,
+                regType: regTypeFilter === 'all' ? '' : regTypeFilter,
+            })
+            if (!result.success) {
+                console.error('Fetch Clients Error:', result.error)
+                throw new Error(result.error as string)
+            }
+            return result
         },
+        staleTime: 30000,
     })
+
+    // Show error toast
+    React.useEffect(() => {
+        if (queryError) {
+            toast.error('Lỗi tải dữ liệu: ' + (queryError as Error).message)
+        }
+    }, [queryError])
+
+    const clients = React.useMemo(() => clientsData?.data || [], [clientsData])
+    const totalCount = clientsData?.count || 0
+    const totalPages = pageSize === -1 ? 1 : Math.ceil(totalCount / pageSize)
+    const filteredClients = clients // Alias for compatibility with existing table code
 
     const { data: branches } = useQuery({
         queryKey: ['branches'],
@@ -189,32 +236,7 @@ export default function ClientsPage() {
         toast.success('Đã xuất file Excel thành công')
     }
 
-    // First, filter by everything EXCEPT status to get accurate counts for the tabs
-    const baseFilteredClients = React.useMemo(() => {
-        if (!clients) return []
-        return clients.filter(client => {
-            const matchesSearch =
-                client.member_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                client.phone?.includes(searchTerm) ||
-                client.id?.toLowerCase().includes(searchTerm.toLowerCase())
-
-            const matchesBranch = branchFilter === 'all' || client.branch_id === branchFilter
-            const matchesPT = ptFilter === 'all' || client.pt_name === ptFilter
-            const matchesRegType = regTypeFilter === 'all' || client.registration_type === regTypeFilter
-            const matchesSource = sourceFilter === 'all' || client.source === sourceFilter
-
-            return matchesSearch && matchesBranch && matchesPT && matchesRegType && matchesSource
-        })
-    }, [clients, searchTerm, branchFilter, ptFilter, regTypeFilter, sourceFilter])
-
-    // Then, filter by status for the table display
-    const filteredClients = React.useMemo(() => {
-        return statusFilter === 'all'
-            ? baseFilteredClients
-            : baseFilteredClients.filter(c => c.status === statusFilter)
-    }, [baseFilteredClients, statusFilter])
-
-    // Get unique values for filters
+    // Options for filters (from current page data)
     const ptOptions = React.useMemo(() => {
         if (!clients) return []
         const pts = clients.map((c: any) => c.pt_name).filter(Boolean)
@@ -247,15 +269,10 @@ export default function ClientsPage() {
         }
     }
 
+    // Use status counts from server for tabs
     const stats = React.useMemo(() => {
-        const counts: Record<string, number> = {
-            total: baseFilteredClients.length
-        }
-        clientStatuses.forEach(s => {
-            counts[s.nam] = baseFilteredClients.filter((c: any) => c.status === s.nam).length
-        })
-        return counts
-    }, [baseFilteredClients, clientStatuses])
+        return (clientsData as any)?.statusCounts || { total: 0 }
+    }, [clientsData])
 
     return (
         <div className="space-y-1.5 font-inter pb-10">
@@ -379,8 +396,8 @@ export default function ClientsPage() {
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
                                                 <SelectItem value="all">Tất cả Chi nhánh</SelectItem>
-                                                {branches?.map((b: any) => (
-                                                    <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                                {branches?.map((c: any) => (
+                                                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -428,11 +445,105 @@ export default function ClientsPage() {
                             )}
                         </AnimatePresence>
                     </div>
+
+                    {/* Pagination Controls (Top) */}
+                    {!isLoading && !isFetching && (pageSize === -1 ? totalCount > 0 : totalPages >= 1) && (
+                        <div className="flex flex-col sm:flex-row items-center justify-between px-3 py-3 border-t border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-800/10 gap-4">
+                            <div className="flex items-center gap-4">
+                                <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
+                                    <span className="text-gray-900 dark:text-gray-100 font-black">{filteredClients.length}</span> / {totalCount} khách
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <Select
+                                        value={pageSize.toString()}
+                                        onValueChange={(val) => setPageSize(parseInt(val))}
+                                    >
+                                        <SelectTrigger className="h-7 w-16 rounded-lg border-gray-100 dark:border-gray-800 text-[10px] font-bold focus:ring-red-500 bg-white dark:bg-gray-800">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                            <SelectItem value="10">10</SelectItem>
+                                            <SelectItem value="20">20</SelectItem>
+                                            <SelectItem value="30">30</SelectItem>
+                                            <SelectItem value="50">50</SelectItem>
+                                            <SelectItem value="100">100</SelectItem>
+                                            <SelectItem value="-1">Tất cả</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            {pageSize !== -1 && totalPages > 1 && (
+                                <div className="flex items-center gap-1.5">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={page === 1}
+                                        onClick={() => setPage((p: number) => Math.max(1, p - 1))}
+                                        className="rounded-lg border-gray-100 dark:border-gray-800 h-7 px-2 text-[10px] font-bold bg-white dark:bg-gray-800"
+                                    >
+                                        <ChevronLeft className="w-3 h-3 mr-1" />
+                                        Trước
+                                    </Button>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                                            let pageNum = page
+                                            if (totalPages <= 5) {
+                                                pageNum = i + 1
+                                            } else if (page <= 3) {
+                                                pageNum = i + 1
+                                            } else if (page >= totalPages - 2) {
+                                                pageNum = totalPages - 4 + i
+                                            } else {
+                                                pageNum = page - 2 + i
+                                            }
+                                            return (
+                                                <Button
+                                                    key={pageNum}
+                                                    variant={page === pageNum ? "default" : "outline"}
+                                                    size="sm"
+                                                    onClick={() => setPage(pageNum)}
+                                                    className={cn(
+                                                        "w-7 h-7 rounded-lg p-0 text-[10px] font-black",
+                                                        page === pageNum ? "bg-red-600 hover:bg-red-700" : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-800"
+                                                    )}
+                                                >
+                                                    {pageNum}
+                                                </Button>
+                                            )
+                                        })}
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={page === totalPages}
+                                        onClick={() => setPage((p: number) => Math.min(totalPages, p + 1))}
+                                        className="rounded-lg border-gray-100 dark:border-gray-800 h-7 px-2 text-[10px] font-bold bg-white dark:bg-gray-800"
+                                    >
+                                        Sau
+                                        <ChevronRight className="w-3 h-3 ml-1" />
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </Card>
 
             {/* Table Section */}
-            < Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-gray-900 transition-all duration-500" >
+            <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-gray-900 transition-all duration-500 relative">
+                {isFetching && (
+                    <div className="absolute top-0 left-0 right-0 h-1 z-50 overflow-hidden bg-white dark:bg-gray-900/50">
+                        <motion.div
+                            className="h-full bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.5)]"
+                            initial={{ x: '-100%' }}
+                            animate={{ x: '100%' }}
+                            transition={{ repeat: Infinity, duration: 1, ease: "easeInOut" }}
+                            style={{ width: '40%' }}
+                        />
+                    </div>
+                )}
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
@@ -453,21 +564,26 @@ export default function ClientsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="h-32 text-center text-gray-400 text-sm">
-                                        <Loader2 className="w-6 h-6 animate-spin mx-auto text-red-500" />
-                                        <p className="mt-2">Đang tải dữ liệu...</p>
-                                    </TableCell>
-                                </TableRow>
+                            {(isLoading || isFetching) ? (
+                                Array.from({ length: 10 }).map((_, i) => (
+                                    <TableRow key={i}>
+                                        <TableCell className="pl-6"><Skeleton className="h-4 w-4" /></TableCell>
+                                        <TableCell><div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-16" /></div></TableCell>
+                                        <TableCell><div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-3 w-20" /></div></TableCell>
+                                        <TableCell><div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-3 w-24" /></div></TableCell>
+                                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                                        <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                                        <TableCell className="text-right pr-8"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
+                                    </TableRow>
+                                ))
                             ) : filteredClients?.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-32 text-center text-gray-400 text-sm">
-                                        Không tìm thấy hội viên nào
+                                    <TableCell colSpan={7} className="h-32 text-center text-gray-500">
+                                        Không tìm thấy khách hàng nào
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredClients?.map((client) => (
+                                filteredClients?.map((client: any) => (
                                     <TableRow
                                         key={client.id}
                                         onClick={(e) => handleRowClick(client, e)}
@@ -641,7 +757,7 @@ export default function ClientsPage() {
                         </TableBody>
                     </Table>
                 </div>
-            </Card >
+            </Card>
 
             <ClientDetailsSheet
                 client={selectedClient}
@@ -649,6 +765,6 @@ export default function ClientsPage() {
                 onOpenChange={setIsDetailsOpen}
                 onSuccess={refetch}
             />
-        </div >
+        </div>
     )
 }

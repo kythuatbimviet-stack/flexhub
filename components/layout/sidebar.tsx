@@ -93,8 +93,19 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                     isCollapsed && "justify-center"
                 )}>
                     <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="w-9 h-9 bg-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20 shrink-0">
-                            <span className="text-white text-[10px] font-bold">LF</span>
+                        <div className="relative w-9 h-9 flex items-center justify-center shrink-0">
+                            <Link href="/">
+                                <div className="h-9 w-9 relative group">
+                                    <div className="absolute -inset-1.5 bg-red-500/10 rounded-xl blur opacity-0 group-hover:opacity-100 transition duration-500" />
+                                    <div className="relative h-9 w-9 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/10 border border-gray-100 dark:border-gray-800 overflow-hidden">
+                                        <img
+                                            src="/logo.png"
+                                            alt="Lady Fit Logo"
+                                            className="w-7 h-7 object-contain transform group-hover:scale-110 transition-transform duration-300"
+                                        />
+                                    </div>
+                                </div>
+                            </Link>
                         </div>
                         {!isCollapsed && (
                             <span className="font-bold text-lg tracking-tight text-gray-950 dark:text-white transition-opacity duration-300">
