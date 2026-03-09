@@ -75,6 +75,44 @@ export async function deleteConfigParam(tableName: string, id: number) {
         return { success: false, error: error.message }
     }
 }
+const ALL_CONFIG_TABLES = [
+    'config_client_goal',
+    'config_client_registration_type',
+    'config_client_source',
+    'config_client_status',
+    'config_client_training_time',
+    'config_contract_source',
+    'config_contract_status',
+    'config_contract_trainer_type',
+    'config_contract_type',
+    'config_event_group',
+    'config_expense_status',
+    'config_finance_bank_account',
+    'config_finance_ewallet',
+    'config_finance_expense_type',
+    'config_finance_income_type',
+    'config_finance_payment_method',
+] as const
+
+export type AllConfigs = Record<typeof ALL_CONFIG_TABLES[number], ConfigItem[]>
+
+export async function fetchAllConfigs(): Promise<{ success: boolean; data?: AllConfigs; error?: string }> {
+    try {
+        const supabase = await createAdminClient()
+        const results = await Promise.all(
+            ALL_CONFIG_TABLES.map(t => supabase.from(t).select('*').order('value', { ascending: true }))
+        )
+        const data = {} as AllConfigs
+        ALL_CONFIG_TABLES.forEach((table, i) => {
+            data[table] = (results[i].data as ConfigItem[]) || []
+        })
+        return { success: true, data }
+    } catch (error: any) {
+        console.error('Error fetching all configs:', error)
+        return { success: false, error: error.message }
+    }
+}
+
 export async function fetchClientConfigs() {
     try {
         const supabase = await createAdminClient()

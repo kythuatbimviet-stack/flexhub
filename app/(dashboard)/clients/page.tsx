@@ -2,59 +2,21 @@
 
 import * as React from 'react'
 import {
-    Search,
-    Filter,
-    MoreHorizontal,
-    Edit2,
-    Trash2,
-    Mail,
-    Phone,
-    FileDown,
-    Trash,
-    CheckCircle2,
-    Loader2,
-    User,
-    Activity,
-    Dumbbell,
-    RotateCcw,
-    ChevronRight,
-    ChevronLeft,
-    TrendingUp,
-    Users,
-    Target,
-    UserStar,
-    Check
+    Search, Filter, MoreHorizontal, Edit2, Trash2, Mail, Phone,
+    FileDown, Trash, Loader2, Activity, Dumbbell, RotateCcw,
+    ChevronRight, ChevronLeft, TrendingUp, Users, Target, UserStar, Check
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-    Tabs,
-    TabsList,
-    TabsTrigger,
-    TabsContent
-} from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 import { cn } from '@/lib/utils'
@@ -62,29 +24,27 @@ import { AddClientDialog } from '@/components/clients/add-client-dialog'
 import { fetchClientConfigs } from '@/app/actions/config-params'
 import { ClientDetailsSheet } from '@/components/clients/client-details-sheet'
 import { ImportExcelClientDialog } from '@/components/clients/import-excel-client-dialog'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
-import { fetchClients, bulkDeleteClients, fetchClientsPage } from '@/app/actions/clients'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { fetchClients, bulkDeleteClients } from '@/app/actions/clients'
 import { fetchBranches } from '@/app/actions/branches'
 import { AddContractDialog } from '@/components/contracts/add-contract-dialog'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
 import { useRouter } from 'next/navigation'
-import { FilePlus2, ExternalLink } from 'lucide-react'
+import { FilePlus2 } from 'lucide-react'
+
+const THIRTY_MINUTES = 30 * 60 * 1000
 
 export default function ClientsPage() {
+    const queryClient = useQueryClient()
+    const router = useRouter()
+
     const [searchTerm, setSearchTerm] = React.useState('')
     const [debouncedSearch, setDebouncedSearch] = React.useState('')
     const [page, setPage] = React.useState(1)
-    const [pageSize, setPageSize] = React.useState(10)
+    const [pageSize, setPageSize] = React.useState(20)
     const [selectedRows, setSelectedRows] = React.useState<string[]>([])
     const [selectedClient, setSelectedClient] = React.useState<any | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
-    const router = useRouter()
 
     // Filter states
     const [statusFilter, setStatusFilter] = React.useState('all')
@@ -96,139 +56,126 @@ export default function ClientsPage() {
 
     // Debounce search
     React.useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(searchTerm)
-            setPage(1) // Reset to page 1 on search
-        }, 500)
-        return () => clearTimeout(timer)
+        const t = setTimeout(() => { setDebouncedSearch(searchTerm); setPage(1) }, 400)
+        return () => clearTimeout(t)
     }, [searchTerm])
+    React.useEffect(() => { setPage(1) }, [statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter, pageSize])
 
-    // Reset page on filter change
-    React.useEffect(() => {
-        setPage(1)
-    }, [statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter, pageSize])
-
+    // ── Data from global cache ────────────────────────────────────────────────
     const { data: configResult } = useQuery({
         queryKey: ['client-configs'],
         queryFn: fetchClientConfigs,
-        staleTime: 5 * 60 * 1000 // Cache configs for 5 mins
+        staleTime: Infinity,
     })
+    const clientStatuses = React.useMemo(() => configResult?.data?.statuses || [], [configResult])
 
-    const clientStatuses = React.useMemo(() => {
-        return configResult?.data?.statuses || []
-    }, [configResult])
-
-    const clearFilters = () => {
-        setSearchTerm('')
-        setStatusFilter('all')
-        setBranchFilter('all')
-        setPtFilter('all')
-        setRegTypeFilter('all')
-        setSourceFilter('all')
-        setPage(1)
-        toast.info('Đã xóa tất cả bộ lọc')
-    }
-
-    const { data: clientsData, isLoading, isFetching, refetch, error: queryError } = useQuery({
-        queryKey: ['clients', page, debouncedSearch, statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter, pageSize],
+    const { data: allClients = [], isLoading } = useQuery<any[]>({
+        queryKey: ['clients-all'],
         queryFn: async () => {
-            const result = await fetchClientsPage({
-                page,
-                pageSize,
-                search: debouncedSearch,
-                status: statusFilter === 'all' ? '' : statusFilter,
-                branch: branchFilter === 'all' ? '' : branchFilter,
-                pt: ptFilter === 'all' ? '' : ptFilter,
-                source: sourceFilter === 'all' ? '' : sourceFilter,
-                regType: regTypeFilter === 'all' ? '' : regTypeFilter,
-            })
-            if (!result.success) {
-                console.error('Fetch Clients Error:', result.error)
-                throw new Error(result.error as string)
-            }
-            return result
+            const res = await fetchClients()
+            return res.success ? (res.data ?? []) : []
         },
-        staleTime: 30000,
+        staleTime: THIRTY_MINUTES,
+        select: (data) => Array.isArray(data) ? data : [],
     })
 
-    // Show error toast
-    React.useEffect(() => {
-        if (queryError) {
-            toast.error('Lỗi tải dữ liệu: ' + (queryError as Error).message)
-        }
-    }, [queryError])
-
-    const clients = React.useMemo(() => clientsData?.data || [], [clientsData])
-    const totalCount = clientsData?.count || 0
-    const totalPages = pageSize === -1 ? 1 : Math.ceil(totalCount / pageSize)
-    const filteredClients = clients // Alias for compatibility with existing table code
-
-    const { data: branches } = useQuery({
+    const { data: branches = [] } = useQuery<any[]>({
         queryKey: ['branches'],
         queryFn: async () => {
-            const result = await fetchBranches()
-            if (!result.success) throw new Error(result.error)
-            return result.data
+            const res = await fetchBranches()
+            return res.success ? (res.data ?? []) : []
         },
+        staleTime: Infinity,
     })
+
+    // ── Client-side filtering ─────────────────────────────────────────────────
+    const filteredClients = React.useMemo(() => {
+        return allClients.filter((c: any) => {
+            if (debouncedSearch) {
+                const q = debouncedSearch.toLowerCase()
+                if (!c.member_name?.toLowerCase().includes(q) &&
+                    !c.phone?.includes(q) &&
+                    !c.email?.toLowerCase().includes(q) &&
+                    !c.id?.toLowerCase().includes(q)) return false
+            }
+            if (statusFilter !== 'all' && c.status !== statusFilter) return false
+            if (branchFilter !== 'all' && c.branch_id !== branchFilter) return false
+            if (ptFilter !== 'all' && !(c.pt_name?.toLowerCase().includes(ptFilter.toLowerCase()))) return false
+            if (regTypeFilter !== 'all' && c.registration_type !== regTypeFilter) return false
+            if (sourceFilter !== 'all' && c.source !== sourceFilter) return false
+            return true
+        })
+    }, [allClients, debouncedSearch, statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter])
+
+    // ── Pagination (client-side) ──────────────────────────────────────────────
+    const totalCount = filteredClients.length
+    const totalPages = pageSize === -1 ? 1 : Math.ceil(totalCount / pageSize)
+    const pagedClients = React.useMemo(() => {
+        if (pageSize === -1) return filteredClients
+        const from = (page - 1) * pageSize
+        return filteredClients.slice(from, from + pageSize)
+    }, [filteredClients, page, pageSize])
+
+    // ── Filter options — full dataset, not current page ───────────────────────
+    const ptOptions = React.useMemo(() =>
+        Array.from(new Set(allClients.map((c: any) => c.pt_name).filter(Boolean))), [allClients])
+    const regTypeOptions = React.useMemo(() =>
+        Array.from(new Set(allClients.map((c: any) => c.registration_type).filter(Boolean))), [allClients])
+    const sourceOptions = React.useMemo(() =>
+        Array.from(new Set(allClients.map((c: any) => c.source).filter(Boolean))), [allClients])
+
+    // ── Status counts from full dataset ────────────────────────────────────────
+    const stats = React.useMemo(() => {
+        const counts: Record<string, number> = { total: allClients.length }
+        clientStatuses.forEach((s: any) => {
+            counts[s.nam] = allClients.filter((c: any) => c.status === s.nam).length
+        })
+        return counts
+    }, [allClients, clientStatuses])
+
+    const refetch = () => queryClient.invalidateQueries({ queryKey: ['clients-all'] })
+
+    const clearFilters = () => {
+        setSearchTerm(''); setStatusFilter('all'); setBranchFilter('all')
+        setPtFilter('all'); setRegTypeFilter('all'); setSourceFilter('all'); setPage(1)
+        toast.info('Đã xóa tất cả bộ lọc')
+    }
 
     const handleRowClick = (client: any, e: React.MouseEvent) => {
         if (
             (e.target as HTMLElement).closest('button') ||
             (e.target as HTMLElement).closest('input[type="checkbox"]') ||
             (e.target as HTMLElement).tagName.toLowerCase() === 'label'
-        ) {
-            return
-        }
-        setSelectedClient(client)
-        setIsDetailsOpen(true)
+        ) return
+        setSelectedClient(client); setIsDetailsOpen(true)
     }
 
     const handleDelete = async (id: string) => {
-        if (confirm('Bạn có chắc chắn muốn xóa hồ sơ khách hàng này?')) {
-            const result = await bulkDeleteClients([id])
-            if (!result.success) {
-                toast.error('Lỗi khi xóa: ' + result.error)
-            } else {
-                toast.success('Đã xóa hồ sơ khách hàng thành công')
-                refetch()
-            }
-        }
+        if (!confirm('Bạn có chắc chắn muốn xóa hồ sơ khách hàng này?')) return
+        const result = await bulkDeleteClients([id])
+        if (!result.success) toast.error('Lỗi khi xóa: ' + result.error)
+        else { toast.success('Đã xóa hồ sơ khách hàng thành công'); refetch() }
     }
 
     const handleBulkDelete = async () => {
-        if (selectedRows.length === 0) return
-
-        if (confirm(`Bạn có chắc chắn muốn xóa ${selectedRows.length} hồ sơ đã chọn?`)) {
-            const result = await bulkDeleteClients(selectedRows)
-
-            if (!result.success) {
-                toast.error('Lỗi khi xóa hàng loạt: ' + result.error)
-            } else {
-                toast.success(`Đã xóa thành công ${selectedRows.length} hồ sơ`)
-                setSelectedRows([])
-                refetch()
-            }
-        }
+        if (!selectedRows.length) return
+        if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedRows.length} hồ sơ đã chọn?`)) return
+        const result = await bulkDeleteClients(selectedRows)
+        if (!result.success) toast.error('Lỗi khi xóa hàng loạt: ' + result.error)
+        else { toast.success(`Đã xóa thành công ${selectedRows.length} hồ sơ`); setSelectedRows([]); refetch() }
     }
 
     const exportToExcel = () => {
-        const dataToExport = clients && clients.length > 0
-            ? clients.map(c => ({
-                'Mã KH': c.id,
-                'Tên hội viên': c.member_name,
-                'Số điện thoại': c.phone,
-                'Email': c.email,
-                'Trạng thái': c.status,
+        const dataToExport = pagedClients.length > 0
+            ? pagedClients.map((c: any) => ({
+                'Mã KH': c.id, 'Tên hội viên': c.member_name, 'Số điện thoại': c.phone,
+                'Email': c.email, 'Trạng thái': c.status,
                 'Chi nhánh': branches?.find((b: any) => b.id === c.branch_id)?.name || '',
-                'PT Phụ trách': c.pt_name,
-                'Cân nặng': c.weight,
-                'Mục tiêu': c.goal,
+                'PT Phụ trách': c.pt_name, 'Cân nặng': c.weight, 'Mục tiêu': c.goal,
                 'Gói tập': c.registration_type,
                 'Ngày tạo': new Date(c.created_at).toLocaleDateString('vi-VN')
             }))
             : [{ 'Thông báo': 'Danh sách trống' }]
-
         const ws = XLSX.utils.json_to_sheet(dataToExport)
         const wb = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(wb, ws, 'Clients')
@@ -236,43 +183,10 @@ export default function ClientsPage() {
         toast.success('Đã xuất file Excel thành công')
     }
 
-    // Options for filters (from current page data)
-    const ptOptions = React.useMemo(() => {
-        if (!clients) return []
-        const pts = clients.map((c: any) => c.pt_name).filter(Boolean)
-        return Array.from(new Set(pts))
-    }, [clients])
-
-    const regTypeOptions = React.useMemo(() => {
-        if (!clients) return []
-        const types = clients.map((c: any) => c.registration_type).filter(Boolean)
-        return Array.from(new Set(types))
-    }, [clients])
-
-    const sourceOptions = React.useMemo(() => {
-        if (!clients) return []
-        const sources = clients.map((c: any) => c.source).filter(Boolean)
-        return Array.from(new Set(sources))
-    }, [clients])
-
-    const toggleRow = (id: string) => {
-        setSelectedRows(prev =>
-            prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
-        )
-    }
-
-    const toggleAll = () => {
-        if (selectedRows.length === (filteredClients?.length || 0)) {
-            setSelectedRows([])
-        } else {
-            setSelectedRows(filteredClients?.map(c => c.id) || [])
-        }
-    }
-
-    // Use status counts from server for tabs
-    const stats = React.useMemo(() => {
-        return (clientsData as any)?.statusCounts || { total: 0 }
-    }, [clientsData])
+    const toggleRow = (id: string) =>
+        setSelectedRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id])
+    const toggleAll = () =>
+        setSelectedRows(selectedRows.length === pagedClients.length ? [] : pagedClients.map((c: any) => c.id))
 
     return (
         <div className="space-y-1.5 font-inter pb-10">
@@ -287,16 +201,9 @@ export default function ClientsPage() {
                 <div className="flex items-center gap-3">
                     <AnimatePresence>
                         {selectedRows.length > 0 && (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            >
-                                <Button
-                                    variant="ghost"
-                                    onClick={handleBulkDelete}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 font-medium px-4 h-11 rounded-xl border border-red-100 dark:border-red-900/30"
-                                >
+                            <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}>
+                                <Button variant="ghost" onClick={handleBulkDelete}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 font-medium px-4 h-11 rounded-xl border border-red-100 dark:border-red-900/30">
                                     <Trash className="w-4 h-4 mr-2" />
                                     <span className="hidden sm:inline">Xóa ({selectedRows.length})</span>
                                     <span className="sm:hidden">{selectedRows.length}</span>
@@ -306,11 +213,8 @@ export default function ClientsPage() {
                     </AnimatePresence>
                     <div className="flex gap-2">
                         <ImportExcelClientDialog onSuccess={refetch} />
-                        <Button
-                            variant="ghost"
-                            onClick={exportToExcel}
-                            className="rounded-xl border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300 h-11 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-                        >
+                        <Button variant="ghost" onClick={exportToExcel}
+                            className="rounded-xl border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300 h-11 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
                             <FileDown className="w-4.5 h-4.5 mr-2" />
                             <span className="hidden sm:inline">Xuất Excel</span>
                         </Button>
@@ -320,123 +224,84 @@ export default function ClientsPage() {
             </div>
 
             {/* Status Tabs */}
-            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+            <Tabs value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1) }} className="w-full">
                 <TabsList className="bg-transparent h-auto p-0 flex flex-nowrap overflow-x-auto no-scrollbar gap-1 px-1 mb-1 w-full justify-start">
-                    <TabsTrigger
-                        value="all"
-                        className={cn(
-                            "flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm border-none text-gray-600 hover:text-gray-700 data-[state=active]:text-red-600"
-                        )}
-                    >
+                    <TabsTrigger value="all" className={cn("flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm border-none text-gray-600 hover:text-gray-700 data-[state=active]:text-red-600")}>
                         Tất cả
-                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600">
-                            {stats.total}
-                        </span>
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600">{stats.total}</span>
                     </TabsTrigger>
-                    {clientStatuses.map((s) => (
-                        <TabsTrigger
-                            key={s.id}
-                            value={s.nam}
-                            className={cn(
-                                "flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm border-none text-gray-500 hover:text-gray-700 data-[state=active]:text-red-600"
-                            )}
-                        >
+                    {clientStatuses.map((s: any) => (
+                        <TabsTrigger key={s.id} value={s.nam} className={cn("flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm border-none text-gray-500 hover:text-gray-700 data-[state=active]:text-red-600")}>
                             {s.nam}
-                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-600">
-                                {stats[s.nam] || 0}
-                            </span>
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-600">{stats[s.nam] || 0}</span>
                         </TabsTrigger>
                     ))}
                 </TabsList>
             </Tabs>
 
-            {/* Optimized Compact Filter Section */}
-            <Card className="border-none shadow-sm rounded-xl overflow-visible bg-white dark:bg-gray-900 transition-all duration-300 py-0">
-                <div className="py-1 px-1 sm:px-1.5 border-gray-100 dark:border-gray-800 bg-gray-50/10 dark:bg-gray-800/20 rounded-xl">
+            {/* Filter Section */}
+            <Card className="border-none shadow-sm rounded-xl overflow-visible bg-white dark:bg-gray-900 py-0">
+                <div className="py-1 px-1 sm:px-1.5 bg-gray-50/10 dark:bg-gray-800/20 rounded-xl">
                     <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2">
-                        {/* Search & Toggle Button Row */}
                         <div className="flex items-center gap-2 flex-1">
                             <div className="relative group flex-1">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-red-600 transition-colors" />
-                                <Input
-                                    placeholder="Tìm tên, SĐT..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10 h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-sm"
-                                />
+                                <Input placeholder="Tìm tên, SĐT..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10 h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-sm" />
                             </div>
-
-                            {/* Mobile Filter Toggle */}
-                            <Button
-                                variant="outline"
-                                size="icon"
+                            <Button variant="outline" size="icon"
                                 onClick={() => setShowMobileFilters(!showMobileFilters)}
-                                className={cn(
-                                    "lg:hidden h-9 w-9 rounded-lg border-gray-200 dark:border-gray-800 transition-all",
-                                    showMobileFilters ? "bg-red-50 text-red-600 border-red-200" : "bg-white dark:bg-gray-800/50"
-                                )}
-                            >
+                                className={cn("lg:hidden h-9 w-9 rounded-lg border-gray-200 dark:border-gray-800 transition-all",
+                                    showMobileFilters ? "bg-red-50 text-red-600 border-red-200" : "bg-white dark:bg-gray-800/50")}>
                                 <Filter className="w-4 h-4" />
                             </Button>
                         </div>
 
-                        {/* Filters Content */}
                         <AnimatePresence>
                             {(showMobileFilters || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
                                 <motion.div
                                     initial={typeof window !== 'undefined' && window.innerWidth < 1024 ? { height: 0, opacity: 0 } : false}
-                                    animate={{ height: "auto", opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2"
-                                >
+                                    animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2">
                                     <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
                                         <Select value={branchFilter} onValueChange={setBranchFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3">
                                                 <SelectValue placeholder="Chi nhánh" />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
                                                 <SelectItem value="all">Tất cả Chi nhánh</SelectItem>
-                                                {branches?.map((c: any) => (
-                                                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                                ))}
+                                                {branches.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
-
                                         <Select value={ptFilter} onValueChange={setPtFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3">
                                                 <SelectValue placeholder="PT" />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
                                                 <SelectItem value="all">Tất cả PT</SelectItem>
-                                                {ptOptions.map(pt => <SelectItem key={pt} value={pt}>{pt}</SelectItem>)}
+                                                {ptOptions.map((pt: any) => <SelectItem key={pt} value={pt}>{pt}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
-
                                         <Select value={regTypeFilter} onValueChange={setRegTypeFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3">
                                                 <SelectValue placeholder="Gói tập" />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
                                                 <SelectItem value="all">Tất cả Gói tập</SelectItem>
-                                                {regTypeOptions.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                                {regTypeOptions.map((t: any) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
-
                                         <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-red-500 text-xs sm:text-sm lg:w-44 px-3">
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3">
                                                 <SelectValue placeholder="Nguồn khách" />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
                                                 <SelectItem value="all">Tất cả Nguồn</SelectItem>
-                                                {sourceOptions.map(source => <SelectItem key={source} value={source}>{source}</SelectItem>)}
+                                                {sourceOptions.map((s: any) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
-
-                                        <Button
-                                            variant="ghost"
-                                            onClick={clearFilters}
-                                            className="h-9 px-3 rounded-lg text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 dark:hover:border-red-900/30 transition-all shrink-0 col-span-2 lg:col-span-1 justify-center"
-                                        >
+                                        <Button variant="ghost" onClick={clearFilters}
+                                            className="h-9 px-3 rounded-lg text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 transition-all col-span-2 lg:col-span-1 justify-center">
                                             <RotateCcw className="w-4 h-4 mr-2 lg:mr-0" />
                                             <span className="lg:hidden text-sm">Làm mới bộ lọc</span>
                                         </Button>
@@ -446,83 +311,51 @@ export default function ClientsPage() {
                         </AnimatePresence>
                     </div>
 
-                    {/* Pagination Controls (Top) */}
-                    {!isLoading && !isFetching && (pageSize === -1 ? totalCount > 0 : totalPages >= 1) && (
-                        <div className="flex flex-col sm:flex-row items-center justify-between px-3 py-3 border-t border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-800/10 gap-4">
+                    {/* Pagination controls (top) */}
+                    {!isLoading && totalCount > 0 && (
+                        <div className="flex flex-col sm:flex-row items-center justify-between px-3 py-3 border-t border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-800/10 gap-4 mt-1 rounded-b-xl">
                             <div className="flex items-center gap-4">
                                 <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
-                                    <span className="text-gray-900 dark:text-gray-100 font-black">{filteredClients.length}</span> / {totalCount} khách
+                                    <span className="text-gray-900 dark:text-gray-100 font-black">{pagedClients.length}</span> / {totalCount} khách
                                 </div>
-
-                                <div className="flex items-center gap-2">
-                                    <Select
-                                        value={pageSize.toString()}
-                                        onValueChange={(val) => setPageSize(parseInt(val))}
-                                    >
-                                        <SelectTrigger className="h-7 w-16 rounded-lg border-gray-100 dark:border-gray-800 text-[10px] font-bold focus:ring-red-500 bg-white dark:bg-gray-800">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                            <SelectItem value="10">10</SelectItem>
-                                            <SelectItem value="20">20</SelectItem>
-                                            <SelectItem value="30">30</SelectItem>
-                                            <SelectItem value="50">50</SelectItem>
-                                            <SelectItem value="100">100</SelectItem>
-                                            <SelectItem value="-1">Tất cả</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(parseInt(v))}>
+                                    <SelectTrigger className="h-7 w-16 rounded-lg border-gray-100 dark:border-gray-800 text-[10px] font-bold focus:ring-red-500 bg-white dark:bg-gray-800">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                        <SelectItem value="10">10</SelectItem>
+                                        <SelectItem value="20">20</SelectItem>
+                                        <SelectItem value="30">30</SelectItem>
+                                        <SelectItem value="50">50</SelectItem>
+                                        <SelectItem value="100">100</SelectItem>
+                                        <SelectItem value="-1">Tất cả</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-
                             {pageSize !== -1 && totalPages > 1 && (
                                 <div className="flex items-center gap-1.5">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={page === 1}
-                                        onClick={() => setPage((p: number) => Math.max(1, p - 1))}
-                                        className="rounded-lg border-gray-100 dark:border-gray-800 h-7 px-2 text-[10px] font-bold bg-white dark:bg-gray-800"
-                                    >
-                                        <ChevronLeft className="w-3 h-3 mr-1" />
-                                        Trước
+                                    <Button variant="outline" size="sm" disabled={page === 1}
+                                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                                        className="rounded-lg border-gray-100 dark:border-gray-800 h-7 px-2 text-[10px] font-bold bg-white dark:bg-gray-800">
+                                        <ChevronLeft className="w-3 h-3 mr-1" />Trước
                                     </Button>
                                     <div className="flex items-center gap-1">
                                         {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                                            let pageNum = page
-                                            if (totalPages <= 5) {
-                                                pageNum = i + 1
-                                            } else if (page <= 3) {
-                                                pageNum = i + 1
-                                            } else if (page >= totalPages - 2) {
-                                                pageNum = totalPages - 4 + i
-                                            } else {
-                                                pageNum = page - 2 + i
-                                            }
+                                            let pn = page <= 3 ? i + 1 : page >= totalPages - 2 ? totalPages - 4 + i : page - 2 + i
                                             return (
-                                                <Button
-                                                    key={pageNum}
-                                                    variant={page === pageNum ? "default" : "outline"}
-                                                    size="sm"
-                                                    onClick={() => setPage(pageNum)}
-                                                    className={cn(
-                                                        "w-7 h-7 rounded-lg p-0 text-[10px] font-black",
-                                                        page === pageNum ? "bg-red-600 hover:bg-red-700" : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-800"
-                                                    )}
-                                                >
-                                                    {pageNum}
+                                                <Button key={pn} variant={page === pn ? 'default' : 'outline'} size="sm"
+                                                    onClick={() => setPage(pn)}
+                                                    className={cn('w-7 h-7 rounded-lg p-0 text-[10px] font-black',
+                                                        page === pn ? 'bg-red-600 hover:bg-red-700' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-800')}>
+                                                    {pn}
                                                 </Button>
                                             )
                                         })}
                                     </div>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={page === totalPages}
-                                        onClick={() => setPage((p: number) => Math.min(totalPages, p + 1))}
-                                        className="rounded-lg border-gray-100 dark:border-gray-800 h-7 px-2 text-[10px] font-bold bg-white dark:bg-gray-800"
-                                    >
-                                        Sau
-                                        <ChevronRight className="w-3 h-3 ml-1" />
+                                    <Button variant="outline" size="sm" disabled={page === totalPages}
+                                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                        className="rounded-lg border-gray-100 dark:border-gray-800 h-7 px-2 text-[10px] font-bold bg-white dark:bg-gray-800">
+                                        Sau<ChevronRight className="w-3 h-3 ml-1" />
                                     </Button>
                                 </div>
                             )}
@@ -531,26 +364,15 @@ export default function ClientsPage() {
                 </div>
             </Card>
 
-            {/* Table Section */}
-            <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-gray-900 transition-all duration-500 relative">
-                {isFetching && (
-                    <div className="absolute top-0 left-0 right-0 h-1 z-50 overflow-hidden bg-white dark:bg-gray-900/50">
-                        <motion.div
-                            className="h-full bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.5)]"
-                            initial={{ x: '-100%' }}
-                            animate={{ x: '100%' }}
-                            transition={{ repeat: Infinity, duration: 1, ease: "easeInOut" }}
-                            style={{ width: '40%' }}
-                        />
-                    </div>
-                )}
+            {/* Table */}
+            <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-gray-900">
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow className="border-gray-50 dark:border-gray-800 hover:bg-transparent border-t-0">
                                 <TableHead className="w-12 pl-6 h-9">
                                     <Checkbox
-                                        checked={selectedRows.length === (filteredClients?.length || 0) && (filteredClients?.length || 0) > 0}
+                                        checked={selectedRows.length === pagedClients.length && pagedClients.length > 0}
                                         onCheckedChange={toggleAll}
                                         className="rounded-lg border-gray-300 dark:border-gray-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                                     />
@@ -564,7 +386,7 @@ export default function ClientsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {(isLoading || isFetching) ? (
+                            {isLoading ? (
                                 Array.from({ length: 10 }).map((_, i) => (
                                     <TableRow key={i}>
                                         <TableCell className="pl-6"><Skeleton className="h-4 w-4" /></TableCell>
@@ -576,28 +398,20 @@ export default function ClientsPage() {
                                         <TableCell className="text-right pr-8"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
                                     </TableRow>
                                 ))
-                            ) : filteredClients?.length === 0 ? (
+                            ) : pagedClients.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={7} className="h-32 text-center text-gray-500">
                                         Không tìm thấy khách hàng nào
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredClients?.map((client: any) => (
-                                    <TableRow
-                                        key={client.id}
-                                        onClick={(e) => handleRowClick(client, e)}
-                                        className={cn(
-                                            "border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 cursor-pointer group transition-colors",
-                                            selectedRows.includes(client.id) && "bg-red-50/30 dark:bg-red-950/20"
-                                        )}
-                                    >
+                                pagedClients.map((client: any) => (
+                                    <TableRow key={client.id} onClick={(e) => handleRowClick(client, e)}
+                                        className={cn('border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 cursor-pointer group transition-colors',
+                                            selectedRows.includes(client.id) && 'bg-red-50/30 dark:bg-red-950/20')}>
                                         <TableCell className="pl-6" onClick={(e) => e.stopPropagation()}>
-                                            <Checkbox
-                                                checked={selectedRows.includes(client.id)}
-                                                onCheckedChange={() => toggleRow(client.id)}
-                                                className="rounded-lg"
-                                            />
+                                            <Checkbox checked={selectedRows.includes(client.id)}
+                                                onCheckedChange={() => toggleRow(client.id)} className="rounded-lg" />
                                         </TableCell>
                                         <TableCell className="py-2">
                                             <div className="flex flex-col">
@@ -610,142 +424,84 @@ export default function ClientsPage() {
                                         </TableCell>
                                         <TableCell className="hidden md:table-cell">
                                             <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Phone className="w-3 h-3 text-gray-400" />
-                                                    {client.phone || '-'}
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
-                                                    <Mail className="w-3 h-3" />
-                                                    {client.email || 'N/A'}
-                                                </div>
+                                                <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-gray-400" />{client.phone || '-'}</div>
+                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]"><Mail className="w-3 h-3" />{client.email || 'N/A'}</div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="hidden sm:table-cell">
                                             <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Dumbbell className="w-3 h-3 text-red-500/20" />
-                                                    {client.pt_name || 'Chưa gán PT'}
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
-                                                    <Activity className="w-3 h-3" />
-                                                    {client.weight ? `${client.weight}kg` : '-'} → {client.target_weight ? `${client.target_weight}kg` : '-'}
-                                                </div>
+                                                <div className="flex items-center gap-1.5"><Dumbbell className="w-3 h-3 text-red-500/20" />{client.pt_name || 'Chưa gán PT'}</div>
+                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]"><Activity className="w-3 h-3" />{client.weight ? `${client.weight}kg` : '-'} → {client.target_weight ? `${client.target_weight}kg` : '-'}</div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="hidden lg:table-cell">
                                             <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
-                                                <Target className="w-3 h-3 text-red-500/20" />
-                                                {client.registration_type || 'N/A'}
+                                                <Target className="w-3 h-3 text-red-500/20" />{client.registration_type || 'N/A'}
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge
-                                                variant="secondary"
-                                                className={cn(
-                                                    "border-none rounded-xl px-2.5 py-0.5 text-[9px] font-medium uppercase tracking-widest",
-                                                    client.status === 'Chốt đăng kí' && "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30",
-                                                    client.status === 'Đang tập' && "bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400 border border-green-100 dark:border-green-900/30",
-                                                    client.status === 'Tạm dừng' && "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30",
-                                                    client.status === 'Đã nghỉ' && "bg-gray-100 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400"
-                                                )}
-                                            >
+                                            <Badge variant="secondary" className={cn(
+                                                'border-none rounded-xl px-2.5 py-0.5 text-[9px] font-medium uppercase tracking-widest',
+                                                client.status === 'Chốt đăng kí' && 'bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30',
+                                                client.status === 'Đang tập' && 'bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400 border border-green-100 dark:border-green-900/30',
+                                                client.status === 'Tạm dừng' && 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30',
+                                                client.status === 'Đã nghỉ' && 'bg-gray-100 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400',
+                                            )}>
                                                 {client.status}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right pr-8">
                                             <div className="flex items-center justify-end gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={(e) => { e.stopPropagation(); setSelectedClient(client); setIsDetailsOpen(true); }}
-                                                    className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500"
-                                                    title="Chỉnh sửa"
-                                                >
+                                                <Button variant="ghost" size="icon"
+                                                    onClick={(e) => { e.stopPropagation(); setSelectedClient(client); setIsDetailsOpen(true) }}
+                                                    className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500" title="Chỉnh sửa">
                                                     <Edit2 className="h-3.5 w-3.5" />
                                                 </Button>
-
-                                                <AddContractDialog
-                                                    onSuccess={refetch}
-                                                    initialClientId={client.id}
-                                                    initialClient={client}
+                                                <AddContractDialog onSuccess={refetch} initialClientId={client.id} initialClient={client}
                                                     triggerOverride={
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500"
-                                                            title="Thêm hợp đồng"
-                                                        >
+                                                        <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}
+                                                            className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500" title="Thêm hợp đồng">
                                                             <FilePlus2 className="h-3.5 w-3.5" />
                                                         </Button>
                                                     }
                                                 />
-
-                                                <AddWeightDialog
-                                                    onSuccess={refetch}
-                                                    clients={filteredClients || []}
-                                                    initialClientId={client.id}
+                                                <AddWeightDialog onSuccess={refetch} clients={pagedClients} initialClientId={client.id}
                                                     triggerOverride={
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500"
-                                                            title="Thêm lộ trình"
-                                                        >
+                                                        <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}
+                                                            className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500" title="Thêm lộ trình">
                                                             <Activity className="h-3.5 w-3.5" />
                                                         </Button>
                                                     }
                                                 />
-
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-400"
-                                                        >
+                                                        <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-400">
                                                             <MoreHorizontal className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-gray-100 dark:border-gray-800">
                                                         <DropdownMenuLabel className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 py-2">Tác vụ hội viên</DropdownMenuLabel>
-                                                        <DropdownMenuItem
-                                                            onClick={(e) => { e.stopPropagation(); setSelectedClient(client); setIsDetailsOpen(true); }}
-                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-gray-50 dark:focus:bg-gray-800 rounded-lg mx-1"
-                                                        >
-                                                            <Edit2 className="w-3.5 h-3.5 text-blue-500" />
-                                                            <span className="text-sm font-medium">Chỉnh sửa hồ sơ</span>
+                                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setSelectedClient(client); setIsDetailsOpen(true) }}
+                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-gray-50 dark:focus:bg-gray-800 rounded-lg mx-1">
+                                                            <Edit2 className="w-3.5 h-3.5 text-blue-500" /><span className="text-sm font-medium">Chỉnh sửa hồ sơ</span>
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={(e) => { e.stopPropagation(); router.push(`/weight-tracking?clientId=${client.id}`); }}
-                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-gray-50 dark:focus:bg-gray-800 rounded-lg mx-1"
-                                                        >
-                                                            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                                                            <span className="text-sm font-medium">Xem lộ trình</span>
+                                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); router.push(`/weight-tracking?clientId=${client.id}`) }}
+                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-gray-50 dark:focus:bg-gray-800 rounded-lg mx-1">
+                                                            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" /><span className="text-sm font-medium">Xem lộ trình</span>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator className="bg-gray-100 dark:bg-gray-800 my-1 mx-1" />
-                                                        <DropdownMenuItem
-                                                            onClick={(e) => { e.stopPropagation(); window.open(`tel:${client.phone}`, '_self'); }}
-                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-gray-50 dark:focus:bg-gray-800 rounded-lg mx-1"
-                                                        >
-                                                            <Phone className="w-3.5 h-3.5 text-indigo-500" />
-                                                            <span className="text-sm font-medium">Gọi điện</span>
+                                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); window.open(`tel:${client.phone}`, '_self') }}
+                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-gray-50 dark:focus:bg-gray-800 rounded-lg mx-1">
+                                                            <Phone className="w-3.5 h-3.5 text-indigo-500" /><span className="text-sm font-medium">Gọi điện</span>
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={(e) => { e.stopPropagation(); router.push('/zalo-users'); }}
-                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-gray-50 dark:focus:bg-gray-800 rounded-lg mx-1"
-                                                        >
-                                                            <UserStar className="w-3.5 h-3.5 text-sky-500" />
-                                                            <span className="text-sm font-medium">Mời quan tâm Zalo</span>
+                                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); router.push('/zalo-users') }}
+                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-gray-50 dark:focus:bg-gray-800 rounded-lg mx-1">
+                                                            <UserStar className="w-3.5 h-3.5 text-sky-500" /><span className="text-sm font-medium">Mời quan tâm Zalo</span>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator className="bg-gray-100 dark:bg-gray-800 my-1 mx-1" />
-                                                        <DropdownMenuItem
-                                                            onClick={(e) => { e.stopPropagation(); handleDelete(client.id); }}
-                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-rose-50 dark:focus:bg-rose-950/20 text-rose-600 rounded-lg mx-1"
-                                                        >
-                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                            <span className="text-sm font-medium">Xóa hồ sơ</span>
+                                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDelete(client.id) }}
+                                                            className="flex items-center gap-2 px-3 py-2 cursor-pointer focus:bg-rose-50 dark:focus:bg-rose-950/20 text-rose-600 rounded-lg mx-1">
+                                                            <Trash2 className="w-3.5 h-3.5" /><span className="text-sm font-medium">Xóa hồ sơ</span>
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
@@ -759,12 +515,7 @@ export default function ClientsPage() {
                 </div>
             </Card>
 
-            <ClientDetailsSheet
-                client={selectedClient}
-                open={isDetailsOpen}
-                onOpenChange={setIsDetailsOpen}
-                onSuccess={refetch}
-            />
+            <ClientDetailsSheet client={selectedClient} open={isDetailsOpen} onOpenChange={setIsDetailsOpen} onSuccess={refetch} />
         </div>
     )
 }

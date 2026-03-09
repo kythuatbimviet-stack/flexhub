@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils'
 import { MobileNav } from '@/components/mobile/mobile-nav'
 import { MobileHeader } from '@/components/mobile/mobile-header'
 import Link from 'next/link'
+import { AppDataInitializer } from '@/components/layout/app-data-initializer'
+import { DataSyncStatus } from '@/components/layout/data-sync-status'
 
 export default function DashboardLayout({
     children,
@@ -72,6 +74,7 @@ export default function DashboardLayout({
 
     return (
         <div suppressHydrationWarning className="flex h-[100dvh] bg-[#F8FAFC] dark:bg-gray-900 overflow-hidden transition-colors duration-300 font-sans">
+            <AppDataInitializer />
             <MobileNav />
             <div className={cn(
                 "hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col transition-all duration-300 ease-in-out",
@@ -124,6 +127,7 @@ export default function DashboardLayout({
                                     <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-900"></span>
                                 </Button>
 
+                                <DataSyncStatus />
                                 <ThemeToggle />
                             </div>
 

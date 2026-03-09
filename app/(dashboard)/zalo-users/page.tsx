@@ -74,17 +74,18 @@ export default function ZaloUsersPage() {
         toast.info('Đã xóa tất cả bộ lọc')
     }
 
-    const { data: zaloUsers, isLoading, refetch } = useQuery({
-        queryKey: ['zalo-users'],
+    const { data: zaloUsers = [], isLoading, refetch } = useQuery<any[]>({
+        queryKey: ['zalo-users-all'],
         queryFn: async () => {
             const result = await fetchZaloUsers()
-            if (!result.success) throw new Error(result.error)
-            return result.data
+            return result.success ? (result.data ?? []) : []
         },
+        staleTime: 30 * 60 * 1000,
+        select: (data) => Array.isArray(data) ? data : [],
     })
 
     const userTypes = React.useMemo(() => {
-        if (!zaloUsers) return []
+        if (!zaloUsers || !Array.isArray(zaloUsers)) return []
         const types = new Set(zaloUsers.map(u => u.user_type).filter(Boolean))
         return Array.from(types).sort()
     }, [zaloUsers])
@@ -151,18 +152,21 @@ export default function ZaloUsersPage() {
         toast.success('Đã xuất file Excel thành công')
     }
 
-    const filteredUsers = zaloUsers?.filter(user => {
-        const matchesSearch =
-            user.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.alias?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.zalo_user_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.tags?.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredUsers = React.useMemo(() => {
+        const list = Array.isArray(zaloUsers) ? zaloUsers : []
+        return list.filter(user => {
+            const matchesSearch =
+                user.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                user.alias?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                user.zalo_user_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                user.tags?.toLowerCase().includes(searchTerm.toLowerCase())
 
-        const matchesUserType = filterUserType === 'all' || user.user_type === filterUserType
-        const matchesFollowing = filterFollowing === 'all' || (filterFollowing === 'following' ? user.is_following : !user.is_following)
+            const matchesUserType = filterUserType === 'all' || user.user_type === filterUserType
+            const matchesFollowing = filterFollowing === 'all' || (filterFollowing === 'following' ? user.is_following : !user.is_following)
 
-        return matchesSearch && matchesUserType && matchesFollowing
-    })
+            return matchesSearch && matchesUserType && matchesFollowing
+        })
+    }, [zaloUsers, searchTerm, filterUserType, filterFollowing])
 
     const toggleRow = (id: string) => {
         setSelectedRows(prev =>

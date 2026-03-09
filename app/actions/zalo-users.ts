@@ -1,17 +1,20 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 
 export async function fetchZaloUsers() {
-    const supabase = await createClient()
     try {
-        const { data, error } = await supabase
+        const adminClient = await createAdminClient()
+        const { data, error } = await adminClient
             .from('zalo_users')
             .select('*')
             .order('last_interaction_date', { ascending: false })
 
-        if (error) throw error
+        if (error) {
+            console.error('Fetch Zalo Users Error:', error)
+            return { success: false, error: error.message }
+        }
         return { success: true, data }
     } catch (error: any) {
         return { success: false, error: error.message }
