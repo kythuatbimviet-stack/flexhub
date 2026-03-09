@@ -1,6 +1,6 @@
 'use server'
 
-import { createAdminClient } from '@/lib/supabase-server'
+import { createAdminClient, createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 
 export async function fetchZaloUsers() {
@@ -22,9 +22,9 @@ export async function fetchZaloUsers() {
 }
 
 export async function updateZaloUser(id: string, updates: any) {
-    const supabase = await createClient()
     try {
-        const { data, error } = await supabase
+        const adminClient = await createAdminClient()
+        const { data, error } = await adminClient
             .from('zalo_users')
             .update(updates)
             .eq('id', id)
@@ -39,9 +39,9 @@ export async function updateZaloUser(id: string, updates: any) {
 }
 
 export async function deleteZaloUser(id: string) {
-    const supabase = await createClient()
     try {
-        const { error } = await supabase
+        const adminClient = await createAdminClient()
+        const { error } = await adminClient
             .from('zalo_users')
             .delete()
             .eq('id', id)
@@ -55,9 +55,9 @@ export async function deleteZaloUser(id: string) {
 }
 
 export async function bulkDeleteZaloUsers(ids: string[]) {
-    const supabase = await createClient()
     try {
-        const { error } = await supabase
+        const adminClient = await createAdminClient()
+        const { error } = await adminClient
             .from('zalo_users')
             .delete()
             .in('id', ids)

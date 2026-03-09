@@ -74,11 +74,15 @@ export default function ZaloUsersPage() {
         toast.info('Đã xóa tất cả bộ lọc')
     }
 
-    const { data: zaloUsers = [], isLoading, refetch } = useQuery<any[]>({
+    const { data: zaloUsers = [], isLoading, refetch, error: queryError } = useQuery<any[]>({
         queryKey: ['zalo-users-all'],
         queryFn: async () => {
             const result = await fetchZaloUsers()
-            return result.success ? (result.data ?? []) : []
+            if (!result.success) {
+                console.error('[ZaloUsers] Fetch failed:', result.error)
+                throw new Error(result.error || 'Lỗi không xác định khi tải dữ liệu')
+            }
+            return result.data ?? []
         },
         staleTime: 30 * 60 * 1000,
         select: (data) => Array.isArray(data) ? data : [],
@@ -337,6 +341,26 @@ export default function ZaloUsersPage() {
                                         <div className="flex flex-col items-center gap-4">
                                             <div className="w-14 h-14 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin shadow-inner" />
                                             <span className="text-slate-400 font-medium text-sm">Đang tải danh sách Zalo users...</span>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ) : queryError ? (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="h-96 text-center text-red-500">
+                                        <div className="flex flex-col items-center gap-4">
+                                            <XCircle className="w-12 h-12 text-rose-500" />
+                                            <div className="space-y-1">
+                                                <p className="font-bold">Lỗi khi tải dữ liệu</p>
+                                                <p className="text-sm opacity-80">{(queryError as any).message}</p>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => refetch()}
+                                                    className="mt-4 rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50"
+                                                >
+                                                    Thử lại
+                                                </Button>
+                                            </div>
                                         </div>
                                     </TableCell>
                                 </TableRow>
