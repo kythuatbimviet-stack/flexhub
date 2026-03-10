@@ -109,9 +109,12 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
         queryFn: fetchCurrentUserProfile
     })
 
-    const { data: zaloUsersResult } = useQuery({
-        queryKey: ['zalo-users'],
-        queryFn: fetchZaloUsers
+    const { data: zaloUsersData } = useQuery({
+        queryKey: ['zalo-users-all'],
+        queryFn: async () => {
+            const result = await fetchZaloUsers()
+            return result.success ? (result.data || []) : []
+        }
     })
 
     const [zaloSearchTerm, setZaloSearchTerm] = React.useState('')
@@ -122,7 +125,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
     const clientGoals = React.useMemo(() => configResult?.data?.goals || [], [configResult])
     const clientTrainingTimes = React.useMemo(() => configResult?.data?.trainingTimes || [], [configResult])
     const clientRegistrationTypes = React.useMemo(() => configResult?.data?.registrationTypes || [], [configResult])
-    const zaloUsers = React.useMemo(() => zaloUsersResult?.data || [], [zaloUsersResult])
+    const zaloUsers = React.useMemo(() => Array.isArray(zaloUsersData) ? zaloUsersData : [], [zaloUsersData])
 
     const filteredZaloUsers = React.useMemo(() => {
         if (!zaloSearchTerm) return zaloUsers

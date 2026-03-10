@@ -115,6 +115,22 @@ export async function fetchCurrentUserProfile() {
             .single()
 
         if (error) return { success: false, error: 'User profile not found' }
+        return { success: true, data: data }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function fetchUserByEmail(email: string) {
+    const supabase = await createClient()
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .single()
+
+        if (error) throw error
         return { success: true, data }
     } catch (error: any) {
         return { success: false, error: error.message }

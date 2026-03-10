@@ -4,6 +4,8 @@ import * as React from 'react'
 import {
     Sheet,
     SheetContent,
+    SheetHeader,
+    SheetTitle,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,11 +25,10 @@ import {
     ChevronDown
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { updateExpense, deleteExpense } from '@/app/actions/financial'
+import { fetchExpense, updateExpense, deleteExpense, fetchExpenseTypes } from '@/app/actions/financial'
 import { cn } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { fetchBranches } from '@/app/actions/branches'
-import { fetchFinancialCategories } from '@/app/actions/financial'
 import {
     Select,
     SelectContent,
@@ -64,10 +65,10 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
         },
     })
 
-    const { data: categories } = useQuery({
-        queryKey: ['financial-categories-expense'],
+    const { data: categories, isLoading: isCategoriesLoading, error: categoriesError } = useQuery({
+        queryKey: ['financial-expense-types'],
         queryFn: async () => {
-            const result = await fetchFinancialCategories('expense')
+            const result = await fetchExpenseTypes()
             if (!result.success) throw new Error(result.error)
             return result.data
         },
@@ -174,48 +175,52 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                 className="w-full sm:max-w-[480px] border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
             >
                 {/* Sticky Header */}
-                <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600">
-                            <Banknote className="w-5 h-5" />
+                <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 shrink-0">
+                    <SheetHeader className="flex flex-row items-center justify-between space-y-0">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600">
+                                <Banknote className="w-5 h-5" />
+                            </div>
+                            <div className="flex flex-col text-left">
+                                <SheetTitle className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                                    Chi tiết khoản chi
+                                </SheetTitle>
+                                <span className="text-[11px] text-slate-500 dark:text-slate-400">ID: {expense.id.split('-')[0]}</span>
+                            </div>
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">Chi tiết khoản chi</span>
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400">ID: {expense.id.split('-')[0]}</span>
+                        <div className="flex items-center gap-1">
+                            {!isEditing && (
+                                <>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={handleDelete}
+                                        className="sm:hidden rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                        disabled={loading}
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setIsEditing(true)}
+                                        className="sm:hidden rounded-full text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                                        disabled={loading}
+                                    >
+                                        <Edit2 className="w-5 h-5" />
+                                    </Button>
+                                </>
+                            )}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => onOpenChange(false)}
+                                className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                            >
+                                <X className="w-5 h-5 text-slate-400" />
+                            </Button>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        {!isEditing && (
-                            <>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handleDelete}
-                                    className="sm:hidden rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
-                                    disabled={loading}
-                                >
-                                    <Trash2 className="w-5 h-5" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setIsEditing(true)}
-                                    className="sm:hidden rounded-full text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20"
-                                    disabled={loading}
-                                >
-                                    <Edit2 className="w-5 h-5" />
-                                </Button>
-                            </>
-                        )}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onOpenChange(false)}
-                            className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-                        >
-                            <X className="w-5 h-5 text-slate-400" />
-                        </Button>
-                    </div>
+                    </SheetHeader>
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4">
@@ -256,14 +261,22 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                                             <SelectValue placeholder="Chọn danh mục" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-xl">
-                                            {categories?.map((cat: any) => (
-                                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                                            ))}
+                                            {isCategoriesLoading ? (
+                                                <SelectItem value="loading" disabled>Đang tải...</SelectItem>
+                                            ) : categoriesError ? (
+                                                <SelectItem value="error" disabled>Lỗi: {(categoriesError as Error).message}</SelectItem>
+                                            ) : !categories || categories.length === 0 ? (
+                                                <SelectItem value="none" disabled>Trống: Hãy kiểm tra RLS policy</SelectItem>
+                                            ) : (
+                                                categories.map((cat: any) => (
+                                                    <SelectItem key={cat.id} value={String(cat.nam)}>{cat.nam}</SelectItem>
+                                                ))
+                                            )}
                                         </SelectContent>
                                     </Select>
                                 ) : (
                                     <div className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
-                                        {formData.financial_categories?.name || 'Phổ thông'}
+                                        {formData.category_id || 'Phổ thông'}
                                     </div>
                                 )}
                             </div>

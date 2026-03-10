@@ -40,13 +40,13 @@ import {
     CreditCard
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import { fetchRevenue, bulkDeleteRevenue, fetchFinancialCategories } from '@/app/actions/financial'
+import { fetchRevenue, bulkDeleteRevenue } from '@/app/actions/financial'
 import { fetchBranches } from '@/app/actions/branches'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AddRevenueDialog } from '@/components/financial/add-revenue-dialog'
+import { AddRevenueSheet } from '@/components/financial/add-revenue-sheet'
 import { ImportExcelRevenueDialog } from '@/components/financial/import-revenue-dialog'
 import { RevenueDetailsSheet } from '@/components/financial/revenue-details-sheet'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -78,21 +78,13 @@ export default function RevenuePage() {
         },
     })
 
-    const { data: categories } = useQuery({
-        queryKey: ['financial-categories-revenue'],
-        queryFn: async () => {
-            const result = await fetchFinancialCategories('revenue')
-            if (!result.success) throw new Error(result.error)
-            return result.data
-        },
-    })
 
     const filteredRevenue = React.useMemo(() => {
         if (!revenueData) return []
         return revenueData.filter((item: any) => {
             const matchesSearch =
                 item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.customers?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.clients?.member_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 item.id.toLowerCase().includes(searchQuery.toLowerCase())
             const matchesBranch = branchFilter === 'all' || item.branch_id === branchFilter
             const matchesCategory = categoryFilter === 'all' || item.category_id === categoryFilter
@@ -109,9 +101,9 @@ export default function RevenuePage() {
             'ID': item.id,
             'Ngày': new Date(item.recorded_at).toLocaleDateString('vi-VN'),
             'Số tiền': item.amount,
-            'Danh mục': item.financial_categories?.name,
+            'Danh mục': item.category_id,
             'Chi nhánh': item.branches?.name,
-            'Khách hàng': item.customers?.name || 'Vãng lai',
+            'Khách hàng': item.clients?.member_name || 'Vãng lai',
             'Thanh toán': item.payment_method,
             'Diễn giải': item.description,
         }))
@@ -167,7 +159,7 @@ export default function RevenuePage() {
                 </div>
                 <div className="flex items-center gap-2">
                     <ImportExcelRevenueDialog onSuccess={refetch} />
-                    <AddRevenueDialog onSuccess={refetch} />
+                    <AddRevenueSheet onSuccess={refetch} />
                 </div>
             </div>
 
@@ -254,9 +246,9 @@ export default function RevenuePage() {
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
                                                 <SelectItem value="all">Tất cả danh mục</SelectItem>
-                                                {categories?.map((cat: any) => (
-                                                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                                                ))}
+                                                <SelectItem value="Hợp đồng">Hợp đồng</SelectItem>
+                                                <SelectItem value="Công nợ">Công nợ</SelectItem>
+                                                <SelectItem value="Khác">Khác</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -336,17 +328,17 @@ export default function RevenuePage() {
                                     <TableCell className="py-3">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 font-bold text-[10px] uppercase">
-                                                {item.customers?.name?.charAt(0) || <User className="w-3 h-3" />}
+                                                {item.clients?.member_name?.charAt(0) || <User className="w-3 h-3" />}
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{item.customers?.name || 'Khách vãng lai'}</span>
+                                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{item.clients?.member_name || 'Khách vãng lai'}</span>
                                                 <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">{item.branches?.name}</span>
                                             </div>
                                         </div>
                                     </TableCell>
                                     <TableCell className="py-3">
                                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 uppercase">
-                                            {item.financial_categories?.name || 'Phổ thông'}
+                                            {item.category_id || 'Phổ thông'}
                                         </span>
                                     </TableCell>
                                     <TableCell className="py-3 text-sm font-black text-emerald-600 dark:text-emerald-400">

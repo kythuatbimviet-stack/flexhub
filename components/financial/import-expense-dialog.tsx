@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { bulkCreateExpense, fetchFinancialCategories } from '@/app/actions/financial'
+import { bulkCreateExpense, fetchExpenseTypes } from '@/app/actions/financial'
 import { fetchBranches } from '@/app/actions/branches'
 import { useQuery } from '@tanstack/react-query'
 
@@ -36,9 +36,9 @@ export function ImportExcelExpenseDialog({ onSuccess }: ImportExcelExpenseDialog
     })
 
     const { data: categories } = useQuery({
-        queryKey: ['financial-categories-expense'],
+        queryKey: ['financial-expense-types'],
         queryFn: async () => {
-            const result = await fetchFinancialCategories('expense')
+            const result = await fetchExpenseTypes()
             if (!result.success) throw new Error(result.error)
             return result.data
         },
@@ -66,12 +66,12 @@ export function ImportExcelExpenseDialog({ onSuccess }: ImportExcelExpenseDialog
                 }
 
                 const expenseToInsert = data.map((row: any) => {
-                    const category = categories?.find((c: any) => c.name === row['Danh mục'])
+                    const category = categories?.find((c: any) => c.nam === row['Danh mục'])
                     const branch = branches?.find((b: any) => b.name === row['Chi nhánh'])
 
                     return {
                         amount: row['Số tiền'] || 0,
-                        category_id: category?.id || null,
+                        category_id: category?.nam || row['Danh mục'] || null,
                         branch_id: branch?.id || null,
                         description: row['Diễn giải'] || row['Ghi chú'] || '',
                         payment_method: row['Thanh toán'] || 'Tiền mặt',

@@ -29,9 +29,8 @@ export async function fetchRevenue() {
             .from('revenue')
             .select(`
                 *,
-                financial_categories (name),
                 branches (name),
-                customers (name)
+                clients (member_name)
             `)
             .order('recorded_at', { ascending: false })
 
@@ -50,12 +49,48 @@ export async function createRevenue(data: any) {
             .from('revenue')
             .insert([{ ...data, recorded_by: userData.user?.id }])
             .select()
+            .single()
 
         if (error) throw error
+
+        // If linked to an installment, update it
+        if (data.installment_id) {
+            await supabase
+                .from('debt_installments')
+                .update({ status: 'Đã thanh toán', revenue_id: result.id })
+                .eq('id', data.installment_id)
+        }
+
+        // If linked to a debt, update the total paid_amount
+        if (data.debt_id) {
+            const { data: debt } = await supabase
+                .from('debts')
+                .select('paid_amount, total_amount')
+                .eq('id', data.debt_id)
+                .single()
+
+            if (debt) {
+                const newPaidAmount = Number(debt.paid_amount) + Number(data.amount)
+                const newRemaining = Math.max(0, Number(debt.total_amount) - newPaidAmount)
+                const newStatus = newRemaining <= 0 ? 'Đã thanh toán' : 'Thanh toán một phần'
+
+                await supabase
+                    .from('debts')
+                    .update({
+                        paid_amount: newPaidAmount,
+                        remaining_amount: newRemaining,
+                        status: newStatus
+                    })
+                    .eq('id', data.debt_id)
+            }
+        }
+
         revalidatePath('/revenue')
         revalidatePath('/cash-flow')
-        return { success: true, data: result[0] }
+        revalidatePath('/debts')
+        return { success: true, data: result }
     } catch (error: any) {
+        console.error('Create Revenue Error:', error)
         return { success: false, error: error.message }
     }
 }
@@ -132,14 +167,19 @@ export async function fetchExpense() {
             .from('expense')
             .select(`
                 *,
-                financial_categories (name),
                 branches (name)
             `)
             .order('recorded_at', { ascending: false })
 
-        if (error) throw error
+        if (error) {
+            console.error('Fetch Expense Error:', error)
+            throw error
+        }
+
+        console.log('Fetch Expense Data:', data?.length || 0, 'rows found')
         return { success: true, data }
     } catch (error: any) {
+        console.error('Fetch Expense Failed:', error.message)
         return { success: false, error: error.message }
     }
 }
@@ -238,6 +278,29 @@ export async function fetchCashFlowData() {
 
         return { success: true, data: { revenue, expense } }
     } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+// --- Configuration ---
+
+export async function fetchExpenseTypes() {
+    const supabase = await createClient()
+    try {
+        const { data, error } = await supabase
+            .from('config_finance_expense_type')
+            .select('*')
+            .order('nam')
+
+        if (error) {
+            console.error('Fetch Expense Types Error:', error)
+            throw error
+        }
+
+        console.log('Fetch Expense Types Success:', data?.length || 0, 'rows found')
+        return { success: true, data }
+    } catch (error: any) {
+        console.error('Fetch Expense Types Failed:', error.message)
         return { success: false, error: error.message }
     }
 }

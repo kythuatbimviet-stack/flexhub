@@ -22,18 +22,52 @@ export async function fetchContracts() {
     }
 }
 
-export async function createContract(contract: any) {
+export async function createContract(contract: any, debtPlan?: any) {
     const supabase = await createClient()
     try {
-        const { data, error } = await supabase
+        const { data: contractData, error: contractError } = await supabase
             .from('contracts')
             .insert([contract])
             .select()
+            .single()
 
-        if (error) throw error
+        if (contractError) throw contractError
+
+        if (debtPlan && debtPlan.has_debt) {
+            const { data: debtData, error: debtError } = await supabase
+                .from('debts')
+                .insert([{
+                    contract_id: contractData.id,
+                    client_id: contractData.client_id,
+                    total_amount: contractData.total_amount,
+                    paid_amount: debtPlan.paid_upfront,
+                    remaining_amount: Number(contractData.total_amount) - Number(debtPlan.paid_upfront),
+                    status: 'Thanh toán một phần',
+                    branch_id: contractData.branch_id,
+                    note: `Tự động tạo từ HĐ ${contractData.id}`
+                }])
+                .select()
+                .single()
+
+            if (debtError) throw debtError
+
+            if (debtPlan.installments && debtPlan.installments.length > 0) {
+                const { error: instError } = await supabase
+                    .from('debt_installments')
+                    .insert(debtPlan.installments.map((inst: any) => ({
+                        ...inst,
+                        debt_id: debtData.id
+                    })))
+
+                if (instError) throw instError
+            }
+        }
+
         revalidatePath('/contracts')
-        return { success: true, data: data[0] }
+        revalidatePath('/debts')
+        return { success: true, data: contractData }
     } catch (error: any) {
+        console.error('Create Contract Error:', error)
         return { success: false, error: error.message }
     }
 }

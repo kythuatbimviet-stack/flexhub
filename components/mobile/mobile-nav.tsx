@@ -41,7 +41,7 @@ const secondaryNavigation = [
     { name: 'Chi nhánh', href: '/branches', icon: Building2 },
     { name: 'Nhân sự', href: '/users', icon: Users },
     { name: 'Gói tập', href: '/packages', icon: Package },
-    { name: 'Cài đặt', href: '/settings', icon: Settings },
+    { name: 'Tham số', href: '/config-params', icon: Settings },
 ]
 
 export function MobileNav() {

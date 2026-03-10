@@ -39,13 +39,13 @@ import {
     CreditCard
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import { fetchExpense, bulkDeleteExpense, fetchFinancialCategories } from '@/app/actions/financial'
+import { fetchExpense, bulkDeleteExpense, fetchExpenseTypes } from '@/app/actions/financial'
 import { fetchBranches } from '@/app/actions/branches'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AddExpenseDialog } from '@/components/financial/add-expense-dialog'
+import { AddExpenseSheet } from '@/components/financial/add-expense-sheet'
 import { ImportExcelExpenseDialog } from '@/components/financial/import-expense-dialog'
 import { ExpenseDetailsSheet } from '@/components/financial/expense-details-sheet'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -80,7 +80,7 @@ export default function ExpensePage() {
     const { data: categories } = useQuery({
         queryKey: ['financial-categories-expense'],
         queryFn: async () => {
-            const result = await fetchFinancialCategories('expense')
+            const result = await fetchExpenseTypes()
             if (!result.success) throw new Error(result.error)
             return result.data
         },
@@ -107,7 +107,7 @@ export default function ExpensePage() {
             'ID': item.id,
             'Ngày': new Date(item.recorded_at).toLocaleDateString('vi-VN'),
             'Số tiền': item.amount,
-            'Danh mục': item.financial_categories?.name,
+            'Danh mục': item.category_id,
             'Chi nhánh': item.branches?.name,
             'Thanh toán': item.payment_method,
             'Diễn giải': item.description,
@@ -165,7 +165,7 @@ export default function ExpensePage() {
                 </div>
                 <div className="flex items-center gap-2">
                     <ImportExcelExpenseDialog onSuccess={refetch} />
-                    <AddExpenseDialog onSuccess={refetch} />
+                    <AddExpenseSheet onSuccess={refetch} />
                 </div>
             </div>
 
@@ -252,7 +252,7 @@ export default function ExpensePage() {
                                             <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
                                                 <SelectItem value="all">Tất cả danh mục</SelectItem>
                                                 {categories?.map((cat: any) => (
-                                                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                                    <SelectItem key={cat.id} value={cat.nam}>{cat.nam}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -339,7 +339,7 @@ export default function ExpensePage() {
                                     </TableCell>
                                     <TableCell className="py-3">
                                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 uppercase">
-                                            {item.financial_categories?.name || 'Chưa phân loại'}
+                                            {item.category_id || 'Chưa phân loại'}
                                         </span>
                                     </TableCell>
                                     <TableCell className="py-3 text-sm font-black text-rose-600 dark:text-rose-400 tracking-tight">

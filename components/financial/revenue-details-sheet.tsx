@@ -28,7 +28,6 @@ import { updateRevenue, deleteRevenue } from '@/app/actions/financial'
 import { cn } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { fetchBranches } from '@/app/actions/branches'
-import { fetchFinancialCategories } from '@/app/actions/financial'
 import {
     Select,
     SelectContent,
@@ -65,21 +64,13 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
         },
     })
 
-    const { data: categories } = useQuery({
-        queryKey: ['financial-categories-revenue'],
-        queryFn: async () => {
-            const result = await fetchFinancialCategories('revenue')
-            if (!result.success) throw new Error(result.error)
-            return result.data
-        },
-    })
 
     if (!revenue) return null
 
     const handleSave = async () => {
         setLoading(true)
         try {
-            const { financial_categories, branches: b, customers, users, ...updateData } = formData
+            const { financial_categories, branches: b, clients, users, ...updateData } = formData
             const result = await updateRevenue(revenue.id, updateData)
             if (result.success) {
                 toast.success('Đã cập nhật khoản thu')
@@ -257,14 +248,14 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
                                             <SelectValue placeholder="Chọn danh mục" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-xl">
-                                            {categories?.map((cat: any) => (
-                                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                            {['Hợp đồng', 'Công nợ', 'Khác'].map(cat => (
+                                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                 ) : (
                                     <div className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
-                                        {formData.financial_categories?.name || 'Phổ thông'}
+                                        {formData.category_id || 'Phổ thông'}
                                     </div>
                                 )}
                             </div>
@@ -301,7 +292,7 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
 
                     <CardSection title="Đối tượng & Chi nhánh" icon={Building2}>
                         <div className="space-y-5">
-                            <DetailRow label="Khách hàng" value={formData.customers?.name || 'Khách vãng lai'} name="customer_id" icon={User} />
+                            <DetailRow label="Khách hàng" value={formData.clients?.member_name || 'Khách vãng lai'} name="customer_id" icon={User} />
 
                             <div className="space-y-1.5 font-inter">
                                 <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">

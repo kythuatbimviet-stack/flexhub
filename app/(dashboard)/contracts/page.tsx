@@ -40,6 +40,7 @@ import {
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -50,6 +51,7 @@ import { AddContractDialog } from '@/components/contracts/add-contract-dialog'
 import { ContractDetailsSheet } from '@/components/contracts/contract-details-sheet'
 import { ImportExcelContractDialog } from '@/components/contracts/import-excel-contract-dialog'
 import { fetchBranches } from '@/app/actions/branches'
+import { fetchContractConfigs } from '@/app/actions/config-params'
 import {
     Select,
     SelectContent,
@@ -86,6 +88,13 @@ export default function ContractsPage() {
     React.useEffect(() => { setPage(1) }, [statusFilter, branchFilter, ptFilter, contractTypeFilter, pageSize])
 
     // ── Data from global cache ────────────────────────────────────────────────
+    const { data: configResult } = useQuery({
+        queryKey: ['contract-configs'],
+        queryFn: fetchContractConfigs,
+        staleTime: Infinity,
+    })
+    const contractStatuses = React.useMemo(() => configResult?.data?.statuses || [], [configResult])
+
     const { data: contracts = [], isLoading } = useQuery<any[]>({
         queryKey: ['contracts-all'],
         queryFn: async () => {
@@ -146,12 +155,11 @@ export default function ContractsPage() {
     // Status counts for the badge tabs
     const statusCounts = React.useMemo(() => {
         const counts: Record<string, number> = { total: contracts?.length ?? 0 }
-        const statuses = ['Đang thực hiện', 'Hoàn thành', 'Đã hủy']
-        statuses.forEach(s => {
-            counts[s] = (contracts ?? []).filter((c: any) => c.status === s).length
+        contractStatuses.forEach((s: any) => {
+            counts[s.nam] = (contracts ?? []).filter((c: any) => c.status === s.nam).length
         })
         return counts
-    }, [contracts])
+    }, [contracts, contractStatuses])
 
     const refetch = () => queryClient.invalidateQueries({ queryKey: ['contracts-all'] })
 
@@ -247,6 +255,22 @@ export default function ContractsPage() {
                 </div>
             </div>
 
+            {/* Status Tabs */}
+            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+                <TabsList className="bg-transparent h-auto p-0 flex flex-nowrap overflow-x-auto no-scrollbar gap-1 px-1 mb-1 w-full justify-start">
+                    <TabsTrigger value="all" className={cn("flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm border-none text-gray-600 hover:text-gray-700 data-[state=active]:text-red-600")}>
+                        Tất cả trạng thái
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600">{statusCounts.total}</span>
+                    </TabsTrigger>
+                    {contractStatuses.map((s: any) => (
+                        <TabsTrigger key={`status-tab-${s.id}`} value={s.nam} className={cn("flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm border-none text-gray-500 hover:text-gray-700 data-[state=active]:text-red-600")}>
+                            {s.nam}
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-600">{statusCounts[s.nam] || 0}</span>
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
+            </Tabs>
+
             {/* Filter Section */}
             <Card className="border-none shadow-sm rounded-xl overflow-visible bg-white dark:bg-gray-900 py-0">
                 <div className="py-1 px-1 sm:px-1.5 rounded-xl">
@@ -277,18 +301,6 @@ export default function ContractsPage() {
                                     exit={{ height: 0, opacity: 0 }}
                                     className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2">
                                     <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
-                                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3 shadow-none">
-                                                <SelectValue placeholder="Trạng thái" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                <SelectItem value="all">Tất cả trạng thái <span className="text-gray-400">({statusCounts.total})</span></SelectItem>
-                                                <SelectItem value="Đang thực hiện">Đang thực hiện <span className="text-gray-400">({statusCounts['Đang thực hiện'] || 0})</span></SelectItem>
-                                                <SelectItem value="Hoàn thành">Hoàn thành <span className="text-gray-400">({statusCounts['Hoàn thành'] || 0})</span></SelectItem>
-                                                <SelectItem value="Đã hủy">Đã hủy <span className="text-gray-400">({statusCounts['Đã hủy'] || 0})</span></SelectItem>
-                                            </SelectContent>
-                                        </Select>
-
                                         <Select value={branchFilter} onValueChange={setBranchFilter}>
                                             <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3 shadow-none">
                                                 <SelectValue placeholder="Chi nhánh" />

@@ -26,7 +26,9 @@ import {
     Activity,
     ChevronLeft,
     ChevronRight,
-    Search
+    Search,
+    HandCoins,
+    BanknoteArrowUp
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -40,23 +42,15 @@ import {
 const mainNavigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Khách hàng', href: '/clients', icon: Users },
-    { name: 'Lộ trình tăng cân', href: '/weight-tracking', icon: Activity },
     { name: 'Hợp đồng', href: '/contracts', icon: FileText },
+    { name: 'Lộ trình tăng cân', href: '/weight-tracking', icon: Activity },
     { name: 'Zalo', href: '/zalo-users', icon: UserStar },
-
-    // { name: 'Categories', href: '/categories', icon: Layers },
-    // { name: 'Items (Master)', href: '/items', icon: Box },
-    // { name: 'Warehouses', href: '/warehouses', icon: Warehouse },
-    // { name: 'Inventory', href: '/inventory', icon: ClipboardList },
-    // { name: 'Quotations', href: '/quotations', icon: FileText },
-    // { name: 'Orders', href: '/orders', icon: ShoppingCart },
-    // { name: 'Sample Catalogues', href: '/samples/catalogues', icon: BookOpen },
-    // { name: 'Sample Requests', href: '/samples/requests', icon: Send },
 ]
 
 const financialNavigation = [
-    { name: 'Thu', href: '/revenue', icon: DollarSign },
+    { name: 'Thu', href: '/revenue', icon: BanknoteArrowUp },
     { name: 'Chi', href: '/expense', icon: BanknoteArrowDown },
+    { name: 'Công nợ', href: '/debts', icon: HandCoins },
     { name: 'Dòng tiền', href: '/cash-flow', icon: TrendingUpDown },
 ]
 

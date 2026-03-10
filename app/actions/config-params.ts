@@ -149,3 +149,26 @@ export async function fetchClientConfigs() {
         return { success: false, error: error.message }
     }
 }
+
+export async function fetchContractConfigs() {
+    try {
+        const supabase = await createAdminClient()
+
+        const { data, error } = await supabase
+            .from('config_contract_status')
+            .select('*')
+            .order('value', { ascending: true })
+
+        if (error) throw error
+
+        return {
+            success: true,
+            data: {
+                statuses: data as ConfigItem[]
+            }
+        }
+    } catch (error: any) {
+        console.error('Error fetching contract configs:', error)
+        return { success: false, error: error.message }
+    }
+}
