@@ -270,8 +270,29 @@ export async function bulkDeleteExpense(ids: string[]) {
 export async function fetchCashFlowData() {
     const supabase = await createClient()
     try {
-        const { data: revenue, error: rError } = await supabase.from('revenue').select('amount, recorded_at, branch_id')
-        const { data: expense, error: eError } = await supabase.from('expense').select('amount, recorded_at, branch_id')
+        const { data: revenue, error: rError } = await supabase
+            .from('revenue')
+            .select(`
+                id, 
+                amount, 
+                recorded_at, 
+                branch_id, 
+                description, 
+                payment_method,
+                branches (name)
+            `)
+
+        const { data: expense, error: eError } = await supabase
+            .from('expense')
+            .select(`
+                id, 
+                amount, 
+                recorded_at, 
+                branch_id, 
+                description, 
+                payment_method,
+                branches (name)
+            `)
 
         if (rError) throw rError
         if (eError) throw eError

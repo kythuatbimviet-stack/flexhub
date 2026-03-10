@@ -326,7 +326,7 @@ export default function CashFlowPage() {
                                             )}>
                                                 {item.type === 'revenue' ? 'Khoản thu' : 'Khoản chi'}
                                             </span>
-                                            <span className="text-[11px] font-black text-gray-400 tracking-tight">#{item.id.split('-')[0]}</span>
+                                            <span className="text-[11px] font-black text-gray-400 tracking-tight">#{item.id?.split('-')[0] || 'N/A'}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell className="py-3">
@@ -345,11 +345,11 @@ export default function CashFlowPage() {
                                     <TableCell className="py-3">
                                         <div className="flex items-center gap-2">
                                             <CreditCard className="w-3 h-3 text-gray-400" />
-                                            <span className="text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest">{item.payment_method}</span>
+                                            <span className="text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest">{item.payment_method || 'N/A'}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell className="py-3 text-right pr-7">
-                                        <span className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">{item.branches?.name}</span>
+                                        <span className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">{item.branches?.name || 'Vãng lai'}</span>
                                     </TableCell>
                                 </TableRow>
                             ))}
