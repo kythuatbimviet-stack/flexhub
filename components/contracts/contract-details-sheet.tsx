@@ -41,6 +41,10 @@ import { updateContract, deleteContract } from '@/app/actions/contracts'
 import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
 import { cn } from '@/lib/utils'
 import { FinalizeContractDialog } from './finalize-contract-dialog'
+import { ContractPrintTemplate } from './contract-print-template'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
+import { Loader2, Download } from 'lucide-react'
 
 interface ContractDetailsSheetProps {
     contract: any | null
@@ -61,6 +65,8 @@ export function ContractDetailsSheet({
     const [branches, setBranches] = React.useState<any[]>([])
     const [statuses, setStatuses] = React.useState<ConfigItem[]>([])
     const [showFinalizeDialog, setShowFinalizeDialog] = React.useState(false)
+    const [isExporting, setIsExporting] = React.useState(false)
+    const printRef = React.useRef<HTMLDivElement>(null)
 
     const defaultStatus = React.useMemo(() => {
         return statuses.find(s => s.is_default)?.nam || statuses[0]?.nam || 'Đang thực hiện'
@@ -133,6 +139,46 @@ export function ContractDetailsSheet({
             } finally {
                 setLoading(false)
             }
+        }
+    }
+
+    const handleExportPDF = async () => {
+        if (!printRef.current) return
+
+        setIsExporting(true)
+        const toastId = toast.loading('Đang khởi tạo tệp PDF...')
+
+        try {
+            // Wait a bit for any pending renders
+            await new Promise(resolve => setTimeout(resolve, 500))
+
+            const canvas = await html2canvas(printRef.current, {
+                scale: 2, // Higher quality
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            })
+
+            const imgData = canvas.toDataURL('image/png')
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            })
+
+            const imgProps = pdf.getImageProperties(imgData)
+            const pdfWidth = pdf.internal.pageSize.getWidth()
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
+
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+            pdf.save(`HopDong_${contract.id || 'Contract'}.pdf`)
+
+            toast.success('Xuất PDF thành công!', { id: toastId })
+        } catch (error: any) {
+            console.error('PDF Export Error:', error)
+            toast.error('Lỗi khi xuất PDF: ' + error.message, { id: toastId })
+        } finally {
+            setIsExporting(false)
         }
     }
 
@@ -421,9 +467,18 @@ export function ContractDetailsSheet({
                                     </Button>
                                 )}
                                 <Button
+                                    onClick={handleExportPDF}
+                                    disabled={isExporting}
+                                    variant="outline"
+                                    className="rounded-xl h-11 px-6 font-bold text-[13px] border-blue-50 text-blue-600 hover:bg-blue-50 dark:border-blue-900/30 dark:hover:bg-blue-950/20 transition-all font-inter border-2"
+                                >
+                                    {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                                    Xuất Hợp đồng (PDF)
+                                </Button>
+                                <Button
                                     onClick={() => setIsEditing(true)}
                                     className="rounded-xl h-11 px-8 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
-                                    disabled={loading}
+                                    disabled={loading || isExporting}
                                 >
                                     <Edit2 className="w-4 h-4 mr-2" />
                                     Sửa hợp đồng
@@ -442,6 +497,11 @@ export function ContractDetailsSheet({
                         onOpenChange(false)
                     }}
                 />
+
+                {/* Hidden Print Template */}
+                <div className="fixed left-[-9999px] top-0">
+                    <ContractPrintTemplate ref={printRef} contract={contract} />
+                </div>
             </SheetContent>
         </Sheet>
     )

@@ -37,7 +37,8 @@ import {
     Edit2,
     Building2,
     User,
-    CreditCard
+    CreditCard,
+    RotateCcw
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchRevenue, bulkDeleteRevenue } from '@/app/actions/financial'
@@ -55,6 +56,7 @@ export default function RevenuePage() {
     const [searchQuery, setSearchQuery] = React.useState('')
     const [branchFilter, setBranchFilter] = React.useState('all')
     const [categoryFilter, setCategoryFilter] = React.useState('all')
+    const [paymentMethodFilter, setPaymentMethodFilter] = React.useState('all')
     const [selectedRevenues, setSelectedRevenues] = React.useState<string[]>([])
     const [viewingRevenue, setViewingRevenue] = React.useState<any>(null)
     const [detailSheetOpen, setDetailSheetOpen] = React.useState(false)
@@ -88,9 +90,10 @@ export default function RevenuePage() {
                 item.id.toLowerCase().includes(searchQuery.toLowerCase())
             const matchesBranch = branchFilter === 'all' || item.branch_id === branchFilter
             const matchesCategory = categoryFilter === 'all' || item.category_id === categoryFilter
-            return matchesSearch && matchesBranch && matchesCategory
+            const matchesPaymentMethod = paymentMethodFilter === 'all' || item.payment_method === paymentMethodFilter
+            return matchesSearch && matchesBranch && matchesCategory && matchesPaymentMethod
         })
-    }, [revenueData, searchQuery, branchFilter, categoryFilter])
+    }, [revenueData, searchQuery, branchFilter, categoryFilter, paymentMethodFilter])
 
     const totalAmount = React.useMemo(() => {
         return filteredRevenue.reduce((sum: number, item: any) => sum + item.amount, 0)
@@ -146,6 +149,13 @@ export default function RevenuePage() {
         )
     }
 
+    const resetFilters = () => {
+        setSearchQuery('')
+        setBranchFilter('all')
+        setCategoryFilter('all')
+        setPaymentMethodFilter('all')
+    }
+
     return (
         <div className="space-y-1.5 font-inter pb-10">
             {/* Header Section */}
@@ -158,6 +168,14 @@ export default function RevenuePage() {
                     <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Theo dõi và quản lý mọi dòng tiền đi vào hệ thống.</p>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={handleExportExcel}
+                        className="h-11 rounded-xl border-gray-100 dark:border-gray-800 text-gray-500 hover:text-emerald-600 transition-all font-semibold"
+                    >
+                        <FileDown className="w-4 h-4 mr-2" />
+                        Xuất Excel
+                    </Button>
                     <ImportExcelRevenueDialog onSuccess={refetch} />
                     <AddRevenueSheet onSuccess={refetch} />
                 </div>
@@ -197,11 +215,11 @@ export default function RevenuePage() {
 
                             <Button
                                 variant="outline"
-                                size="icon"
-                                onClick={handleExportExcel}
-                                className="h-9 w-9 rounded-lg border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-gray-400 hover:text-emerald-600"
+                                onClick={resetFilters}
+                                className="h-9 px-3 rounded-lg text-emerald-600 dark:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 border-gray-100 dark:border-gray-800 transition-all flex items-center gap-2"
                             >
-                                <FileDown className="w-4 h-4" />
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                <span className="text-xs font-bold uppercase tracking-wider">Làm mới</span>
                             </Button>
 
                             {/* Mobile Filter Toggle */}
@@ -249,6 +267,18 @@ export default function RevenuePage() {
                                                 <SelectItem value="Hợp đồng">Hợp đồng</SelectItem>
                                                 <SelectItem value="Công nợ">Công nợ</SelectItem>
                                                 <SelectItem value="Khác">Khác</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+
+                                        <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-emerald-500 text-xs sm:text-sm lg:w-44 px-3">
+                                                <SelectValue placeholder="Hình thức" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                <SelectItem value="all">Tất cả hình thức</SelectItem>
+                                                {['Tiền mặt', 'Chuyển khoản', 'Thẻ'].map(m => (
+                                                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </div>

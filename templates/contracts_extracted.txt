@@ -1,0 +1,342 @@
+
+
+Hôm nay, tại phòng tập <<[Tên viết tắt]>> chúng tôi gồm:
+
+
+
+TRUNG TÂM
+
+ <<upper([Tên viết tắt])>> 
+
+Địa chỉ: 
+
+<<[Địa chỉ]>> 
+
+Đại diện: 
+
+<<[Đại diện Trung tâm]>> 
+
+Số điện thoại: 
+
+<<[SĐT trung tâm]>> 
+
+Số tài khoản: 
+
+<<[Số tài khoản]>> 
+
+Chủ tài khoản: 
+
+<<[Chủ tài khoản]>>
+
+Ngân hàng: 
+
+<<[Ngân hàng]>>
+
+
+
+(Sau đây gọi tắt là “Phòng tập”) Và:
+
+
+
+HỘI VIÊN
+
+<<upper([Tên Hội viên])>> 
+
+Ngày sinh: 
+
+<<[Ngày sinh]>>
+
+Số CMND/CCCD: 
+
+<<[Số CMND/CCCD]>> 
+
+Địa chỉ: 
+
+<<[Địa chỉ Hội viên]>> 
+
+Số điện thoại: 
+
+<<[Số điện thoại]>> 
+
+Email: 
+
+<<[Email]>> 
+
+Chiều cao: 
+
+<<[Chiều cao ban đầu]>> cm 
+
+Cân nặng: 
+
+<<[Cân nặng ban đầu]>> kg 
+
+Bệnh lý: 
+
+<<[Bệnh lý]>> 
+
+
+
+Thông tin người đại diện theo pháp luật (nếu  có): 
+
+Họ và tên: 
+
+<<[Đại diện PL KH]>> 
+
+Số điện thoại: 
+
+<<[SĐT Đại diện PL]>>
+
+(Người đại diện theo pháp luật sẽ thay mặt ký Hợp đồng này nếu Hội viên dưới 18 tuổi)	
+
+(Sau đây gọi tắt là “Hội viên”)
+
+
+
+Sau khi được chuyên viên của phòng tập tư vấn quyền lợi trong các gói tập, Hội viên đồng ý lựa chọn gói tập theo thông tin dưới đây với các quyền lợi và dịch vụ được kèm theo Hợp đồng này.			
+
+THÔNG TIN GÓI TẬP HUẤN LUYỆN VIÊN CÁ NHÂN
+
+GÓI TẬP
+
+<<upper([Tên Gói tập])>>                      
+
+Tổng số cân khoán: 
+
+<<[Tổng số buổi/cân khoán]>>
+
+Giá trị gói tập: 
+
+<<text([Giá trước giảm])>> đ                  
+
+     Bằng chữ: 
+
+<<text([Bằng chữ gói tập])>> đồng.
+
+Giá trợ giá : 
+
+<<text([Thành tiền])>> đ             
+
+     Bằng chữ: 
+
+<<[Bằng chữ trợ giá]>> đồng.
+
+Tổng giá trị Hợp đồng: 
+
+<<text([Thành tiền])>>đ               
+
+     Bằng chữ
+
+<<[Bằng chữ trợ giá]>> đồng
+
+Thời hạn Gói tập: 
+
+<<[Tổng số ngày]>>  ngày 
+
+Ngày bắt đầu
+
+<<[Ngày bắt đầu]>> 
+
+Ngày kết thúc:
+
+<<[Ngày kết thúc]>> 
+
+Tên Huấn luyện viên: 
+
+<<[Tên Huấn luyện viên]>>                
+
+Hình thức Hlv: 
+
+<<[Hình thức HLV]>>
+
+
+
+Đồng thời, Các Bên nhất trí ký kết hợp đồng với những điều khoản và điều kiện như sau:								
+
+ĐIỀU 1: MỤC ĐÍCH HỢP ĐỒNG							
+
+Các Bên thống nhất tại Hợp đồng này rằng phòng tập sẽ cung cấp cho Hội viên dịch vụ tập luyện cùng với Huấn luyện viên cá nhân (“HLV”) với Gói tập và giá trị Gói tập được nêu bên trên. Giá trị Gói tập chưa bao gồm Thuế Giá trị Gia tăng theo quy định pháp luật hiện hành.					
+
+Điều 2: GÓI TẬP, THỜI HẠN VÀ BẢO LƯU	
+
+- Các gói tập tại phòng tập được phân chia theo mục tiêu và hình thức cam kết khác nhau, bao gồm Gói Cơ Bản, Gói Nâng Cao, Gói PT và Gói Khoán. Thời hạn sử dụng của Gói tập tính từ ngày kích hoạt đến hết thời gian Gói tập, hoặc hết số buổi trong Gói tập. 
+
+- Quyền lợi và quy định bảo lưu của từng loại gói được ghi trong catalog của Gói tập.
+
+- Gói Khoán:								
+
+a. Không áp dụng bảo lưu, kể cả trong các trường hợp bận công việc cá nhân hay lý do cá nhân khác, vì đây là giai đoạn tập trung theo chương trình cam kết giảm cân đặc biệt.	
+
+b. Thời hạn Gói khoán kết thúc khi Hội viên đạt đủ cân nặng cam kết được ghi rõ trong Hợp đồng tại thời điểm ký kết.								
+
+c. Trong trường hợp Hội viên đạt mục tiêu cam kết trước thời hạn, Phòng tập sẽ hoàn trả một phần giá trị Gói tập theo mức quy định tại Bảng công cụ tính toán kèm theo Hợp đồng. Trường hợp Hội viên không đạt mục tiêu đúng thời hạn, Hội viên có trách nhiệm thanh toán khoản phí phạt theo quy định tại Bảng công cụ tính toán.
+
+d. Toàn bộ thời gian tập luyện bù sau thời hạn cam kết được xem là nghĩa vụ và trách nhiệm riêng của HLV phụ trách đối với Hội viên.
+
+e. Trong thời gian thực hiện nghĩa vụ bù hoặc trong suốt quá trình thực hiện Hợp đồng, nếu Phòng tập phát hiện Hội viên có hành vi gian lận, cung cấp thông tin sai lệch, tạo lập kết quả giả hoặc bất kỳ hành vi không trung thực nào nhằm trục lợi, Phòng tập có quyền chấm dứt Hợp đồng ngay lập tức. Trong trường hợp này, Hội viên không được hoàn trả bất kỳ khoản phí nào.						
+
+ĐIỀU 3: PHƯƠNG THỨC THANH TOÁN							
+
+3.1. Gói dưới 30 ngày: Thanh toán 1 lần.
+
+3.2. Gói trên 30 ngày:								
+
+a. Đối với hình thức thanh toán không mất lãi tại phòng tập, khách hàng sẽ thanh toán trong 2 đợt:	
+
+Đợt 1: Hội viên sẽ đặt cọc một khoản tiền tương ứng bằng hoặc lớn hơn 50% giá trị Gói tập, khoản tiền đặt cọc sẽ không được hoàn trả vì bất kỳ lý do gì và không được chuyển nhượng cho người khác.
+
+Đợt 2: Thanh toán phần còn lại trong vòng 14 ngày. Quá hạn thanh toán số tiền đặt cọc sẽ không được hoàn trả lại và phòng tập có quyền ngừng cung cấp dịch vụ cho Hội viên.
+
+b. Đối với hình thức trả góp hàng tháng (có lãi), phòng tập sẽ cần 1 đơn vị thứ 3 từ bên ngân hàng liên kết với trung tâm thời điểm hiện tại để tiến hành trả góp.
+
+3.3. Hình thức thanh toán: Tiền mặt / Chuyển khoản / Quẹt thẻ / Trả góp.
+
+ĐIỀU 4: HUẤN LUYỆN VIÊN								
+
+4.1. Phòng tập đảm bảo các Huấn luyện viên (HLV) do phòng tập cung cấp đều có trình độ chuyên môn, kỹ năng và chất lượng đào tạo tốt.
+
+Trong trường hợp HLV không thể phụ trách Hội viên trong các buổi tập vì các lý do như: ốm đau, công việc cá nhân, nghỉ việc, bị đình chỉ công tác do vi phạm quy định của công ty, hoặc khi Hội viên thay đổi Phòng tập theo quy định của Hợp đồng này, phòng tập sẽ phân công HLV thay thế trong thời gian sớm nhất nhằm đảm bảo quá trình tập luyện của Hội viên không bị gián đoạn.			
+
+4.2. HLV có trách nhiệm như sau:								
+
+a. Lên giáo án tập luyện và chế độ dinh dưỡng cho Hội viên theo quyền lợi gói tập đã đăng ký.	
+
+b. Liên hệ và nhắn tin cho Hội viên để nhắc nhở và động viên trong suốt Thời hạn của Hợp đồng.	
+
+c. Sắp xếp lịch tập cho Hội viên nhằm đảm bảo sự phù hợp với lịch sinh hoạt của Hội viên.
+
+d. Hướng dẫn và hỗ trợ cho Hội viên nhằm đảm bảo an toàn cho Hội viên trong quá trình tập luyện.
+
+4.3. Hội viên được quyền thay đổi HLV khi gặp phải một trong những trường hợp sau:
+
+a. Không lên thực đơn và chương trình cho Hội viên theo quyền lợi gói tập đã đăng ký.
+
+b. Không nhắn tin hỏi thăm, động viên và nhắc nhở Hội viên.
+
+c. Không hẹn lịch tập hay lỡ lịch hẹn đã đặt trước với Hội viên.
+
+d. Có thái độ không nghiêm túc, không tập trung trong quá trình hướng dẫn Hội viên tập luyện.
+
+e. Có những lời nói, hành động, cử chỉ không đúng mực, quấy rối với Hội viên.
+
+ĐIỀU 5: CHUYỂN NHƯỢNG, HOÀN TIỀN
+
+5.1. Không chuyển nhượng: Hai bên thống nhất rằng để đảm bảo cung cấp dịch vụ tốt nhất cho Hội viên, phòng tập cần có thời gian để chuẩn bị chương trình huấn luyện phù hợp với từng Hội viên dựa trên thể chất, cân nặng và yêu cầu riêng. Do đó, gói tập sẽ không được chuyển nhượng dưới bất kỳ hình thức nào.
+
+5.2. Không hoàn tiền: Hội viên sẽ không được hoàn tiền sau khi đã đăng ký tập tại phòng tập. Trong trường hợp bất khả kháng khiến Hội viên phải ngừng tập, phòng tập sẽ hỗ trợ chuyển đổi sang gói tập phù hợp.
+
+5.3. Đối với Gói khoán cân nặng, việc hoàn tiền chỉ áp dụng trong trường hợp Hội viên hoàn thành mục tiêu trước thời hạn, theo tỷ lệ quy định tại Điều 2.5.c. Các trường hợp khác, Gói khoán vẫn tuân theo nguyên tắc không hoàn tiền, không chuyển nhượng như các Gói tập thông thường.					
+
+ĐIỀU 6: TRÁCH NHIỆM CÁC BÊN								
+
+6.1. Trách nhiệm của Hội viên:								
+
+a. Thanh toán đầy đủ, đúng hạn.								
+
+b. Tuân thủ nội quy Phòng tập và hướng dẫn từ HLV.
+
+c. Để đạt được kết quả tốt nhất, Hội viên cần nghiêm túc bám sát giáo án tập luyện và chế độ dinh dưỡng do HLV cung cấp trong thời hạn của Hợp đồng.				
+
+d. Hội viên cần đến đúng giờ đã hẹn, nếu đến muộn, thời gian của buổi tập chỉ kéo dài đến hết thời gian của buổi tập (1 tiếng) và không bù lại thời gian đến muộn của Hội viên.	
+
+e. Hội viên cần báo trước 3 tiếng nếu muốn thay đổi lịch tập để HLV kịp thời sắp xếp.
+
+f. Không được quảng cáo hay trưng bày sản phẩm, dịch vụ khác trong phòng tập.
+
+g. Không sử dụng tên phòng tập cho mục đích quảng cáo mà không có sự chấp thuận của phòng tập.
+
+h. Hội viên có thể chuyển phòng tập cùng cơ sở trong tỉnh miễn phí một lần, nhưng từ lần thứ hai sẽ mất phí 300.000 VNĐ/lần.								
+
+6.2. Trách nhiệm của phòng tập gồm:
+
+a. Cung cấp HLV theo Hợp đồng.							
+
+b. Cung cấp tiện ích và đảm bảo chất lượng, phù hợp với nhu cầu tập luyện Hội viên.
+
+c. Có trách nhiệm hướng dẫn cách tập với từng thiết bị trước khi Hội viên sử dụng thiết bị.
+
+d. Có quyền từ chối cung cấp dịch vụ HLV khi đã nhắc nhở Hội viên 03 lần khi Hội viên không tuân thủ các quy tắc an toàn và theo hướng dẫn của HLV trong quá trình tập luyện.				
+
+e. Có quyền từ chối cung cấp dịch vụ cho Hội viên nếu Hội viên không đến tập luyện trong vòng 30 ngày liên tục dù cho HLV đã nhắn tin hỏi thăm, nhắc nhở, động viên, mà không có lý do chính đáng.
+
+f. Cam kết bảo mật thông tin cá nhân của Hội viên và chỉ sử dụng hình ảnh để quảng cáo với sự đồng ý của Hội viên.							
+
+ĐIỀU 7: QUY ĐỊNH CỦA PHÒNG TẬP							
+
+7.1. Trang phục: Hội viên mặc trang phục thoải mái co giãn, tránh mặc các trang phục quá nhạy cảm, sử dụng giày tập đế sạch đi lại trong khu vực phòng tập.		
+
+7.2. Sức khoẻ:								
+
+a. Hội viên cần kiểm tra thể trạng sức khỏe tại cơ sở y tế chuyên nghiệp trước khi bắt đầu bất kỳ Gói tập nào.								
+
+b. Gói tập tại phòng tập hoàn toàn phù hợp với Hội viên có sức khoẻ bình thường và không có lưu ý từ bác sĩ. phòng tập khuyến cáo Hội viên nên thông báo đầy đủ tình trạng sức khoẻ cho HLV trước khi kích hoạt Gói tập và trong suốt quá trình tập luyện nhằm được hỗ trợ tập luyện một cách tốt nhất.			
+
+7.3. Bảo quản tài sản cá nhân:								
+
+a. Có tủ đựng đồ, khoá tủ cho Hội viên và Hội viên có trách nhiệm trả lại nguyên vẹn sau khi dùng.	
+
+b. Hội viên có trách nhiệm tự bảo quản đồ dùng, tài sản cá nhân của mình, sử dụng đúng số tủ. Phòng tập khuyến cáo Hội viên không mang theo những tài sản có giá trị vào khu vực Phòng tập. Phòng tập không chịu trách nhiệm về tổn thất, mất mát, hư hỏng, bị lấy cắp, bị thiệt hại đối với đồ dùng, tài sản cá nhân của Hội viên.					
+
+7.4. An toàn và Âm thanh/tiếng ồn:
+
+a. Hội viên cần tôn trọng không gian tập của Phòng tập. Giữ trật tự và giảm âm thanh/tiếng ồn trong mọi hoạt động ở mức thấp nhất.							
+
+b. Không sử dụng thiết bị gây ảnh hưởng đến môi trường chung, trừ máy nghe nhạc có tai nghe.	
+
+c. Hội viên phải tôn trọng, không bạo lực với nhân viên Phòng tập. Nếu có tranh chấp, cần báo Quản lý để xử lý. Hành vi bạo lực sẽ dẫn đến việc từ chối dịch vụ và yêu cầu bồi thường theo pháp luật.
+
+7.5. Thay đổi tên/địa điểm Phòng tập:							
+
+a. Phòng tập có thể chuyển địa điểm trong bán kính 10km và sẽ thông báo cho Hội viên ít nhất 30 ngày trước. Thông báo sẽ qua tin nhắn và niêm yết tại quầy lễ tân. Nếu Hội viên không đồng ý và muốn chuyển sang Phòng khác trong hệ thống phòng tập, sẽ không phải trả thêm phí và cũng không được hoàn tiền đã đóng.					
+
+b. Phòng tập có thể thay đổi tên bất cứ khi nào nhưng vẫn sẽ đảm bảo quyền được tập luyện của Hội viên theo Hợp đồng này.												
+
+ĐIỀU 8: MIỄN TRỪ VÀ BỒI THƯỜNG THIỆT HẠI
+
+8.1. Các Bên đồng ý rằng sử dụng thiết bị tại phòng tập có thể gây rủi ro cho Hội viên. Hội viên cam kết tuân thủ hướng dẫn tập luyện. phòng tập không chịu trách nhiệm về thương tổn của Hội viên, trừ khi do làm theo hướng dẫn của HLV. Bồi thường của phòng tập không vượt quá giá trị Hợp đồng.		
+
+8.2. Nếu Hội viên gây hại cho thiết bị hoặc tài sản của phòng tập do không tuân thủ hướng dẫn, Hội viên phải bồi thường toàn bộ thiệt hại.										
+
+ĐIỀU 9: CHẤM DỨT HỢP ĐỒNG								
+
+9.1. Hợp đồng tự động chấm dứt khi hết thời hạn tại Điều 2.1.			
+
+9.2. Hợp đồng không thể hủy ngang hay đơn phương chấm dứt trong bất kỳ trường hợp nào trừ khi được nêu tại Điều 6.2.d, Điều 6.2.e						
+
+9.3. Phòng tập có quyền chấm dứt Hợp đồng theo Điều 6.2.d, 6.2.e mà không cần hoàn trả tiền, kể cả các buổi tập chưa sử dụng. phòng tập phải thông báo trước 3 ngày.						
+
+ĐIỀU 10: LUẬT ĐIỀU CHỈNH VÀ GIẢI QUYẾT TRANH CHẤP			
+
+10.1. Hợp đồng được điều chỉnh bởi luật pháp Việt Nam.				
+
+10.2. Nếu có tranh chấp, các Bên sẽ thương lượng để tìm ra giải pháp. Nếu sau 30 ngày không đạt thỏa thuận, vụ việc sẽ được đưa ra Tòa án.				
+
+10.3. Nếu có tranh chấp, các Bên sẽ thương lượng. Nếu sau 30 ngày mà các Bên không đạt được thỏa thuận, mỗi Bên có quyền đưa vụ việc ra Tòa án nhân dân có thẩm quyền để giải quyết tranh chấp.	
+
+ĐIỀU 11: ĐIỀU KHOẢN CUỐI CÙNG					
+
+11.1. Các Bên cam kết ràng buộc chặt chẽ bởi những thoả thuận trong Hợp đồng dịch vụ này. Nếu có bất kỳ khó khăn gì nảy sinh trong quá trình thực hiện các điều khoản của Hợp đồng dịch vụ, các Bên sẽ bàn bạc để tìm ra biện pháp hợp lý nhằm khắc phục khó khăn và sẽ có văn bản về những vấn đề được bổ sung vào Hợp đồng dịch vụ hiện tại.		
+
+11.2. Hợp đồng dịch vụ này có hiệu lực kể từ ngày ký.
+
+
+
+HỘI VIÊN
+
+TRUNG TÂM
+
+Ký và ghi rõ họ tên
+
+Ký và ghi rõ họ tên
+
+<<upper([Tên Hội viên])>> 
+
+                      
+
+
+
+
+
+
+
+               
+

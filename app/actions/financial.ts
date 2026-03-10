@@ -167,7 +167,7 @@ export async function fetchExpense() {
             .from('expense')
             .select(`
                 *,
-                branches (name)
+                branches (name, short_name)
             `)
             .order('recorded_at', { ascending: false })
 

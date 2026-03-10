@@ -36,7 +36,8 @@ import {
     Eye,
     Edit2,
     Building2,
-    CreditCard
+    CreditCard,
+    RotateCcw
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchExpense, bulkDeleteExpense, fetchExpenseTypes } from '@/app/actions/financial'
@@ -54,6 +55,7 @@ export default function ExpensePage() {
     const [searchQuery, setSearchQuery] = React.useState('')
     const [branchFilter, setBranchFilter] = React.useState('all')
     const [categoryFilter, setCategoryFilter] = React.useState('all')
+    const [paymentMethodFilter, setPaymentMethodFilter] = React.useState('all')
     const [selectedExpenses, setSelectedExpenses] = React.useState<string[]>([])
     const [viewingExpense, setViewingExpense] = React.useState<any>(null)
     const [detailSheetOpen, setDetailSheetOpen] = React.useState(false)
@@ -94,9 +96,10 @@ export default function ExpensePage() {
                 item.id.toLowerCase().includes(searchQuery.toLowerCase())
             const matchesBranch = branchFilter === 'all' || item.branch_id === branchFilter
             const matchesCategory = categoryFilter === 'all' || item.category_id === categoryFilter
-            return matchesSearch && matchesBranch && matchesCategory
+            const matchesPaymentMethod = paymentMethodFilter === 'all' || item.payment_method === paymentMethodFilter
+            return matchesSearch && matchesBranch && matchesCategory && matchesPaymentMethod
         })
-    }, [expenseData, searchQuery, branchFilter, categoryFilter])
+    }, [expenseData, searchQuery, branchFilter, categoryFilter, paymentMethodFilter])
 
     const totalAmount = React.useMemo(() => {
         return filteredExpense.reduce((sum: number, item: any) => sum + item.amount, 0)
@@ -152,6 +155,13 @@ export default function ExpensePage() {
         )
     }
 
+    const resetFilters = () => {
+        setSearchQuery('')
+        setBranchFilter('all')
+        setCategoryFilter('all')
+        setPaymentMethodFilter('all')
+    }
+
     return (
         <div className="space-y-1.5 font-inter pb-10">
             {/* Header Section */}
@@ -164,6 +174,14 @@ export default function ExpensePage() {
                     <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Quản lý các khoản chi phí phát sinh.</p>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={handleExportExcel}
+                        className="h-11 rounded-xl border-gray-100 dark:border-gray-800 text-gray-500 hover:text-rose-600 transition-all font-semibold"
+                    >
+                        <FileDown className="w-4 h-4 mr-2" />
+                        Xuất Excel
+                    </Button>
                     <ImportExcelExpenseDialog onSuccess={refetch} />
                     <AddExpenseSheet onSuccess={refetch} />
                 </div>
@@ -203,11 +221,11 @@ export default function ExpensePage() {
 
                             <Button
                                 variant="outline"
-                                size="icon"
-                                onClick={handleExportExcel}
-                                className="h-9 w-9 rounded-lg border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-gray-400 hover:text-rose-600"
+                                onClick={resetFilters}
+                                className="h-9 px-3 rounded-lg text-rose-600 dark:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 border-gray-100 dark:border-gray-800 transition-all flex items-center gap-2"
                             >
-                                <FileDown className="w-4 h-4" />
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                <span className="text-xs font-bold uppercase tracking-wider">Làm mới</span>
                             </Button>
 
                             <Button
@@ -256,6 +274,18 @@ export default function ExpensePage() {
                                                 ))}
                                             </SelectContent>
                                         </Select>
+
+                                        <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs sm:text-sm lg:w-40 px-3">
+                                                <SelectValue placeholder="Hình thức" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                <SelectItem value="all">Tất cả hình thức</SelectItem>
+                                                {['Tiền mặt', 'Chuyển khoản', 'Thẻ'].map(m => (
+                                                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                 </motion.div>
                             )}
@@ -297,7 +327,7 @@ export default function ExpensePage() {
                                     />
                                 </TableHead>
                                 <TableHead>Ngày</TableHead>
-                                <TableHead>ID / Chi nhánh</TableHead>
+                                <TableHead>Chi nhánh</TableHead>
                                 <TableHead>Danh mục</TableHead>
                                 <TableHead>Số tiền</TableHead>
                                 <TableHead>Hình thức</TableHead>
@@ -333,14 +363,23 @@ export default function ExpensePage() {
                                     </TableCell>
                                     <TableCell className="py-3">
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100 tracking-tight">#{item.id.split('-')[0]}</span>
-                                            <span className="text-[11px] text-rose-600 dark:text-rose-400 font-medium mt-0.5">{item.branches?.name}</span>
+                                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                                                {item.branches?.short_name || 'LF'}
+                                            </span>
+                                            <span className="text-[10px] text-gray-400 font-medium mt-0.5">{item.branches?.name || 'Chi nhánh'}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell className="py-3">
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 uppercase">
-                                            {item.category_id || 'Chưa phân loại'}
-                                        </span>
+                                        <div className="flex flex-col gap-1">
+                                            <span className="w-fit inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 uppercase">
+                                                {item.category_id || 'Chưa phân loại'}
+                                            </span>
+                                            {item.description && (
+                                                <span className="text-[11px] text-gray-400 line-clamp-1 max-w-[180px]">
+                                                    {item.description}
+                                                </span>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     <TableCell className="py-3 text-sm font-black text-rose-600 dark:text-rose-400 tracking-tight">
                                         {new Intl.NumberFormat('vi-VN').format(item.amount)}

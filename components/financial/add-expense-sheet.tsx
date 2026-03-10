@@ -250,7 +250,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                                     <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Chi nhánh</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl>
-                                                            <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full sm:w-[320px]">
+                                                            <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full">
                                                                 <SelectValue placeholder="Chọn chi nhánh" />
                                                             </SelectTrigger>
                                                         </FormControl>
@@ -286,7 +286,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                                     <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Danh mục</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl>
-                                                            <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700">
+                                                            <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full">
                                                                 <SelectValue placeholder="Chọn..." />
                                                             </SelectTrigger>
                                                         </FormControl>
@@ -316,7 +316,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                                     <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Hình thức</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl>
-                                                            <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700">
+                                                            <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full">
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                         </FormControl>

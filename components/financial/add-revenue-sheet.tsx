@@ -299,7 +299,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                                 value={field.value || undefined}
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full sm:w-[320px]">
+                                                    <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full">
                                                         <SelectValue placeholder="Chọn khách hàng" />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -341,7 +341,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                                 disabled={!customerId || filteredContracts.length === 0}
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full sm:w-[320px]">
+                                                    <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full">
                                                         <SelectValue placeholder={
                                                             !customerId ? "Vui lòng chọn khách hàng trước"
                                                                 : filteredContracts.length === 0 ? "Khách hàng này không có hợp đồng"
@@ -441,7 +441,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                             <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Chi nhánh</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full sm:w-[320px]">
+                                                    <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full">
                                                         <SelectValue placeholder="Chọn chi nhánh" />
                                                     </SelectTrigger>
                                                 </FormControl>

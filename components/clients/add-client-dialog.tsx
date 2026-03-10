@@ -643,21 +643,22 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="registration_type"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Loại đăng ký</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm">
-                                                        <SelectValue placeholder="Chọn gói tập" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent className="rounded-xl border-gray-100">
-                                                    {clientRegistrationTypes.map((t) => (
-                                                        <SelectItem key={t.id} value={t.nam}>
-                                                            {t.nam}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <FormLabel className="text-xs text-gray-500 font-medium">Lộ trình đăng ký</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <Input
+                                                        placeholder="Chọn hoặc nhập lộ trình"
+                                                        {...field}
+                                                        list="registration-types-list"
+                                                        className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm"
+                                                    />
+                                                    <datalist id="registration-types-list">
+                                                        {clientRegistrationTypes.map((t) => (
+                                                            <option key={t.id} value={t.nam} />
+                                                        ))}
+                                                    </datalist>
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}

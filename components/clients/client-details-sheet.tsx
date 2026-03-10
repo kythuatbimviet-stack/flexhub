@@ -215,37 +215,50 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
         </div>
     )
 
-    const InfoRow = ({ label, value, name, type = "text" }: any) => (
-        <div className="space-y-1">
-            <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                {label}
-            </Label>
-            {isEditing ? (
-                type === 'textarea' ? (
-                    <Textarea
-                        name={name}
-                        value={formData[name] || ''}
-                        onChange={handleChange}
-                        className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[80px] text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
-                    />
+    const InfoRow = ({ label, value, name, type = "text", options }: any) => {
+        const listId = options ? `${name}-list` : undefined;
+        return (
+            <div className="space-y-1">
+                <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    {label}
+                </Label>
+                {isEditing ? (
+                    type === 'textarea' ? (
+                        <Textarea
+                            name={name}
+                            value={formData[name] || ''}
+                            onChange={handleChange}
+                            className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[80px] text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        />
+                    ) : (
+                        <div className="relative">
+                            <Input
+                                name={name}
+                                type={type}
+                                step={type === 'number' ? '0.1' : undefined}
+                                value={formData[name] ?? ''}
+                                onChange={handleChange}
+                                readOnly={name === 'age'}
+                                list={listId}
+                                className={cn("w-full rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-blue-500 shadow-sm", name === 'age' && "bg-slate-50 dark:bg-slate-800/50 text-slate-500 cursor-not-allowed")}
+                            />
+                            {options && (
+                                <datalist id={listId}>
+                                    {options.map((opt: string, idx: number) => (
+                                        <option key={idx} value={opt} />
+                                    ))}
+                                </datalist>
+                            )}
+                        </div>
+                    )
                 ) : (
-                    <Input
-                        name={name}
-                        type={type}
-                        step={type === 'number' ? '0.1' : undefined}
-                        value={formData[name] ?? ''}
-                        onChange={handleChange}
-                        readOnly={name === 'age'}
-                        className={cn("rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-blue-500 shadow-sm", name === 'age' && "bg-slate-50 dark:bg-slate-800/50 text-slate-500 cursor-not-allowed")}
-                    />
-                )
-            ) : (
-                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
-                    {value || <span className="text-slate-300 italic font-normal text-sm">Chưa cập nhật</span>}
-                </p>
-            )}
-        </div>
-    )
+                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                        {value || <span className="text-slate-300 italic font-normal text-sm">Chưa cập nhật</span>}
+                    </p>
+                )}
+            </div>
+        )
+    }
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -583,7 +596,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                         <div className="space-y-5">
                             <div className="grid grid-cols-2 gap-5">
                                 <InfoRow label="PT Phụ trách" value={formData.pt_name} name="pt_name" />
-                                <InfoRow label="Loại đăng ký" value={formData.registration_type} name="registration_type" />
+                                <InfoRow label="Lộ trình đăng ký" value={formData.registration_type} name="registration_type" options={clientRegistrationTypes.map((t: any) => t.nam)} />
                             </div>
                             <div className="grid grid-cols-2 gap-5">
                                 <InfoRow label="Thời gian tập" value={formData.training_time} name="training_time" />
