@@ -40,6 +40,7 @@ import { toast } from 'sonner'
 import { updateContract, deleteContract } from '@/app/actions/contracts'
 import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
 import { cn } from '@/lib/utils'
+import { FinalizeContractDialog } from './finalize-contract-dialog'
 
 interface ContractDetailsSheetProps {
     contract: any | null
@@ -59,6 +60,7 @@ export function ContractDetailsSheet({
     const [formData, setFormData] = React.useState<any>({})
     const [branches, setBranches] = React.useState<any[]>([])
     const [statuses, setStatuses] = React.useState<ConfigItem[]>([])
+    const [showFinalizeDialog, setShowFinalizeDialog] = React.useState(false)
 
     const defaultStatus = React.useMemo(() => {
         return statuses.find(s => s.is_default)?.nam || statuses[0]?.nam || 'Đang thực hiện'
@@ -238,18 +240,39 @@ export function ContractDetailsSheet({
                                 </p>
                                 <div className="flex flex-wrap items-center gap-2 mt-3">
                                     <div className={cn(
-                                        "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
-                                        (formData.status || defaultStatus) === defaultStatus ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" : "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
+                                        "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium tracking-tight",
+                                        (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-50 text-amber-600 border border-amber-100 dark:bg-amber-950/20 dark:border-amber-900/30" :
+                                            (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" :
+                                                "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
                                     )}>
-                                        <div className={cn("w-1.5 h-1.5 rounded-full", (formData.status || defaultStatus) === defaultStatus ? "bg-emerald-500" : "bg-slate-400")} />
+                                        <div className={cn("w-1.5 h-1.5 rounded-full",
+                                            (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-500" :
+                                                (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-500" :
+                                                    "bg-slate-400"
+                                        )} />
                                         {formData.status || defaultStatus}
                                     </div>
-                                    <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30">
+                                    <div className="px-3 py-1 rounded-full text-[10px] font-medium tracking-tight bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30">
                                         {branches?.find((b: any) => b.id === formData.branch_id)?.name || contract.branches?.name || 'Chi nhánh'}
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        {formData.status === 'Chờ ký HĐ' && !isEditing && (
+                            <div className="mt-6 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 flex flex-col gap-3">
+                                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                                    <BadgeCheck className="w-5 h-5" />
+                                    <span className="text-sm font-bold">Hợp đồng đang chờ ký kết</span>
+                                </div>
+                                <Button
+                                    onClick={() => setShowFinalizeDialog(true)}
+                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl h-11 shadow-lg shadow-emerald-100 dark:shadow-none"
+                                >
+                                    Chốt Ký HĐ Ngay
+                                </Button>
+                            </div>
+                        )}
 
                         {!isEditing && (
                             <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between gap-3">
@@ -386,17 +409,39 @@ export function ContractDetailsSheet({
                                 {loading ? 'Đang lưu...' : 'Lưu lại'}
                             </Button>
                         ) : (
-                            <Button
-                                onClick={() => setIsEditing(true)}
-                                className="rounded-xl h-11 px-10 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
-                                disabled={loading}
-                            >
-                                <Edit2 className="w-4 h-4 mr-2" />
-                                Sửa hợp đồng
-                            </Button>
+                            <div className="flex items-center gap-2">
+                                {formData.status === 'Chờ ký HĐ' && (
+                                    <Button
+                                        onClick={() => setShowFinalizeDialog(true)}
+                                        className="rounded-xl h-11 px-6 font-bold text-[13px] bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-100 dark:shadow-emerald-900/20 transition-all font-inter active:scale-95"
+                                        disabled={loading}
+                                    >
+                                        <BadgeCheck className="w-4 h-4 mr-2" />
+                                        Chốt Ký HĐ
+                                    </Button>
+                                )}
+                                <Button
+                                    onClick={() => setIsEditing(true)}
+                                    className="rounded-xl h-11 px-8 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
+                                    disabled={loading}
+                                >
+                                    <Edit2 className="w-4 h-4 mr-2" />
+                                    Sửa hợp đồng
+                                </Button>
+                            </div>
                         )}
                     </div>
                 </div>
+
+                <FinalizeContractDialog
+                    contract={contract}
+                    open={showFinalizeDialog}
+                    onOpenChange={setShowFinalizeDialog}
+                    onSuccess={() => {
+                        onSuccess()
+                        onOpenChange(false)
+                    }}
+                />
             </SheetContent>
         </Sheet>
     )

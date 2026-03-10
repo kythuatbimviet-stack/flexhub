@@ -102,10 +102,6 @@ const contractFormSchema = z.object({
     custom_selection: z.string().optional(),
     trainer_type: z.string().optional(),
     total_sessions: z.string().optional(),
-    // Debt fields
-    paid_upfront: z.string().optional(),
-    installments_count: z.string().optional(),
-    installment_frequency: z.enum(['weekly', 'biweekly', 'monthly']).optional(),
 })
 
 export function AddContractDialog({ onSuccess, initialClientId, initialClient, isQuickAction, triggerOverride }: { onSuccess: () => void, initialClientId?: string, initialClient?: any, isQuickAction?: boolean, triggerOverride?: React.ReactNode }) {
@@ -162,11 +158,10 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             custom_selection: '',
             trainer_type: '',
             total_sessions: '',
-            paid_upfront: '',
-            installments_count: '1',
-            installment_frequency: 'monthly',
         },
     })
+
+    const watchTotalAmountValue = form.watch('total_amount')
 
     const [trainerTypes, setTrainerTypes] = React.useState<ConfigItem[]>([])
     const selectedPackageRef = React.useRef<any>(null)
@@ -342,7 +337,6 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
 
     // Auto-calculate prices
     const watchQuantity = form.watch('quantity')
-    const watchTotalAmount = form.watch('total_amount')
 
     React.useEffect(() => {
         if (selectedPackageRef.current) {
@@ -363,24 +357,27 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
 
     React.useEffect(() => {
         const pkgPrice = parseFloat(form.getValues('package_price') || '0')
-        const total = parseFloat(watchTotalAmount || '0')
+        const total = parseFloat(watchTotalAmountValue || '0')
         const discount = total - pkgPrice
         form.setValue('discounted_price', discount.toString())
-    }, [watchTotalAmount, watchQuantity, form])
+    }, [watchTotalAmountValue, watchQuantity, form])
 
     async function onSubmit(values: z.infer<typeof contractFormSchema>) {
         setLoading(true)
         try {
             // Prepare data for submission, converting numeric strings where necessary
+            const totalAmount = Number(values.total_amount?.toString().replace(/\./g, '') || 0)
+
             const formData = {
                 ...values,
-                total_amount: values.total_amount ? Number(values.total_amount) : 0,
-                package_price: values.package_price ? Number(values.package_price) : 0,
-                discounted_price: values.discounted_price ? Number(values.discounted_price) : 0,
+                total_amount: totalAmount,
+                package_price: values.package_price ? Number(values.package_price.toString().replace(/\./g, '')) : 0,
+                discounted_price: values.discounted_price ? Number(values.discounted_price.toString().replace(/\./g, '')) : 0,
                 initial_height: values.initial_height ? Number(values.initial_height) : null,
                 initial_weight: values.initial_weight ? Number(values.initial_weight) : null,
                 quantity: values.quantity ? Number(values.quantity) : 1,
                 total_sessions: values.total_sessions ? Number(values.total_sessions) : null,
+                status: 'Chờ ký HĐ', // Default status for new contracts
             }
 
             const result = await createContract(formData)
@@ -877,6 +874,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                 />
                             </div>
                         </div>
+
 
                         {/* Section 1: Định danh hợp đồng */}
                         <div className="space-y-6">

@@ -22,17 +22,62 @@ export async function fetchContracts() {
     }
 }
 
-export async function createContract(contract: any, debtPlan?: any) {
+export async function createContract(contract: any) {
     const supabase = await createClient()
     try {
-        const { data: contractData, error: contractError } = await supabase
+        const { data, error } = await supabase
             .from('contracts')
             .insert([contract])
             .select()
             .single()
 
+        if (error) throw error
+
+        revalidatePath('/contracts')
+        return { success: true, data }
+    } catch (error: any) {
+        console.error('Create Contract Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+export async function finalizeContract(id: string, finalizeData: any) {
+    const supabase = await createClient()
+    try {
+        const { contractUpdates, debtPlan } = finalizeData
+
+        // 1. Cập nhật hợp đồng (Trạng thái, ngày ký, ngày bắt đầu/kết thúc)
+        const { data: contractData, error: contractError } = await supabase
+            .from('contracts')
+            .update({
+                ...contractUpdates,
+                status: 'Đã ký HĐ'
+            })
+            .eq('id', id)
+            .select()
+            .single()
+
         if (contractError) throw contractError
 
+        // 2. Nếu có trả trước, tạo khoản thu (Revenue)
+        if (debtPlan && Number(debtPlan.paid_upfront) > 0) {
+            const { error: revError } = await supabase
+                .from('revenue')
+                .insert([{
+                    amount: debtPlan.paid_upfront,
+                    client_id: contractData.client_id,
+                    branch_id: contractData.branch_id,
+                    contract_id: contractData.id,
+                    category_id: 'Hợp đồng',
+                    payment_method: contractUpdates.payment_method || 'Tiền mặt',
+                    description: `Thu tiền trả trước cho HĐ ${contractData.id}`,
+                    recorded_at: contractUpdates.signing_date || new Date().toISOString().split('T')[0]
+                }])
+
+            if (revError) console.error('Error creating upfront revenue:', revError)
+        }
+
+        // 3. Nếu có nợ, tạo hồ sơ nợ (Debt) và các kỳ (Installments)
         if (debtPlan && debtPlan.has_debt) {
             const { data: debtData, error: debtError } = await supabase
                 .from('debts')
@@ -44,7 +89,7 @@ export async function createContract(contract: any, debtPlan?: any) {
                     remaining_amount: Number(contractData.total_amount) - Number(debtPlan.paid_upfront),
                     status: 'Thanh toán một phần',
                     branch_id: contractData.branch_id,
-                    note: `Tự động tạo từ HĐ ${contractData.id}`
+                    note: `Tự động tạo khi chốt ký HĐ ${contractData.id}`
                 }])
                 .select()
                 .single()
@@ -65,9 +110,10 @@ export async function createContract(contract: any, debtPlan?: any) {
 
         revalidatePath('/contracts')
         revalidatePath('/debts')
+        revalidatePath('/financial/revenue')
         return { success: true, data: contractData }
     } catch (error: any) {
-        console.error('Create Contract Error:', error)
+        console.error('Finalize Contract Error:', error)
         return { success: false, error: error.message }
     }
 }
