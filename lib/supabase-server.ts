@@ -1,4 +1,5 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 export async function createClient() {
@@ -35,20 +36,17 @@ export async function createClient() {
     )
 }
 
+// Uses service_role key via pure supabase-js — bypasses RLS completely
 export async function createAdminClient() {
-    return createServerClient(
+    return createSupabaseClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
         process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder',
         {
-            cookies: {
-                get(name: string) {
-                    return undefined
-                },
-                set(name: string, value: string, options: CookieOptions) {
-                },
-                remove(name: string, options: CookieOptions) {
-                },
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
             },
         }
     )
 }
+

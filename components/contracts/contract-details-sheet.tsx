@@ -41,9 +41,8 @@ import { updateContract, deleteContract } from '@/app/actions/contracts'
 import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
 import { cn } from '@/lib/utils'
 import { FinalizeContractDialog } from './finalize-contract-dialog'
-import { ContractPrintTemplate } from './contract-print-template'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+import { getContractHTML, getContractHTMLFromTemplate } from './contract-print-template'
+import { fetchActiveTemplateForBranch } from '@/app/actions/contract-templates'
 import { Loader2, Download } from 'lucide-react'
 
 interface ContractDetailsSheetProps {
@@ -65,8 +64,7 @@ export function ContractDetailsSheet({
     const [branches, setBranches] = React.useState<any[]>([])
     const [statuses, setStatuses] = React.useState<ConfigItem[]>([])
     const [showFinalizeDialog, setShowFinalizeDialog] = React.useState(false)
-    const [isExporting, setIsExporting] = React.useState(false)
-    const printRef = React.useRef<HTMLDivElement>(null)
+    const [contractTemplate, setContractTemplate] = React.useState<string | null>(null)
 
     const defaultStatus = React.useMemo(() => {
         return statuses.find(s => s.is_default)?.nam || statuses[0]?.nam || 'Đang thực hiện'
@@ -75,16 +73,22 @@ export function ContractDetailsSheet({
     React.useEffect(() => {
         if (open) {
             const loadData = async () => {
-                const [branchesRes, statusRes] = await Promise.all([
+                const [branchesRes, statusRes, templateRes] = await Promise.all([
                     fetchBranches(),
-                    fetchConfigParams('config_contract_status')
+                    fetchConfigParams('config_contract_status'),
+                    fetchActiveTemplateForBranch(contract?.branch_id)
                 ])
                 if (branchesRes.success) setBranches(branchesRes.data || [])
                 if (statusRes.success) setStatuses(statusRes.data || [])
+                if (templateRes.success && templateRes.data?.content) {
+                    setContractTemplate(templateRes.data.content)
+                } else {
+                    setContractTemplate(null)
+                }
             }
             loadData()
         }
-    }, [open])
+    }, [open, contract?.branch_id])
 
     React.useEffect(() => {
         if (contract) {
@@ -142,43 +146,28 @@ export function ContractDetailsSheet({
         }
     }
 
-    const handleExportPDF = async () => {
-        if (!printRef.current) return
+    const handleExportPDF = () => {
+        // Use custom template from DB if available and non-empty, else fallback to built-in
+        const html = (contractTemplate && contractTemplate.trim())
+            ? getContractHTMLFromTemplate(contract, contractTemplate)
+            : getContractHTML(contract)
+        if (!html) return
 
-        setIsExporting(true)
-        const toastId = toast.loading('Đang khởi tạo tệp PDF...')
+        const printWindow = window.open('', '_blank', 'width=900,height=700')
+        if (!printWindow) {
+            toast.error('Trình duyệt đã chặn cửa sổ mới. Vui lòng cho phép popup.')
+            return
+        }
 
-        try {
-            // Wait a bit for any pending renders
-            await new Promise(resolve => setTimeout(resolve, 500))
+        printWindow.document.write(html)
+        printWindow.document.close()
 
-            const canvas = await html2canvas(printRef.current, {
-                scale: 2, // Higher quality
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff'
-            })
-
-            const imgData = canvas.toDataURL('image/png')
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
-            })
-
-            const imgProps = pdf.getImageProperties(imgData)
-            const pdfWidth = pdf.internal.pageSize.getWidth()
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
-
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-            pdf.save(`HopDong_${contract.id || 'Contract'}.pdf`)
-
-            toast.success('Xuất PDF thành công!', { id: toastId })
-        } catch (error: any) {
-            console.error('PDF Export Error:', error)
-            toast.error('Lỗi khi xuất PDF: ' + error.message, { id: toastId })
-        } finally {
-            setIsExporting(false)
+        // Wait for fonts/styles to load then print
+        printWindow.onload = () => {
+            setTimeout(() => {
+                printWindow.print()
+                printWindow.close()
+            }, 600)
         }
     }
 
@@ -468,20 +457,19 @@ export function ContractDetailsSheet({
                                 )}
                                 <Button
                                     onClick={handleExportPDF}
-                                    disabled={isExporting}
                                     variant="outline"
                                     className="rounded-xl h-11 px-6 font-bold text-[13px] border-blue-50 text-blue-600 hover:bg-blue-50 dark:border-blue-900/30 dark:hover:bg-blue-950/20 transition-all font-inter border-2"
                                 >
-                                    {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                                    Xuất Hợp đồng (PDF)
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Xuất PDF
                                 </Button>
                                 <Button
                                     onClick={() => setIsEditing(true)}
                                     className="rounded-xl h-11 px-8 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
-                                    disabled={loading || isExporting}
+                                    disabled={loading}
                                 >
                                     <Edit2 className="w-4 h-4 mr-2" />
-                                    Sửa hợp đồng
+                                    Sửa
                                 </Button>
                             </div>
                         )}
@@ -498,10 +486,6 @@ export function ContractDetailsSheet({
                     }}
                 />
 
-                {/* Hidden Print Template */}
-                <div className="fixed left-[-9999px] top-0">
-                    <ContractPrintTemplate ref={printRef} contract={contract} />
-                </div>
             </SheetContent>
         </Sheet>
     )

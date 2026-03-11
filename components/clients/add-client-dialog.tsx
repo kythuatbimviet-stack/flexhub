@@ -17,7 +17,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchClientConfigs } from '@/app/actions/config-params'
-import { fetchCurrentUserProfile } from '@/app/actions/users'
+import { fetchCurrentUserProfile, fetchUsers } from '@/app/actions/users'
 import { fetchZaloUsers } from '@/app/actions/zalo-users'
 import {
     Popover,
@@ -81,6 +81,7 @@ const clientSchema = z.object({
     target_weight: z.coerce.number().optional(),
     registration_type: z.string().optional(),
     training_time: z.string().optional(),
+    customer_cycle: z.string().optional(),
     source: z.string().optional(),
     referrer: z.string().optional(),
     goal: z.string().optional(),
@@ -117,8 +118,20 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
         }
     })
 
+    const { data: usersData } = useQuery({
+        queryKey: ['users'],
+        queryFn: async () => {
+            const result = await fetchUsers()
+            if (!result.success) throw new Error(result.error)
+            return result.data
+        }
+    })
+
     const [zaloSearchTerm, setZaloSearchTerm] = React.useState('')
     const [zaloOpen, setZaloOpen] = React.useState(false)
+
+    const [ptSearchTerm, setPtSearchTerm] = React.useState('')
+    const [ptOpen, setPtOpen] = React.useState(false)
 
     const clientStatuses = React.useMemo(() => configResult?.data?.statuses || [], [configResult])
     const clientSources = React.useMemo(() => configResult?.data?.sources || [], [configResult])
@@ -126,6 +139,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
     const clientTrainingTimes = React.useMemo(() => configResult?.data?.trainingTimes || [], [configResult])
     const clientRegistrationTypes = React.useMemo(() => configResult?.data?.registrationTypes || [], [configResult])
     const zaloUsers = React.useMemo(() => Array.isArray(zaloUsersData) ? zaloUsersData : [], [zaloUsersData])
+    const users = React.useMemo(() => Array.isArray(usersData) ? usersData : [], [usersData])
 
     const filteredZaloUsers = React.useMemo(() => {
         if (!zaloSearchTerm) return zaloUsers
@@ -134,6 +148,14 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
             user.zalo_user_id?.toLowerCase().includes(zaloSearchTerm.toLowerCase())
         )
     }, [zaloUsers, zaloSearchTerm])
+
+    const filteredPts = React.useMemo(() => {
+        if (!ptSearchTerm) return users
+        return users.filter((user: any) =>
+            user.name?.toLowerCase().includes(ptSearchTerm.toLowerCase()) ||
+            user.email?.toLowerCase().includes(ptSearchTerm.toLowerCase())
+        )
+    }, [users, ptSearchTerm])
 
     const form = useForm<any>({
         resolver: zodResolver(clientSchema),
@@ -212,7 +234,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
         if (currentUserResult?.success && currentUserResult.data) {
             const user = currentUserResult.data
             if (user.name) form.setValue('pt_name', user.name)
-            if (user.id) form.setValue('assigned_pt', user.id)
+            if (user.email) form.setValue('assigned_pt', user.email)
             if (user.branch_id) form.setValue('branch_id', user.branch_id)
         }
     }, [currentUserResult, form])
@@ -419,7 +441,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                                 <MessageSquare className="w-3 h-3" />
                                                 Zalo
                                             </FormLabel>
-                                            <Popover open={zaloOpen} onOpenChange={(open) => {
+                                            <Popover modal={true} open={zaloOpen} onOpenChange={(open) => {
                                                 setZaloOpen(open)
                                                 if (!open) setZaloSearchTerm('')
                                             }}>
@@ -452,7 +474,11 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                                         </Button>
                                                     </FormControl>
                                                 </PopoverTrigger>
-                                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-gray-100" align="start">
+                                                <PopoverContent
+                                                    className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-gray-100"
+                                                    align="start"
+                                                    onCloseAutoFocus={(e) => e.preventDefault()}
+                                                >
                                                     <div className="p-2 border-b border-gray-50">
                                                         <div className="relative">
                                                             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -604,14 +630,93 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     control={form.control}
                                     name="pt_name"
                                     render={({ field }) => (
-                                        <FormItem>
+                                        <FormItem className="flex flex-col">
                                             <FormLabel className="text-xs text-gray-500 font-medium">PT Phụ trách</FormLabel>
-                                            <FormControl>
-                                                <div className="relative">
-                                                    <Input placeholder="Tên Huấn luyện viên" {...field} className="rounded-xl border-gray-100 bg-gray-50/50 pl-10" />
-                                                    <UserCheck className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                                </div>
-                                            </FormControl>
+                                            <Popover modal={true} open={ptOpen} onOpenChange={(open) => {
+                                                setPtOpen(open)
+                                                if (!open) setPtSearchTerm('')
+                                            }}>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button
+                                                            variant="outline"
+                                                            role="combobox"
+                                                            className={cn(
+                                                                "w-full justify-between rounded-xl border-gray-100 bg-gray-50/50 text-sm font-normal h-10 px-3",
+                                                                !field.value && "text-muted-foreground"
+                                                            )}
+                                                        >
+                                                            <div className="flex items-center gap-2 overflow-hidden w-full">
+                                                                <UserCheck className="w-4 h-4 shrink-0 text-gray-400" />
+                                                                <span className="truncate">
+                                                                    {field.value || "Chọn Huấn luyện viên"}
+                                                                </span>
+                                                            </div>
+                                                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent
+                                                    className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-gray-100"
+                                                    align="start"
+                                                    onCloseAutoFocus={(e) => e.preventDefault()}
+                                                >
+                                                    <div className="p-2 border-b border-gray-50">
+                                                        <div className="relative">
+                                                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                                            <Input
+                                                                placeholder="Tìm nhân viên..."
+                                                                value={ptSearchTerm}
+                                                                onChange={(e) => setPtSearchTerm(e.target.value)}
+                                                                className="pl-8 h-9 border-none bg-gray-50/50 rounded-lg focus-visible:ring-0"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <ScrollArea className="h-[250px]">
+                                                        <div className="p-1">
+                                                            <button
+                                                                type="button"
+                                                                className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-50 transition-colors"
+                                                                onClick={() => {
+                                                                    form.setValue('assigned_pt', '')
+                                                                    form.setValue('pt_name', '')
+                                                                    setPtOpen(false)
+                                                                }}
+                                                            >
+                                                                <span className="text-gray-400 italic text-xs">-- Không gán PT --</span>
+                                                            </button>
+                                                            {filteredPts.length === 0 && (
+                                                                <div className="p-4 text-center text-xs text-gray-500">
+                                                                    Không tìm thấy kết quả
+                                                                </div>
+                                                            )}
+                                                            {filteredPts.map((user: any) => (
+                                                                <button
+                                                                    key={user.id}
+                                                                    type="button"
+                                                                    className={cn(
+                                                                        "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-50 transition-colors",
+                                                                        field.value === user.name && "bg-blue-50/50 text-blue-600"
+                                                                    )}
+                                                                    onClick={() => {
+                                                                        form.setValue('assigned_pt', user.email)
+                                                                        form.setValue('pt_name', user.name)
+                                                                        setPtOpen(false)
+                                                                    }}
+                                                                >
+                                                                    <div className="flex flex-col items-start min-w-0">
+                                                                        <span className="font-medium truncate w-full">{user.name}</span>
+                                                                        <span className="text-[10px] text-gray-400 truncate w-full">{user.email}</span>
+                                                                    </div>
+                                                                    {field.value === user.name && (
+                                                                        <Check className="ml-auto h-4 w-4" />
+                                                                    )}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </ScrollArea>
+                                                </PopoverContent>
+                                            </Popover>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -683,6 +788,19 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="customer_cycle"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs text-gray-500 font-medium">Chu kỳ khách</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Chu kỳ chăm sóc..." {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}

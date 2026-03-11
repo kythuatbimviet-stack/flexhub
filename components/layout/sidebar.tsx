@@ -59,6 +59,7 @@ const systemNavigation = [
     { name: 'Nhân sự', href: '/users', icon: Users },
     { name: 'Gói tập', href: '/packages', icon: Package },
     { name: 'Tham số', href: '/config-params', icon: Settings },
+    { name: 'Mẫu HĐ', href: '/contract-template', icon: FileText },
     // { name: 'Cài đặt', href: '/settings', icon: Settings },
 ]
 
