@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
+import { createClient, createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 
 export async function fetchContracts() {
@@ -14,6 +14,26 @@ export async function fetchContracts() {
                 branches (name)
             `)
             .order('created_at', { ascending: false })
+
+        if (error) throw error
+        return { success: true, data }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function fetchContractById(id: string) {
+    const supabase = await createAdminClient()
+    try {
+        const { data, error } = await supabase
+            .from('contracts')
+            .select(`
+                *,
+                clients (member_name, phone, email, dob, address),
+                branches (name, id, legal_representative, representative_phone, center_address, center_phone)
+            `)
+            .eq('id', id)
+            .single()
 
         if (error) throw error
         return { success: true, data }

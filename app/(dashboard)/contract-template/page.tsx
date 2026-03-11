@@ -50,6 +50,11 @@ const PLACEHOLDERS = [
     { key: '{{initial_height}}', label: 'Chiều cao' },
     { key: '{{initial_weight}}', label: 'Cân nặng' },
     { key: '{{medical_condition}}', label: 'Bệnh lý' },
+    // Branch fields
+    { key: '{{center_phone}}', label: 'SĐT trung tâm' },
+    { key: '{{center_address}}', label: 'Địa chỉ TT' },
+    { key: '{{legal_representative}}', label: 'Người đại diện PL' },
+    { key: '{{representative_phone}}', label: 'SĐT đại diện' },
 ]
 
 const SAMPLE_DATA: Record<string, string> = {
@@ -75,6 +80,10 @@ const SAMPLE_DATA: Record<string, string> = {
     '{{initial_height}}': '162',
     '{{initial_weight}}': '55',
     '{{medical_condition}}': 'Không',
+    '{{center_phone}}': '028 1234 5678',
+    '{{center_address}}': '456 Nguyễn Trãi, Quận 5, TP.HCM',
+    '{{legal_representative}}': 'NGUYỄN VĂN AN',
+    '{{representative_phone}}': '0901 234 567',
 }
 
 function renderPreview(content: string): string {

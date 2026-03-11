@@ -218,10 +218,18 @@ export function BranchDetailsSheet({
                             <DetailRow label="Tên chi nhánh" value={formData.name} name="name" icon={Building2} />
                             <div className="grid grid-cols-2 gap-5">
                                 <DetailRow label="Tên viết tắt" value={formData.short_name} name="short_name" icon={Building2} />
-                                <DetailRow label="Số điện thoại" value={formData.phone} name="phone" icon={Phone} />
+                                <DetailRow label="Số điện thoại trung tâm" value={formData.center_phone || formData.phone} name="center_phone" icon={Phone} />
                             </div>
-                            <DetailRow label="Người đại diện" value={formData.representative} name="representative" icon={User} />
-                            <DetailRow label="Địa chỉ" value={formData.address} name="address" icon={MapPin} />
+                            <DetailRow label="Người đại diện (hiển thị HĐ)" value={formData.representative} name="representative" icon={User} />
+                            <DetailRow label="Địa chỉ trung tâm" value={formData.center_address || formData.address} name="center_address" icon={MapPin} />
+                        </div>
+                    </CardSection>
+
+                    {/* Section: Đại diện pháp lý */}
+                    <CardSection title="Đại diện theo pháp luật" icon={User}>
+                        <div className="space-y-5">
+                            <DetailRow label="Họ và tên người đại diện PL" value={formData.legal_representative} name="legal_representative" icon={User} />
+                            <DetailRow label="Số điện thoại người đại diện" value={formData.representative_phone} name="representative_phone" icon={Phone} />
                         </div>
                     </CardSection>
 
@@ -235,6 +243,7 @@ export function BranchDetailsSheet({
                             <DetailRow label="Chủ tài khoản" value={formData.account_holder} name="account_holder" icon={User} />
                         </div>
                     </CardSection>
+
                 </div>
 
                 {/* Sticky Footer */}

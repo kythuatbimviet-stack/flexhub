@@ -41,8 +41,6 @@ import { updateContract, deleteContract } from '@/app/actions/contracts'
 import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
 import { cn } from '@/lib/utils'
 import { FinalizeContractDialog } from './finalize-contract-dialog'
-import { getContractHTML, getContractHTMLFromTemplate } from './contract-print-template'
-import { fetchActiveTemplateForBranch } from '@/app/actions/contract-templates'
 import { Loader2, Download } from 'lucide-react'
 
 interface ContractDetailsSheetProps {
@@ -64,7 +62,6 @@ export function ContractDetailsSheet({
     const [branches, setBranches] = React.useState<any[]>([])
     const [statuses, setStatuses] = React.useState<ConfigItem[]>([])
     const [showFinalizeDialog, setShowFinalizeDialog] = React.useState(false)
-    const [contractTemplate, setContractTemplate] = React.useState<string | null>(null)
 
     const defaultStatus = React.useMemo(() => {
         return statuses.find(s => s.is_default)?.nam || statuses[0]?.nam || 'Đang thực hiện'
@@ -73,22 +70,16 @@ export function ContractDetailsSheet({
     React.useEffect(() => {
         if (open) {
             const loadData = async () => {
-                const [branchesRes, statusRes, templateRes] = await Promise.all([
+                const [branchesRes, statusRes] = await Promise.all([
                     fetchBranches(),
                     fetchConfigParams('config_contract_status'),
-                    fetchActiveTemplateForBranch(contract?.branch_id)
                 ])
                 if (branchesRes.success) setBranches(branchesRes.data || [])
                 if (statusRes.success) setStatuses(statusRes.data || [])
-                if (templateRes.success && templateRes.data?.content) {
-                    setContractTemplate(templateRes.data.content)
-                } else {
-                    setContractTemplate(null)
-                }
             }
             loadData()
         }
-    }, [open, contract?.branch_id])
+    }, [open])
 
     React.useEffect(() => {
         if (contract) {
@@ -147,28 +138,8 @@ export function ContractDetailsSheet({
     }
 
     const handleExportPDF = () => {
-        // Use custom template from DB if available and non-empty, else fallback to built-in
-        const html = (contractTemplate && contractTemplate.trim())
-            ? getContractHTMLFromTemplate(contract, contractTemplate)
-            : getContractHTML(contract)
-        if (!html) return
-
-        const printWindow = window.open('', '_blank', 'width=900,height=700')
-        if (!printWindow) {
-            toast.error('Trình duyệt đã chặn cửa sổ mới. Vui lòng cho phép popup.')
-            return
-        }
-
-        printWindow.document.write(html)
-        printWindow.document.close()
-
-        // Wait for fonts/styles to load then print
-        printWindow.onload = () => {
-            setTimeout(() => {
-                printWindow.print()
-                printWindow.close()
-            }, 600)
-        }
+        if (!contract?.id) return
+        window.open(`/contracts/print/${encodeURIComponent(contract.id)}`, '_blank')
     }
 
     const CardSection = ({ title, icon: Icon, children }: any) => (

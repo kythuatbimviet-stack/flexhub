@@ -92,6 +92,8 @@ const contractFormSchema = z.object({
     id_number: z.string().optional(),
     representative_name: z.string().optional(),
     representative_phone: z.string().optional(),
+    legal_representative: z.string().optional(),
+    center_address: z.string().optional(),
     medical_condition: z.string().optional(),
     initial_height: z.string().optional(),
     initial_weight: z.string().optional(),
@@ -148,7 +150,9 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             id_number: '',
             representative_name: '',
             representative_phone: '',
-            medical_condition: '',
+            legal_representative: '',
+            center_address: '',
+            medical_condition: '',,
             initial_height: '',
             initial_weight: '',
             package_type: 'offline',
@@ -257,7 +261,10 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                             form.setValue('facility_name', branch.name)
                             form.setValue('short_name', branch.short_name || '')
                             form.setValue('address', branch.address || '')
-                            form.setValue('center_phone', branch.phone || '')
+                            form.setValue('center_phone', branch.center_phone || branch.phone || '')
+                            form.setValue('center_address', branch.center_address || branch.address || '')
+                            form.setValue('legal_representative', branch.legal_representative || '')
+                            form.setValue('representative_phone', branch.representative_phone || '')
                             form.setValue('account_number', branch.account_number?.toString() || '')
                             form.setValue('account_holder', branch.account_holder || '')
                             form.setValue('bank_name', branch.bank_name || '')
@@ -307,7 +314,10 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             form.setValue('facility_name', branch.name)
             form.setValue('short_name', branch.short_name || '')
             form.setValue('address', branch.address || '')
-            form.setValue('center_phone', branch.phone || '')
+            form.setValue('center_phone', branch.center_phone || branch.phone || '')
+            form.setValue('center_address', branch.center_address || branch.address || '')
+            form.setValue('legal_representative', branch.legal_representative || '')
+            form.setValue('representative_phone', branch.representative_phone || '')
             form.setValue('account_number', branch.account_number?.toString() || '')
             form.setValue('account_holder', branch.account_holder || '')
             form.setValue('bank_name', branch.bank_name || '')

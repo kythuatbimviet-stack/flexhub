@@ -51,8 +51,11 @@ export function getContractHTMLFromTemplate(contract: any, templateContent: stri
     '{{account_number}}': contract.account_number || '',
     '{{bank_name}}': contract.bank_name || '',
     '{{account_holder}}': contract.account_holder || '',
-    '{{center_phone}}': contract.center_phone || '',
-    '{{center_address}}': contract.address || '',
+    // Branch-sourced fields (from branches table)
+    '{{center_phone}}': contract.branches?.center_phone || contract.center_phone || '',
+    '{{center_address}}': contract.branches?.center_address || contract.address || '',
+    '{{legal_representative}}': contract.branches?.legal_representative || '',
+    '{{representative_phone}}': contract.branches?.representative_phone || '',
   }
 
   let body = templateContent
