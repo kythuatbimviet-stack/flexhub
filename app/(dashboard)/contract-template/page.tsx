@@ -3,7 +3,9 @@
 import * as React from 'react'
 import {
     FileText, Save, Copy, Check, RefreshCw, Eye, Code2,
-    Plus, Trash2, Building2, Globe, Power, Edit2, X
+    Plus, Trash2, Building2, Globe, Power, X,
+    Tags, RotateCcw, Search, AlertCircle, Pencil,
+    BookOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,6 +19,16 @@ import {
     deleteContractTemplate,
     toggleTemplateStatus,
 } from '@/app/actions/contract-templates'
+import {
+    fetchAllPlaceholders,
+    createPlaceholder,
+    updatePlaceholder,
+    deletePlaceholder,
+    togglePlaceholderStatus,
+    resetPlaceholdersToDefault,
+    type ContractPlaceholder,
+} from '@/app/actions/contract-placeholders'
+import { DEFAULT_PLACEHOLDERS, type PlaceholderCategory } from '@/lib/placeholder-defaults'
 import { fetchBranches } from '@/app/actions/branches'
 import {
     Select,
@@ -26,69 +38,24 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 
-// ── Placeholders ────────────────────────────────────────────────────────────
-const PLACEHOLDERS = [
-    { key: '{{member_name}}', label: 'Họ và tên' },
-    { key: '{{phone}}', label: 'Số điện thoại' },
-    { key: '{{email}}', label: 'Email' },
-    { key: '{{dob}}', label: 'Ngày sinh' },
-    { key: '{{address}}', label: 'Địa chỉ' },
-    { key: '{{id_number}}', label: 'CMND/CCCD' },
-    { key: '{{package_name}}', label: 'Gói tập' },
-    { key: '{{total_sessions}}', label: 'Số buổi' },
-    { key: '{{start_date}}', label: 'Ngày bắt đầu' },
-    { key: '{{end_date}}', label: 'Ngày kết thúc' },
-    { key: '{{total_amount}}', label: 'Tổng tiền' },
-    { key: '{{total_amount_words}}', label: 'Tổng tiền (chữ)' },
-    { key: '{{trainer_name}}', label: 'Tên HLV' },
-    { key: '{{trainer_type}}', label: 'Hình thức HL' },
-    { key: '{{center_representative}}', label: 'Đại diện TT' },
-    { key: '{{center_name}}', label: 'Tên trung tâm' },
-    { key: '{{contract_id}}', label: 'Mã hợp đồng' },
-    { key: '{{signing_date}}', label: 'Ngày ký' },
-    { key: '{{payment_method}}', label: 'Hình thức TT' },
-    { key: '{{initial_height}}', label: 'Chiều cao' },
-    { key: '{{initial_weight}}', label: 'Cân nặng' },
-    { key: '{{medical_condition}}', label: 'Bệnh lý' },
-    // Branch fields
-    { key: '{{center_phone}}', label: 'SĐT trung tâm' },
-    { key: '{{center_address}}', label: 'Địa chỉ TT' },
-    { key: '{{legal_representative}}', label: 'Người đại diện PL' },
-    { key: '{{representative_phone}}', label: 'SĐT đại diện' },
+// ── Category config ──────────────────────────────────────────────────────────
+const CATEGORIES: { value: PlaceholderCategory | 'all'; label: string; color: string; bg: string; border: string }[] = [
+    { value: 'all',      label: 'Tất cả',         color: 'text-gray-600',   bg: 'bg-gray-50',    border: 'border-gray-200'   },
+    { value: 'member',   label: 'Hội viên',        color: 'text-blue-600',   bg: 'bg-blue-50',    border: 'border-blue-200'   },
+    { value: 'center',   label: 'Trung tâm',       color: 'text-purple-600', bg: 'bg-purple-50',  border: 'border-purple-200' },
+    { value: 'package',  label: 'Gói dịch vụ',     color: 'text-amber-600',  bg: 'bg-amber-50',   border: 'border-amber-200'  },
+    { value: 'contract', label: 'Hợp đồng',        color: 'text-red-600',    bg: 'bg-red-50',     border: 'border-red-200'    },
+    { value: 'general',  label: 'Khác',            color: 'text-gray-500',   bg: 'bg-gray-50',    border: 'border-gray-200'   },
 ]
 
-const SAMPLE_DATA: Record<string, string> = {
-    '{{member_name}}': 'NGUYỄN THỊ MAI',
-    '{{phone}}': '0912 345 678',
-    '{{email}}': 'mai.nguyen@email.com',
-    '{{dob}}': '15/03/1995',
-    '{{address}}': '123 Đường Lê Lợi, Quận 1, TP.HCM',
-    '{{id_number}}': '079195012345',
-    '{{package_name}}': 'GÓI PT CAO CẤP 3 THÁNG',
-    '{{total_sessions}}': '36',
-    '{{start_date}}': '01/04/2026',
-    '{{end_date}}': '30/06/2026',
-    '{{total_amount}}': '12.000.000 ₫',
-    '{{total_amount_words}}': 'Mười hai triệu',
-    '{{trainer_name}}': 'Trần Văn Hùng',
-    '{{trainer_type}}': 'Trực tiếp',
-    '{{center_representative}}': 'Nguyễn Minh Trí',
-    '{{center_name}}': 'TRUNG TÂM LADY FIT',
-    '{{contract_id}}': 'HĐ-2026-0001',
-    '{{signing_date}}': '01/04/2026',
-    '{{payment_method}}': 'Tiền mặt',
-    '{{initial_height}}': '162',
-    '{{initial_weight}}': '55',
-    '{{medical_condition}}': 'Không',
-    '{{center_phone}}': '028 1234 5678',
-    '{{center_address}}': '456 Nguyễn Trãi, Quận 5, TP.HCM',
-    '{{legal_representative}}': 'NGUYỄN VĂN AN',
-    '{{representative_phone}}': '0901 234 567',
+function getCategoryMeta(cat: string) {
+    return CATEGORIES.find(c => c.value === cat) ?? CATEGORIES[CATEGORIES.length - 1]
 }
 
-function renderPreview(content: string): string {
+// ── Sample render helper (for template editor preview) ───────────────────────
+function renderPreview(content: string, sampleMap: Record<string, string>): string {
     let result = content
-    Object.entries(SAMPLE_DATA).forEach(([key, val]) => {
+    Object.entries(sampleMap).forEach(([key, val]) => {
         result = result.replaceAll(key, `<mark style="background:#fef9c3;color:#92400e;padding:0 2px;border-radius:2px;">${val}</mark>`)
     })
     result = result.replace(/\{\{[^}]+\}\}/g, (match) =>
@@ -96,119 +63,612 @@ function renderPreview(content: string): string {
     return result
 }
 
-// ── Empty form state ─────────────────────────────────────────────────────────
-const emptyForm = { name: '', content: '', branch_id: 'global', is_active: true }
+// ── Empty form states ─────────────────────────────────────────────────────────
+const emptyTemplateForm = { name: '', content: '', branch_id: 'global', is_active: true }
+const emptyPlaceholderForm = {
+    key: '',
+    label: '',
+    description: '',
+    category: 'general' as PlaceholderCategory,
+    sample_value: '',
+    is_active: true,
+}
 
-export default function ContractTemplatePage() {
-    const [templates, setTemplates] = React.useState<any[]>([])
-    const [branches, setBranches] = React.useState<any[]>([])
-    const [loading, setLoading] = React.useState(true)
+// ════════════════════════════════════════════════════════════════════════════
+// COMPONENT: Placeholder Dialog (Add/Edit)
+// ════════════════════════════════════════════════════════════════════════════
+interface PlaceholderDialogProps {
+    open: boolean
+    onClose: () => void
+    onSaved: () => void
+    editing: ContractPlaceholder | null
+}
+
+function PlaceholderDialog({ open, onClose, onSaved, editing }: PlaceholderDialogProps) {
+    const [form, setForm] = React.useState(emptyPlaceholderForm)
     const [saving, setSaving] = React.useState(false)
 
-    // Selected template for editing
-    const [selectedId, setSelectedId] = React.useState<string | null>(null)
-    const [isCreating, setIsCreating] = React.useState(false)
-
-    // Editor form state
-    const [form, setForm] = React.useState(emptyForm)
-    const [activeTab, setActiveTab] = React.useState<'html' | 'preview'>('html')
-    const [copiedKey, setCopiedKey] = React.useState<string | null>(null)
-    const textareaRef = React.useRef<HTMLTextAreaElement>(null)
-
-    const selectedTemplate = templates.find(t => t.id === selectedId)
-
-    // Load data
-    const loadData = React.useCallback(async () => {
-        setLoading(true)
-        const [tRes, bRes] = await Promise.all([
-            fetchAllContractTemplates(),
-            fetchBranches(),
-        ])
-        if (tRes.success) setTemplates(tRes.data || [])
-        if (bRes.success) setBranches(bRes.data || [])
-        setLoading(false)
-    }, [])
-
-    React.useEffect(() => { loadData() }, [loadData])
-
-    // Open editor for existing template
-    const openEditor = (t: any) => {
-        setIsCreating(false)
-        setSelectedId(t.id)
-        setForm({
-            name: t.name,
-            content: t.content,
-            branch_id: t.branch_id || 'global',
-            is_active: t.is_active,
-        })
-        setActiveTab('html')
-    }
-
-    // Start creating new
-    const startNew = () => {
-        setSelectedId(null)
-        setIsCreating(true)
-        setForm(emptyForm)
-        setActiveTab('html')
-    }
-
-    const closeEditor = () => {
-        setSelectedId(null)
-        setIsCreating(false)
-    }
+    React.useEffect(() => {
+        if (editing) {
+            setForm({
+                key: editing.key,
+                label: editing.label,
+                description: editing.description || '',
+                category: editing.category,
+                sample_value: editing.sample_value || '',
+                is_active: editing.is_active,
+            })
+        } else {
+            setForm(emptyPlaceholderForm)
+        }
+    }, [editing, open])
 
     const handleSave = async () => {
-        if (!form.name.trim()) { toast.error('Vui lòng nhập tên mẫu'); return }
+        if (!form.key.trim()) { toast.error('Vui lòng nhập key placeholder'); return }
+        if (!form.label.trim()) { toast.error('Vui lòng nhập nhãn'); return }
         setSaving(true)
         try {
             const payload = {
-                name: form.name,
-                content: form.content,
-                branch_id: form.branch_id === 'global' ? null : form.branch_id,
+                key: form.key.trim(),
+                label: form.label.trim(),
+                description: form.description.trim() || null,
+                category: form.category,
+                sample_value: form.sample_value.trim() || null,
                 is_active: form.is_active,
             }
-            let res
-            if (isCreating) {
-                res = await createContractTemplate(payload)
-            } else if (selectedId) {
-                res = await updateContractTemplate(selectedId, payload)
-            }
-            if (res?.success) {
-                toast.success(isCreating ? 'Đã tạo mẫu mới!' : 'Đã lưu mẫu!')
-                await loadData()
-                if (isCreating && res.data?.id) {
-                    setSelectedId(res.data.id)
-                    setIsCreating(false)
-                }
+            const res = editing
+                ? await updatePlaceholder(editing.id, payload)
+                : await createPlaceholder(payload)
+
+            if (res.success) {
+                toast.success(editing ? 'Đã cập nhật placeholder!' : 'Đã thêm placeholder mới!')
+                onSaved()
+                onClose()
             } else {
-                toast.error('Lỗi: ' + res?.error)
+                toast.error('Lỗi: ' + res.error)
             }
         } finally {
             setSaving(false)
         }
     }
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Xóa mẫu này?')) return
-        const res = await deleteContractTemplate(id)
+    if (!open) return null
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+            {/* Dialog */}
+            <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg border border-gray-100 dark:border-gray-800">
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center gap-2">
+                        <Tags className="w-4 h-4 text-red-500" />
+                        <h2 className="font-bold text-sm text-gray-700 dark:text-gray-200">
+                            {editing ? 'Chỉnh sửa Placeholder' : 'Thêm Placeholder mới'}
+                        </h2>
+                    </div>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="px-6 py-5 space-y-4">
+                    {/* Key */}
+                    <div className="space-y-1.5">
+                        <Label className="text-[11px] uppercase tracking-wider text-gray-400">
+                            Key Placeholder <span className="text-red-500">*</span>
+                        </Label>
+                        <div className="relative">
+                            <Input
+                                value={form.key}
+                                onChange={e => setForm(f => ({ ...f, key: e.target.value }))}
+                                placeholder="member_name  hoặc  {{member_name}}"
+                                className="h-9 rounded-xl text-sm border-gray-200 dark:border-gray-700 font-mono"
+                                disabled={editing?.is_default}
+                            />
+                        </div>
+                        <p className="text-[10px] text-gray-400">
+                            Hệ thống tự thêm <code className="bg-gray-100 px-1 rounded">{'{{ }}'}</code> nếu chưa có.
+                            {editing?.is_default && <span className="ml-1 text-amber-500">⚠ Placeholder mặc định — không đổi được key.</span>}
+                        </p>
+                    </div>
+
+                    {/* Label */}
+                    <div className="space-y-1.5">
+                        <Label className="text-[11px] uppercase tracking-wider text-gray-400">
+                            Nhãn hiển thị <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                            value={form.label}
+                            onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
+                            placeholder="VD: Họ và tên hội viên"
+                            className="h-9 rounded-xl text-sm border-gray-200 dark:border-gray-700"
+                        />
+                    </div>
+
+                    {/* Category + Status */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                            <Label className="text-[11px] uppercase tracking-wider text-gray-400">Nhóm</Label>
+                            <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v as PlaceholderCategory }))}>
+                                <SelectTrigger className="h-9 rounded-xl text-sm border-gray-200 dark:border-gray-700">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {CATEGORIES.filter(c => c.value !== 'all').map(c => (
+                                        <SelectItem key={c.value} value={c.value}>
+                                            <span className={cn('font-medium', c.color)}>{c.label}</span>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-[11px] uppercase tracking-wider text-gray-400">Trạng thái</Label>
+                            <button
+                                type="button"
+                                onClick={() => setForm(f => ({ ...f, is_active: !f.is_active }))}
+                                className={cn(
+                                    'h-9 w-full rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 transition-all',
+                                    form.is_active
+                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                                        : 'bg-gray-50 border-gray-200 text-gray-400 hover:bg-gray-100'
+                                )}
+                            >
+                                <Power className="w-3.5 h-3.5" />
+                                {form.is_active ? 'Kích hoạt' : 'Tắt'}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Sample Value */}
+                    <div className="space-y-1.5">
+                        <Label className="text-[11px] uppercase tracking-wider text-gray-400">Giá trị mẫu (preview)</Label>
+                        <Input
+                            value={form.sample_value}
+                            onChange={e => setForm(f => ({ ...f, sample_value: e.target.value }))}
+                            placeholder="VD: NGUYỄN THỊ MAI"
+                            className="h-9 rounded-xl text-sm border-gray-200 dark:border-gray-700"
+                        />
+                        <p className="text-[10px] text-gray-400">Dùng để xem trước template. Không ảnh hưởng đến dữ liệu thực.</p>
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-1.5">
+                        <Label className="text-[11px] uppercase tracking-wider text-gray-400">Mô tả (tuỳ chọn)</Label>
+                        <Input
+                            value={form.description}
+                            onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                            placeholder="Mô tả ý nghĩa của placeholder..."
+                            className="h-9 rounded-xl text-sm border-gray-200 dark:border-gray-700"
+                        />
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-2">
+                    <Button variant="ghost" onClick={onClose} className="h-9 rounded-xl text-sm text-gray-500">
+                        Huỷ
+                    </Button>
+                    <Button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="h-9 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm px-5"
+                    >
+                        {saving ? <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
+                        {editing ? 'Lưu thay đổi' : 'Thêm placeholder'}
+                    </Button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// COMPONENT: Placeholder Manager Tab
+// ════════════════════════════════════════════════════════════════════════════
+interface PlaceholderManagerProps {
+    placeholders: ContractPlaceholder[]
+    loading: boolean
+    onReload: () => void
+}
+
+function PlaceholderManager({ placeholders, loading, onReload }: PlaceholderManagerProps) {
+    const [dialogOpen, setDialogOpen] = React.useState(false)
+    const [editing, setEditing] = React.useState<ContractPlaceholder | null>(null)
+    const [searchQuery, setSearchQuery] = React.useState('')
+    const [activeCategory, setActiveCategory] = React.useState<PlaceholderCategory | 'all'>('all')
+    const [resetting, setResetting] = React.useState(false)
+    const [copiedKey, setCopiedKey] = React.useState<string | null>(null)
+
+    const filtered = placeholders.filter(p => {
+        const matchCat = activeCategory === 'all' || p.category === activeCategory
+        const q = searchQuery.toLowerCase()
+        const matchSearch = !q || p.key.toLowerCase().includes(q) || p.label.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)
+        return matchCat && matchSearch
+    })
+
+    const handleCopy = (key: string) => {
+        navigator.clipboard.writeText(key)
+        setCopiedKey(key)
+        setTimeout(() => setCopiedKey(null), 1500)
+        toast.success(`Đã copy: ${key}`)
+    }
+
+    const handleToggle = async (p: ContractPlaceholder) => {
+        const res = await togglePlaceholderStatus(p.id, !p.is_active)
         if (res.success) {
-            toast.success('Đã xóa mẫu')
-            if (selectedId === id) closeEditor()
-            await loadData()
+            onReload()
+            toast.success(!p.is_active ? 'Đã kích hoạt' : 'Đã tắt')
         } else {
             toast.error('Lỗi: ' + res.error)
         }
     }
 
-    const handleToggle = async (id: string, current: boolean) => {
-        const res = await toggleTemplateStatus(id, !current)
+    const handleDelete = async (p: ContractPlaceholder) => {
+        if (!confirm(`Xóa placeholder "${p.key}"?\n${p.is_default ? '⚠ Đây là placeholder mặc định, bạn có thể reset lại sau.' : ''}`)) return
+        const res = await deletePlaceholder(p.id)
         if (res.success) {
-            await loadData()
-            toast.success(!current ? 'Đã kích hoạt mẫu' : 'Đã tắt mẫu')
-            if (selectedId === id) setForm(f => ({ ...f, is_active: !current }))
+            onReload()
+            toast.success('Đã xóa placeholder')
         } else {
             toast.error('Lỗi: ' + res.error)
         }
+    }
+
+    const handleReset = async () => {
+        if (!confirm(`Reset về mặc định?\n\n• Xóa các placeholder mặc định cũ (${DEFAULT_PLACEHOLDERS.length} cái)\n• Khôi phục toàn bộ placeholder mặc định\n• GIỮ NGUYÊN placeholder tùy chỉnh của bạn`)) return
+        setResetting(true)
+        try {
+            const res = await resetPlaceholdersToDefault()
+            if (res.success) {
+                onReload()
+                toast.success(`Đã reset về ${res.count} placeholder mặc định`)
+            } else {
+                toast.error('Lỗi: ' + res.error)
+            }
+        } finally {
+            setResetting(false)
+        }
+    }
+
+    // Thống kê
+    const stats = {
+        total: placeholders.length,
+        active: placeholders.filter(p => p.is_active).length,
+        defaults: placeholders.filter(p => p.is_default).length,
+        custom: placeholders.filter(p => !p.is_default).length,
+    }
+
+    return (
+        <div className="space-y-4">
+            {/* Stats row */}
+            <div className="grid grid-cols-4 gap-3">
+                {[
+                    { label: 'Tổng cộng', value: stats.total, color: 'text-gray-700' },
+                    { label: 'Đang hoạt động', value: stats.active, color: 'text-emerald-600' },
+                    { label: 'Mặc định', value: stats.defaults, color: 'text-blue-600' },
+                    { label: 'Tùy chỉnh', value: stats.custom, color: 'text-purple-600' },
+                ].map(s => (
+                    <div key={s.label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-3 text-center">
+                        <div className={cn('text-2xl font-black', s.color)}>{s.value}</div>
+                        <div className="text-[10px] text-gray-400 mt-0.5 font-medium uppercase tracking-wide">{s.label}</div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Toolbar */}
+            <div className="flex items-center gap-3 flex-wrap">
+                {/* Search */}
+                <div className="relative flex-1 min-w-[200px]">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
+                    <Input
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        placeholder="Tìm kiếm key, nhãn..."
+                        className="h-9 pl-9 rounded-xl text-sm border-gray-200 dark:border-gray-700"
+                    />
+                </div>
+
+                {/* Category filter */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    {CATEGORIES.map(c => (
+                        <button
+                            key={c.value}
+                            onClick={() => setActiveCategory(c.value as PlaceholderCategory | 'all')}
+                            className={cn(
+                                'px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all',
+                                activeCategory === c.value
+                                    ? cn(c.bg, c.color, c.border)
+                                    : 'bg-gray-50 text-gray-400 border-transparent hover:border-gray-200'
+                            )}
+                        >
+                            {c.label}
+                            {c.value !== 'all' && (
+                                <span className="ml-1.5 opacity-60">
+                                    {placeholders.filter(p => p.category === c.value).length}
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 ml-auto">
+                    <button
+                        onClick={handleReset}
+                        disabled={resetting}
+                        title="Reset về placeholder mặc định (giữ placeholder tùy chỉnh)"
+                        className="h-9 px-3 rounded-xl border border-gray-200 text-xs text-gray-400 hover:text-gray-600 hover:border-gray-300 flex items-center gap-1.5 transition-all"
+                    >
+                        {resetting
+                            ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            : <RotateCcw className="w-3.5 h-3.5" />}
+                        Load lại mặc định
+                    </button>
+                    <Button
+                        onClick={() => { setEditing(null); setDialogOpen(true) }}
+                        className="h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-lg shadow-red-100"
+                    >
+                        <Plus className="w-3.5 h-3.5 mr-1.5" />
+                        Thêm placeholder
+                    </Button>
+                </div>
+            </div>
+
+            {/* Placeholder list */}
+            {loading ? (
+                <div className="flex items-center justify-center h-40 text-gray-300">
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                </div>
+            ) : filtered.length === 0 ? (
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 p-10 text-center">
+                    <Tags className="w-10 h-10 mx-auto mb-2 text-gray-200" />
+                    <p className="text-sm text-gray-400">
+                        {searchQuery ? `Không tìm thấy placeholder nào với "${searchQuery}"` : 'Chưa có placeholder nào'}
+                    </p>
+                    {!searchQuery && (
+                        <button
+                            onClick={handleReset}
+                            className="mt-3 text-xs text-red-500 hover:text-red-700 underline underline-offset-2"
+                        >
+                            Load placeholder mặc định
+                        </button>
+                    )}
+                </div>
+            ) : (
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+                    {/* Table header */}
+                    <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_auto] gap-4 px-4 py-2.5 bg-gray-50/80 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                        {['Key', 'Nhãn / Mô tả', 'Nhóm', 'Giá trị mẫu', 'Thao tác'].map(h => (
+                            <div key={h} className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{h}</div>
+                        ))}
+                    </div>
+
+                    {/* Rows */}
+                    <div className="divide-y divide-gray-50 dark:divide-gray-800">
+                        {filtered.map(p => {
+                            const catMeta = getCategoryMeta(p.category)
+                            return (
+                                <div
+                                    key={p.id}
+                                    className={cn(
+                                        'grid grid-cols-[2fr_1.5fr_1fr_1fr_auto] gap-4 px-4 py-3 items-center transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/30',
+                                        !p.is_active && 'opacity-50'
+                                    )}
+                                >
+                                    {/* Key */}
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <button
+                                            onClick={() => handleCopy(p.key)}
+                                            title="Click để copy"
+                                            className="group flex items-center gap-1.5 min-w-0"
+                                        >
+                                            <code className="text-xs font-mono font-bold text-red-600 dark:text-red-400 truncate">
+                                                {p.key}
+                                            </code>
+                                            {copiedKey === p.key
+                                                ? <Check className="w-3 h-3 text-green-500 shrink-0" />
+                                                : <Copy className="w-3 h-3 text-gray-300 group-hover:text-gray-500 shrink-0 transition-colors" />}
+                                        </button>
+                                        {p.is_default && (
+                                            <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-500 border border-blue-100">
+                                                SYS
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Label / Description */}
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate">{p.label}</p>
+                                        {p.description && (
+                                            <p className="text-[10px] text-gray-400 truncate mt-0.5">{p.description}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Category */}
+                                    <div>
+                                        <span className={cn(
+                                            'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                                            catMeta.bg, catMeta.color, catMeta.border
+                                        )}>
+                                            {catMeta.label}
+                                        </span>
+                                    </div>
+
+                                    {/* Sample value */}
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] text-gray-500 truncate font-mono">
+                                            {p.sample_value || <span className="text-gray-300 italic">—</span>}
+                                        </p>
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        {/* Toggle active */}
+                                        <button
+                                            title={p.is_active ? 'Tắt' : 'Kích hoạt'}
+                                            onClick={() => handleToggle(p)}
+                                            className={cn(
+                                                'w-7 h-7 rounded-lg flex items-center justify-center transition-all',
+                                                p.is_active
+                                                    ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                                                    : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                                            )}
+                                        >
+                                            <Power className="w-3.5 h-3.5" />
+                                        </button>
+                                        {/* Edit */}
+                                        <button
+                                            title="Chỉnh sửa"
+                                            onClick={() => { setEditing(p); setDialogOpen(true) }}
+                                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-blue-50 text-blue-400 hover:bg-blue-100 transition-all"
+                                        >
+                                            <Pencil className="w-3.5 h-3.5" />
+                                        </button>
+                                        {/* Delete */}
+                                        <button
+                                            title="Xóa"
+                                            onClick={() => handleDelete(p)}
+                                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 transition-all"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* Info box */}
+            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-4">
+                <p className="font-bold text-blue-700 dark:text-blue-300 mb-1.5 text-sm flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4" />
+                    Lưu ý khi quản lý Placeholder
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-blue-600 dark:text-blue-400 text-[12px]">
+                    <li>Placeholder có nhãn <strong>SYS</strong> là mặc định — có thể xóa nhưng sẽ được khôi phục khi nhấn "Load lại mặc định"</li>
+                    <li>Placeholder mặc định có sẵn mapping trong hệ thống, placeholder tùy chỉnh cần bổ sung logic render trong code</li>
+                    <li>"Load lại mặc định" chỉ ảnh hưởng đến placeholder SYS, <strong>không xóa</strong> placeholder bạn tự thêm</li>
+                    <li>Click vào key <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded font-mono">{'{{...}}'}</code> để copy nhanh vào clipboard</li>
+                </ul>
+            </div>
+
+            {/* Dialog */}
+            <PlaceholderDialog
+                open={dialogOpen}
+                onClose={() => { setDialogOpen(false); setEditing(null) }}
+                onSaved={onReload}
+                editing={editing}
+            />
+        </div>
+    )
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ════════════════════════════════════════════════════════════════════════════
+export default function ContractTemplatePage() {
+    const [activeMainTab, setActiveMainTab] = React.useState<'templates' | 'placeholders'>('templates')
+
+    // ── Template state ──
+    const [templates, setTemplates] = React.useState<any[]>([])
+    const [branches, setBranches] = React.useState<any[]>([])
+    const [loadingTemplates, setLoadingTemplates] = React.useState(true)
+    const [saving, setSaving] = React.useState(false)
+    const [selectedId, setSelectedId] = React.useState<string | null>(null)
+    const [isCreating, setIsCreating] = React.useState(false)
+    const [form, setForm] = React.useState(emptyTemplateForm)
+    const [activeTab, setActiveTab] = React.useState<'html' | 'preview'>('html')
+    const [copiedKey, setCopiedKey] = React.useState<string | null>(null)
+    const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+
+    // ── Placeholder state ──
+    const [placeholders, setPlaceholders] = React.useState<ContractPlaceholder[]>([])
+    const [loadingPlaceholders, setLoadingPlaceholders] = React.useState(true)
+
+    const selectedTemplate = templates.find(t => t.id === selectedId)
+    const showEditor = isCreating || !!selectedId
+
+    // Sample map built from DB placeholders
+    const sampleMap = React.useMemo(() => {
+        const map: Record<string, string> = {}
+        placeholders.forEach(p => { if (p.sample_value) map[p.key] = p.sample_value })
+        return map
+    }, [placeholders])
+
+    // ── Load data ──
+    const loadTemplates = React.useCallback(async () => {
+        setLoadingTemplates(true)
+        const [tRes, bRes] = await Promise.all([fetchAllContractTemplates(), fetchBranches()])
+        if (tRes.success) setTemplates(tRes.data || [])
+        if (bRes.success) setBranches(bRes.data || [])
+        setLoadingTemplates(false)
+    }, [])
+
+    const loadPlaceholders = React.useCallback(async () => {
+        setLoadingPlaceholders(true)
+        const res = await fetchAllPlaceholders()
+        if (res.success) {
+            setPlaceholders(res.data || [])
+        } else {
+            console.error('[Placeholder] Load failed:', res.error)
+            toast.error('Không thể tải placeholder: ' + res.error)
+        }
+        setLoadingPlaceholders(false)
+    }, [])
+
+    React.useEffect(() => {
+        loadTemplates()
+        loadPlaceholders()
+    }, [loadTemplates, loadPlaceholders])
+
+    // ── Template editor handlers ──
+    const openEditor = (t: any) => {
+        setIsCreating(false)
+        setSelectedId(t.id)
+        setForm({ name: t.name, content: t.content, branch_id: t.branch_id || 'global', is_active: t.is_active })
+        setActiveTab('html')
+    }
+    const startNew = () => {
+        setSelectedId(null)
+        setIsCreating(true)
+        setForm(emptyTemplateForm)
+        setActiveTab('html')
+    }
+    const closeEditor = () => { setSelectedId(null); setIsCreating(false) }
+
+    const handleSave = async () => {
+        if (!form.name.trim()) { toast.error('Vui lòng nhập tên mẫu'); return }
+        setSaving(true)
+        try {
+            const payload = { name: form.name, content: form.content, branch_id: form.branch_id === 'global' ? null : form.branch_id, is_active: form.is_active }
+            let res
+            if (isCreating) res = await createContractTemplate(payload)
+            else if (selectedId) res = await updateContractTemplate(selectedId, payload)
+            if (res?.success) {
+                toast.success(isCreating ? 'Đã tạo mẫu mới!' : 'Đã lưu mẫu!')
+                await loadTemplates()
+                if (isCreating && res.data?.id) { setSelectedId(res.data.id); setIsCreating(false) }
+            } else { toast.error('Lỗi: ' + res?.error) }
+        } finally { setSaving(false) }
+    }
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Xóa mẫu này?')) return
+        const res = await deleteContractTemplate(id)
+        if (res.success) { toast.success('Đã xóa mẫu'); if (selectedId === id) closeEditor(); await loadTemplates() }
+        else toast.error('Lỗi: ' + res.error)
+    }
+
+    const handleToggle = async (id: string, current: boolean) => {
+        const res = await toggleTemplateStatus(id, !current)
+        if (res.success) { await loadTemplates(); toast.success(!current ? 'Đã kích hoạt mẫu' : 'Đã tắt mẫu'); if (selectedId === id) setForm(f => ({ ...f, is_active: !current })) }
+        else toast.error('Lỗi: ' + res.error)
     }
 
     const copyPlaceholder = (key: string) => {
@@ -225,17 +685,15 @@ export default function ContractTemplatePage() {
         const end = ta.selectionEnd
         const newContent = form.content.slice(0, start) + key + form.content.slice(end)
         setForm(f => ({ ...f, content: newContent }))
-        setTimeout(() => {
-            ta.focus()
-            ta.setSelectionRange(start + key.length, start + key.length)
-        }, 10)
+        setTimeout(() => { ta.focus(); ta.setSelectionRange(start + key.length, start + key.length) }, 10)
     }
 
-    const showEditor = isCreating || !!selectedId
+    // Active placeholders for editor panel
+    const activePlaceholders = placeholders.filter(p => p.is_active)
 
     return (
         <div className="space-y-4 pb-10 font-inter">
-            {/* Header */}
+            {/* ── Page Header ── */}
             <div className="flex justify-between items-center px-1">
                 <div>
                     <h1 className="text-3xl font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
@@ -243,262 +701,299 @@ export default function ContractTemplatePage() {
                         Mẫu hợp đồng
                     </h1>
                     <p className="text-sm text-gray-500 mt-0.5">
-                        Quản lý các mẫu hợp đồng theo chi nhánh. Mẫu được kích hoạt sẽ được dùng khi xuất PDF.
+                        Quản lý mẫu hợp đồng và placeholder theo chi nhánh.
                     </p>
                 </div>
-                <Button
-                    onClick={startNew}
-                    className="rounded-xl h-10 px-5 bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-100"
-                >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Tạo mẫu mới
-                </Button>
-            </div>
-
-            <div className={cn('gap-5', showEditor ? 'grid grid-cols-1 lg:grid-cols-[340px_1fr]' : 'block')}>
-                {/* ── Template list ── */}
-                <div className="space-y-3">
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 px-1">
-                        Danh sách mẫu ({templates.length})
-                    </p>
-                    {loading ? (
-                        <div className="flex items-center justify-center h-40 text-gray-300">
-                            <RefreshCw className="w-5 h-5 animate-spin" />
-                        </div>
-                    ) : templates.length === 0 ? (
-                        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 p-8 text-center text-gray-400">
-                            <FileText className="w-10 h-10 mx-auto mb-2 text-gray-200" />
-                            <p className="text-sm">Chưa có mẫu nào. Bấm "Tạo mẫu mới".</p>
-                        </div>
-                    ) : (
-                        templates.map(t => (
-                            <div
-                                key={t.id}
-                                onClick={() => openEditor(t)}
-                                className={cn(
-                                    'bg-white dark:bg-gray-900 rounded-2xl border shadow-sm p-4 cursor-pointer transition-all hover:shadow-md',
-                                    selectedId === t.id
-                                        ? 'border-red-300 dark:border-red-700 bg-red-50/30 dark:bg-red-950/10'
-                                        : 'border-gray-100 dark:border-gray-800 hover:border-gray-200'
-                                )}
-                            >
-                                <div className="flex items-start justify-between gap-2">
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">{t.name}</p>
-                                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                                            {/* Branch badge */}
-                                            {t.branch_id ? (
-                                                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
-                                                    <Building2 className="w-2.5 h-2.5" />
-                                                    {t.branches?.name || t.branch_id}
-                                                </span>
-                                            ) : (
-                                                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-600 border border-purple-100">
-                                                    <Globe className="w-2.5 h-2.5" />
-                                                    Tất cả chi nhánh
-                                                </span>
-                                            )}
-                                            {/* Status badge */}
-                                            <span className={cn(
-                                                'px-2 py-0.5 rounded-full text-[10px] font-bold border',
-                                                t.is_active
-                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                                    : 'bg-gray-50 text-gray-400 border-gray-100'
-                                            )}>
-                                                {t.is_active ? '● Đang dùng' : '○ Tắt'}
-                                            </span>
-                                        </div>
-                                        <p className="text-[10px] text-gray-300 mt-1">
-                                            {t.content?.length?.toLocaleString() || 0} ký tự
-                                        </p>
-                                    </div>
-                                    {/* Actions */}
-                                    <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
-                                        <button
-                                            title={t.is_active ? 'Tắt mẫu' : 'Kích hoạt mẫu'}
-                                            onClick={() => handleToggle(t.id, t.is_active)}
-                                            className={cn(
-                                                'w-7 h-7 rounded-lg flex items-center justify-center transition-all',
-                                                t.is_active
-                                                    ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                                                    : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-                                            )}
-                                        >
-                                            <Power className="w-3.5 h-3.5" />
-                                        </button>
-                                        <button
-                                            title="Xóa mẫu"
-                                            onClick={() => handleDelete(t.id)}
-                                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 transition-all"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-
-                {/* ── Editor panel ── */}
-                {showEditor && (
-                    <div className="space-y-3">
-                        {/* Form fields */}
-                        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-sm font-bold text-gray-700 dark:text-gray-200">
-                                    {isCreating ? 'Tạo mẫu mới' : 'Chỉnh sửa mẫu'}
-                                </h2>
-                                <button onClick={closeEditor} className="text-gray-400 hover:text-gray-600">
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[11px] uppercase tracking-wider text-gray-400">Tên mẫu *</Label>
-                                    <Input
-                                        value={form.name}
-                                        onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                                        placeholder="VD: Mẫu hợp đồng chuẩn..."
-                                        className="h-9 rounded-xl text-sm border-gray-200 dark:border-gray-700"
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[11px] uppercase tracking-wider text-gray-400">Chi nhánh áp dụng</Label>
-                                    <Select
-                                        value={form.branch_id}
-                                        onValueChange={v => setForm(f => ({ ...f, branch_id: v }))}
-                                    >
-                                        <SelectTrigger className="h-9 rounded-xl text-sm border-gray-200 dark:border-gray-700">
-                                            <SelectValue placeholder="Chọn chi nhánh" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="global">
-                                                <span className="flex items-center gap-1.5">
-                                                    <Globe className="w-3.5 h-3.5 text-purple-500" />
-                                                    Tất cả chi nhánh (Global)
-                                                </span>
-                                            </SelectItem>
-                                            {branches.map(b => (
-                                                <SelectItem key={b.id} value={b.id}>
-                                                    <span className="flex items-center gap-1.5">
-                                                        <Building2 className="w-3.5 h-3.5 text-blue-500" />
-                                                        {b.name}
-                                                    </span>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[11px] uppercase tracking-wider text-gray-400">Trạng thái</Label>
-                                    <button
-                                        type="button"
-                                        onClick={() => setForm(f => ({ ...f, is_active: !f.is_active }))}
-                                        className={cn(
-                                            'h-9 w-full rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 transition-all',
-                                            form.is_active
-                                                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
-                                                : 'bg-gray-50 border-gray-200 text-gray-400 hover:bg-gray-100'
-                                        )}
-                                    >
-                                        <Power className="w-4 h-4" />
-                                        {form.is_active ? 'Kích hoạt' : 'Không kích hoạt'}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Placeholders */}
-                        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4">
-                            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">
-                                Placeholders — Click để {activeTab === 'html' ? 'chèn vào vị trí con trỏ' : 'copy'}
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                                {PLACEHOLDERS.map(({ key, label }) => (
-                                    <button
-                                        key={key}
-                                        onClick={() => activeTab === 'html' ? insertAtCursor(key) : copyPlaceholder(key)}
-                                        className="group flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:bg-red-50 hover:border-red-200 transition-all"
-                                    >
-                                        <span className="text-[10px] font-mono font-bold text-red-600 dark:text-red-400">{key}</span>
-                                        <span className="text-[9px] text-gray-400">({label})</span>
-                                        {copiedKey === key
-                                            ? <Check className="w-2.5 h-2.5 text-green-500 ml-1" />
-                                            : <Copy className="w-2.5 h-2.5 text-gray-300 ml-1 group-hover:text-gray-400" />}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* HTML Editor / Preview */}
-                        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-                            {/* Toolbar */}
-                            <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50">
-                                <div className="flex items-center gap-1 bg-white dark:bg-gray-800 rounded-xl p-1 border border-gray-100 dark:border-gray-700">
-                                    <button
-                                        onClick={() => setActiveTab('html')}
-                                        className={cn(
-                                            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
-                                            activeTab === 'html' ? 'bg-red-600 text-white shadow' : 'text-gray-400 hover:text-gray-700'
-                                        )}
-                                    >
-                                        <Code2 className="w-3.5 h-3.5" />
-                                        HTML Source
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('preview')}
-                                        className={cn(
-                                            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
-                                            activeTab === 'preview' ? 'bg-red-600 text-white shadow' : 'text-gray-400 hover:text-gray-700'
-                                        )}
-                                    >
-                                        <Eye className="w-3.5 h-3.5" />
-                                        Xem trước
-                                    </button>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-[10px] text-gray-300">{form.content.length.toLocaleString()} ký tự</span>
-                                    <Button
-                                        onClick={handleSave}
-                                        disabled={saving}
-                                        size="sm"
-                                        className="rounded-xl h-8 px-4 bg-red-600 hover:bg-red-700 text-white font-bold text-xs"
-                                    >
-                                        {saving ? <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
-                                        Lưu mẫu
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {activeTab === 'html' ? (
-                                <textarea
-                                    ref={textareaRef}
-                                    value={form.content}
-                                    onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                                    placeholder={`Paste HTML từ Google Docs vào đây...\n\nCách lấy HTML:\n  1. File → Tải xuống → Trang Web (.html)\n  2. Mở file .html bằng Notepad\n  3. Bôi đen toàn bộ (Ctrl+A) → Copy (Ctrl+C)\n  4. Paste vào đây\n\nChèn {{placeholder}} vào vị trí cần điền dữ liệu tự động.`}
-                                    className="w-full min-h-[600px] p-5 font-mono text-xs text-gray-700 dark:text-gray-300 bg-transparent resize-y outline-none border-none placeholder:text-gray-300 leading-relaxed"
-                                    spellCheck={false}
-                                />
-                            ) : (
-                                <div className="min-h-[600px] overflow-auto bg-white dark:bg-gray-950">
-                                    {form.content.trim() ? (
-                                        <div className="p-6" dangerouslySetInnerHTML={{ __html: renderPreview(form.content) }} />
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center h-[600px] text-gray-300 gap-3">
-                                            <FileText className="w-12 h-12" />
-                                            <p className="text-sm">Chưa có nội dung</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                {activeMainTab === 'templates' && (
+                    <Button
+                        onClick={startNew}
+                        className="rounded-xl h-10 px-5 bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-100"
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Tạo mẫu mới
+                    </Button>
                 )}
             </div>
 
-            {/* Tips — only show when no editor open */}
-            {!showEditor && (
+            {/* ── Main Tab navigation ── */}
+            <div className="flex items-center gap-1 bg-white dark:bg-gray-900 rounded-2xl p-1 border border-gray-100 dark:border-gray-800 shadow-sm w-fit">
+                {([
+                    { value: 'templates', label: 'Mẫu hợp đồng', icon: BookOpen },
+                    { value: 'placeholders', label: 'Quản lý Placeholder', icon: Tags },
+                ] as const).map(tab => {
+                    const Icon = tab.icon
+                    return (
+                        <button
+                            key={tab.value}
+                            onClick={() => setActiveMainTab(tab.value)}
+                            className={cn(
+                                'flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all',
+                                activeMainTab === tab.value
+                                    ? 'bg-red-600 text-white shadow'
+                                    : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                            )}
+                        >
+                            <Icon className="w-4 h-4" />
+                            {tab.label}
+                        </button>
+                    )
+                })}
+            </div>
+
+            {/* ── TEMPLATES TAB ── */}
+            {activeMainTab === 'templates' && (
+                <div className={cn('gap-5', showEditor ? 'grid grid-cols-1 lg:grid-cols-[340px_1fr]' : 'block')}>
+                    {/* Template list */}
+                    <div className="space-y-3">
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 px-1">
+                            Danh sách mẫu ({templates.length})
+                        </p>
+                        {loadingTemplates ? (
+                            <div className="flex items-center justify-center h-40 text-gray-300">
+                                <RefreshCw className="w-5 h-5 animate-spin" />
+                            </div>
+                        ) : templates.length === 0 ? (
+                            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 p-8 text-center text-gray-400">
+                                <FileText className="w-10 h-10 mx-auto mb-2 text-gray-200" />
+                                <p className="text-sm">Chưa có mẫu nào. Bấm "Tạo mẫu mới".</p>
+                            </div>
+                        ) : (
+                            templates.map(t => (
+                                <div
+                                    key={t.id}
+                                    onClick={() => openEditor(t)}
+                                    className={cn(
+                                        'bg-white dark:bg-gray-900 rounded-2xl border shadow-sm p-4 cursor-pointer transition-all hover:shadow-md',
+                                        selectedId === t.id
+                                            ? 'border-red-300 dark:border-red-700 bg-red-50/30 dark:bg-red-950/10'
+                                            : 'border-gray-100 dark:border-gray-800 hover:border-gray-200'
+                                    )}
+                                >
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">{t.name}</p>
+                                            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                                                {t.branch_id ? (
+                                                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
+                                                        <Building2 className="w-2.5 h-2.5" />
+                                                        {t.branches?.name || t.branch_id}
+                                                    </span>
+                                                ) : (
+                                                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-600 border border-purple-100">
+                                                        <Globe className="w-2.5 h-2.5" />
+                                                        Tất cả chi nhánh
+                                                    </span>
+                                                )}
+                                                <span className={cn(
+                                                    'px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                                                    t.is_active
+                                                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                                        : 'bg-gray-50 text-gray-400 border-gray-100'
+                                                )}>
+                                                    {t.is_active ? '● Đang dùng' : '○ Tắt'}
+                                                </span>
+                                            </div>
+                                            <p className="text-[10px] text-gray-300 mt-1">
+                                                {t.content?.length?.toLocaleString() || 0} ký tự
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                                            <button
+                                                title={t.is_active ? 'Tắt mẫu' : 'Kích hoạt mẫu'}
+                                                onClick={() => handleToggle(t.id, t.is_active)}
+                                                className={cn(
+                                                    'w-7 h-7 rounded-lg flex items-center justify-center transition-all',
+                                                    t.is_active
+                                                        ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                                                        : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                                                )}
+                                            >
+                                                <Power className="w-3.5 h-3.5" />
+                                            </button>
+                                            <button
+                                                title="Xóa mẫu"
+                                                onClick={() => handleDelete(t.id)}
+                                                className="w-7 h-7 rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 transition-all"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    {/* Editor panel */}
+                    {showEditor && (
+                        <div className="space-y-3">
+                            {/* Form fields */}
+                            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-sm font-bold text-gray-700 dark:text-gray-200">
+                                        {isCreating ? 'Tạo mẫu mới' : 'Chỉnh sửa mẫu'}
+                                    </h2>
+                                    <button onClick={closeEditor} className="text-gray-400 hover:text-gray-600">
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[11px] uppercase tracking-wider text-gray-400">Tên mẫu *</Label>
+                                        <Input
+                                            value={form.name}
+                                            onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                                            placeholder="VD: Mẫu hợp đồng chuẩn..."
+                                            className="h-9 rounded-xl text-sm border-gray-200 dark:border-gray-700"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[11px] uppercase tracking-wider text-gray-400">Chi nhánh áp dụng</Label>
+                                        <Select value={form.branch_id} onValueChange={v => setForm(f => ({ ...f, branch_id: v }))}>
+                                            <SelectTrigger className="h-9 rounded-xl text-sm border-gray-200 dark:border-gray-700">
+                                                <SelectValue placeholder="Chọn chi nhánh" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="global">
+                                                    <span className="flex items-center gap-1.5">
+                                                        <Globe className="w-3.5 h-3.5 text-purple-500" />
+                                                        Tất cả chi nhánh (Global)
+                                                    </span>
+                                                </SelectItem>
+                                                {branches.map(b => (
+                                                    <SelectItem key={b.id} value={b.id}>
+                                                        <span className="flex items-center gap-1.5">
+                                                            <Building2 className="w-3.5 h-3.5 text-blue-500" />
+                                                            {b.name}
+                                                        </span>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[11px] uppercase tracking-wider text-gray-400">Trạng thái</Label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setForm(f => ({ ...f, is_active: !f.is_active }))}
+                                            className={cn(
+                                                'h-9 w-full rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 transition-all',
+                                                form.is_active
+                                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                                                    : 'bg-gray-50 border-gray-200 text-gray-400 hover:bg-gray-100'
+                                            )}
+                                        >
+                                            <Power className="w-4 h-4" />
+                                            {form.is_active ? 'Kích hoạt' : 'Không kích hoạt'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Placeholders panel (dynamic from DB) */}
+                            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4">
+                                <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+                                    Placeholders ({activePlaceholders.length}) — Click để {activeTab === 'html' ? 'chèn vào vị trí con trỏ' : 'copy'}
+                                </p>
+                                {loadingPlaceholders ? (
+                                    <div className="flex items-center gap-2 text-gray-300 text-xs">
+                                        <RefreshCw className="w-3 h-3 animate-spin" /> Đang tải...
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {activePlaceholders.map(({ key, label }) => (
+                                            <button
+                                                key={key}
+                                                onClick={() => activeTab === 'html' ? insertAtCursor(key) : copyPlaceholder(key)}
+                                                className="group flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:bg-red-50 hover:border-red-200 transition-all"
+                                            >
+                                                <span className="text-[10px] font-mono font-bold text-red-600 dark:text-red-400">{key}</span>
+                                                <span className="text-[9px] text-gray-400">({label})</span>
+                                                {copiedKey === key
+                                                    ? <Check className="w-2.5 h-2.5 text-green-500 ml-1" />
+                                                    : <Copy className="w-2.5 h-2.5 text-gray-300 ml-1 group-hover:text-gray-400" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* HTML Editor / Preview */}
+                            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+                                <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50">
+                                    <div className="flex items-center gap-1 bg-white dark:bg-gray-800 rounded-xl p-1 border border-gray-100 dark:border-gray-700">
+                                        {([
+                                            { value: 'html', label: 'HTML Source', icon: Code2 },
+                                            { value: 'preview', label: 'Xem trước', icon: Eye },
+                                        ] as const).map(t => {
+                                            const Icon = t.icon
+                                            return (
+                                                <button
+                                                    key={t.value}
+                                                    onClick={() => setActiveTab(t.value)}
+                                                    className={cn(
+                                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                                                        activeTab === t.value ? 'bg-red-600 text-white shadow' : 'text-gray-400 hover:text-gray-700'
+                                                    )}
+                                                >
+                                                    <Icon className="w-3.5 h-3.5" />
+                                                    {t.label}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-[10px] text-gray-300">{form.content.length.toLocaleString()} ký tự</span>
+                                        <Button
+                                            onClick={handleSave}
+                                            disabled={saving}
+                                            size="sm"
+                                            className="rounded-xl h-8 px-4 bg-red-600 hover:bg-red-700 text-white font-bold text-xs"
+                                        >
+                                            {saving ? <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
+                                            Lưu mẫu
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {activeTab === 'html' ? (
+                                    <textarea
+                                        ref={textareaRef}
+                                        value={form.content}
+                                        onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+                                        placeholder={`Paste HTML từ Google Docs vào đây...\n\nCách lấy HTML:\n  1. File → Tải xuống → Trang Web (.html)\n  2. Mở file .html bằng Notepad\n  3. Bôi đen toàn bộ (Ctrl+A) → Copy (Ctrl+C)\n  4. Paste vào đây\n\nChèn {{placeholder}} vào vị trí cần điền dữ liệu tự động.`}
+                                        className="w-full min-h-[600px] p-5 font-mono text-xs text-gray-700 dark:text-gray-300 bg-transparent resize-y outline-none border-none placeholder:text-gray-300 leading-relaxed"
+                                        spellCheck={false}
+                                    />
+                                ) : (
+                                    <div className="min-h-[600px] overflow-auto bg-white dark:bg-gray-950">
+                                        {form.content.trim() ? (
+                                            <div className="p-6" dangerouslySetInnerHTML={{ __html: renderPreview(form.content, sampleMap) }} />
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center h-[600px] text-gray-300 gap-3">
+                                                <FileText className="w-12 h-12" />
+                                                <p className="text-sm">Chưa có nội dung</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ── PLACEHOLDERS TAB ── */}
+            {activeMainTab === 'placeholders' && (
+                <PlaceholderManager
+                    placeholders={placeholders}
+                    loading={loadingPlaceholders}
+                    onReload={loadPlaceholders}
+                />
+            )}
+
+            {/* Tips — only show when templates tab and no editor open */}
+            {activeMainTab === 'templates' && !showEditor && (
                 <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-4">
                     <p className="font-bold text-blue-700 dark:text-blue-300 mb-2">💡 Cách hoạt động</p>
                     <ul className="list-disc list-inside space-y-1 text-blue-600 dark:text-blue-400 text-[13px]">

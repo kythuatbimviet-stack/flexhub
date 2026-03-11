@@ -152,7 +152,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             representative_phone: '',
             legal_representative: '',
             center_address: '',
-            medical_condition: '',,
+            medical_condition: '',
             initial_height: '',
             initial_weight: '',
             package_type: 'offline',
