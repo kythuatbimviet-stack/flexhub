@@ -11,6 +11,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { fetchContractById } from '@/app/actions/contracts'
+import { fetchActiveTemplateForBranch } from '@/app/actions/contract-templates'
+import { fetchAllPlaceholders } from '@/app/actions/contract-placeholders'
+import { getContractHTML, getContractHTMLFromTemplate } from '@/components/contracts/contract-print-template'
+import { sendContractEmail } from '@/app/actions/send-email'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
@@ -267,9 +271,8 @@ export default function ContractPrintPage() {
         const load = async () => {
             setLoading(true)
             try {
-                const [contractRes, , placeholderRes] = await Promise.all([
+                const [contractRes, placeholderRes] = await Promise.all([
                     fetchContractById(id),
-                    fetchActiveTemplateForBranch(undefined),
                     fetchAllPlaceholders(),
                 ])
                 if (!contractRes.success || !contractRes.data) {
