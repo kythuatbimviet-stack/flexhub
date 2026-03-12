@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Nunito_Sans, Playfair_Display } from "next/font/google";
+import { Geist, Geist_Mono, Inter, Nunito_Sans, Playfair_Display, Play } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
@@ -29,6 +29,12 @@ const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
 });
 
+const play = Play({
+  variable: "--font-play",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+});
+
 export const metadata: Metadata = {
   title: "Eva Fit ERP",
   description: "Hệ thống quản trị doanh nghiệp chuyên biệt cho Eva Fit",
@@ -43,7 +49,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${nunitoSans.variable} ${playfairDisplay.variable} font-sans antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${nunitoSans.variable} ${playfairDisplay.variable} ${play.variable} font-sans antialiased`}
       >
         <Providers>
           {children}
