@@ -101,6 +101,7 @@ export function ContractDetailsSheet({
             const result = await updateContract(contract.id, {
                 ...formData,
                 package_price: formData.package_price ? parseFloat(formData.package_price) : null,
+                discounted_price: formData.discounted_price ? parseFloat(formData.discounted_price) : null,
                 total_amount: formData.total_amount ? parseFloat(formData.total_amount) : null,
             })
             if (result.success) {
@@ -375,9 +376,29 @@ export function ContractDetailsSheet({
 
                     {/* Section: Thanh toán */}
                     <CardSection title="Thanh toán" icon={CreditCard}>
-                        <div className="grid grid-cols-2 gap-5">
+                        <div className="space-y-5">
                             <DetailRow label="Hình thức" value={formData.payment_method} name="payment_method" icon={CreditCard} />
-                            <DetailRow label="Tổng giá trị" value={formData.total_amount} name="total_amount" type="number" icon={CreditCard} />
+                            <div className="grid grid-cols-2 gap-5">
+                                <DetailRow label="Giá gói (niêm yết)" value={formData.package_price} name="package_price" type="number" icon={CreditCard} />
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bằng chữ</Label>
+                                    <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.package_price_text || '-'}</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-5">
+                                <DetailRow label="Giá trợ giá" value={formData.discounted_price} name="discounted_price" type="number" icon={CreditCard} />
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bằng chữ</Label>
+                                    <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.discounted_price_text || '-'}</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-5">
+                                <DetailRow label="Tổng giá trị HĐ" value={formData.total_amount} name="total_amount" type="number" icon={CreditCard} />
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bằng chữ</Label>
+                                    <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.total_amount_text || '-'}</p>
+                                </div>
+                            </div>
                         </div>
                     </CardSection>
                 </div>

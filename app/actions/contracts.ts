@@ -2,6 +2,35 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
+import { numberToVietnameseWords } from '@/lib/utils'
+
+// Tự động tính các trường "bằng chữ" từ số tiền
+function computeAmountTextFields(data: any): any {
+    const enriched = { ...data }
+    try {
+        if (enriched.total_amount != null && enriched.total_amount !== '') {
+            const amount = Number(enriched.total_amount)
+            if (!isNaN(amount) && amount > 0) {
+                enriched.total_amount_text = numberToVietnameseWords(amount) + ' đồng chẵn'
+            }
+        }
+        if (enriched.package_price != null && enriched.package_price !== '') {
+            const amount = Number(enriched.package_price)
+            if (!isNaN(amount) && amount > 0) {
+                enriched.package_price_text = numberToVietnameseWords(amount) + ' đồng chẵn'
+            }
+        }
+        if (enriched.discounted_price != null && enriched.discounted_price !== '') {
+            const amount = Number(enriched.discounted_price)
+            if (!isNaN(amount) && amount > 0) {
+                enriched.discounted_price_text = numberToVietnameseWords(amount) + ' đồng chẵn'
+            }
+        }
+    } catch (e) {
+        // silent fail — không nhằm để vỡ hàm chính
+    }
+    return enriched
+}
 
 export async function fetchContracts() {
     const supabase = await createClient()
@@ -45,9 +74,10 @@ export async function fetchContractById(id: string) {
 export async function createContract(contract: any) {
     const supabase = await createClient()
     try {
+        const enriched = computeAmountTextFields(contract)
         const { data, error } = await supabase
             .from('contracts')
-            .insert([contract])
+            .insert([enriched])
             .select()
             .single()
 
@@ -141,9 +171,10 @@ export async function finalizeContract(id: string, finalizeData: any) {
 export async function updateContract(id: string, updates: any) {
     const supabase = await createClient()
     try {
+        const enriched = computeAmountTextFields(updates)
         const { data, error } = await supabase
             .from('contracts')
-            .update(updates)
+            .update(enriched)
             .eq('id', id)
             .select()
 
@@ -190,9 +221,10 @@ export async function bulkDeleteContracts(ids: string[]) {
 export async function importContracts(contracts: any[]) {
     const supabase = await createClient()
     try {
+        const enriched = contracts.map(c => computeAmountTextFields(c))
         const { data, error } = await supabase
             .from('contracts')
-            .insert(contracts)
+            .insert(enriched)
             .select()
 
         if (error) throw error

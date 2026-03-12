@@ -66,7 +66,7 @@ export default function LoginPage() {
                         <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30">
                             <Dumbbell className="w-6 h-6 text-white" />
                         </div>
-                        <span className="text-2xl font-bold tracking-tight uppercase">LADYFIT CRM</span>
+                        <span className="text-2xl font-bold tracking-tight uppercase">EVA FIT CRM</span>
                     </div>
                 </div>
 
@@ -80,14 +80,14 @@ export default function LoginPage() {
                             Hệ thống quản lý phòng tập hiện đại.
                         </h1>
                         <p className="text-white/80 text-lg max-w-sm leading-relaxed">
-                            Tối ưu hóa quy trình, nâng cao trải nghiệm khách hàng và quản lý tài chính hiệu quả với LADYFIT CRM.
+                            Tối ưu hóa quy trình, nâng cao trải nghiệm khách hàng và quản lý tài chính hiệu quả với EVA FIT CRM.
                         </p>
                     </motion.div>
                 </div>
 
                 <div className="relative z-10 flex items-center gap-4">
                     <div className="h-px w-12 bg-white/40" />
-                    <span className="text-white/40 text-xs tracking-[0.3em] uppercase font-medium">Lady Fit Team Product</span>
+                    <span className="text-white/40 text-xs tracking-[0.3em] uppercase font-medium">EVA Fit Team Product</span>
                 </div>
             </div>
 
@@ -136,7 +136,7 @@ export default function LoginPage() {
                                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-red-500 transition-colors" />
                                     <Input
                                         type="email"
-                                        placeholder="admin@ladyfit.com"
+                                        placeholder="admin@evafit.com"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="bg-gray-50/50 dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white pl-12 h-14 rounded-2xl focus:ring-red-500 focus:border-red-500 transition-all"

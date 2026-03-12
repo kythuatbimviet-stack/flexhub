@@ -1,6 +1,6 @@
 'use server'
 
-import { createAdminClient } from '@/lib/supabase-server'
+import { createAdminClient, createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { DEFAULT_PLACEHOLDERS, type PlaceholderCategory } from '@/lib/placeholder-defaults'
 
@@ -21,33 +21,89 @@ export interface ContractPlaceholder {
 
 // ── Lấy tất cả placeholder ───────────────────────────────────────────────────
 export async function fetchAllPlaceholders() {
-    const supabase = await createAdminClient()
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+    const maskedUrl = url.replace(/(https?:\/\/).{5}(.*)/, '$1*****$2')
+    
+    const diagnostics: any = {
+        projectUrl: maskedUrl,
+        serviceKeyDefined: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        envCheck: {
+            url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+            anon: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        }
+    }
+    
+    const supabaseAdmin = await createAdminClient()
+    
+    // Diagnostic 1: Health Check
     try {
-        const { data, error } = await supabase
+        const { error: tplError } = await supabaseAdmin.from('contract_templates').select('id').limit(1)
+        const { error: brError } = await supabaseAdmin.from('branches').select('id').limit(1)
+
+        diagnostics.tablesHealth = {
+            contract_templates: tplError ? `ERROR: ${tplError.message}` : 'OK',
+            branches: brError ? `ERROR: ${brError.message}` : 'OK'
+        }
+    } catch (e: any) {
+        diagnostics.globalHealth = `CRASHED: ${e.message}`
+    }
+
+
+    try {
+        const { data, error, status, statusText } = await supabaseAdmin
             .from('contract_placeholders')
             .select('*')
             .order('sort_order', { ascending: true })
 
-        if (error) throw error
-        return { success: true, data: (data || []) as ContractPlaceholder[] }
+        if (error) {
+            diagnostics.mainError = { message: error.message, code: error.code, status }
+            
+            // Log for developer to see in terminal
+            console.error('[fetchAllPlaceholders] Error details:', error)
+            
+            throw error
+        }
+        
+        return { success: true, data: (data || []) as ContractPlaceholder[], diagnostics }
     } catch (error: any) {
-        return { success: false, error: error.message, data: [] as ContractPlaceholder[] }
+        return { success: false, error: error.message, diagnostics, data: [] }
     }
 }
 
 // ── Lấy placeholder đang active (dùng cho render template) ───────────────────
 export async function fetchActivePlaceholders() {
-    const supabase = await createAdminClient()
+    const supabaseAdmin = await createAdminClient()
     try {
-        const { data, error } = await supabase
+        const { data, error, status, statusText } = await supabaseAdmin
             .from('contract_placeholders')
             .select('key, label, sample_value, category')
             .eq('is_active', true)
             .order('sort_order', { ascending: true })
 
-        if (error) throw error
+        if (error) {
+            console.error('[fetchActivePlaceholders] Admin Client Error:', {
+                message: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint,
+                status,
+                statusText
+            })
+            
+            // Fallback for debug
+            const supabasePublic = await createClient()
+            const { data: pData, error: pError } = await supabasePublic
+                .from('contract_placeholders')
+                .select('key, label, sample_value, category')
+                .eq('is_active', true)
+                .order('sort_order', { ascending: true })
+            
+            if (pError) throw error
+            return { success: true, data: (pData || []) as any[] }
+        }
         return { success: true, data: (data || []) as Pick<ContractPlaceholder, 'key' | 'label' | 'sample_value' | 'category'>[] }
     } catch (error: any) {
+        console.error('[fetchActivePlaceholders] Final Catch Error:', error)
         return { success: false, error: error.message, data: [] }
     }
 }

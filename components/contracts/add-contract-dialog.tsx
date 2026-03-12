@@ -26,7 +26,7 @@ import {
     Calculator,
     ChevronDown
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, numberToVietnameseWords } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -166,6 +166,17 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
     })
 
     const watchTotalAmountValue = form.watch('total_amount')
+    const watchPackagePrice = form.watch('package_price')
+    const watchDiscountedPrice = form.watch('discounted_price')
+
+    // Helper: format number to Vietnamese words preview
+    const toWords = (val: string | undefined) => {
+        try {
+            const num = Number((val || '').toString().replace(/\./g, ''))
+            if (!num || isNaN(num)) return ''
+            return numberToVietnameseWords(num) + ' đồng chẵn'
+        } catch { return '' }
+    }
 
     const [trainerTypes, setTrainerTypes] = React.useState<ConfigItem[]>([])
     const selectedPackageRef = React.useRef<any>(null)
@@ -819,6 +830,9 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                             <FormControl>
                                                 <Input readOnly {...field} value={field.value ? Number(field.value).toLocaleString('vi-VN') : '0'} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 h-11 font-medium text-gray-500" />
                                             </FormControl>
+                                            {toWords(watchPackagePrice) && (
+                                                <p className="text-[10px] italic text-gray-400 mt-0.5">{toWords(watchPackagePrice)}</p>
+                                            )}
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -843,6 +857,9 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                                     className="rounded-xl border-gray-200 dark:border-gray-800 bg-red-50/30 dark:bg-red-950/10 h-11 font-semibold text-red-600"
                                                 />
                                             </FormControl>
+                                            {toWords(watchTotalAmountValue) && (
+                                                <p className="text-[10px] italic text-red-400 mt-0.5">{toWords(watchTotalAmountValue)}</p>
+                                            )}
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -856,6 +873,9 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                             <FormControl>
                                                 <Input readOnly {...field} value={field.value ? Number(field.value).toLocaleString('vi-VN') : '0'} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 h-11 font-medium text-emerald-600" />
                                             </FormControl>
+                                            {toWords(watchDiscountedPrice) && (
+                                                <p className="text-[10px] italic text-emerald-500 mt-0.5">{toWords(watchDiscountedPrice)}</p>
+                                            )}
                                             <FormMessage />
                                         </FormItem>
                                     )}

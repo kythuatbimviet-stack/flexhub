@@ -5,8 +5,9 @@ import {
     FileText, Save, Copy, Check, RefreshCw, Eye, Code2,
     Plus, Trash2, Building2, Globe, Power, X,
     Tags, RotateCcw, Search, AlertCircle, Pencil,
-    BookOpen,
+    BookOpen, PenSquare, EyeOff, LayoutTemplate, AlignLeft, AlignCenter, AlignRight,
 } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -37,6 +38,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
+import {
+    parsePrintHFConfig, DEFAULT_HF_CONFIG, PRINT_FONTS,
+    type PrintHFConfig, type TextAlign,
+} from '@/lib/contract-print-types'
 
 // ── Category config ──────────────────────────────────────────────────────────
 const CATEGORIES: { value: PlaceholderCategory | 'all'; label: string; color: string; bg: string; border: string }[] = [
@@ -573,7 +578,16 @@ function PlaceholderManager({ placeholders, loading, onReload }: PlaceholderMana
 // MAIN PAGE
 // ════════════════════════════════════════════════════════════════════════════
 export default function ContractTemplatePage() {
+    const searchParams = useSearchParams()
+    const tabParam = searchParams.get('tab') as 'templates' | 'placeholders' | null
+
     const [activeMainTab, setActiveMainTab] = React.useState<'templates' | 'placeholders'>('templates')
+
+    React.useEffect(() => {
+        if (tabParam === 'placeholders' || tabParam === 'templates') {
+            setActiveMainTab(tabParam)
+        }
+    }, [tabParam])
 
     // ── Template state ──
     const [templates, setTemplates] = React.useState<any[]>([])
@@ -583,9 +597,25 @@ export default function ContractTemplatePage() {
     const [selectedId, setSelectedId] = React.useState<string | null>(null)
     const [isCreating, setIsCreating] = React.useState(false)
     const [form, setForm] = React.useState(emptyTemplateForm)
-    const [activeTab, setActiveTab] = React.useState<'html' | 'preview'>('html')
+    const [activeTab, setActiveTab] = React.useState<'html' | 'preview' | 'print'>('html')
     const [copiedKey, setCopiedKey] = React.useState<string | null>(null)
+    const [editMode, setEditMode] = React.useState(false)
     const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+    const previewDivRef = React.useRef<HTMLDivElement>(null)
+    const [hfConfig, setHfConfig] = React.useState<PrintHFConfig>(DEFAULT_HF_CONFIG)
+
+    // When entering edit mode on preview: populate the div with raw HTML
+    React.useEffect(() => {
+        if (activeTab === 'preview' && editMode && previewDivRef.current) {
+            previewDivRef.current.innerHTML = form.content
+        }
+    }, [activeTab, editMode])
+
+    // Reset edit mode when switching to html/print tab
+    const handleTabChange = (tab: 'html' | 'preview' | 'print') => {
+        if (tab !== 'preview' && editMode) setEditMode(false)
+        setActiveTab(tab)
+    }
 
     // ── Placeholder state ──
     const [placeholders, setPlaceholders] = React.useState<ContractPlaceholder[]>([])
@@ -615,8 +645,10 @@ export default function ContractTemplatePage() {
         const res = await fetchAllPlaceholders()
         if (res.success) {
             setPlaceholders(res.data || [])
+            if (res.diagnostics) console.log('[Placeholder] Server Diagnostics:', JSON.stringify(res.diagnostics, null, 2))
         } else {
             console.error('[Placeholder] Load failed:', res.error)
+            if (res.diagnostics) console.error('[Placeholder] Diagnostic Trace:', JSON.stringify(res.diagnostics, null, 2))
             toast.error('Không thể tải placeholder: ' + res.error)
         }
         setLoadingPlaceholders(false)
@@ -632,13 +664,17 @@ export default function ContractTemplatePage() {
         setIsCreating(false)
         setSelectedId(t.id)
         setForm({ name: t.name, content: t.content, branch_id: t.branch_id || 'global', is_active: t.is_active })
+        setHfConfig(parsePrintHFConfig(t.header_footer_config))
         setActiveTab('html')
+        setEditMode(false)
     }
     const startNew = () => {
         setSelectedId(null)
         setIsCreating(true)
         setForm(emptyTemplateForm)
+        setHfConfig(DEFAULT_HF_CONFIG)
         setActiveTab('html')
+        setEditMode(false)
     }
     const closeEditor = () => { setSelectedId(null); setIsCreating(false) }
 
@@ -646,7 +682,13 @@ export default function ContractTemplatePage() {
         if (!form.name.trim()) { toast.error('Vui lòng nhập tên mẫu'); return }
         setSaving(true)
         try {
-            const payload = { name: form.name, content: form.content, branch_id: form.branch_id === 'global' ? null : form.branch_id, is_active: form.is_active }
+            const payload = {
+                name: form.name,
+                content: form.content,
+                branch_id: form.branch_id === 'global' ? null : form.branch_id,
+                is_active: form.is_active,
+                header_footer_config: hfConfig,
+            }
             let res
             if (isCreating) res = await createContractTemplate(payload)
             else if (selectedId) res = await updateContractTemplate(selectedId, payload)
@@ -921,26 +963,45 @@ export default function ContractTemplatePage() {
                             {/* HTML Editor / Preview */}
                             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                                 <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50">
-                                    <div className="flex items-center gap-1 bg-white dark:bg-gray-800 rounded-xl p-1 border border-gray-100 dark:border-gray-700">
-                                        {([
-                                            { value: 'html', label: 'HTML Source', icon: Code2 },
-                                            { value: 'preview', label: 'Xem trước', icon: Eye },
-                                        ] as const).map(t => {
-                                            const Icon = t.icon
-                                            return (
-                                                <button
-                                                    key={t.value}
-                                                    onClick={() => setActiveTab(t.value)}
-                                                    className={cn(
-                                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
-                                                        activeTab === t.value ? 'bg-red-600 text-white shadow' : 'text-gray-400 hover:text-gray-700'
-                                                    )}
-                                                >
-                                                    <Icon className="w-3.5 h-3.5" />
-                                                    {t.label}
-                                                </button>
-                                            )
-                                        })}
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1 bg-white dark:bg-gray-800 rounded-xl p-1 border border-gray-100 dark:border-gray-700">
+                                            {([
+                                                { value: 'html', label: 'HTML Source', icon: Code2 },
+                                                { value: 'preview', label: 'Xem trước', icon: Eye },
+                                                { value: 'print', label: 'Cấu hình in', icon: LayoutTemplate },
+                                            ] as const).map(t => {
+                                                const Icon = t.icon
+                                                return (
+                                                    <button
+                                                        key={t.value}
+                                                        onClick={() => handleTabChange(t.value as any)}
+                                                        className={cn(
+                                                            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                                                            activeTab === t.value ? 'bg-red-600 text-white shadow' : 'text-gray-400 hover:text-gray-700'
+                                                        )}
+                                                    >
+                                                        <Icon className="w-3.5 h-3.5" />
+                                                        {t.label}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                        {/* Edit mode toggle — only visible in preview tab */}
+                                        {activeTab === 'preview' && (
+                                            <button
+                                                onClick={() => setEditMode(v => !v)}
+                                                title={editMode ? 'Tắt chỉnh sửa trực tiếp' : 'Bật chỉnh sửa trực tiếp trong preview'}
+                                                className={cn(
+                                                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all',
+                                                    editMode
+                                                        ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                                                        : 'bg-white border-gray-200 text-gray-500 hover:border-amber-300 hover:text-amber-600'
+                                                )}
+                                            >
+                                                {editMode ? <EyeOff className="w-3.5 h-3.5" /> : <PenSquare className="w-3.5 h-3.5" />}
+                                                {editMode ? 'Đang chỉnh sửa' : 'Chỉnh sửa'}
+                                            </button>
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <span className="text-[10px] text-gray-300">{form.content.length.toLocaleString()} ký tự</span>
@@ -965,10 +1026,119 @@ export default function ContractTemplatePage() {
                                         className="w-full min-h-[600px] p-5 font-mono text-xs text-gray-700 dark:text-gray-300 bg-transparent resize-y outline-none border-none placeholder:text-gray-300 leading-relaxed"
                                         spellCheck={false}
                                     />
+                                ) : activeTab === 'print' ? (
+                                    /* ── PRINT CONFIG TAB ── */
+                                    <div className="p-5 space-y-5 min-h-[600px] bg-gray-50/50">
+                                        <p className="text-[11px] text-gray-400 italic flex items-center gap-1.5">
+                                            <LayoutTemplate className="w-3.5 h-3.5 shrink-0" />
+                                            Cấu hình Header/Footer sẽ được lưu cùng mẫu và tự động áp dụng khi in.
+                                        </p>
+                                        {/* HEADER */}
+                                        {(() => {
+                                            const H = hfConfig.header
+                                            const setH = (patch: Partial<typeof H>) => setHfConfig(c => ({ ...c, header: { ...c.header, ...patch } }))
+                                            const AlignBtn = ({ val }: { val: TextAlign }) => {
+                                                const icon = val === 'left' ? <AlignLeft className="w-3.5 h-3.5"/> : val === 'center' ? <AlignCenter className="w-3.5 h-3.5"/> : <AlignRight className="w-3.5 h-3.5"/>
+                                                return <button onClick={() => setH({ textAlign: val })} className={cn('p-1.5 rounded-lg transition-colors', H.textAlign === val ? 'bg-purple-100 text-purple-700' : 'text-gray-400 hover:bg-gray-100')}>{icon}</button>
+                                            }
+                                            return (
+                                                <div className="bg-white rounded-xl border border-gray-100 p-4 space-y-3 shadow-sm">
+                                                    <div className="flex items-center gap-2 pb-2 border-b border-dashed border-purple-100">
+                                                        <label className="flex items-center gap-2.5 cursor-pointer">
+                                                            <div onClick={() => setH({ enabled: !H.enabled })} className={`w-9 h-5 rounded-full transition-all relative ${H.enabled ? 'bg-purple-500' : 'bg-gray-200'}`}>
+                                                                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${H.enabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                                                            </div>
+                                                            <span className="text-xs font-bold text-purple-600">HEADER</span>
+                                                        </label>
+                                                        {H.enabled && <div className="ml-auto flex items-center gap-0.5 border border-gray-200 rounded-lg p-0.5"><AlignBtn val="left"/><AlignBtn val="center"/><AlignBtn val="right"/></div>}
+                                                    </div>
+                                                    {H.enabled && (
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <div className="col-span-2 space-y-1"><Label className="text-[10px] text-gray-400 uppercase tracking-wider">Logo URL (tùy chọn)</Label><Input value={H.logoUrl} onChange={e => setH({ logoUrl: e.target.value })} placeholder="https://..." className="h-8 text-xs rounded-lg border-gray-200" /></div>
+                                                            <div className="col-span-2 space-y-1"><Label className="text-[10px] text-gray-400 uppercase tracking-wider">Tiêu đề HĐ</Label><Input value={H.title} onChange={e => setH({ title: e.target.value })} className="h-8 text-xs rounded-lg border-gray-200" /></div>
+                                                            <div className="space-y-1"><Label className="text-[10px] text-gray-400 uppercase tracking-wider">Tên trung tâm</Label><Input value={H.centerName} onChange={e => setH({ centerName: e.target.value })} placeholder="LADYFITS" className="h-8 text-xs rounded-lg border-gray-200" /></div>
+                                                            <div className="space-y-1"><Label className="text-[10px] text-gray-400 uppercase tracking-wider">Địa chỉ</Label><Input value={H.address} onChange={e => setH({ address: e.target.value })} placeholder="Địa chỉ..." className="h-8 text-xs rounded-lg border-gray-200" /></div>
+                                                            <div className="col-span-2 space-y-1"><Label className="text-[10px] text-gray-400 uppercase tracking-wider">Font chữ</Label>
+                                                                <select value={H.fontFamily} onChange={e => setH({ fontFamily: e.target.value })} className="w-full h-8 text-xs rounded-lg border border-gray-200 bg-gray-50 px-2 focus:outline-none focus:ring-1 focus:ring-purple-300">
+                                                                    {PRINT_FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+                                                                </select>
+                                                            </div>
+                                                            <div className="space-y-1"><Label className="text-[10px] text-gray-400 uppercase">Màu tiêu đề</Label><div className="flex items-center gap-1.5 h-8 border border-gray-200 rounded-lg bg-gray-50 px-2"><input type="color" value={H.titleColor} onChange={e => setH({ titleColor: e.target.value })} className="w-5 h-5 cursor-pointer bg-transparent p-0 border-0"/><span className="text-[10px] font-mono text-gray-400">{H.titleColor}</span></div></div>
+                                                            <div className="space-y-1"><Label className="text-[10px] text-gray-400 uppercase">Cỡ tiêu đề (px)</Label><Input type="number" min={8} max={24} value={H.titleSize} onChange={e => setH({ titleSize: +e.target.value })} className="h-8 text-xs rounded-lg border-gray-200 text-center"/></div>
+                                                            <div className="space-y-1"><Label className="text-[10px] text-gray-400 uppercase">Màu tên TT</Label><div className="flex items-center gap-1.5 h-8 border border-gray-200 rounded-lg bg-gray-50 px-2"><input type="color" value={H.subColor} onChange={e => setH({ subColor: e.target.value })} className="w-5 h-5 cursor-pointer bg-transparent p-0 border-0"/><span className="text-[10px] font-mono text-gray-400">{H.subColor}</span></div></div>
+                                                            <div className="space-y-1"><Label className="text-[10px] text-gray-400 uppercase">Cỡ tên TT (px)</Label><Input type="number" min={8} max={24} value={H.subSize} onChange={e => setH({ subSize: +e.target.value })} className="h-8 text-xs rounded-lg border-gray-200 text-center"/></div>
+                                                            <div className="space-y-1"><Label className="text-[10px] text-gray-400 uppercase">Màu địa chỉ</Label><div className="flex items-center gap-1.5 h-8 border border-gray-200 rounded-lg bg-gray-50 px-2"><input type="color" value={H.addrColor} onChange={e => setH({ addrColor: e.target.value })} className="w-5 h-5 cursor-pointer bg-transparent p-0 border-0"/><span className="text-[10px] font-mono text-gray-400">{H.addrColor}</span></div></div>
+                                                            <div className="space-y-1"><Label className="text-[10px] text-gray-400 uppercase">Cỡ địa chỉ (px)</Label><Input type="number" min={8} max={24} value={H.addrSize} onChange={e => setH({ addrSize: +e.target.value })} className="h-8 text-xs rounded-lg border-gray-200 text-center"/></div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )
+                                        })()}
+                                        {/* FOOTER */}
+                                        {(() => {
+                                            const F = hfConfig.footer
+                                            const setF = (patch: Partial<typeof F>) => setHfConfig(c => ({ ...c, footer: { ...c.footer, ...patch } }))
+                                            const AlignBtn = ({ val }: { val: TextAlign }) => {
+                                                const icon = val === 'left' ? <AlignLeft className="w-3.5 h-3.5"/> : val === 'center' ? <AlignCenter className="w-3.5 h-3.5"/> : <AlignRight className="w-3.5 h-3.5"/>
+                                                return <button onClick={() => setF({ textAlign: val })} className={cn('p-1.5 rounded-lg transition-colors', F.textAlign === val ? 'bg-rose-100 text-rose-700' : 'text-gray-400 hover:bg-gray-100')}>{icon}</button>
+                                            }
+                                            return (
+                                                <div className="bg-white rounded-xl border border-gray-100 p-4 space-y-3 shadow-sm">
+                                                    <div className="flex items-center gap-2 pb-2 border-b border-dashed border-rose-100">
+                                                        <label className="flex items-center gap-2.5 cursor-pointer">
+                                                            <div onClick={() => setF({ enabled: !F.enabled })} className={`w-9 h-5 rounded-full transition-all relative ${F.enabled ? 'bg-rose-500' : 'bg-gray-200'}`}>
+                                                                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${F.enabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                                                            </div>
+                                                            <span className="text-xs font-bold text-rose-600">FOOTER</span>
+                                                        </label>
+                                                        {F.enabled && <div className="ml-auto flex items-center gap-0.5 border border-gray-200 rounded-lg p-0.5"><AlignBtn val="left"/><AlignBtn val="center"/><AlignBtn val="right"/></div>}
+                                                    </div>
+                                                    {F.enabled && (
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <div className="space-y-1"><Label className="text-[10px] text-gray-400 uppercase tracking-wider">Hotline</Label><Input value={F.hotline} onChange={e => setF({ hotline: e.target.value })} placeholder="0832 646 686" className="h-8 text-xs rounded-lg border-gray-200"/></div>
+                                                            <div className="space-y-1"><Label className="text-[10px] text-gray-400 uppercase tracking-wider">Email</Label><Input value={F.email} onChange={e => setF({ email: e.target.value })} placeholder="email@..." className="h-8 text-xs rounded-lg border-gray-200"/></div>
+                                                            <div className="col-span-2 space-y-1"><Label className="text-[10px] text-gray-400 uppercase tracking-wider">Font chữ</Label>
+                                                                <select value={F.fontFamily} onChange={e => setF({ fontFamily: e.target.value })} className="w-full h-8 text-xs rounded-lg border border-gray-200 bg-gray-50 px-2 focus:outline-none focus:ring-1 focus:ring-rose-300">
+                                                                    {PRINT_FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+                                                                </select>
+                                                            </div>
+                                                            <div className="space-y-1"><Label className="text-[10px] text-gray-400 uppercase">Màu chữ</Label><div className="flex items-center gap-1.5 h-8 border border-gray-200 rounded-lg bg-gray-50 px-2"><input type="color" value={F.color} onChange={e => setF({ color: e.target.value })} className="w-5 h-5 cursor-pointer bg-transparent p-0 border-0"/><span className="text-[10px] font-mono text-gray-400">{F.color}</span></div></div>
+                                                            <div className="space-y-1"><Label className="text-[10px] text-gray-400 uppercase">Cỡ chữ (px)</Label><Input type="number" min={8} max={24} value={F.fontSize} onChange={e => setF({ fontSize: +e.target.value })} className="h-8 text-xs rounded-lg border-gray-200 text-center"/></div>
+                                                            <div className="col-span-2"><label className="flex items-center gap-2.5 cursor-pointer"><div onClick={() => setF({ showPageNumber: !F.showPageNumber })} className={`w-9 h-5 rounded-full transition-all relative ${F.showPageNumber ? 'bg-rose-400' : 'bg-gray-200'}`}><div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${F.showPageNumber ? 'translate-x-4' : 'translate-x-0.5'}`}/></div><span className="text-xs text-gray-600 font-medium">Hiển thị số trang</span></label></div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )
+                                        })()}
+                                    </div>
                                 ) : (
-                                    <div className="min-h-[600px] overflow-auto bg-white dark:bg-gray-950">
+                                    <div className="min-h-[600px] overflow-auto bg-white dark:bg-gray-950 relative">
                                         {form.content.trim() ? (
-                                            <div className="p-6" dangerouslySetInnerHTML={{ __html: renderPreview(form.content, sampleMap) }} />
+                                            editMode ? (
+                                                // ── WYSIWYG edit mode ──
+                                                <>
+                                                    <div className="sticky top-0 z-10 px-4 py-2 bg-amber-50 border-b border-amber-200 flex items-center gap-2 text-xs text-amber-700">
+                                                        <PenSquare className="w-3.5 h-3.5 shrink-0" />
+                                                        <span className="font-semibold">Chế độ chỉnh sửa trực tiếp</span>
+                                                        <span className="text-amber-500">— chỉnh sửa phần cấu trúc (xóa khoảng trắng, ký tự thừa...). Placeholder màu đỏ vẫn hoạt động bình thường khi in.</span>
+                                                    </div>
+                                                    <div
+                                                        ref={previewDivRef}
+                                                        contentEditable
+                                                        suppressContentEditableWarning
+                                                        onInput={() => {
+                                                            if (previewDivRef.current) {
+                                                                setForm(f => ({ ...f, content: previewDivRef.current!.innerHTML }))
+                                                            }
+                                                        }}
+                                                        className="p-6 outline-none min-h-[560px] focus:ring-2 focus:ring-amber-200 focus:ring-inset"
+                                                        style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+                                                    />
+                                                </>
+                                            ) : (
+                                                // ── Preview mode (read-only, sample values highlighted) ──
+                                                <div className="p-6" dangerouslySetInnerHTML={{ __html: renderPreview(form.content, sampleMap) }} />
+                                            )
                                         ) : (
                                             <div className="flex flex-col items-center justify-center h-[600px] text-gray-300 gap-3">
                                                 <FileText className="w-12 h-12" />

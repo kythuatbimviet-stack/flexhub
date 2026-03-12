@@ -60,6 +60,7 @@ export async function createContractTemplate(data: {
     content: string
     branch_id?: string | null
     is_active?: boolean
+    header_footer_config?: any
 }) {
     const supabase = await createAdminClient()
     try {
@@ -82,6 +83,7 @@ export async function updateContractTemplate(id: string, data: {
     content?: string
     branch_id?: string | null
     is_active?: boolean
+    header_footer_config?: any
 }) {
     const supabase = await createAdminClient()
     try {

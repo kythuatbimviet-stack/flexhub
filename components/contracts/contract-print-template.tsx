@@ -6,23 +6,37 @@ import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
 // ---------- Template-based HTML builder (uses custom template from DB) ----------
-export function getContractHTMLFromTemplate(contract: any, templateContent: string): string {
+// ---------- Template-based HTML builder (uses custom template from DB) ----------
+export function getContractHTMLFromTemplate(
+  contract: any,
+  templateContent: string,
+  dynamicPlaceholders: any[] = []
+): string {
   if (!contract || !templateContent) return ''
 
   const formatCurrency = (amount: number) => {
     if (!amount) return '0 ₫'
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
   }
+
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '.../.../...'
     try { return new Date(dateStr).toLocaleDateString('vi-VN') } catch { return '.../.../...' }
   }
+
   let totalWords = ''
-  try { totalWords = numberToVietnameseWords(contract.total_amount) } catch { totalWords = '' }
+  try { totalWords = contract.total_amount_text || (contract.total_amount ? numberToVietnameseWords(contract.total_amount) + ' đồng chẵn' : '') } catch { totalWords = '' }
+
+  let packagePriceWords = ''
+  try { packagePriceWords = contract.package_price_text || (contract.package_price ? numberToVietnameseWords(contract.package_price) + ' đồng chẵn' : '') } catch { packagePriceWords = '' }
+
+  let discountedPriceWords = ''
+  try { discountedPriceWords = contract.discounted_price_text || (contract.discounted_price ? numberToVietnameseWords(contract.discounted_price) + ' đồng chẵn' : '') } catch { discountedPriceWords = '' }
 
   const centerName = contract.facility_name || contract.branches?.name || 'TRUNG TÂM LADY FIT'
   const centerShortName = contract.short_name || 'LADY FIT'
 
+  // 1. Start with the "hardcoded" core mappings that need logic
   const map: Record<string, string> = {
     '{{member_name}}': (contract.member_name || '').toUpperCase(),
     '{{phone}}': contract.phone || '',
@@ -38,6 +52,11 @@ export function getContractHTMLFromTemplate(contract: any, templateContent: stri
     '{{total_amount_words}}': totalWords,
     '{{trainer_name}}': contract.trainer_name || 'Đang cập nhật',
     '{{trainer_type}}': contract.trainer_type || 'Trực tiếp',
+    // Giá gói
+    '{{package_price}}': contract.package_price ? formatCurrency(contract.package_price) : '',
+    '{{package_price_words}}': packagePriceWords,
+    '{{discounted_price}}': contract.discounted_price ? formatCurrency(contract.discounted_price) : '',
+    '{{discounted_price_words}}': discountedPriceWords,
     '{{center_representative}}': contract.center_representative || '',
     '{{center_name}}': centerName,
     '{{center_short_name}}': centerShortName,
@@ -51,12 +70,30 @@ export function getContractHTMLFromTemplate(contract: any, templateContent: stri
     '{{account_number}}': contract.account_number || '',
     '{{bank_name}}': contract.bank_name || '',
     '{{account_holder}}': contract.account_holder || '',
-    // Branch-sourced fields (from branches table)
+    // Branch-sourced fields
     '{{center_phone}}': contract.branches?.center_phone || contract.center_phone || '',
     '{{center_address}}': contract.branches?.center_address || contract.address || '',
     '{{legal_representative}}': contract.branches?.legal_representative || '',
     '{{representative_phone}}': contract.branches?.representative_phone || '',
   }
+
+  // 2. Overlay dynamic placeholders from DB (only if they aren't already handled or if we want to override)
+  // Also allows supporting custom placeholders if they match a field in the contract object
+  dynamicPlaceholders.forEach(p => {
+    if (!map[p.key]) {
+      // Try to find a match in the contract object if the key is simple (e.g. {{something}})
+      const cleanKey = p.key.replace(/[{}]/g, '')
+      if (contract[cleanKey] !== undefined) {
+        let val = contract[cleanKey]
+        if (typeof val === 'number' && (cleanKey.includes('amount') || cleanKey.includes('price'))) {
+          val = formatCurrency(val)
+        } else if (cleanKey.includes('date')) {
+          val = formatDate(val)
+        }
+        map[p.key] = String(val ?? '')
+      }
+    }
+  })
 
   let body = templateContent
   Object.entries(map).forEach(([key, val]) => {
@@ -83,8 +120,21 @@ export function getContractHTMLFromTemplate(contract: any, templateContent: stri
       min-height: 297mm;
       margin: 0 auto;
       padding: 20mm 20mm 16mm 20mm;
-      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
       word-break: break-word;
+    }
+    /* Đảm bảo mọi phần tử con không tràn ra ngoài khổ giấy */
+    .page * {
+      max-width: 100%;
+    }
+    .page table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+    }
+    .page img {
+      height: auto;
     }
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

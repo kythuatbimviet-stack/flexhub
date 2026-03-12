@@ -70,6 +70,12 @@ export default function DashboardLayout({
         )
     }
 
+    // Print pages need full-screen, no sidebar/header
+    const isPrintPage = pathname?.startsWith('/contracts/print/')
+    if (isPrintPage) {
+        return <>{children}</>
+    }
+
     const isAppStore = pathname === '/app-store'
 
     return (
