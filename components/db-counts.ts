@@ -2,7 +2,7 @@
 import { createAdminClient } from '../lib/supabase-server';
 
 async function checkCounts() {
-  const supabase = createAdminClient();
+  const supabase = await createAdminClient();
   
   const { count: clientCount } = await supabase.from('clients').select('*', { count: 'exact', head: true });
   const { count: contractCount } = await supabase.from('contracts').select('*', { count: 'exact', head: true });
