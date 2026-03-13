@@ -54,3 +54,10 @@ export function numberToVietnameseWords(number: number): string {
   const finalResult = res.trim()
   return finalResult.charAt(0).toUpperCase() + finalResult.slice(1)
 }
+
+export function formatCurrency(amount: number) {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+  }).format(amount)
+}

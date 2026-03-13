@@ -102,7 +102,7 @@ export function AddBranchDialog({ onSuccess }: { onSuccess: () => void }) {
                         Thêm chi nhánh mới
                     </DialogTitle>
                     <DialogDescription className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                        Điền đầy đủ thông tin để định danh chi nhánh trong hệ thống Lady Fit.
+                        Điền đầy đủ thông tin để định danh chi nhánh trong hệ thống Eva Fit.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -135,7 +135,7 @@ export function AddBranchDialog({ onSuccess }: { onSuccess: () => void }) {
                                         <FormItem className="md:col-span-2">
                                             <FormLabel className="text-xs font-medium text-slate-700 dark:text-slate-300">Tên Chi nhánh</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Lady Fit - Quận 1" {...field} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 transition-all h-11 border-2" />
+                                                <Input placeholder="Eva Fit - Quận 1" {...field} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 transition-all h-11 border-2" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

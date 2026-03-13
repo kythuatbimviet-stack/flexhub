@@ -7,7 +7,7 @@ import * as z from 'zod'
 import {
     Plus,
     FileText,
-    User,
+    User as UserIcon,
     Building2,
     Calendar,
     CreditCard,
@@ -17,14 +17,18 @@ import {
     Phone,
     Mail,
     Loader2,
-    Users,
+    Users as UsersIcon,
     Activity,
     ShieldCheck,
     Hash,
     MonitorPlay,
     AlertCircle,
     Calculator,
-    ChevronDown
+    ChevronDown,
+    Search,
+    UserCheck,
+    RotateCcw,
+    Check
 } from 'lucide-react'
 import { cn, numberToVietnameseWords } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -53,12 +57,18 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
-import { createContract } from '@/app/actions/contracts'
+import { createContract, generateContractId } from '@/app/actions/contracts'
 import { fetchClients } from '@/app/actions/clients'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchMemberships } from '@/app/actions/memberships'
-import { fetchUserByEmail } from '@/app/actions/users'
+import { fetchUserByEmail, fetchUsers } from '@/app/actions/users'
 import { addDays } from 'date-fns'
 import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
 const contractFormSchema = z.object({
@@ -67,19 +77,19 @@ const contractFormSchema = z.object({
     branch_id: z.string().min(1, { message: 'Vui lòng chọn chi nhánh' }),
     member_name: z.string().min(1, { message: 'Tên hội viên không được để trống' }),
     phone: z.string().optional(),
-    email: z.string().optional(),
+    email: z.string().min(1, { message: 'Vui lòng nhập email' }).email({ message: 'Email không hợp lệ' }),
     member_address: z.string().optional(),
     contract_type: z.string().optional(),
     contract_name: z.string().optional(),
     start_date: z.string().min(1, { message: 'Vui lòng chọn ngày bắt đầu' }),
     end_date: z.string().optional(),
-    package_name: z.string().optional(),
+    package_name: z.string().min(1, { message: 'Vui lòng chọn gói tập' }),
     package_price: z.string().optional(),
-    total_amount: z.string().optional(),
-    payment_method: z.string().optional(),
+    total_amount: z.string().min(1, { message: 'Vui lòng nhập giá hợp đồng' }),
+    payment_method: z.string().min(1, { message: 'Vui lòng chọn phương thức thanh toán' }),
     trainer_name: z.string().optional(),
     center_representative: z.string().optional(),
-    status: z.string().optional(),
+    status: z.string().min(1, { message: 'Vui lòng chọn trạng thái hợp đồng' }),
     facility_name: z.string().optional(),
     short_name: z.string().optional(),
     address: z.string().optional(),
@@ -89,7 +99,7 @@ const contractFormSchema = z.object({
     bank_name: z.string().optional(),
     // New fields
     dob: z.string().optional(),
-    id_number: z.string().optional(),
+    id_number: z.string().min(1, { message: 'Vui lòng nhập số CCCD' }),
     representative_name: z.string().optional(),
     representative_phone: z.string().optional(),
     legal_representative: z.string().optional(),
@@ -98,17 +108,20 @@ const contractFormSchema = z.object({
     initial_height: z.string().optional(),
     initial_weight: z.string().optional(),
     package_type: z.string().optional(),
-    quantity: z.string().optional(),
+    quantity: z.string().min(1, { message: 'Vui lòng nhập số lượng' }),
     discounted_price: z.string().optional(),
     staff_phone: z.string().optional(),
+    assigned_pt: z.string().optional(),
     custom_selection: z.string().optional(),
     trainer_type: z.string().optional(),
     total_sessions: z.string().optional(),
+    signature_url: z.string().optional(),
 })
 
 export function AddContractDialog({ onSuccess, initialClientId, initialClient, isQuickAction, triggerOverride }: { onSuccess: () => void, initialClientId?: string, initialClient?: any, isQuickAction?: boolean, triggerOverride?: React.ReactNode }) {
     const [open, setOpen] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
+    const [generatingId, setGeneratingId] = React.useState(false)
     const [clients, setClients] = React.useState<any[]>(initialClient ? [initialClient] : [])
     const [branches, setBranches] = React.useState<any[]>(
         initialClient?.branch_id
@@ -125,6 +138,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             client_id: '',
             branch_id: '',
             member_name: '',
+            signature_url: '',
             phone: '',
             email: '',
             member_address: '',
@@ -159,6 +173,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             quantity: '1',
             discounted_price: '0',
             staff_phone: '',
+            assigned_pt: '',
             custom_selection: '',
             trainer_type: '',
             total_sessions: '',
@@ -179,6 +194,18 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
     }
 
     const [trainerTypes, setTrainerTypes] = React.useState<ConfigItem[]>([])
+    const [users, setUsers] = React.useState<any[]>([])
+    const [ptSearchTerm, setPtSearchTerm] = React.useState('')
+    const [ptOpen, setPtOpen] = React.useState(false)
+
+    const filteredPts = React.useMemo(() => {
+        if (!ptSearchTerm) return users
+        return users.filter((user: any) =>
+            user.name?.toLowerCase().includes(ptSearchTerm.toLowerCase()) ||
+            user.email?.toLowerCase().includes(ptSearchTerm.toLowerCase())
+        )
+    }, [users, ptSearchTerm])
+
     const selectedPackageRef = React.useRef<any>(null)
 
     React.useEffect(() => {
@@ -189,17 +216,20 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                 form.setValue('member_name', initialClient.member_name)
                 form.setValue('phone', initialClient.phone || '')
                 form.setValue('email', initialClient.email || '')
-                form.setValue('member_address', initialClient.address || '')
+                if (initialClient.member_address || initialClient.address) {
+                    form.setValue('member_address', initialClient.member_address || initialClient.address)
+                }
                 form.setValue('trainer_name', initialClient.pt_name || '')
                 if (initialClient.dob) {
                     form.setValue('dob', initialClient.dob.split('T')[0])
                 }
+                if (initialClient.signature_url) {
+                    form.setValue('signature_url', initialClient.signature_url)
+                }
                 if (initialClient.assigned_pt) {
-                    fetchUserByEmail(initialClient.assigned_pt).then(res => {
-                        if (res.success && res.data?.phone) {
-                            form.setValue('staff_phone', res.data.phone)
-                        }
-                    })
+                    form.setValue('assigned_pt', initialClient.assigned_pt)
+                } else {
+                    form.setValue('assigned_pt', '')
                 }
                 if (initialClient.branch_id) {
                     form.setValue('branch_id', initialClient.branch_id)
@@ -207,11 +237,12 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             }
 
             const loadData = async () => {
-                const [clientsRes, branchesRes, packagesRes, statusRes] = await Promise.all([
+                const [clientsRes, branchesRes, packagesRes, statusRes, usersRes] = await Promise.all([
                     fetchClients(),
                     fetchBranches(),
                     fetchMemberships(),
-                    fetchConfigParams('config_contract_status')
+                    fetchConfigParams('config_contract_status'),
+                    fetchUsers()
                 ])
                 if (statusRes.success && statusRes.data) {
                     setStatuses(statusRes.data)
@@ -241,17 +272,20 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                             form.setValue('member_name', client.member_name)
                             form.setValue('phone', client.phone || '')
                             form.setValue('email', client.email || '')
-                            form.setValue('member_address', client.member_address || client.address || '')
+                            if (client.member_address || client.address) {
+                                form.setValue('member_address', client.member_address || client.address)
+                            }
                             form.setValue('trainer_name', client.pt_name || '')
                             if (client.dob) {
                                 form.setValue('dob', client.dob.split('T')[0])
                             }
+                            if (client.signature_url) {
+                                form.setValue('signature_url', client.signature_url)
+                            }
                             if (client.assigned_pt) {
-                                fetchUserByEmail(client.assigned_pt).then(res => {
-                                    if (res.success && res.data?.phone) {
-                                        form.setValue('staff_phone', res.data.phone)
-                                    }
-                                })
+                                form.setValue('assigned_pt', client.assigned_pt)
+                            } else {
+                                form.setValue('assigned_pt', '')
                             }
 
                             if (client.branch_id) {
@@ -275,7 +309,9 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                             form.setValue('center_phone', branch.center_phone || branch.phone || '')
                             form.setValue('center_address', branch.center_address || branch.address || '')
                             form.setValue('legal_representative', branch.legal_representative || '')
-                            form.setValue('representative_phone', branch.representative_phone || '')
+                            form.setValue('representative_phone', '')
+                            form.setValue('center_representative', branch.representative || '')
+                            form.setValue('representative_name', '')
                             form.setValue('account_number', branch.account_number?.toString() || '')
                             form.setValue('account_holder', branch.account_holder || '')
                             form.setValue('bank_name', branch.bank_name || '')
@@ -287,10 +323,25 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
 
                 const trainerTypeRes = await fetchConfigParams('config_contract_trainer_type')
                 if (trainerTypeRes.success) setTrainerTypes(trainerTypeRes.data || [])
+
+                if (usersRes.success) setUsers(usersRes.data || [])
             }
             loadData()
         }
     }, [open, initialClientId, initialClient, form])
+
+    // Watch assigned_pt to update staff_phone automatically
+    const watchAssignedPt = form.watch('assigned_pt')
+    React.useEffect(() => {
+        if (watchAssignedPt && users.length > 0) {
+            const ptUser = users.find(u => u.email === watchAssignedPt)
+            if (ptUser) {
+                form.setValue('staff_phone', ptUser.phone || '')
+            }
+        } else if (!watchAssignedPt) {
+            form.setValue('staff_phone', '')
+        }
+    }, [watchAssignedPt, users, form])
 
     const onClientChange = (clientId: string) => {
         const client = clients.find(c => c.id === clientId)
@@ -298,17 +349,20 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             form.setValue('member_name', client.member_name)
             form.setValue('phone', client.phone || '')
             form.setValue('email', client.email || '')
-            form.setValue('member_address', client.member_address || client.address || '')
+            if (client.member_address || client.address) {
+                form.setValue('member_address', client.member_address || client.address)
+            }
             form.setValue('trainer_name', client.pt_name || '')
             if (client.dob) {
                 form.setValue('dob', client.dob.split('T')[0])
             }
+            if (client.signature_url) {
+                form.setValue('signature_url', client.signature_url)
+            }
             if (client.assigned_pt) {
-                fetchUserByEmail(client.assigned_pt).then(res => {
-                    if (res.success && res.data?.phone) {
-                        form.setValue('staff_phone', res.data.phone)
-                    }
-                })
+                form.setValue('assigned_pt', client.assigned_pt)
+            } else {
+                form.setValue('assigned_pt', '')
             }
 
             // Auto-select branch from client
@@ -328,7 +382,9 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             form.setValue('center_phone', branch.center_phone || branch.phone || '')
             form.setValue('center_address', branch.center_address || branch.address || '')
             form.setValue('legal_representative', branch.legal_representative || '')
-            form.setValue('representative_phone', branch.representative_phone || '')
+            form.setValue('representative_phone', '')
+            form.setValue('center_representative', branch.representative || '')
+            form.setValue('representative_name', '')
             form.setValue('account_number', branch.account_number?.toString() || '')
             form.setValue('account_holder', branch.account_holder || '')
             form.setValue('bank_name', branch.bank_name || '')
@@ -383,6 +439,18 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
         form.setValue('discounted_price', discount.toString())
     }, [watchTotalAmountValue, watchQuantity, form])
 
+    const watchBranchId = form.watch('branch_id')
+
+    React.useEffect(() => {
+        if (!open) return
+        setGeneratingId(true)
+        generateContractId(watchBranchId).then((res) => {
+            if (res.success && res.data) {
+                form.setValue('id', res.data)
+            }
+        }).finally(() => setGeneratingId(false))
+    }, [open, watchBranchId, form])
+
     async function onSubmit(values: z.infer<typeof contractFormSchema>) {
         setLoading(true)
         try {
@@ -435,14 +503,14 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             </DialogTrigger>
             <DialogContent
                 className="max-w-4xl max-h-[85vh] overflow-y-auto rounded-3xl border-none shadow-2xl font-inter bg-white dark:bg-gray-950"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-medium text-gray-950 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-4 mb-2">
                         Tạo Hợp đồng mới
                     </DialogTitle>
                     <DialogDescription className="text-gray-500 dark:text-gray-400 font-medium">
-                        Nhập các thông tin cần thiết để tạo hợp đồng dịch vụ cho khách hàng.
+                        Nhập các thông tin cần thiết (<span className="text-red-600">*</span> là bắt buộc) để tạo hợp đồng dịch vụ cho khách hàng.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -451,7 +519,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                         {/* Section 2: Khách hàng */}
                         <div className="space-y-6">
                             <h3 className="text-xs font-medium text-red-600 dark:text-red-500 tracking-tight flex items-center gap-2">
-                                <User className="w-4 h-4" />
+                                <UserIcon className="w-4 h-4" />
                                 Thông tin Khách hàng
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -515,7 +583,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                     name="email"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Email</FormLabel>
+                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Email <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
                                                 <Input {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
                                             </FormControl>
@@ -541,7 +609,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                     name="id_number"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Căn cước công dân (ID Number)</FormLabel>
+                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Căn cước công dân (ID Number) <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
                                                 <Input {...field} placeholder="Số CCCD..." className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
                                             </FormControl>
@@ -620,16 +688,99 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                 <ShieldCheck className="w-4 h-4" />
                                 Nhân sự phụ trách
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <FormField
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                 <FormField
                                     control={form.control}
                                     name="trainer_name"
                                     render={({ field }) => (
-                                        <FormItem>
+                                        <FormItem className="flex flex-col">
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Huấn luyện viên (PT)</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Tên PT..." {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
-                                            </FormControl>
+                                            <Popover modal={true} open={ptOpen} onOpenChange={(open) => {
+                                                setPtOpen(open)
+                                                if (!open) setPtSearchTerm('')
+                                            }}>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button
+                                                            variant="outline"
+                                                            role="combobox"
+                                                            className={cn(
+                                                                "w-full justify-between rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11 px-3 font-normal",
+                                                                !field.value && "text-muted-foreground"
+                                                            )}
+                                                        >
+                                                            <div className="flex items-center gap-2 overflow-hidden w-full text-sm">
+                                                                <UserCheck className="w-4 h-4 shrink-0 text-gray-400" />
+                                                                <span className="truncate">
+                                                                    {field.value || "Chọn Huấn luyện viên"}
+                                                                </span>
+                                                            </div>
+                                                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent
+                                                    className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-gray-200 dark:border-gray-800"
+                                                    align="start"
+                                                >
+                                                    <div className="p-2 border-b border-gray-100 dark:border-gray-800">
+                                                        <div className="relative">
+                                                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                                            <Input
+                                                                placeholder="Tìm nhân viên..."
+                                                                value={ptSearchTerm}
+                                                                onChange={(e) => setPtSearchTerm(e.target.value)}
+                                                                className="pl-8 h-9 border-none bg-gray-50/50 dark:bg-gray-900 rounded-lg focus-visible:ring-0"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <ScrollArea className="h-[250px]">
+                                                        <div className="p-1">
+                                                            <button
+                                                                type="button"
+                                                                className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                                                onClick={() => {
+                                                                    form.setValue('assigned_pt', '')
+                                                                    form.setValue('trainer_name', '')
+                                                                    form.setValue('staff_phone', '')
+                                                                    setPtOpen(false)
+                                                                }}
+                                                            >
+                                                                <span className="text-gray-400 italic text-xs">-- Không gán PT --</span>
+                                                            </button>
+                                                            {filteredPts.length === 0 && (
+                                                                <div className="p-4 text-center text-xs text-gray-500">
+                                                                    Không tìm thấy kết quả
+                                                                </div>
+                                                            )}
+                                                            {filteredPts.map((user: any) => (
+                                                                <button
+                                                                    key={user.id}
+                                                                    type="button"
+                                                                    className={cn(
+                                                                        "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
+                                                                        field.value === user.name && "bg-red-50 dark:bg-red-900/20 text-red-600"
+                                                                    )}
+                                                                    onClick={() => {
+                                                                        form.setValue('assigned_pt', user.email)
+                                                                        form.setValue('trainer_name', user.name)
+                                                                        form.setValue('staff_phone', user.phone || '')
+                                                                        setPtOpen(false)
+                                                                    }}
+                                                                >
+                                                                    <div className="flex flex-col items-start min-w-0">
+                                                                        <span className="font-medium truncate w-full">{user.name}</span>
+                                                                        <span className="text-[10px] text-gray-400 truncate w-full">{user.email}</span>
+                                                                    </div>
+                                                                    {field.value === user.name && (
+                                                                        <Check className="ml-auto h-4 w-4" />
+                                                                    )}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </ScrollArea>
+                                                </PopoverContent>
+                                            </Popover>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -642,19 +793,6 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Số điện thoại nhân sự</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="090..." {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="center_representative"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Đại diện trung tâm ký</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Tên quản lý..." {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -673,7 +811,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormItem>
                                     <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Chọn Gói tập (Sẵn có)</FormLabel>
-                                    <Select onValueChange={onPackageChange}>
+                                    <Select onValueChange={(e: string) => onPackageChange(e)}>
                                         <FormControl>
                                             <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11 overflow-hidden">
                                                 <SelectValue placeholder="Chọn gói tập..." className="truncate" />
@@ -693,7 +831,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                     name="package_name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Tên gói tập (Thủ công)</FormLabel>
+                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Tên gói tập (Thủ công) <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
                                                 <Input placeholder="Gói VIP 12 tháng..." {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
                                             </FormControl>
@@ -770,7 +908,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                         </FormItem>
                                     )}
                                 />
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:col-span-2 pt-2">
                                     <FormField
                                         control={form.control}
                                         name="start_date"
@@ -807,85 +945,101 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                 <Calculator className="w-4 h-4" />
                                 Thành tiền
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <FormField
-                                    control={form.control}
-                                    name="quantity"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Số tháng (Số lượng)</FormLabel>
-                                            <FormControl>
-                                                <Input type="number" min="1" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="package_price"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Giá tự tính (VNĐ)</FormLabel>
-                                            <FormControl>
-                                                <Input readOnly {...field} value={field.value ? Number(field.value).toLocaleString('vi-VN') : '0'} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 h-11 font-medium text-gray-500" />
-                                            </FormControl>
-                                            {toWords(watchPackagePrice) && (
-                                                <p className="text-[10px] italic text-gray-400 mt-0.5">{toWords(watchPackagePrice)}</p>
-                                            )}
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="total_amount"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Giá hợp đồng (VNĐ - Nhập cuối)</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    placeholder="0"
-                                                    {...field}
-                                                    value={field.value ? Number(field.value.toString().replace(/\./g, '')).toLocaleString('vi-VN').replace(/,/g, '.') : ''}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value.replace(/\./g, '')
-                                                        if (/^\d*$/.test(val)) {
-                                                            field.onChange(val)
-                                                        }
-                                                    }}
-                                                    className="rounded-xl border-gray-200 dark:border-gray-800 bg-red-50/30 dark:bg-red-950/10 h-11 font-semibold text-red-600"
-                                                />
-                                            </FormControl>
-                                            {toWords(watchTotalAmountValue) && (
-                                                <p className="text-[10px] italic text-red-400 mt-0.5">{toWords(watchTotalAmountValue)}</p>
-                                            )}
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="discounted_price"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Phần giảm giá (Tính toán)</FormLabel>
-                                            <FormControl>
-                                                <Input readOnly {...field} value={field.value ? Number(field.value).toLocaleString('vi-VN') : '0'} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 h-11 font-medium text-emerald-600" />
-                                            </FormControl>
-                                            {toWords(watchDiscountedPrice) && (
-                                                <p className="text-[10px] italic text-emerald-500 mt-0.5">{toWords(watchDiscountedPrice)}</p>
-                                            )}
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                            <div className="space-y-6">
+                                {/* Row 1: Số tháng & Giá tự tính */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField
+                                        control={form.control}
+                                        name="quantity"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Số tháng (Số lượng) <span className="text-red-600">*</span></FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" min="1" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="package_price"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Giá tự tính (VNĐ)</FormLabel>
+                                                <FormControl>
+                                                    <Input readOnly {...field} value={field.value ? Number(field.value).toLocaleString('vi-VN') : '0'} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 h-11 font-medium text-gray-500" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+
+                                {/* Row 2: Bằng chữ (Giá tự tính) */}
+                                {toWords(watchPackagePrice) && (
+                                    <div className="px-4 py-2 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
+                                        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-widest mb-1">Bằng chữ (Tạm tính)</p>
+                                        <p className="text-xs italic text-gray-600 dark:text-gray-400">{toWords(watchPackagePrice)}</p>
+                                    </div>
+                                )}
+
+                                {/* Row 3: Giá hợp đồng & Giảm giá */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField
+                                        control={form.control}
+                                        name="total_amount"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Giá hợp đồng (VNĐ - Nhập cuối) <span className="text-red-600">*</span></FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder="0"
+                                                        {...field}
+                                                        value={field.value ? Number(field.value.toString().replace(/\./g, '')).toLocaleString('vi-VN').replace(/,/g, '.') : ''}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.replace(/\./g, '')
+                                                            if (/^\d*$/.test(val)) {
+                                                                field.onChange(val)
+                                                            }
+                                                        }}
+                                                        className="rounded-xl border-gray-200 dark:border-gray-800 bg-red-50/30 dark:bg-red-950/10 h-11 font-semibold text-red-600"
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="discounted_price"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Phần giảm giá (Tính toán)</FormLabel>
+                                                <FormControl>
+                                                    <Input readOnly {...field} value={field.value ? Number(field.value).toLocaleString('vi-VN') : '0'} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 h-11 font-medium text-emerald-600" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+
+                                {/* Row 4: Bằng chữ (Giá hợp đồng) */}
+                                {toWords(watchTotalAmountValue) && (
+                                    <div className="px-4 py-2 bg-red-50/30 dark:bg-red-950/10 rounded-xl border border-dashed border-red-200 dark:border-red-900/30">
+                                        <p className="text-[10px] font-medium text-red-400 uppercase tracking-widest mb-1">Bằng chữ (Thành tiền)</p>
+                                        <p className="text-xs italic text-red-600 dark:text-red-400 font-medium">{toWords(watchTotalAmountValue)}</p>
+                                    </div>
+                                )}
+
+                                {/* Row 5: Phương thức thanh toán */}
                                 <FormField
                                     control={form.control}
                                     name="payment_method"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Phương thức thanh toán</FormLabel>
+                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Phương thức thanh toán <span className="text-red-600">*</span></FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value}>
                                                 <FormControl>
                                                     <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11 overflow-hidden">
@@ -920,7 +1074,12 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                         <FormItem>
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Số Hợp đồng</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="HD-2024-..." {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11" />
+                                                <Input
+                                                    readOnly
+                                                    placeholder={generatingId ? "Đang tạo mã..." : "HD-XX-YYMM-001"}
+                                                    {...field}
+                                                    className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 h-11 font-bold font-mono text-sm"
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -931,7 +1090,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                     name="status"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Trạng thái HĐ</FormLabel>
+                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Trạng thái HĐ <span className="text-red-600">*</span></FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value}>
                                                 <FormControl>
                                                     <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11 overflow-hidden">
@@ -1002,12 +1161,29 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                             </div>
                         </div>
                         {/* Section 2.1: Người đại diện pháp luật */}
+
                         <div className="space-y-6">
                             <h3 className="text-xs font-medium text-red-600 dark:text-red-500 tracking-tight flex items-center gap-2">
-                                <Users className="w-4 h-4" />
+                                <UsersIcon className="w-4 h-4" />
                                 Người đại diện pháp luật
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField
+                                control={form.control}
+                                name="center_representative"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Đại diện trung tâm ký</FormLabel>
+                                        <FormControl>
+                                            <Input readOnly placeholder="Tên quản lý..." {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 h-11" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            
+                            <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Khách hàng (Người giám hộ/đại diện nếu có)</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
                                     name="representative_name"
@@ -1034,6 +1210,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                         </FormItem>
                                     )}
                                 />
+                                </div>
                             </div>
                         </div>
                         <DialogFooter className="pt-8 border-t border-gray-100 dark:border-gray-800 gap-3">

@@ -119,7 +119,7 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                 <DialogHeader className="space-y-3">
                     <DialogTitle className="text-xl font-bold text-gray-900 leading-tight">Nhập liệu hàng loạt</DialogTitle>
                     <DialogDescription className="text-gray-500 text-sm">
-                        Tải lên file Excel mẫu của Lady Fit để cập nhật danh sách hội viên nhanh chóng.
+                        Tải lên file Excel mẫu của Eva Fit để cập nhật danh sách hội viên nhanh chóng.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-8">
@@ -152,7 +152,7 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                         </div>
                         <div className="flex-1">
                             <p className="text-sm font-bold text-gray-900">Mẫu nhập liệu</p>
-                            <p className="text-xs text-gray-500 mt-1 leading-relaxed">Hãy sử dụng đúng định dạng của Lady Fit để tránh lỗi dữ liệu.</p>
+                            <p className="text-xs text-gray-500 mt-1 leading-relaxed">Hãy sử dụng đúng định dạng của Eva Fit để tránh lỗi dữ liệu.</p>
                             <Button
                                 variant="link"
                                 className="p-0 h-auto text-red-600 text-xs font-bold mt-2 hover:no-underline"

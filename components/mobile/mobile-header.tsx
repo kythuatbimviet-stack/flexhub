@@ -11,10 +11,10 @@ export function MobileHeader() {
         <header className="lg:hidden sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md px-4 transition-all">
             <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20">
-                    <span className="text-white text-[10px] font-bold">LF</span>
+                    <span className="text-white text-[10px] font-semibold">EF</span>
                 </div>
-                <span className="font-bold text-lg tracking-tight text-gray-900 dark:text-white">
-                    Lady Fit
+                <span className="font-semibold text-lg tracking-tight text-gray-900 dark:text-white">
+                    Eva Fit
                 </span>
             </div>
 

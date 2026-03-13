@@ -161,7 +161,10 @@ export default function ContractsPage() {
         return counts
     }, [contracts, contractStatuses])
 
-    const refetch = () => queryClient.invalidateQueries({ queryKey: ['contracts-all'] })
+    const refetch = () => {
+        queryClient.invalidateQueries({ queryKey: ['contracts-all'] })
+        queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
+    }
 
     const clearFilters = () => {
         setSearchTerm(''); setStatusFilter('all'); setBranchFilter('all')

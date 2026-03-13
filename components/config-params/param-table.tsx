@@ -6,8 +6,10 @@ import {
     fetchConfigParams,
     updateConfigParam,
     deleteConfigParam,
+    deleteBulkConfigParams,
     type ConfigItem
 } from '@/app/actions/config-params'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
     Table,
     TableBody,
@@ -41,6 +43,7 @@ export function ParamTable({ tableName, searchTerm, groupColor, groupBg }: Param
     const queryClient = useQueryClient()
     const [isDialogOpen, setIsDialogOpen] = React.useState(false)
     const [editingItem, setEditingItem] = React.useState<ConfigItem | null>(null)
+    const [selectedIds, setSelectedIds] = React.useState<number[]>([])
 
     const { data: result, isLoading, error } = useQuery({
         queryKey: ['config-params', tableName],
@@ -53,8 +56,22 @@ export function ParamTable({ tableName, searchTerm, groupColor, groupBg }: Param
             if (res.success) {
                 toast.success('Xóa tham số thành công')
                 queryClient.invalidateQueries({ queryKey: ['config-params', tableName] })
+                setSelectedIds(prev => prev.filter(selectedId => selectedId !== editingItem?.id))
             } else {
                 toast.error(res.error || 'Lỗi khi xóa')
+            }
+        }
+    })
+
+    const bulkDeleteMutation = useMutation({
+        mutationFn: (ids: number[]) => deleteBulkConfigParams(tableName, ids),
+        onSuccess: (res) => {
+            if (res.success) {
+                toast.success(`Đã xóa ${selectedIds.length} tham số thành công`)
+                queryClient.invalidateQueries({ queryKey: ['config-params', tableName] })
+                setSelectedIds([])
+            } else {
+                toast.error(res.error || 'Lỗi khi xóa hàng loạt')
             }
         }
     })
@@ -70,6 +87,29 @@ export function ParamTable({ tableName, searchTerm, groupColor, groupBg }: Param
         if (confirm('Bạn có chắc chắn muốn xóa tham số này?')) {
             deleteMutation.mutate(id)
         }
+    }
+
+    const handleBulkDelete = () => {
+        if (selectedIds.length === 0) return
+        if (confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} tham số đã chọn?`)) {
+            bulkDeleteMutation.mutate(selectedIds)
+        }
+    }
+
+    const toggleSelectAll = () => {
+        if (selectedIds.length === filteredData.length) {
+            setSelectedIds([])
+        } else {
+            setSelectedIds(filteredData.map(item => item.id))
+        }
+    }
+
+    const toggleSelectItem = (id: number) => {
+        setSelectedIds(prev => 
+            prev.includes(id) 
+                ? prev.filter(itemId => itemId !== id)
+                : [...prev, id]
+        )
     }
 
     const handleEdit = (item: ConfigItem) => {
@@ -105,7 +145,23 @@ export function ParamTable({ tableName, searchTerm, groupColor, groupBg }: Param
 
     return (
         <div className="relative">
-            <div className="absolute top-[-52px] right-6">
+            <div className="absolute top-[-52px] right-6 flex items-center gap-2">
+                {selectedIds.length > 0 && (
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleBulkDelete}
+                        className="rounded-xl px-4 h-9 shadow-lg shadow-red-500/20 text-xs font-semibold"
+                        disabled={bulkDeleteMutation.isPending}
+                    >
+                        {bulkDeleteMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                            <Trash2 className="w-4 h-4 mr-2" />
+                        )}
+                        Xóa đã chọn ({selectedIds.length})
+                    </Button>
+                )}
                 <Button
                     onClick={handleAdd}
                     className="bg-red-600 hover:bg-red-700 text-white rounded-xl px-4 h-9 shadow-lg shadow-red-500/20 text-xs font-semibold"
@@ -119,6 +175,12 @@ export function ParamTable({ tableName, searchTerm, groupColor, groupBg }: Param
                 <Table>
                     <TableHeader className="bg-gray-50/50 dark:bg-gray-800/50">
                         <TableRow className="border-b border-gray-100 dark:border-gray-800">
+                            <TableHead className="w-[50px] text-center">
+                                <Checkbox 
+                                    checked={filteredData.length > 0 && selectedIds.length === filteredData.length}
+                                    onCheckedChange={toggleSelectAll}
+                                />
+                            </TableHead>
                             <TableHead className="w-[80px] text-center font-bold text-gray-400 uppercase tracking-widest text-[10px]">Thứ tự</TableHead>
                             <TableHead className="font-bold text-gray-400 uppercase tracking-widest text-[10px]">Tên hiển thị</TableHead>
                             <TableHead className="w-[120px] text-center font-bold text-gray-400 uppercase tracking-widest text-[10px]">Mặc định</TableHead>
@@ -128,7 +190,16 @@ export function ParamTable({ tableName, searchTerm, groupColor, groupBg }: Param
                     <TableBody>
                         {filteredData.length > 0 ? (
                             filteredData.map((item) => (
-                                <TableRow key={item.id} className="group hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors border-b border-rose-50/50 dark:border-gray-800/50 last:border-0">
+                                <TableRow key={item.id} className={cn(
+                                    "group hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors border-b border-rose-50/50 dark:border-gray-800/50 last:border-0",
+                                    selectedIds.includes(item.id) && "bg-red-50/30 dark:bg-red-900/10"
+                                )}>
+                                    <TableCell className="text-center">
+                                        <Checkbox 
+                                            checked={selectedIds.includes(item.id)}
+                                            onCheckedChange={() => toggleSelectItem(item.id)}
+                                        />
+                                    </TableCell>
                                     <TableCell className="text-center">
                                         <span className={cn("px-2 py-1 rounded-md text-[11px] font-bold", groupBg, groupColor)}>
                                             {item.value || 0}
@@ -172,7 +243,7 @@ export function ParamTable({ tableName, searchTerm, groupColor, groupBg }: Param
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center text-gray-400 text-sm italic">
+                                <TableCell colSpan={5} className="h-24 text-center text-gray-400 text-sm italic">
                                     Không tìm thấy tham số nào.
                                 </TableCell>
                             </TableRow>

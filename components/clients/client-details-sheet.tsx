@@ -64,6 +64,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { SignatureField } from '@/components/ui/signature-field'
 
 interface ClientDetailsSheetProps {
     client: any | null
@@ -245,7 +246,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
         return (
             <div className="space-y-1">
                 <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                    {label}
+                    {label} {isEditing && ['member_name', 'branch_id', 'status', 'assigned_pt', 'pt_name', 'age', 'height', 'weight', 'source', 'goal'].includes(name) && <span className="text-red-500">*</span>}
                 </Label>
                 {isEditing ? (
                     type === 'textarea' ? (
@@ -321,7 +322,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                         </div>
                         <div className="flex flex-col">
                             <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{client.member_name}</span>
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400">{client.email || 'No email provided'}</span>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">ID: {client.id} | {client.email || 'No email provided'}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -714,12 +715,36 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                     </CardSection>
 
                     {/* Section: Nguồn khách */}
-                    <CardSection title="Nguồn khách" icon={Star}>
+                    <CardSection title="Nguồn khách khách hàng" icon={Star}>
                         <div className="space-y-5">
                             <div className="grid grid-cols-2 gap-5">
                                 <InfoRow label="Nguồn khách hàng" value={formData.source} name="source" type="select" options={clientSources.map((s: any) => s.nam)} />
                                 <InfoRow label="Người giới thiệu" value={formData.referrer} name="referrer" />
                             </div>
+                        </div>
+                    </CardSection>
+                    
+                    {/* Section: Chữ ký khách hàng */}
+                    <CardSection title="Chữ ký khách hàng" icon={FileText}>
+                        <div className="space-y-4">
+                            {isEditing ? (
+                                <SignatureField 
+                                    value={formData.signature_url} 
+                                    onChange={(val) => setFormData((prev: any) => ({ ...prev, signature_url: val }))}
+                                />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center p-4 min-h-[120px] bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                                    {formData.signature_url ? (
+                                        <img 
+                                            src={formData.signature_url} 
+                                            alt="Chữ ký khách hàng" 
+                                            className="max-h-32 object-contain"
+                                        />
+                                    ) : (
+                                        <p className="text-sm text-slate-400 italic">Chưa có chữ ký</p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </CardSection>
                 </div>

@@ -104,7 +104,7 @@ export function ImportExcelRevenueDialog({ onSuccess }: ImportExcelRevenueDialog
                 'Ngày': '2026-03-06',
                 'Số tiền': 500000,
                 'Danh mục': 'Phí hội viên',
-                'Chi nhánh': 'Lady Fit Quận 1',
+                'Chi nhánh': 'Eva Fit Quận 1',
                 'Thanh toán': 'Tiền mặt',
                 'Diễn giải': 'Thu học phí chị Lan',
             }
@@ -112,7 +112,7 @@ export function ImportExcelRevenueDialog({ onSuccess }: ImportExcelRevenueDialog
         const ws = XLSX.utils.json_to_sheet(template)
         const wb = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(wb, ws, 'Template')
-        XLSX.writeFile(wb, 'ladyfit_revenue_template.xlsx')
+        XLSX.writeFile(wb, 'evafit_revenue_template.xlsx')
     }
 
     return (

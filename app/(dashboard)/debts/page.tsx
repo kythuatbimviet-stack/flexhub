@@ -128,7 +128,10 @@ export default function DebtPage() {
         return filteredDebts.reduce((sum, d) => sum + (Number(d.remaining_amount) || 0), 0)
     }, [filteredDebts])
 
-    const refetch = () => queryClient.invalidateQueries({ queryKey: ['debts-all'] })
+    const refetch = () => {
+        queryClient.invalidateQueries({ queryKey: ['debts-all'] })
+        queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
+    }
 
     const clearFilters = () => {
         setSearchTerm(''); setStatusFilter('all'); setBranchFilter('all')

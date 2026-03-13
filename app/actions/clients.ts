@@ -245,10 +245,8 @@ export async function generateClientId(clientBranchId?: string | null) {
             }
         }
 
-        // Build prefix: LF-[BranchCode]-[YYMM]-
-        // NOTE: Although the prompt requested LF-CN001-2603001, we format the YYMM and Seq together with a dash before YYMM and no dash before Seq: LF-CN001-2603[seq] or LF-CN001-2603-001 depending on the literal prompt: LF-[branch_id]-yymm-số thứ tự
-        // The prompt examples states: LF-CN001-2603001
-        const prefix = `LF-${branchCode}-${year}${month}`
+        // Build prefix: EF-[BranchCode]-[YYMM]-
+        const prefix = `EF-${branchCode}-${year}${month}`
 
         // Count existing clients with same prefix to determine next seq number
         // We need to look for IDs starting with LF-BranchCode-YYMM

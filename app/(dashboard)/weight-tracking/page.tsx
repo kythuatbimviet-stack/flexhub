@@ -36,11 +36,11 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { format, isWithinInterval, parseISO } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { fetchWeightRecords, deleteWeightRecord } from '@/app/actions/weight-tracking'
+import { fetchWeightRecords, deleteWeightRecord, deleteBulkWeightRecords } from '@/app/actions/weight-tracking'
 import { fetchClients } from '@/app/actions/clients'
 import { fetchContracts } from '@/app/actions/contracts'
 import { WeightChart } from '@/components/weight-tracking/weight-chart'
@@ -51,8 +51,11 @@ import * as XLSX from 'xlsx'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Loader2 } from 'lucide-react'
 
 export default function WeightTrackingPage() {
+    const queryClient = useQueryClient()
     const searchParams = useSearchParams()
     const urlClientId = searchParams.get('clientId')
 
@@ -68,6 +71,7 @@ export default function WeightTrackingPage() {
     const [filterPT, setFilterPT] = React.useState('all')
     const [filterPackage, setFilterPackage] = React.useState('all')
     const [expandedClients, setExpandedClients] = React.useState<Set<string>>(new Set())
+    const [selectedRecordIds, setSelectedRecordIds] = React.useState<Set<string>>(new Set())
 
     const { data: recordsResult, isLoading: isLoadingRecords, refetch: refetchRecords, error: queryError } = useQuery({
         queryKey: ['weight-records'],
@@ -195,15 +199,69 @@ export default function WeightTrackingPage() {
         setExpandedClients(newExpanded)
     }
 
+    const bulkDeleteMutation = useMutation({
+        mutationFn: (ids: string[]) => deleteBulkWeightRecords(ids),
+        onSuccess: (res) => {
+            if (res.success) {
+                toast.success(`Đã xóa ${selectedRecordIds.size} bản ghi thành công`)
+                queryClient.invalidateQueries({ queryKey: ['weight-records'] })
+                setSelectedRecordIds(new Set())
+            } else {
+                toast.error('Lỗi khi xóa hàng loạt: ' + res.error)
+            }
+        }
+    })
+
     const handleDelete = async (id: string) => {
         if (confirm('Bạn có chắc chắn muốn xóa bản ghi này?')) {
             const result = await deleteWeightRecord(id)
             if (result.success) {
                 toast.success('Đã xóa bản ghi thành công')
-                refetchRecords()
+                queryClient.invalidateQueries({ queryKey: ['weight-records'] })
+                const newSelected = new Set(selectedRecordIds)
+                newSelected.delete(id)
+                setSelectedRecordIds(newSelected)
             } else {
                 toast.error('Lỗi khi xóa: ' + result.error)
             }
+        }
+    }
+
+    const handleBulkDelete = () => {
+        if (selectedRecordIds.size === 0) return
+        if (confirm(`Bạn có chắc chắn muốn xóa ${selectedRecordIds.size} bản ghi đã chọn?`)) {
+            bulkDeleteMutation.mutate(Array.from(selectedRecordIds))
+        }
+    }
+
+    const toggleSelectRecord = (id: string) => {
+        const newSelected = new Set(selectedRecordIds)
+        if (newSelected.has(id)) {
+            newSelected.delete(id)
+        } else {
+            newSelected.add(id)
+        }
+        setSelectedRecordIds(newSelected)
+    }
+
+    const toggleSelectClient = (clientId: string, clientRecords: any[]) => {
+        const newSelected = new Set(selectedRecordIds)
+        const recordIds = clientRecords.map(r => r.id)
+        const allSelected = recordIds.every(id => newSelected.has(id))
+
+        if (allSelected) {
+            recordIds.forEach(id => newSelected.delete(id))
+        } else {
+            recordIds.forEach(id => newSelected.add(id))
+        }
+        setSelectedRecordIds(newSelected)
+    }
+
+    const toggleSelectAll = () => {
+        if (selectedRecordIds.size === filteredRecords.length) {
+            setSelectedRecordIds(new Set())
+        } else {
+            setSelectedRecordIds(new Set(filteredRecords.map(r => r.id)))
         }
     }
 
@@ -252,6 +310,21 @@ export default function WeightTrackingPage() {
                     <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Theo dõi và quản lý cân nặng của khách hàng theo thời gian.</p>
                 </div>
                 <div className="flex items-center gap-3">
+                    {selectedRecordIds.size > 0 && (
+                        <Button
+                            variant="destructive"
+                            onClick={handleBulkDelete}
+                            className="rounded-xl h-11 px-4 transition-all font-medium shadow-lg shadow-red-200 dark:shadow-none"
+                            disabled={bulkDeleteMutation.isPending}
+                        >
+                            {bulkDeleteMutation.isPending ? (
+                                <Loader2 className="w-4.5 h-4.5 mr-2 animate-spin" />
+                            ) : (
+                                <Trash2 className="w-4.5 h-4.5 mr-2" />
+                            )}
+                            Xóa đã chọn ({selectedRecordIds.size})
+                        </Button>
+                    )}
                     <Button
                         variant="ghost"
                         onClick={exportToExcel}
@@ -415,6 +488,12 @@ export default function WeightTrackingPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow className="border-gray-50 dark:border-gray-800 hover:bg-transparent border-t-0">
+                                        <TableHead className="w-10 h-9 p-0 text-center">
+                                            <Checkbox 
+                                                checked={filteredRecords.length > 0 && selectedRecordIds.size === filteredRecords.length}
+                                                onCheckedChange={toggleSelectAll}
+                                            />
+                                        </TableHead>
                                         <TableHead className="w-10 h-9"></TableHead>
                                         <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Hội viên</TableHead>
                                         <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 text-center">Bắt đầu</TableHead>
@@ -426,19 +505,28 @@ export default function WeightTrackingPage() {
                                 <TableBody>
                                     {isLoadingRecords ? (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="h-32 text-center text-gray-400 text-sm">Đang tải dữ liệu...</TableCell>
+                                            <TableCell colSpan={7} className="h-32 text-center text-gray-400 text-sm">Đang tải dữ liệu...</TableCell>
                                         </TableRow>
                                     ) : groupedRecords.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="h-32 text-center text-gray-400 text-sm">Không có dữ liệu phù hợp</TableCell>
+                                            <TableCell colSpan={7} className="h-32 text-center text-gray-400 text-sm">Không có dữ liệu phù hợp</TableCell>
                                         </TableRow>
                                     ) : (
                                         groupedRecords.map((group) => (
                                             <React.Fragment key={group.clientId}>
                                                 <TableRow
-                                                    className="border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 group transition-colors cursor-pointer"
+                                                    className={cn(
+                                                        "border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 group transition-colors cursor-pointer",
+                                                        group.allRecords.some(r => selectedRecordIds.has(r.id)) && "bg-blue-50/30 dark:bg-blue-900/10"
+                                                    )}
                                                     onClick={() => toggleExpand(group.clientId)}
                                                 >
+                                                    <TableCell className="w-10 p-0 text-center" onClick={(e) => e.stopPropagation()}>
+                                                        <Checkbox 
+                                                            checked={group.allRecords.every(r => selectedRecordIds.has(r.id))}
+                                                            onCheckedChange={() => toggleSelectClient(group.clientId, group.allRecords)}
+                                                        />
+                                                    </TableCell>
                                                     <TableCell className="py-3 text-center w-10">
                                                         {expandedClients.has(group.clientId) ?
                                                             <ChevronDown className="w-4 h-4 text-gray-400" /> :
@@ -487,7 +575,7 @@ export default function WeightTrackingPage() {
                                                 <AnimatePresence>
                                                     {expandedClients.has(group.clientId) && (
                                                         <TableRow className="bg-gray-50/30 dark:bg-gray-900/40 border-none hover:bg-gray-50/30 dark:hover:bg-gray-900/40">
-                                                            <TableCell colSpan={6} className="p-0">
+                                                            <TableCell colSpan={7} className="p-0">
                                                                 <motion.div
                                                                     initial={{ height: 0, opacity: 0 }}
                                                                     animate={{ height: "auto", opacity: 1 }}
@@ -497,6 +585,7 @@ export default function WeightTrackingPage() {
                                                                     <Table>
                                                                         <TableHeader className="bg-transparent">
                                                                             <TableRow className="border-none hover:bg-transparent">
+                                                                                <TableHead className="w-10 h-8 p-0 text-center"></TableHead>
                                                                                 <TableHead className="h-8 text-[10px] uppercase tracking-wider text-gray-400 pl-4">Ngày đo</TableHead>
                                                                                 <TableHead className="h-8 text-[10px] uppercase tracking-wider text-gray-400">Cân nặng</TableHead>
                                                                                 <TableHead className="h-8 text-[10px] uppercase tracking-wider text-gray-400">Hẹn tiếp theo</TableHead>
@@ -507,12 +596,21 @@ export default function WeightTrackingPage() {
                                                                             {group.allRecords.map((record: any) => (
                                                                                 <TableRow
                                                                                     key={record.id}
-                                                                                    className="border-gray-100/50 dark:border-gray-800/50 hover:bg-white dark:hover:bg-gray-800/80 transition-colors cursor-pointer"
+                                                                                    className={cn(
+                                                                                        "border-gray-100/50 dark:border-gray-800/50 hover:bg-white dark:hover:bg-gray-800/80 transition-colors cursor-pointer",
+                                                                                        selectedRecordIds.has(record.id) && "bg-blue-50/50 dark:bg-blue-900/20"
+                                                                                    )}
                                                                                     onClick={() => {
                                                                                         setSelectedRecord(record)
                                                                                         setIsDetailsOpen(true)
                                                                                     }}
                                                                                 >
+                                                                                    <TableCell className="w-10 p-0 text-center" onClick={(e) => e.stopPropagation()}>
+                                                                                        <Checkbox 
+                                                                                            checked={selectedRecordIds.has(record.id)}
+                                                                                            onCheckedChange={() => toggleSelectRecord(record.id)}
+                                                                                        />
+                                                                                    </TableCell>
                                                                                     <TableCell className="py-2 pl-4 text-xs font-medium text-gray-600 dark:text-gray-300">
                                                                                         {format(new Date(record.measurement_date), 'dd/MM/yyyy')}
                                                                                     </TableCell>

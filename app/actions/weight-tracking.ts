@@ -88,6 +88,27 @@ export async function deleteWeightRecord(id: string) {
     }
 }
 
+export async function deleteBulkWeightRecords(ids: string[]) {
+    try {
+        const adminClient = await createAdminClient()
+        const { error } = await adminClient
+            .from('weight_tracking')
+            .delete()
+            .in('id', ids)
+
+        if (error) {
+            console.error('Delete Bulk Weight Records Error:', error)
+            return { success: false, error: error.message }
+        }
+
+        revalidatePath('/weight-tracking')
+        return { success: true }
+    } catch (error: any) {
+        console.error('Unexpected Bulk Delete Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
 export async function fetchWeightChartData(clientId: string) {
     try {
         const adminClient = await createAdminClient()

@@ -88,6 +88,7 @@ export async function createRevenue(data: any) {
         revalidatePath('/revenue')
         revalidatePath('/cash-flow')
         revalidatePath('/debts')
+        revalidatePath('/')
         return { success: true, data: result }
     } catch (error: any) {
         console.error('Create Revenue Error:', error)
@@ -108,6 +109,7 @@ export async function bulkCreateRevenue(revenues: any[]) {
         if (error) throw error
         revalidatePath('/revenue')
         revalidatePath('/cash-flow')
+        revalidatePath('/')
         return { success: true, data }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -126,6 +128,7 @@ export async function updateRevenue(id: string, updates: any) {
         if (error) throw error
         revalidatePath('/revenue')
         revalidatePath('/cash-flow')
+        revalidatePath('/')
         return { success: true, data: result[0] }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -139,6 +142,7 @@ export async function deleteRevenue(id: string) {
         if (error) throw error
         revalidatePath('/revenue')
         revalidatePath('/cash-flow')
+        revalidatePath('/')
         return { success: true }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -152,6 +156,7 @@ export async function bulkDeleteRevenue(ids: string[]) {
         if (error) throw error
         revalidatePath('/revenue')
         revalidatePath('/cash-flow')
+        revalidatePath('/')
         return { success: true }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -196,6 +201,7 @@ export async function createExpense(data: any) {
         if (error) throw error
         revalidatePath('/expense')
         revalidatePath('/cash-flow')
+        revalidatePath('/')
         return { success: true, data: result[0] }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -215,6 +221,7 @@ export async function bulkCreateExpense(expenses: any[]) {
         if (error) throw error
         revalidatePath('/expense')
         revalidatePath('/cash-flow')
+        revalidatePath('/')
         return { success: true, data }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -246,6 +253,7 @@ export async function deleteExpense(id: string) {
         if (error) throw error
         revalidatePath('/expense')
         revalidatePath('/cash-flow')
+        revalidatePath('/')
         return { success: true }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -259,6 +267,7 @@ export async function bulkDeleteExpense(ids: string[]) {
         if (error) throw error
         revalidatePath('/expense')
         revalidatePath('/cash-flow')
+        revalidatePath('/')
         return { success: true }
     } catch (error: any) {
         return { success: false, error: error.message }

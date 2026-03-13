@@ -159,7 +159,7 @@ export default function UsersPage() {
 
         const worksheet = XLSX.utils.json_to_sheet(dataToExport)
         const workbook = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Nhân sự Lady Fit')
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Nhân sự Eva Fit')
         XLSX.writeFile(workbook, `LadyFit_NhanSu_${new Date().toISOString().slice(0, 10)}.xlsx`)
         toast.success('Đã xuất file Excel thành công')
     }
@@ -216,7 +216,7 @@ export default function UsersPage() {
                         <UserCircle className="w-8 h-8 text-red-600" />
                         Quản lý Nhân sự
                     </h1>
-                    <p className="text-sm text-slate-500 dark:text-gray-400 font-medium">Quản lý đội ngũ Lady Fit.</p>
+                    <p className="text-sm text-slate-500 dark:text-gray-400 font-medium">Quản lý đội ngũ Eva Fit.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <AnimatePresence>

@@ -179,7 +179,7 @@ export default function BranchesPage() {
                         <Building2 className="w-8 h-8 text-red-600" />
                         Chi nhánh
                     </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium tracking-tight">Quản lý mạng lưới cơ sở Lady Fit trên toàn quốc.</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium tracking-tight">Quản lý mạng lưới cơ sở Eva Fit trên toàn quốc.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <AnimatePresence>

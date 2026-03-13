@@ -159,7 +159,7 @@ export function ContractDetailsSheet({
         <div className="space-y-1.5">
             <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
                 {Icon && <Icon className="w-3 h-3" />}
-                {label}
+                {label} {isEditing && ['package_name', 'payment_method', 'quantity', 'total_amount', 'status', 'id_number', 'email'].includes(name) && <span className="text-red-500">*</span>}
             </Label>
             {isEditing ? (
                 <Input
@@ -308,6 +308,7 @@ export function ContractDetailsSheet({
                                 <DetailRow label="Số điện thoại" value={formData.phone} name="phone" icon={Phone} />
                                 <DetailRow label="Email" value={formData.email} name="email" icon={Mail} />
                             </div>
+                            <DetailRow label="Căn cước công dân" value={formData.id_number} name="id_number" icon={FileText} />
                             <DetailRow label="Địa chỉ" value={formData.member_address} name="member_address" icon={MapPin} />
                         </div>
                     </CardSection>
@@ -321,6 +322,10 @@ export function ContractDetailsSheet({
                                 <DetailRow label="Ngày kết thúc" value={formData.end_date} name="end_date" type="date" icon={Calendar} />
                             </div>
                             <div className="grid grid-cols-2 gap-5">
+                                <DetailRow label="Số lượng/Tháng" value={formData.quantity} name="quantity" type="number" icon={Clock} />
+                                <DetailRow label="Huấn luyện viên" value={formData.trainer_name} name="trainer_name" icon={Dumbbell} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
                                         <Building2 className="w-3 h-3" />
@@ -329,7 +334,7 @@ export function ContractDetailsSheet({
                                     {isEditing ? (
                                         <Select
                                             value={formData.branch_id}
-                                            onValueChange={(val) => setFormData((prev: any) => ({ ...prev, branch_id: val }))}
+                                            onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, branch_id: val }))}
                                         >
                                             <SelectTrigger className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm">
                                                 <SelectValue placeholder="Chọn chi nhánh" />
@@ -354,7 +359,7 @@ export function ContractDetailsSheet({
                                     {isEditing ? (
                                         <Select
                                             value={formData.status}
-                                            onValueChange={(val) => setFormData((prev: any) => ({ ...prev, status: val }))}
+                                            onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, status: val }))}
                                         >
                                             <SelectTrigger className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm">
                                                 <SelectValue placeholder="Chọn trạng thái" />
@@ -366,11 +371,10 @@ export function ContractDetailsSheet({
                                             </SelectContent>
                                         </Select>
                                     ) : (
-                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">{formData.status || defaultStatus}</p>
+                                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">{formData.status || defaultStatus}</p>
                                     )}
                                 </div>
                             </div>
-                            <DetailRow label="Huấn luyện viên" value={formData.trainer_name} name="trainer_name" icon={Dumbbell} />
                         </div>
                     </CardSection>
 
@@ -399,6 +403,21 @@ export function ContractDetailsSheet({
                                     <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.total_amount_text || '-'}</p>
                                 </div>
                             </div>
+                        </div>
+                    </CardSection>
+
+                    {/* Section: Chữ ký khách hàng */}
+                    <CardSection title="Chữ ký khách hàng" icon={FileText}>
+                        <div className="flex flex-col items-center justify-center p-4 min-h-[120px] bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                            {formData.signature_url ? (
+                                <img 
+                                    src={formData.signature_url} 
+                                    alt="Chữ ký khách hàng" 
+                                    className="max-h-32 object-contain"
+                                />
+                            ) : (
+                                <p className="text-sm text-slate-400 italic">Chưa có chữ ký</p>
+                            )}
                         </div>
                     </CardSection>
                 </div>

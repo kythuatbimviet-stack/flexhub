@@ -41,7 +41,7 @@ import {
 } from '@/components/ui/tooltip'
 
 const mainNavigation = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Báo cáo', href: '/', icon: LayoutDashboard },
     { name: 'Khách hàng', href: '/clients', icon: Users },
     { name: 'Hợp đồng', href: '/contracts', icon: FileText },
     { name: 'Lộ trình tăng cân', href: '/weight-tracking', icon: Activity },
@@ -97,7 +97,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                                     <div className="relative h-9 w-9 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/10 border border-gray-100 dark:border-gray-800 overflow-hidden">
                                         <img
                                             src="/logo.png"
-                                            alt="Lady Fit Logo"
+                                            alt="Eva Fit Logo"
                                             className="w-7 h-7 object-contain transform group-hover:scale-110 transition-transform duration-300"
                                         />
                                     </div>
@@ -105,8 +105,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                             </Link>
                         </div>
                         {!isCollapsed && (
-                            <span className="font-bold text-lg tracking-tight text-gray-950 dark:text-white transition-opacity duration-300">
-                                Lady Fit <span className="text-red-600 dark:text-red-400 font-bold text-[10px] ml-1 px-2 py-0.5 bg-red-50 dark:bg-red-900/30 rounded-full uppercase tracking-wider">ERP</span>
+                            <span className="font-semibold text-lg tracking-tight text-gray-950 dark:text-white transition-opacity duration-300">
+                                Eva Fit <span className="text-red-600 dark:text-red-400 font-semibold text-[10px] ml-1 px-2 py-0.5 bg-red-50 dark:bg-red-900/30 rounded-full tracking-wider">ERP</span>
                             </span>
                         )}
                     </div>

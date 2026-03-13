@@ -40,7 +40,7 @@ import {
     CreditCard,
     RotateCcw
 } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchRevenue, bulkDeleteRevenue } from '@/app/actions/financial'
 import { fetchBranches } from '@/app/actions/branches'
 import { toast } from 'sonner'
@@ -62,7 +62,8 @@ export default function RevenuePage() {
     const [detailSheetOpen, setDetailSheetOpen] = React.useState(false)
     const [showMobileFilters, setShowMobileFilters] = React.useState(false)
 
-    const { data: revenueData, refetch } = useQuery({
+    const queryClient = useQueryClient()
+    const { data: revenueData, refetch: originalRefetch } = useQuery({
         queryKey: ['revenue'],
         queryFn: async () => {
             const result = await fetchRevenue()
@@ -70,6 +71,11 @@ export default function RevenuePage() {
             return result.data
         },
     })
+
+    const refetch = () => {
+        originalRefetch()
+        queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
+    }
 
     const { data: branches } = useQuery({
         queryKey: ['branches'],

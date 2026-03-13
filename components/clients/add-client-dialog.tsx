@@ -62,6 +62,7 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select'
+import { SignatureField } from '@/components/ui/signature-field'
 
 const clientSchema = z.object({
     id: z.string().min(1, 'Mã khách hàng là bắt buộc'),
@@ -71,23 +72,24 @@ const clientSchema = z.object({
     address: z.string().optional(),
     zalo_id: z.string().optional(),
     facebook_id: z.string().optional(),
-    status: z.string().default('Chốt đăng kí'),
-    assigned_pt: z.string().optional(),
+    status: z.string().min(1, 'Trạng thái là bắt buộc'),
+    assigned_pt: z.string().min(1, 'PT phụ trách là bắt buộc'),
     pt_name: z.string().optional(),
-    dob: z.string().optional(),
-    age: z.coerce.number().optional(),
-    height: z.coerce.number().optional(),
-    weight: z.coerce.number().optional(),
+    dob: z.string().min(1, 'Ngày sinh là bắt buộc'),
+    age: z.coerce.number().min(1, 'Tuổi phải lớn hơn 0'),
+    height: z.coerce.number().min(1, 'Chiều cao là bắt buộc'),
+    weight: z.coerce.number().min(1, 'Cân nặng là bắt buộc'),
     target_weight: z.coerce.number().optional(),
     registration_type: z.string().optional(),
     training_time: z.string().optional(),
     customer_cycle: z.string().optional(),
-    source: z.string().optional(),
+    source: z.string().min(1, 'Nguồn khách là bắt buộc'),
     referrer: z.string().optional(),
-    goal: z.string().optional(),
+    goal: z.string().min(1, 'Mục tiêu là bắt buộc'),
     medical_history: z.string().optional(),
     notes: z.string().optional(),
-    branch_id: z.string().optional().nullable(),
+    branch_id: z.string().min(1, 'Chi nhánh là bắt buộc').nullable(),
+    signature_url: z.string().optional(),
 })
 
 type ClientFormValues = z.infer<typeof clientSchema>
@@ -183,6 +185,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
             medical_history: '',
             notes: '',
             branch_id: null,
+            signature_url: '',
         },
     })
 
@@ -293,7 +296,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                         Thông tin Khách hàng mới
                     </DialogTitle>
                     <DialogDescription className="text-gray-500 flex items-center justify-between gap-4">
-                        <span>Hoàn tất thông tin bên dưới</span>
+                        <span>Hoàn tất thông tin bên dưới (<span className="text-red-600">*</span> là bắt buộc)</span>
                         <Select
                             value={form.watch('status')}
                             onValueChange={(val) => form.setValue('status', val)}
@@ -333,7 +336,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="id"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-bold">Mã Khách hàng</FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 font-bold">Mã Khách hàng <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
                                                 <Input
                                                     readOnly
@@ -351,7 +354,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="member_name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Họ và Tên hội viên</FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 font-medium">Họ và Tên hội viên <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
                                                 <Input placeholder="Nguyễn Văn A" {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
                                             </FormControl>
@@ -392,7 +395,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="dob"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Ngày tháng năm sinh</FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 font-medium">Ngày tháng năm sinh <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
                                                 <Input type="date" {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
                                             </FormControl>
@@ -405,7 +408,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="age"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Tuổi</FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 font-medium">Tuổi <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
                                                 <Input readOnly placeholder="Tự động" type="number" {...field} value={field.value ?? ''} className="rounded-xl border-gray-100 bg-gray-100/50 text-gray-500" />
                                             </FormControl>
@@ -558,7 +561,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="height"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Chiều cao (cm)</FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 font-medium">Chiều cao (cm) <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
                                                 <Input type="number" step="0.1" {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
                                             </FormControl>
@@ -571,7 +574,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="weight"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Cân nặng (kg)</FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 font-medium">Cân nặng (kg) <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
                                                 <Input type="number" step="0.1" {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
                                             </FormControl>
@@ -598,7 +601,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                 name="goal"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs text-gray-500 font-medium">Mục tiêu tập luyện</FormLabel>
+                                        <FormLabel className="text-xs text-gray-500 font-medium">Mục tiêu của bạn <span className="text-red-600">*</span></FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
                                                 <SelectTrigger className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm">
@@ -631,7 +634,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="pt_name"
                                     render={({ field }) => (
                                         <FormItem className="flex flex-col">
-                                            <FormLabel className="text-xs text-gray-500 font-medium">PT Phụ trách</FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 font-medium">PT phụ trách <span className="text-red-600">*</span></FormLabel>
                                             <Popover modal={true} open={ptOpen} onOpenChange={(open) => {
                                                 setPtOpen(open)
                                                 if (!open) setPtSearchTerm('')
@@ -726,7 +729,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="branch_id"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Chi nhánh</FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 font-medium">Chi nhánh <span className="text-red-600">*</span></FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value || undefined} defaultValue={field.value || undefined}>
                                                 <FormControl>
                                                     <SelectTrigger className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm">
@@ -846,7 +849,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="source"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Nguồn khách hàng</FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 font-medium">Nguồn khách hàng <span className="text-red-600">*</span></FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
                                                     <SelectTrigger className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm">
@@ -879,6 +882,29 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     )}
                                 />
                             </div>
+                        </div>
+
+                        {/* Section 5: Chữ ký khách hàng */}
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-medium text-red-600 flex items-center gap-2">
+                                <Activity className="w-4 h-4" />
+                                Chữ ký Khách hàng
+                            </h3>
+                            <FormField
+                                control={form.control}
+                                name="signature_url"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <SignatureField 
+                                                value={field.value} 
+                                                onChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </div>
 
                         <DialogFooter className="pt-6 border-t gap-2 sm:gap-0">

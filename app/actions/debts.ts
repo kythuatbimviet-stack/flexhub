@@ -159,6 +159,7 @@ export async function deleteDebt(id: string) {
 
         if (error) throw error
         revalidatePath('/debts')
+        revalidatePath('/')
         return { success: true }
     } catch (error: any) {
         return { success: false, error: error.message }

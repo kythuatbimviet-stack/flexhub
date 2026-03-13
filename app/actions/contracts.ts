@@ -75,9 +75,15 @@ export async function createContract(contract: any) {
     const supabase = await createClient()
     try {
         const enriched = computeAmountTextFields(contract)
+        
+        // Filter out fields that don't exist in 'contracts' table to prevent schema errors
+        // Known problematic fields: center_address, assigned_pt, etc.
+        // We will keep only standard fields and those explicitly allowed.
+        const { center_address, assigned_pt, ...dbValues } = enriched
+
         const { data, error } = await supabase
             .from('contracts')
-            .insert([enriched])
+            .insert([dbValues])
             .select()
             .single()
 
@@ -115,7 +121,7 @@ export async function finalizeContract(id: string, finalizeData: any) {
                 .from('revenue')
                 .insert([{
                     amount: debtPlan.paid_upfront,
-                    client_id: contractData.client_id,
+                    customer_id: contractData.client_id,
                     branch_id: contractData.branch_id,
                     contract_id: contractData.id,
                     category_id: 'Hợp đồng',
@@ -161,6 +167,7 @@ export async function finalizeContract(id: string, finalizeData: any) {
         revalidatePath('/contracts')
         revalidatePath('/debts')
         revalidatePath('/financial/revenue')
+        revalidatePath('/')
         return { success: true, data: contractData }
     } catch (error: any) {
         console.error('Finalize Contract Error:', error)
@@ -180,6 +187,7 @@ export async function updateContract(id: string, updates: any) {
 
         if (error) throw error
         revalidatePath('/contracts')
+        revalidatePath('/')
         return { success: true, data: data[0] }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -196,6 +204,7 @@ export async function deleteContract(id: string) {
 
         if (error) throw error
         revalidatePath('/contracts')
+        revalidatePath('/')
         return { success: true }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -212,6 +221,7 @@ export async function bulkDeleteContracts(ids: string[]) {
 
         if (error) throw error
         revalidatePath('/contracts')
+        revalidatePath('/')
         return { success: true }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -229,8 +239,48 @@ export async function importContracts(contracts: any[]) {
 
         if (error) throw error
         revalidatePath('/contracts')
+        revalidatePath('/')
         return { success: true, data }
     } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+export async function generateContractId(branchId?: string | null) {
+    try {
+        const adminClient = await createAdminClient()
+        const now = new Date()
+        const year = now.getFullYear().toString().slice(-2)
+        const month = String(now.getMonth() + 1).padStart(2, '0')
+
+        let branchCode = '00'
+        if (branchId) {
+            branchCode = String(branchId).toUpperCase()
+        } else {
+            const { data: { user: authUser } } = await adminClient.auth.getUser()
+            if (authUser?.email) {
+                const { data: userProfile } = await adminClient
+                    .from('users')
+                    .select('branch_id')
+                    .eq('email', authUser.email)
+                    .single()
+                if (userProfile?.branch_id) {
+                    branchCode = String(userProfile.branch_id).toUpperCase()
+                }
+            }
+        }
+
+        const prefix = `HD-${branchCode}-${year}${month}`
+        const { data: existing } = await adminClient
+            .from('contracts')
+            .select('id')
+            .like('id', `${prefix}%`)
+
+        const seq = String((existing?.length ?? 0) + 1).padStart(3, '0')
+        const newId = `${prefix}${seq}`
+
+        return { success: true, data: newId }
+    } catch (error: any) {
+        console.error('Generate Contract ID Error:', error)
         return { success: false, error: error.message }
     }
 }

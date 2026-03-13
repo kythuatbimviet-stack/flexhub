@@ -75,6 +75,23 @@ export async function deleteConfigParam(tableName: string, id: number) {
         return { success: false, error: error.message }
     }
 }
+
+export async function deleteBulkConfigParams(tableName: string, ids: number[]) {
+    try {
+        const supabase = await createAdminClient()
+        const { error } = await supabase
+            .from(tableName)
+            .delete()
+            .in('id', ids)
+
+        if (error) throw error
+        revalidatePath('/config-params')
+        return { success: true }
+    } catch (error: any) {
+        console.error(`Error bulk deleting from ${tableName}:`, error)
+        return { success: false, error: error.message }
+    }
+}
 const ALL_CONFIG_TABLES = [
     'config_client_goal',
     'config_client_registration_type',

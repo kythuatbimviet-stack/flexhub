@@ -151,7 +151,7 @@ export default function ZaloUsersPage() {
 
         const worksheet = XLSX.utils.json_to_sheet(dataToExport)
         const workbook = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Zalo Users Lady Fit')
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Zalo Users Eva Fit')
         XLSX.writeFile(workbook, `LadyFit_ZaloUsers_${new Date().toISOString().slice(0, 10)}.xlsx`)
         toast.success('Đã xuất file Excel thành công')
     }
@@ -207,7 +207,7 @@ export default function ZaloUsersPage() {
                         <UserStar className="w-8 h-8 text-blue-600" />
                         Quản lý Zalo Users
                     </h1>
-                    <p className="text-sm text-slate-500 dark:text-gray-400 font-medium">Quản lý danh sách người dùng tương tác qua Zalo OA của Lady Fit.</p>
+                    <p className="text-sm text-slate-500 dark:text-gray-400 font-medium">Quản lý danh sách người dùng tương tác qua Zalo OA của Eva Fit.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <AnimatePresence>

@@ -30,7 +30,7 @@ export function LogoLoading({ className, size = 60 }: LogoLoadingProps) {
 
             <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-600 animate-pulse">
-                    Lady Fit
+                    Eva Fit
                 </span>
                 <div className="flex gap-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-red-600 animate-bounce [animation-delay:-0.3s]" />

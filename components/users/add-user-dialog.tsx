@@ -122,7 +122,7 @@ export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
                         Thêm nhân viên mới
                     </DialogTitle>
                     <DialogDescription className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                        Nhập thông tin cơ bản để tạo tài khoản nhân viên trong hệ thống Lady Fit.
+                        Nhập thông tin cơ bản để tạo tài khoản nhân viên trong hệ thống Eva Fit.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -155,7 +155,7 @@ export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
                                         <FormItem>
                                             <FormLabel className="text-xs font-medium text-slate-700 dark:text-slate-300">Email (ID đăng nhập)</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="email@ladyfit.vn" {...field} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 transition-all h-11 border-2" />
+                                                <Input placeholder="email@evafit.vn" {...field} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 transition-all h-11 border-2" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

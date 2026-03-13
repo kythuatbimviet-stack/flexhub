@@ -33,8 +33,8 @@ export function getContractHTMLFromTemplate(
   let discountedPriceWords = ''
   try { discountedPriceWords = contract.discounted_price_text || (contract.discounted_price ? numberToVietnameseWords(contract.discounted_price) + ' đồng chẵn' : '') } catch { discountedPriceWords = '' }
 
-  const centerName = contract.facility_name || contract.branches?.name || 'TRUNG TÂM LADY FIT'
-  const centerShortName = contract.short_name || 'LADY FIT'
+  const centerName = contract.facility_name || contract.branches?.name || 'TRUNG TÂM EVA FIT'
+  const centerShortName = contract.short_name || 'EVA FIT'
 
   // 1. Start with the "hardcoded" core mappings that need logic
   const map: Record<string, string> = {
@@ -213,8 +213,8 @@ export function getContractHTML(contract: any): string {
     .clauses { font-size: 11px; line-height: 1.7; text-align: justify; }
     .clauses p { margin-bottom: 6px; }
     .signature-grid { display: grid; grid-template-columns: 1fr 1fr; text-align: center; margin-top: 60px; }
-    .sig-name { font-weight: 700; margin-top: 70px; }
-    .sig-note { font-size: 10px; font-style: italic; color: #555; }
+    .sig-name { font-weight: 700; margin-top: 10px; }
+    .sig-img { max-height: 60px; object-contain: contain; margin: 0 auto; }
     .footer { margin-top: 60px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 8px; }
     .indent { text-indent: 2em; text-align: justify; }
     @media print {
@@ -335,7 +335,8 @@ export function getContractHTML(contract: any): string {
     </div>
     <div>
       <div style="font-weight:700;text-transform:uppercase;">Hội viên (Khách hàng)</div>
-      <div class="sig-note">(Ký và ghi rõ họ tên)</div>
+      <div class="sig-note" style="margin-bottom: 10px;">(Ký và ghi rõ họ tên)</div>
+      ${contract.signature_url ? `<img src="${contract.signature_url}" class="sig-img" alt="Customer Signature" />` : '<div style="height:60px;"></div>'}
       <div class="sig-name">${contract.member_name || ''}</div>
     </div>
   </div>
@@ -502,10 +503,17 @@ export const ContractPrintTemplate = React.forwardRef<HTMLDivElement, ContractPr
             </div>
             <p className="font-bold">{contract.center_representative || '................................'}</p>
           </div>
-          <div className="space-y-20">
+          <div className="space-y-4">
             <div>
               <p className="font-bold uppercase">Hội viên (Khách hàng)</p>
-              <p className="text-[10px] italic">(Ký và ghi rõ họ tên)</p>
+              <p className="text-[10px] italic mb-2">(Ký và ghi rõ họ tên)</p>
+              {contract.signature_url ? (
+                <div className="flex justify-center">
+                  <img src={contract.signature_url} className="h-14 object-contain" alt="Signature" />
+                </div>
+              ) : (
+                <div className="h-14"></div>
+              )}
             </div>
             <p className="font-bold">{contract.member_name}</p>
           </div>

@@ -53,9 +53,9 @@ export function ImportUsersDialog({ onSuccess }: { onSuccess: () => void }) {
         const template = [
             {
                 name: 'Nguyễn Văn A',
-                email: 'nva@ladyfit.vn',
+                email: 'nva@evafit.vn',
                 phone: '0987654321',
-                branch_name: 'Lady Fit Thanh Xuân',
+                branch_name: 'Eva Fit Thanh Xuân',
                 position: 'Huấn luyện viên',
                 department: 'Kinh doanh',
                 role_id: 'User',
@@ -65,7 +65,7 @@ export function ImportUsersDialog({ onSuccess }: { onSuccess: () => void }) {
         const worksheet = XLSX.utils.json_to_sheet(template)
         const workbook = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Template')
-        XLSX.writeFile(workbook, 'LadyFit_Users_Template.xlsx')
+        XLSX.writeFile(workbook, 'EvaFit_Users_Template.xlsx')
     }
 
     const handleImport = async () => {
