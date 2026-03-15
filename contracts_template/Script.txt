@@ -1,0 +1,136 @@
+const CONFIG = {
+  TEMPLATE_ID: '1e8xRfjiW5rthelPJ4Q3jbPYI8tfTduyiAvWkyj4CO2c', // Thay ID file Doc mẫu vào đây
+  FOLDER_ID: '1GgU2UlHl1ief_JYILaQabhh4RcXIQkQc',         // Thay ID thư mục lưu PDF vào đây
+  SHEET_NAME: 'Contracts',                         // Tên sheet chứa dữ liệu
+  ID_COLUMN_NAME: 'ID'                             // Tên cột chứa mã hợp đồng để tìm kiếm
+};
+
+function HD_NewPDF(contractId, tenfile, client_name, client_email) {
+  // 1. Lấy dữ liệu từ Sheet
+  const ss = SpreadsheetApp.openById(idfile_data);
+  const sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
+  if (!sheet) throw new Error("Không tìm thấy sheet tên: " + CONFIG.SHEET_NAME);
+
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0]; // Dòng tiêu đề
+  
+  // 2. Tìm dòng dữ liệu khớp với contractId
+  const idIndex = headers.indexOf(CONFIG.ID_COLUMN_NAME);
+  if (idIndex === -1) throw new Error("Không tìm thấy cột ID: " + CONFIG.ID_COLUMN_NAME);
+
+  let rowData = null;
+  let foundRowIndex = -1; // [MỚI] Biến để lưu vị trí dòng tìm thấy
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][idIndex] == contractId) {
+      rowData = data[i];
+      foundRowIndex = i; // [MỚI] Lưu lại chỉ số dòng (index tính từ 0)
+      break;
+    }
+  }
+
+  if (!rowData) throw new Error("Không tìm thấy hợp đồng mã: " + contractId);
+
+  // 3. Tạo bản sao của file mẫu
+  const templateFile = DriveApp.getFileById(CONFIG.TEMPLATE_ID);
+  const targetFolder = DriveApp.getFolderById(idfolder_hopdong);
+  const tempDocFile = templateFile.makeCopy("Hợp đồng_" + contractId, targetFolder);
+  const tempDocId = tempDocFile.getId();
+  
+  // 4. Mở file tạm để điền dữ liệu
+  const doc = DocumentApp.openById(tempDocId);
+  const body = doc.getBody();
+
+  // 5. Duyệt qua từng cột và thay thế vào Doc
+  headers.forEach((header, index) => {
+    let value = rowData[index];
+    
+    // Xử lý dữ liệu Date
+    if (value instanceof Date) {
+      value = Utilities.formatDate(value, Session.getScriptTimeZone(), "dd/MM/yyyy");
+    }
+    
+    // Xử lý dữ liệu rỗng
+    if (value === "" || value === null) value = "....................";
+
+    // A. Thay thế dạng thường
+    body.replaceText("<<\\[" + header + "\\]>>", value.toString());
+
+    // B. Thay thế dạng UPPER
+    body.replaceText("<<upper\\(\\[" + header + "\\]\\)>>", value.toString().toUpperCase());
+
+    // C. Thay thế dạng TEXT/Tiền tệ
+    let formattedValue = value;
+    if (!isNaN(parseFloat(rowData[index])) && isFinite(rowData[index])) {
+       formattedValue = Number(rowData[index]).toLocaleString('vi-VN');
+    }
+    body.replaceText("<<text\\(\\[" + header + "\\]\\)>>", formattedValue.toString());
+  });
+
+  // Lưu và đóng file doc tạm
+  doc.saveAndClose();
+
+  // 6. Chuyển đổi sang PDF
+  const pdfBlob = tempDocFile.getAs(MimeType.PDF);
+  const pdfFile = targetFolder.createFile(pdfBlob).setName(tenfile);
+  const pdfUrl = pdfFile.getUrl(); // Lấy đường dẫn file
+
+  // 7. Xóa file Doc tạm
+  tempDocFile.setTrashed(true);
+
+  // 8. Ghi link PDF vào cột "File hợp đồng"
+  // Tìm vị trí cột "File hợp đồng" trong header
+  const targetColumnName = "File hợp đồng"; 
+  const targetColIndex = headers.indexOf(targetColumnName);
+
+  if (targetColIndex !== -1 && foundRowIndex !== -1) {
+    // getRange(row, col) trong Apps Script tính từ 1.
+    // foundRowIndex đang tính từ 0 nên phải +1.
+    // targetColIndex đang tính từ 0 nên phải +1.
+    sheet.getRange(foundRowIndex + 1, targetColIndex + 1).setValue(pdfUrl);
+    console.log("Đã cập nhật link vào cột: " + targetColumnName);
+  } else {
+    console.log("Cảnh báo: Không tìm thấy cột '" + targetColumnName + "' để ghi link.");
+  }
+
+  // --- [PHẦN MỚI THÊM] 9. Gửi Email HTML đính kèm PDF ---
+  if (client_email && client_email.toString().includes("@")) {
+    try {
+      // Nội dung HTML chuyên nghiệp
+      const emailSubject = `Hợp đồng ${client_name} - Eva's Fit Nam Định`;
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6;">
+            <p>Trung tâm Eva's Fit Nam Định xin chào chị <strong>${client_name}</strong>,</p>
+            
+            <p>Cảm ơn chị đã tin tưởng và lựa chọn Eva's Fit.</p>
+            
+            <p>Đây là biên nhận và hợp đồng của chị tại Eva's Fit (HĐ). Mọi thông tin chi tiết chị vui lòng kiểm tra trong file đính kèm.</p>
+            
+            <p>Nếu cần hỗ trợ thêm, chị có thể phản hồi lại email này hoặc liên hệ trực tiếp với quản lý trung tâm.</p>
+            <br>
+            <p>Trân trọng,<br>
+            <strong>Đội ngũ Eva's Fit Nam Định</strong></p>
+            <hr style="border:none; border-top:1px solid #eee; margin: 20px 0;">
+            <small style="color: #888;">Email này được gửi tự động từ hệ thống.</small>
+        </div>
+      `;
+
+      GmailApp.sendEmail(client_email, emailSubject, "", {
+        htmlBody: htmlBody,
+        attachments: [pdfBlob], // Đính kèm file PDF vừa tạo ở bước 6
+        name: "Eva's Fit Nam Định" // Tên hiển thị người gửi
+      });
+
+      console.log("Đã gửi email thành công tới: " + client_email);
+    } catch (e) {
+      console.log("Lỗi gửi email: " + e.toString());
+    }
+  } else {
+    console.log("Không có email hợp lệ hoặc email rỗng. Bỏ qua gửi mail.");
+  }
+  // -----------------------------------------------------
+
+  // 10. Trả về kết quả
+  console.log("Đã tạo xong PDF: " + pdfUrl);
+  return pdfUrl;
+}

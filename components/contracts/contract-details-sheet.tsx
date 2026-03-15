@@ -143,6 +143,11 @@ export function ContractDetailsSheet({
         window.open(`/contracts/print/${encodeURIComponent(contract.id)}`, '_blank')
     }
 
+    const handleExportPDFV2 = () => {
+        if (!contract?.id) return
+        window.open(`/contracts/print-v2/${encodeURIComponent(contract.id)}`, '_blank')
+    }
+
     const CardSection = ({ title, icon: Icon, children }: any) => (
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
             <div className="flex items-center gap-3 mb-6">
@@ -473,6 +478,15 @@ export function ContractDetailsSheet({
                                 >
                                     <Download className="w-4 h-4 mr-2" />
                                     Xuất PDF
+                                </Button>
+                                <Button
+                                    onClick={handleExportPDFV2}
+                                    variant="outline"
+                                    className="rounded-xl h-11 px-6 font-bold text-[13px] border-emerald-100 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/30 dark:hover:bg-emerald-950/20 transition-all font-inter border-2"
+                                    title="Xuất hợp đồng theo mẫu chuẩn (V2)"
+                                >
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Xuất HĐ mới
                                 </Button>
                                 <Button
                                     onClick={() => setIsEditing(true)}

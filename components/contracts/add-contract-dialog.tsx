@@ -71,6 +71,7 @@ import { fetchMemberships } from '@/app/actions/memberships'
 import { fetchUserByEmail, fetchUsers } from '@/app/actions/users'
 import { addDays } from 'date-fns'
 import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
+import { useQuery } from '@tanstack/react-query'
 const contractFormSchema = z.object({
     id: z.string().min(2, { message: 'Mã hợp đồng phải có ít nhất 2 ký tự' }),
     client_id: z.string().min(1, { message: 'Vui lòng chọn khách hàng' }),
@@ -122,7 +123,6 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
     const [open, setOpen] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
     const [generatingId, setGeneratingId] = React.useState(false)
-    const [clients, setClients] = React.useState<any[]>(initialClient ? [initialClient] : [])
     const [branches, setBranches] = React.useState<any[]>(
         initialClient?.branch_id
             ? [{ id: initialClient.branch_id, name: initialClient.branch_name || initialClient.branch_id }]
@@ -130,6 +130,28 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
     )
     const [packages, setPackages] = React.useState<any[]>([])
     const [statuses, setStatuses] = React.useState<ConfigItem[]>([])
+
+    const { data: clients = [], isLoading: clientsLoading } = useQuery({
+        queryKey: ['clients-all'],
+        queryFn: async () => {
+            const res = await fetchClients()
+            return res.success ? (res.data ?? []) : []
+        },
+        staleTime: 30 * 60 * 1000,
+    })
+
+    const [clientSearchTerm, setClientSearchTerm] = React.useState('')
+    const [clientOpen, setClientOpen] = React.useState(false)
+
+    const filteredClients = React.useMemo(() => {
+        if (!clientSearchTerm) return clients
+        const term = clientSearchTerm.toLowerCase()
+        return clients.filter((client: any) =>
+            client.member_name?.toLowerCase().includes(term) ||
+            client.phone?.toLowerCase().includes(term) ||
+            client.email?.toLowerCase().includes(term)
+        )
+    }, [clients, clientSearchTerm])
 
     const form = useForm<z.infer<typeof contractFormSchema>>({
         resolver: zodResolver(contractFormSchema),
@@ -237,8 +259,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             }
 
             const loadData = async () => {
-                const [clientsRes, branchesRes, packagesRes, statusRes, usersRes] = await Promise.all([
-                    fetchClients(),
+                const [branchesRes, packagesRes, statusRes, usersRes] = await Promise.all([
                     fetchBranches(),
                     fetchMemberships(),
                     fetchConfigParams('config_contract_status'),
@@ -246,51 +267,11 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                 ])
                 if (statusRes.success && statusRes.data) {
                     setStatuses(statusRes.data)
-                    // Set default status if not already set or is default
                     const currentStatus = form.getValues('status')
                     if (currentStatus === 'Đang thực hiện' || !currentStatus) {
                         const defaultStatus = statusRes.data.find(s => s.is_default) || statusRes.data[0]
                         if (defaultStatus) {
                             form.setValue('status', defaultStatus.nam)
-                        }
-                    }
-                }
-
-                if (clientsRes.success) {
-                    const clientList = clientsRes.data || []
-
-                    // Merge initial client if not present in the fetched list, just to be safe
-                    const fetchedIds = new Set(clientList.map((c: any) => c.id))
-                    const initialArray = initialClient && !fetchedIds.has(initialClient.id) ? [initialClient] : []
-                    setClients([...initialArray, ...clientList])
-
-                    // Pre-select client if initialClientId is provided but no initialClient object is present
-                    if (initialClientId && !initialClient) {
-                        form.setValue('client_id', initialClientId)
-                        const client = clientList.find((c: any) => c.id === initialClientId)
-                        if (client) {
-                            form.setValue('member_name', client.member_name)
-                            form.setValue('phone', client.phone || '')
-                            form.setValue('email', client.email || '')
-                            if (client.member_address || client.address) {
-                                form.setValue('member_address', client.member_address || client.address)
-                            }
-                            form.setValue('trainer_name', client.pt_name || '')
-                            if (client.dob) {
-                                form.setValue('dob', client.dob.split('T')[0])
-                            }
-                            if (client.signature_url) {
-                                form.setValue('signature_url', client.signature_url)
-                            }
-                            if (client.assigned_pt) {
-                                form.setValue('assigned_pt', client.assigned_pt)
-                            } else {
-                                form.setValue('assigned_pt', '')
-                            }
-
-                            if (client.branch_id) {
-                                form.setValue('branch_id', client.branch_id)
-                            }
                         }
                     }
                 }
@@ -329,6 +310,41 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             loadData()
         }
     }, [open, initialClientId, initialClient, form])
+
+    // Specific effect to handle initial selection from shared cache
+    React.useEffect(() => {
+        if (open && clients.length > 0) {
+            if (initialClientId || initialClient?.id) {
+                const targetId = initialClientId || initialClient.id
+                form.setValue('client_id', targetId)
+                const client = clients.find((c: any) => c.id === targetId)
+                if (client) {
+                    form.setValue('member_name', client.member_name)
+                    form.setValue('phone', client.phone || '')
+                    form.setValue('email', client.email || '')
+                    if (client.member_address || client.address) {
+                        form.setValue('member_address', client.member_address || client.address)
+                    }
+                    form.setValue('trainer_name', client.pt_name || '')
+                    if (client.dob) {
+                        form.setValue('dob', client.dob.split('T')[0])
+                    }
+                    if (client.signature_url) {
+                        form.setValue('signature_url', client.signature_url)
+                    }
+                    if (client.assigned_pt) {
+                        form.setValue('assigned_pt', client.assigned_pt)
+                    } else {
+                        form.setValue('assigned_pt', '')
+                    }
+
+                    if (client.branch_id) {
+                        form.setValue('branch_id', client.branch_id)
+                    }
+                }
+            }
+        }
+    }, [open, clients, initialClientId, initialClient, form])
 
     // Watch assigned_pt to update staff_phone automatically
     const watchAssignedPt = form.watch('assigned_pt')
@@ -523,31 +539,105 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                 Thông tin Khách hàng
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField
+                                    <FormField
                                     control={form.control}
                                     name="client_id"
                                     render={({ field }) => (
-                                        <FormItem>
+                                        <FormItem className="flex flex-col">
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Chọn Khách hàng (Sẵn có)</FormLabel>
-                                            <Select
-                                                onValueChange={(val) => {
-                                                    field.onChange(val)
-                                                    onClientChange(val)
-                                                }}
-                                                value={field.value || ""}
-                                                disabled={!!initialClientId || !!initialClient}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11 overflow-hidden disabled:opacity-75 disabled:cursor-not-allowed">
-                                                        <SelectValue placeholder="Tìm khách hàng..." className="truncate text-left" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800 max-h-60 w-[--radix-select-trigger-width]" position="popper" sideOffset={4}>
-                                                    {clients.map(client => (
-                                                        <SelectItem key={`client-${client.id}`} value={client.id}>{client.member_name} - {client.phone}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <Popover modal={true} open={clientOpen} onOpenChange={(open) => {
+                                                setClientOpen(open)
+                                                if (!open) setClientSearchTerm('')
+                                            }}>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button
+                                                            variant="outline"
+                                                            role="combobox"
+                                                            className={cn(
+                                                                "w-full justify-between rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11 px-3 font-normal",
+                                                                !field.value && "text-muted-foreground"
+                                                            )}
+                                                        >
+                                                            <div className="flex items-center gap-2 overflow-hidden w-full text-sm">
+                                                                <UsersIcon className="w-4 h-4 shrink-0 text-gray-400" />
+                                                                <span className="truncate">
+                                                                    {field.value
+                                                                        ? clients.find(c => c.id === field.value)?.member_name || "Khách hàng không xác định"
+                                                                        : "Tìm khách hàng..."}
+                                                                </span>
+                                                            </div>
+                                                            {clientsLoading ? (
+                                                                <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin opacity-50" />
+                                                            ) : (
+                                                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                            )}
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent
+                                                    className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-gray-200 dark:border-gray-800"
+                                                    align="start"
+                                                >
+                                                    <div className="p-2 border-b border-gray-100 dark:border-gray-800">
+                                                        <div className="relative">
+                                                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                                            <Input
+                                                                placeholder="Tìm tên, số điện thoại hoặc email..."
+                                                                value={clientSearchTerm}
+                                                                onChange={(e) => setClientSearchTerm(e.target.value)}
+                                                                className="pl-8 h-9 border-none bg-gray-50/50 dark:bg-gray-900 rounded-lg focus-visible:ring-0"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <ScrollArea className="h-[300px]">
+                                                        <div className="p-1">
+                                                            {clientsLoading ? (
+                                                                <div className="p-4 text-center text-xs text-gray-500 flex items-center justify-center gap-2">
+                                                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                                                    Đang tải danh sách...
+                                                                </div>
+                                                            ) : filteredClients.length === 0 ? (
+                                                                <div className="p-4 text-center text-xs text-gray-500">
+                                                                    Không tìm thấy khách hàng nào
+                                                                </div>
+                                                            ) : (
+                                                                filteredClients.map((client: any) => (
+                                                                    <button
+                                                                        key={client.id}
+                                                                        type="button"
+                                                                        className={cn(
+                                                                            "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
+                                                                            field.value === client.id && "bg-red-50 dark:bg-red-900/20 text-red-600"
+                                                                        )}
+                                                                        onClick={() => {
+                                                                            field.onChange(client.id)
+                                                                            onClientChange(client.id)
+                                                                            setClientOpen(false)
+                                                                        }}
+                                                                    >
+                                                                        <div className="flex flex-col items-start min-w-0">
+                                                                            <span className="font-medium truncate w-full">{client.member_name}</span>
+                                                                            <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                                                                                <span className="truncate">{client.phone}</span>
+                                                                                {client.email && (
+                                                                                    <>
+                                                                                        <span className="w-1 h-1 rounded-full bg-gray-300" />
+                                                                                        <span className="truncate">{client.email}</span>
+                                                                                    </>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                        {field.value === client.id && (
+                                                                            <Check className="ml-auto h-4 w-4" />
+                                                                        )}
+                                                                    </button>
+                                                                ))
+                                                            )}
+                                                        </div>
+                                                    </ScrollArea>
+                                                </PopoverContent>
+                                            </Popover>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -1119,7 +1209,6 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                                     onBranchChange(val)
                                                 }}
                                                 value={field.value || ""}
-                                                disabled
                                             >
                                                 <FormControl>
                                                     <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11 overflow-hidden">

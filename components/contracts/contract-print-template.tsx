@@ -148,7 +148,188 @@ export function getContractHTMLFromTemplate(
 </html>`
 }
 
+// ---------- CONFIG values (read from config/config.md convention) ----------
+// These values can be updated in config/config.md by admin
+const CONTRACT_CONFIG = {
+  LOGO_URL: 'https://cdn-icons-png.flaticon.com/128/281/281764.png',
+  HOTLINE: '0832 646 686',
+}
+
+// ---------- V2 Template builder (uses fixed contracts.html — chuẩn ảnh mẫu) ----------
+export function getContractHTMLV2(
+  contract: any,
+  templateContent: string,
+  dynamicPlaceholders: any[] = []
+): string {
+  if (!contract || !templateContent) return ''
+
+  const formatCurrency = (amount: number) => {
+    if (!amount) return '0 ₫'
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
+  }
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '............'
+    try { return new Date(dateStr).toLocaleDateString('vi-VN') } catch { return '............' }
+  }
+
+  let totalWords = ''
+  try { totalWords = contract.total_amount_text || (contract.total_amount ? numberToVietnameseWords(contract.total_amount) + ' đồng chẵn' : '') } catch { totalWords = '' }
+  let packagePriceWords = ''
+  try { packagePriceWords = contract.package_price_text || (contract.package_price ? numberToVietnameseWords(contract.package_price) + ' đồng chẵn' : '') } catch { packagePriceWords = '' }
+  let discountedPriceWords = ''
+  try { discountedPriceWords = contract.discounted_price_text || (contract.discounted_price ? numberToVietnameseWords(contract.discounted_price) + ' đồng chẵn' : '') } catch { discountedPriceWords = '' }
+
+  const centerName = contract.facility_name || contract.branches?.name || 'TRUNG TÂM EVA FIT'
+  const centerShortName = contract.short_name || 'EVA FIT'
+
+  // Signature image HTML
+  const sigHtml = contract.signature_url
+    ? `<img src="${contract.signature_url}" style="max-height:60pt;max-width:120pt;object-fit:contain;display:block;margin:4pt auto;" alt="Chữ ký"/>`
+    : `<div style="height:60pt;"></div>`
+
+  const map: Record<string, string> = {
+    '{{member_name}}': (contract.member_name || '').toUpperCase(),
+    '{{phone}}': contract.phone || '',
+    '{{email}}': contract.email || '',
+    '{{dob}}': formatDate(contract.dob),
+    '{{address}}': contract.member_address || contract.address || '',
+    '{{id_number}}': contract.id_number || '......................',
+    '{{package_name}}': contract.package_name || '',
+    '{{total_sessions}}': String(contract.total_sessions || ''),
+    '{{start_date}}': formatDate(contract.start_date),
+    '{{end_date}}': formatDate(contract.end_date),
+    '{{total_amount}}': formatCurrency(contract.total_amount),
+    '{{total_amount_words}}': totalWords,
+    '{{trainer_name}}': contract.trainer_name || 'Đang cập nhật',
+    '{{trainer_type}}': contract.trainer_type || 'Trực tiếp',
+    '{{package_price}}': contract.package_price ? formatCurrency(contract.package_price) : '',
+    '{{package_price_words}}': packagePriceWords,
+    '{{discounted_price}}': contract.discounted_price ? formatCurrency(contract.discounted_price) : '',
+    '{{discounted_price_words}}': discountedPriceWords,
+    '{{center_representative}}': contract.center_representative || '',
+    '{{center_name}}': centerName,
+    '{{center_short_name}}': centerShortName,
+    '{{contract_id}}': contract.id || '',
+    '{{signing_date}}': formatDate(contract.signing_date),
+    '{{payment_method}}': contract.payment_method || '',
+    '{{initial_height}}': String(contract.initial_height || ''),
+    '{{initial_weight}}': String(contract.initial_weight || ''),
+    '{{medical_condition}}': contract.medical_condition || 'Không',
+    '{{branch_name}}': contract.branches?.name || '',
+    '{{account_number}}': contract.account_number || '',
+    '{{bank_name}}': contract.bank_name || '',
+    '{{account_holder}}': contract.account_holder || '',
+    '{{center_phone}}': contract.branches?.center_phone || contract.center_phone || '',
+    '{{center_address}}': contract.branches?.center_address || contract.address || '',
+    '{{legal_representative}}': contract.legal_representative || contract.branches?.legal_representative || '......................',
+    '{{representative_phone}}': contract.representative_phone || contract.branches?.representative_phone || '......................',
+    // V2 config values
+    '{{logo_url}}': CONTRACT_CONFIG.LOGO_URL,
+    '{{hotline}}': CONTRACT_CONFIG.HOTLINE,
+    // Chữ ký hội viên
+    '{{signature_url}}': sigHtml,
+  }
+
+  dynamicPlaceholders.forEach(p => {
+    if (!map[p.key]) {
+      const cleanKey = p.key.replace(/[{}]/g, '')
+      if (contract[cleanKey] !== undefined) {
+        let val = contract[cleanKey]
+        if (typeof val === 'number' && (cleanKey.includes('amount') || cleanKey.includes('price'))) val = formatCurrency(val)
+        else if (cleanKey.includes('date')) val = formatDate(val)
+        map[p.key] = String(val ?? '')
+      }
+    }
+  })
+
+  // Lấy phần nội dung từ contracts.html (bên trong <body>...</body>)
+  // Loại bỏ <html>, <head>, <body> tags để nhúng vào shell mới
+  let bodyContent = templateContent
+  const bodyMatch = templateContent.match(/<body[^>]*>([\s\S]*)<\/body>/i)
+  if (bodyMatch) bodyContent = bodyMatch[1]
+
+  // Thay thế tất cả placeholders
+  Object.entries(map).forEach(([key, val]) => {
+    bodyContent = bodyContent.replaceAll(key, val)
+  })
+
+  // Footer HTML là element bình thường (html2canvas capture được, print cũng hiện)
+  const footerHtml = `
+<div class="v2-footer" style="
+  margin-top: 16pt;
+  padding: 6pt 0 4pt;
+  border-top: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9pt;
+  font-family: 'Nunito Sans', Arial, sans-serif;
+">
+  <span style="color:#ee5b5c; font-weight:600;">Hotline: ${CONTRACT_CONFIG.HOTLINE}</span>
+  <span style="color:#555;">Trang 1</span>
+</div>`
+
+  // CSS shell V2:
+  // - font Nunito Sans
+  // - body có padding 18mm (giống trang A4)
+  // - @page disable browser header/footer mặc định (margin 0 ở các cạnh để tắt browser header)
+  // - KHÔNG dùng table-layout:fixed (tránh méo cột bảng GDocs)
+  // - Màu nền bảng được giữ nguyên khi in
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=794px"/>
+  <title>Hợp Đồng - ${contract.member_name || ''}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 794px;
+      background: #fff;
+      color: #000;
+    }
+    body {
+      font-family: 'Nunito Sans', Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.45;
+      padding: 18mm 18mm 12mm 18mm;
+    }
+    /* Giữ màu nền bảng khi in */
+    @media print {
+      html, body { width: 210mm; }
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      /* Tắt browser header/footer mặc định (ngày giờ, tên trang) */
+      @page {
+        size: A4;
+        margin: 0;
+      }
+      body {
+        padding: 12mm 18mm 10mm 18mm;
+      }
+    }
+    /* Bảng GDocs: KHÔNG force width để tránh méo cột */
+    table { border-collapse: collapse; }
+    p, div, span { font-family: 'Nunito Sans', Arial, sans-serif; }
+    /* Header logo */
+    .pdf-page-header img { display: block; }
+    .pdf-page-header div { font-family: 'Nunito Sans', Arial, sans-serif !important; }
+  </style>
+</head>
+<body>
+${bodyContent}
+${footerHtml}
+</body>
+</html>`
+}
+
 // ---------- Standalone HTML builder for window.print() ----------
+
 export function getContractHTML(contract: any): string {
 
   if (!contract) return ''
