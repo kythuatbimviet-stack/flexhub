@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
     LayoutDashboard,
+    Home,
     Users,
     Activity,
     FileText,
@@ -28,7 +29,7 @@ import {
 import { createClient } from '@/lib/supabase'
 
 const mobileMainItems = [
-    { name: 'Trang chủ', href: '/', icon: LayoutDashboard },
+    { name: 'Trang chủ', href: '/', icon: Home },
     { name: 'Khách hàng', href: '/clients', icon: Users },
     { name: 'Lộ trình', href: '/weight-tracking', icon: Activity },
     { name: 'Hợp đồng', href: '/contracts', icon: FileText },
@@ -64,7 +65,7 @@ export function MobileNav() {
                         className={cn(
                             "flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-16",
                             isActive
-                                ? "text-red-600 dark:text-red-400"
+                                ? "text-[#FD5771]"
                                 : "text-gray-500 dark:text-gray-400"
                         )}
                     >
@@ -97,13 +98,13 @@ export function MobileNav() {
                                         className={cn(
                                             "flex flex-col items-center gap-3 p-4 rounded-2xl transition-all border",
                                             isActive
-                                                ? "bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400"
+                                                ? "bg-[#FD5771]/10 dark:bg-[#FD5771]/20 border-[#FD5771]/20 dark:border-[#FD5771]/30 text-[#FD5771]"
                                                 : "bg-gray-50 dark:bg-gray-900 border-transparent text-gray-700 dark:text-gray-300 active:scale-95"
                                         )}
                                     >
                                         <div className={cn(
                                             "p-3 rounded-xl",
-                                            isActive ? "bg-red-100 dark:bg-red-900/40" : "bg-white dark:bg-gray-800 shadow-sm"
+                                            isActive ? "bg-[#FD5771]/20" : "bg-white dark:bg-gray-800 shadow-sm"
                                         )}>
                                             <item.icon className="w-6 h-6" />
                                         </div>

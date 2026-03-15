@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
     LayoutDashboard,
+    LayoutGrid,
     Users,
     Layers,
     Box,
@@ -29,7 +30,8 @@ import {
     Search,
     HandCoins,
     BanknoteArrowUp,
-    Tags
+    Tags,
+    Home
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -41,7 +43,7 @@ import {
 } from '@/components/ui/tooltip'
 
 const mainNavigation = [
-    { name: 'Báo cáo', href: '/', icon: LayoutDashboard },
+    { name: 'Trang chủ', href: '/', icon: Home },
     { name: 'Khách hàng', href: '/clients', icon: Users },
     { name: 'Hợp đồng', href: '/contracts', icon: FileText },
     { name: 'Lộ trình tăng cân', href: '/weight-tracking', icon: Activity },
@@ -62,6 +64,7 @@ const systemNavigation = [
     { name: 'Tham số', href: '/config-params', icon: Settings },
     { name: 'Mẫu HĐ', href: '/contract-template', icon: FileText },
     { name: 'Quản lý Placeholder', href: '/contract-template?tab=placeholders', icon: Tags },
+    { name: 'Báo cáo', href: '/reports', icon: LayoutDashboard },
     // { name: 'Cài đặt', href: '/settings', icon: Settings },
 ]
 
@@ -93,8 +96,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                         <div className="relative w-9 h-9 flex items-center justify-center shrink-0">
                             <Link href="/">
                                 <div className="h-9 w-9 relative group">
-                                    <div className="absolute -inset-1.5 bg-red-500/10 rounded-xl blur opacity-0 group-hover:opacity-100 transition duration-500" />
-                                    <div className="relative h-9 w-9 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/10 border border-gray-100 dark:border-gray-800 overflow-hidden">
+                                    <div className="absolute -inset-1.5 bg-[#FD5771]/10 rounded-xl blur opacity-0 group-hover:opacity-100 transition duration-500" />
+                                    <div className="relative h-9 w-9 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center shadow-lg shadow-[#FD5771]/10 border border-gray-100 dark:border-gray-800 overflow-hidden">
                                         <img
                                             src="/logo.png"
                                             alt="Eva Fit Logo"

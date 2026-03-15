@@ -229,7 +229,7 @@ export default function ContractsPage() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-1">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                        <FileText className="w-8 h-8 text-red-500" />
+                        <FileText className="w-8 h-8 text-[#FD5771]" />
                         Hợp đồng
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Theo dõi và quản lý các hợp đồng dịch vụ của hội viên.</p>
@@ -440,9 +440,9 @@ export default function ContractsPage() {
                                     <TableCell colSpan={6} className="h-64 text-center">
                                         <div className="flex flex-col items-center gap-4">
                                             <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-3xl flex items-center justify-center">
-                                                <FileText className="w-8 h-8 text-gray-200" />
+                                                <FileText className="w-8 h-8 text-gray-200 dark:text-gray-700" />
                                             </div>
-                                            <p className="text-gray-400 text-sm font-medium">Không tìm thấy hợp đồng nào.</p>
+                                            <p className="text-gray-400 text-sm font-medium">Thêm hợp đồng đầu tiên.</p>
                                         </div>
                                     </TableCell>
                                 </TableRow>

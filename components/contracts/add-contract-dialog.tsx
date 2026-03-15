@@ -689,7 +689,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                 Nhân sự phụ trách
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                 <FormField
+                                <FormField
                                     control={form.control}
                                     name="trainer_name"
                                     render={({ field }) => (
@@ -1180,36 +1180,36 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                     </FormItem>
                                 )}
                             />
-                            
+
                             <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
                                 <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Khách hàng (Người giám hộ/đại diện nếu có)</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField
-                                    control={form.control}
-                                    name="representative_name"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Tên người đại diện pháp luật</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} placeholder="Nhập tên..." className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="representative_phone"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Số điện thoại người đại diện</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} placeholder="Nhập số điện thoại..." className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                    <FormField
+                                        control={form.control}
+                                        name="representative_name"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Tên người đại diện pháp luật</FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} placeholder="Nhập tên..." className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="representative_phone"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Số điện thoại người đại diện</FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} placeholder="Nhập số điện thoại..." className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -1232,7 +1232,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                         <Loader2 className="w-4 h-4 animate-spin" />
                                         Đang tạo HĐ...
                                     </div>
-                                ) : 'Ký Hợp đồng'}
+                                ) : 'Tạo Hợp đồng'}
                             </Button>
                         </DialogFooter>
                     </form>

@@ -168,7 +168,7 @@ export default function RevenuePage() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-1">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-medium tracking-tight text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                        <DollarSign className="w-8 h-8 text-emerald-600" />
+                        <DollarSign className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                         Khoản thu
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Theo dõi và quản lý mọi dòng tiền đi vào hệ thống.</p>
@@ -191,7 +191,7 @@ export default function RevenuePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-1">
                 <Card className="rounded-2xl border-none shadow-sm bg-white dark:bg-gray-900 overflow-hidden relative group p-5">
                     <div className="absolute top-0 right-0 p-4 opacity-10 transition-transform group-hover:scale-110">
-                        <DollarSign className="w-12 h-12 text-emerald-600" />
+                        <DollarSign className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div className="space-y-1">
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tổng thu (Lọc)</p>
@@ -392,10 +392,10 @@ export default function RevenuePage() {
                                 <TableRow>
                                     <TableCell colSpan={7} className="h-64 text-center">
                                         <div className="flex flex-col items-center justify-center gap-3">
-                                            <div className="w-16 h-16 bg-gray-50 rounded-3xl flex items-center justify-center">
-                                                <DollarSign className="w-8 h-8 text-gray-200" />
+                                            <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-3xl flex items-center justify-center">
+                                                <DollarSign className="w-8 h-8 text-gray-200 dark:text-gray-700" />
                                             </div>
-                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Không tìm thấy khoản thu</p>
+                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Thêm khoản thu đầu tiên</p>
                                         </div>
                                     </TableCell>
                                 </TableRow>

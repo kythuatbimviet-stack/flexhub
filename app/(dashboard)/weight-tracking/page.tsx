@@ -304,7 +304,7 @@ export default function WeightTrackingPage() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-1">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                        <Activity className="w-8 h-8 text-red-500" />
+                        <Activity className="w-8 h-8 text-[#FD5771]" />
                         Lộ trình tăng cân
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Theo dõi và quản lý cân nặng của khách hàng theo thời gian.</p>
@@ -509,7 +509,14 @@ export default function WeightTrackingPage() {
                                         </TableRow>
                                     ) : groupedRecords.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={7} className="h-32 text-center text-gray-400 text-sm">Không có dữ liệu phù hợp</TableCell>
+                                            <TableCell colSpan={7} className="h-48 text-center text-gray-500">
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-3xl flex items-center justify-center">
+                                                        <Activity className="w-8 h-8 text-gray-200 dark:text-gray-700" />
+                                                    </div>
+                                                    <p className="text-gray-400 text-sm font-medium">Thêm lộ trình đầu tiên</p>
+                                                </div>
+                                            </TableCell>
                                         </TableRow>
                                     ) : (
                                         groupedRecords.map((group) => (
