@@ -4,9 +4,32 @@ import { createClient, createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { numberToVietnameseWords } from '@/lib/utils'
 
-// Tự động tính các trường "bằng chữ" từ số tiền
+// Tự động tính các trường "bằng chữ" từ số tiền và ép kiểu số cho các trường numeric
 function computeAmountTextFields(data: any): any {
     const enriched = { ...data }
+    
+    // Các trường cần ép kiểu số
+    const numericFields = [
+        'package_price', 'discounted_price', 'total_amount', 'price_before_discount',
+        'initial_height', 'initial_weight', 'target_weight', 'final_weight', 'weight_change',
+        'quantity', 'package_duration', 'total_sessions', 'payment_installment', 'total_days'
+    ]
+
+    numericFields.forEach(field => {
+        if (enriched[field] !== undefined && enriched[field] !== null && enriched[field] !== '') {
+            const val = Number(enriched[field])
+            enriched[field] = isNaN(val) ? null : val
+        } else if (enriched[field] === '') {
+            enriched[field] = null
+        }
+    })
+
+    // Đặc biệt cho account_number (có thể là bigint)
+    if (enriched.account_number !== undefined && enriched.account_number !== null && enriched.account_number !== '') {
+        const accNum = enriched.account_number.toString().replace(/\D/g, '')
+        enriched.account_number = accNum ? accNum : null
+    }
+
     try {
         if (enriched.total_amount != null && enriched.total_amount !== '') {
             const amount = Number(enriched.total_amount)
@@ -27,8 +50,14 @@ function computeAmountTextFields(data: any): any {
             }
         }
     } catch (e) {
-        // silent fail — không nhằm để vỡ hàm chính
+        // silent fail
     }
+
+    // Loại bỏ các object từ câu lệnh join nếu có (Supabase sẽ báo lỗi nếu insert/update cả các object này)
+    delete enriched.clients
+    delete enriched.branches
+    delete enriched.memberships
+
     return enriched
 }
 
@@ -76,14 +105,9 @@ export async function createContract(contract: any) {
     try {
         const enriched = computeAmountTextFields(contract)
         
-        // Filter out fields that don't exist in 'contracts' table to prevent schema errors
-        // Known problematic fields: center_address, assigned_pt, etc.
-        // We will keep only standard fields and those explicitly allowed.
-        const { center_address, assigned_pt, ...dbValues } = enriched
-
         const { data, error } = await supabase
             .from('contracts')
-            .insert([dbValues])
+            .insert([enriched])
             .select()
             .single()
 
@@ -281,6 +305,38 @@ export async function generateContractId(branchId?: string | null) {
         return { success: true, data: newId }
     } catch (error: any) {
         console.error('Generate Contract ID Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+export async function shareContractViaZalo(id: string) {
+    const supabase = await createClient()
+    try {
+        const { error } = await supabase
+            .from('contracts')
+            .update({ sendzalo: new Date().toISOString() })
+            .eq('id', id)
+
+        if (error) throw error
+        return { success: true }
+    } catch (error: any) {
+        console.error('Share Zalo Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+export async function shareContractViaEmail(id: string) {
+    const supabase = await createClient()
+    try {
+        const { error } = await supabase
+            .from('contracts')
+            .update({ sendemail: new Date().toISOString() })
+            .eq('id', id)
+
+        if (error) throw error
+        return { success: true }
+    } catch (error: any) {
+        console.error('Share Email Error:', error)
         return { success: false, error: error.message }
     }
 }

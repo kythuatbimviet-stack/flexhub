@@ -470,18 +470,8 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
     async function onSubmit(values: z.infer<typeof contractFormSchema>) {
         setLoading(true)
         try {
-            // Prepare data for submission, converting numeric strings where necessary
-            const totalAmount = Number(values.total_amount?.toString().replace(/\./g, '') || 0)
-
             const formData = {
                 ...values,
-                total_amount: totalAmount,
-                package_price: values.package_price ? Number(values.package_price.toString().replace(/\./g, '')) : 0,
-                discounted_price: values.discounted_price ? Number(values.discounted_price.toString().replace(/\./g, '')) : 0,
-                initial_height: values.initial_height ? Number(values.initial_height) : null,
-                initial_weight: values.initial_weight ? Number(values.initial_weight) : null,
-                quantity: values.quantity ? Number(values.quantity) : 1,
-                total_sessions: values.total_sessions ? Number(values.total_sessions) : null,
                 status: 'Chờ ký HĐ', // Default status for new contracts
             }
 

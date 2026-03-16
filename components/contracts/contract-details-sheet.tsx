@@ -26,7 +26,9 @@ import {
     Clock,
     Phone,
     Mail,
-    MapPin
+    MapPin,
+    Cloud,
+    ExternalLink
 } from 'lucide-react'
 import {
     Select,
@@ -40,6 +42,7 @@ import { toast } from 'sonner'
 import { updateContract, deleteContract } from '@/app/actions/contracts'
 import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase'
 import { FinalizeContractDialog } from './finalize-contract-dialog'
 import { Loader2, Download } from 'lucide-react'
 
@@ -62,6 +65,7 @@ export function ContractDetailsSheet({
     const [branches, setBranches] = React.useState<any[]>([])
     const [statuses, setStatuses] = React.useState<ConfigItem[]>([])
     const [showFinalizeDialog, setShowFinalizeDialog] = React.useState(false)
+    const [generatingPdf, setGeneratingPdf] = React.useState(false)
 
     const defaultStatus = React.useMemo(() => {
         return statuses.find(s => s.is_default)?.nam || statuses[0]?.nam || 'Đang thực hiện'
@@ -88,6 +92,37 @@ export function ContractDetailsSheet({
         }
     }, [contract])
 
+    // Listen for Realtime updates to the PDF URL
+    React.useEffect(() => {
+        if (!open || !contract?.id) return
+
+        const supabase = createClient()
+        const channel = supabase
+            .channel(`contract-${contract.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'contracts',
+                    filter: `id=eq.${contract.id}`
+                },
+                (payload) => {
+                    const newUrl = payload.new.contract_file_url
+                    if (newUrl && newUrl !== 'create_contract') {
+                        setFormData((prev: any) => ({ ...prev, contract_file_url: newUrl }))
+                        setGeneratingPdf(false)
+                        toast.success('Hợp đồng PDF đã sẵn sàng!')
+                    }
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [open, contract?.id])
+
     if (!contract) return null
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,12 +133,7 @@ export function ContractDetailsSheet({
     const handleSave = async () => {
         setLoading(true)
         try {
-            const result = await updateContract(contract.id, {
-                ...formData,
-                package_price: formData.package_price ? parseFloat(formData.package_price) : null,
-                discounted_price: formData.discounted_price ? parseFloat(formData.discounted_price) : null,
-                total_amount: formData.total_amount ? parseFloat(formData.total_amount) : null,
-            })
+            const result = await updateContract(contract.id, formData)
             if (result.success) {
                 toast.success('Đã cập nhật hợp đồng')
                 setIsEditing(false)
@@ -145,7 +175,22 @@ export function ContractDetailsSheet({
 
     const handleExportPDFV2 = () => {
         if (!contract?.id) return
-        window.open(`/contracts/print-v2/${encodeURIComponent(contract.id)}`, '_blank')
+        window.open(`/contracts/print-v3/${encodeURIComponent(contract.id)}`, '_blank')
+    }
+
+    const handleGenerateDocPDF = async () => {
+        if (!contract?.id) return
+        
+        // Trigger generation status
+        try {
+            await updateContract(contract.id, {
+                contract_file_url: 'create_contract'
+            })
+            // Open new preview page in a new tab (dashboard route)
+            window.open(`/contracts/preview-gdoc/${contract.id}`, '_blank')
+        } catch (error: any) {
+            toast.error('Lỗi hệ thống: ' + error.message)
+        }
     }
 
     const CardSection = ({ title, icon: Icon, children }: any) => (
@@ -186,8 +231,9 @@ export function ContractDetailsSheet({
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
                 side="right"
+                resizable
                 showCloseButton={false}
-                className="w-full sm:max-w-[480px] border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
+                className="w-full border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
             >
                 {/* Sticky Header */}
                 <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
@@ -412,16 +458,29 @@ export function ContractDetailsSheet({
                     </CardSection>
 
                     {/* Section: Chữ ký khách hàng */}
-                    <CardSection title="Chữ ký khách hàng" icon={FileText}>
-                        <div className="flex flex-col items-center justify-center p-4 min-h-[120px] bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-                            {formData.signature_url ? (
-                                <img 
-                                    src={formData.signature_url} 
-                                    alt="Chữ ký khách hàng" 
-                                    className="max-h-32 object-contain"
-                                />
-                            ) : (
-                                <p className="text-sm text-slate-400 italic">Chưa có chữ ký</p>
+                    <CardSection title="Chữ ký khách hàng" icon={Cloud}>
+                        <div className="space-y-4">
+                            <DetailRow 
+                                label="URL Chữ ký khách hàng" 
+                                value={formData.signature_url} 
+                                name="signature_url" 
+                                icon={Cloud}
+                                placeholder="https://.../signature.png"
+                            />
+                            
+                            {!isEditing && (
+                                <div className="flex flex-col items-center justify-center p-4 min-h-[120px] bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                                    {formData.signature_url ? (
+                                        <img 
+                                            src={formData.signature_url} 
+                                            alt="Chữ ký khách hàng" 
+                                            className="max-h-32 object-contain"
+                                            onError={(e: any) => e.target.style.display = 'none'}
+                                        />
+                                    ) : (
+                                        <p className="text-sm text-slate-400 italic">Chưa có chữ ký</p>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </CardSection>
@@ -439,16 +498,7 @@ export function ContractDetailsSheet({
                     </Button>
 
                     <div className="flex items-center gap-2">
-                        {!isEditing && (
-                            <Button
-                                variant="outline"
-                                onClick={handleDelete}
-                                className="rounded-xl h-11 px-4 font-bold text-[13px] border-red-50 text-red-500 hover:bg-red-50 hover:text-red-600 dark:border-red-900/30 dark:hover:bg-red-950/20 transition-all font-inter border-2"
-                                disabled={loading}
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </Button>
-                        )}
+
 
                         {isEditing ? (
                             <Button
@@ -471,13 +521,14 @@ export function ContractDetailsSheet({
                                         Chốt Ký HĐ
                                     </Button>
                                 )}
+                                {/* 
                                 <Button
                                     onClick={handleExportPDF}
                                     variant="outline"
                                     className="rounded-xl h-11 px-6 font-bold text-[13px] border-blue-50 text-blue-600 hover:bg-blue-50 dark:border-blue-900/30 dark:hover:bg-blue-950/20 transition-all font-inter border-2"
                                 >
                                     <Download className="w-4 h-4 mr-2" />
-                                    Xuất PDF
+                                    Xuất hợp đồng
                                 </Button>
                                 <Button
                                     onClick={handleExportPDFV2}
@@ -486,8 +537,44 @@ export function ContractDetailsSheet({
                                     title="Xuất hợp đồng theo mẫu chuẩn (V2)"
                                 >
                                     <Download className="w-4 h-4 mr-2" />
-                                    Xuất HĐ mới
+                                    In HĐ (v2)
                                 </Button>
+                                */}
+                                <Button
+                                    onClick={handleGenerateDocPDF}
+                                    variant="outline"
+                                    disabled={generatingPdf}
+                                    className="rounded-xl h-11 px-6 font-bold text-[13px] border-blue-100 text-blue-700 hover:bg-blue-50 dark:border-blue-900/30 dark:hover:bg-blue-950/20 transition-all font-inter border-2"
+                                    title="Tạo file PDF từ mẫu Google Doc và lưu vào Drive"
+                                >
+                                    {generatingPdf ? (
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                        <Cloud className="w-4 h-4 mr-2 text-blue-500" />
+                                    )}
+                                    Xuất lại hợp đồng
+                                </Button>
+                                {formData.contract_file_url && formData.contract_file_url !== 'create_contract' && (
+                                    <Button
+                                        onClick={() => window.open(`/contracts/preview-gdoc/${encodeURIComponent(contract.id)}`, '_blank')}
+                                        variant="ghost"
+                                        className="rounded-xl h-11 px-4 font-bold text-[13px] text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all font-inter"
+                                        title="Xem bản xem trước PDF (Print Preview)"
+                                    >
+                                        <ExternalLink className="w-4 h-4" />
+                                    </Button>
+                                )}
+                                {contract.status === 'Chờ ký HĐ' && (
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => handleDelete()}
+                                        className="h-11 w-11 rounded-xl border-red-50 text-red-500 hover:bg-red-50 hover:border-red-100 transition-all active:scale-95 border-2"
+                                        title="Xóa hợp đồng"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                )}
                                 <Button
                                     onClick={() => setIsEditing(true)}
                                     className="rounded-xl h-11 px-8 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"

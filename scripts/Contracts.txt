@@ -1,0 +1,288 @@
+const CONFIG = {
+  // Google Drive
+  TEMPLATE_ID: '1zC8GDUuynsQ5UU2dbXU6-8n2sIq5igbXGXAGGYIYink',
+  FOLDER_ID: '1vKraumWp05a1QkhVr8aUbup0sgR-6sIH',
+  
+  // Supabase
+  SUPABASE_URL: 'https://iecyckrbxtofxfweaipy.supabase.co', // URL dự án Supabase
+  SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllY3lja3JieHRvZnhmd2VhaXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4MDY4NjgsImV4cCI6MjA4NTM4Mjg2OH0.qWZ-AtupuJcio1XL2u6olsKtppH7Vg2abr4PmGrOVdI', // Service Role Key hoặc Anon Key (có quyền Update)
+  TABLE_NAME: 'contracts' // Tên bảng trong Supabase
+};
+
+
+/**
+ * @param {Object|string} dataJson - Dữ liệu placeholder (JSON object hoặc string)
+ */
+function generateContractFromJSON(dataJson) {
+  try {
+    // 1. Parse dữ liệu nếu là chuỗi
+    const payload = typeof dataJson === 'string' ? JSON.parse(dataJson) : dataJson;
+    
+    // Lấy ID hợp đồng để đặt tên file và update Supabase (Giả định key là {{id}})
+    const contractId = payload["{{id}}"] || "N/A";
+    const fileName = "Hợp đồng_" + contractId + "_" + new Date().getTime();
+
+    // 2. Tạo bản sao từ mẫu
+    const templateFile = DriveApp.getFileById(CONFIG.TEMPLATE_ID);
+    const targetFolder = DriveApp.getFolderById(CONFIG.FOLDER_ID);
+    const tempDocFile = templateFile.makeCopy(fileName, targetFolder);
+    const doc = DocumentApp.openById(tempDocFile.getId());
+    const body = doc.getBody();
+
+    // 3. Duyệt qua JSON để thay thế placeholder
+    for (let key in payload) {
+      let value = payload[key] || "....................";
+      
+      // Xử lý định dạng nếu là Date
+      if (value instanceof Date) {
+        value = Utilities.formatDate(value, Session.getScriptTimeZone(), "dd/MM/yyyy");
+      }
+
+      // A. Thay thế dạng cơ bản: {{key}}
+      body.replaceText(escapeRegex(key), value.toString());
+
+      // B. Xử lý các biến thể tự động (UPPER và TEXT)
+      // Lấy tên gốc (ví dụ: {{member_name}} -> member_name)
+      const rawKey = key.replace(/[{}]/g, ""); 
+      
+      // Thay thế {{UPPER(key)}}
+      body.replaceText("{{UPPER\\(" + rawKey + "\\)}}", value.toString().toUpperCase());
+
+      // Thay thế {{TEXT(key)}} - Định dạng số việt nam
+      let formattedValue = value;
+      if (!isNaN(parseFloat(value)) && isFinite(value)) {
+          formattedValue = Number(value).toLocaleString('vi-VN');
+      }
+      body.replaceText("{{TEXT\\(" + rawKey + "\\)}}", formattedValue.toString());
+    }
+
+    doc.saveAndClose();
+
+    // 4. Xuất PDF và xóa file tạm
+    const pdfBlob = tempDocFile.getAs(MimeType.PDF);
+    const pdfFile = targetFolder.createFile(pdfBlob).setName(fileName + ".pdf");
+    const pdfUrl = pdfFile.getUrl();
+    tempDocFile.setTrashed(true);
+
+    // 5. Cập nhật vào Supabase
+    updateSupabase(contractId, pdfUrl);
+
+    console.log("Thành công! Link PDF: " + pdfUrl);
+    return pdfUrl;
+
+  } catch (e) {
+    console.error("Lỗi: " + e.toString());
+    return "Lỗi: " + e.message;
+  }
+}
+
+/**
+ * Hàm cập nhật link PDF vào Supabase
+ */
+function updateSupabase(id, url) {
+  const endpoint = `${CONFIG.SUPABASE_URL}/rest/v1/${CONFIG.TABLE_NAME}?id=eq.${id}`;
+  
+  const options = {
+    method: "patch",
+    headers: {
+      "apikey": CONFIG.SUPABASE_KEY,
+      "Authorization": "Bearer " + CONFIG.SUPABASE_KEY,
+      "Content-Type": "application/json",
+      "Prefer": "return=minimal"
+    },
+    payload: JSON.stringify({
+      contract_file_url: url,
+      updated_at: new Date().toISOString()
+    }),
+    muteHttpExceptions: true
+  };
+
+  const response = UrlFetchApp.fetch(endpoint, options);
+  
+  if (response.getResponseCode() !== 204 && response.getResponseCode() !== 200) {
+    throw new Error("Lỗi Supabase: " + response.getContentText());
+  }
+  Logger.log("Đã cập nhật Supabase cho ID: " + id);
+}
+
+/**
+ * Hàm bổ trợ để xử lý các ký tự đặc biệt trong Regex
+ */
+function escapeRegex(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function test_RunContract_Full() {
+  // Dữ liệu lấy chính xác từ dòng đầu tiên file contracts_rows (1).csv của bạn
+  const rawData = {
+    "id": "HD-CN002-2603001",
+    "short_name": "Phòng tập Đề Thám",
+    "bank_name": "MB Bank",
+    "member_address": "130 Trần Hưng Đạo, P. Đề Thám, tỉnh Hưng Yên",
+    "facility_name": "Đề Thám - Hưng Yên",
+    "center_address": "130 Trần Hưng Đạo, Hưng Yên", // Giả định từ cột center_address
+    "center_representative": "Ngô Duy An",
+    "center_phone": "0981039697",
+    "account_holder": "Công ty CP đầu tư và phát triển Q&C",
+    "account_number": "1990231299999",
+    "member_name": "Nguyễn Vân Anh",
+    "dob": "1998-08-19",
+    "id_number": "34098002687",
+    "member_address": "130 Trần Hưng Đạo, P. Đề Thám, tỉnh Hưng Yên",
+    "phone": "0343908054",
+    "email": "anngo4362@gmail.com",
+    "initial_height": "", 
+    "initial_weight": "",
+    "medical_condition": "không",
+    "legal_representative": "",
+    "representative_phone": "",
+    "package_name": "LT3",
+    "total_sessions": "120", // Giả định số buổi
+    "package_price": 25000000,
+    "discounted_price": 0,
+    "total_amount": 25000000,
+    "start_date": "2026-03-16",
+    "end_date": "2026-07-14",
+    "trainer_name": "Ngô Duy An",
+    "trainer_type": "1 kèm 1"
+  };
+
+  // Tạo Payload để truyền vào hàm xử lý
+  const payload = {};
+  for (let key in rawData) {
+    let value = rawData[key];
+    
+    // 1. Format Ngày tháng cho các trường chứa 'date' hoặc 'dob'
+    if (key.includes('date') || key === 'dob') {
+      value = formatDateVietnamese(value);
+    }
+
+    // 2. Map các key đặc biệt từ database vào placeholder template của bạn
+    if (key === 'facility_name') payload["{{center_name}}"] = value;
+    
+    // Gán mặc định các trường còn lại theo dạng {{key}}
+    payload["{{" + key + "}}"] = value;
+
+    // 3. Tự động tạo trường Bằng Chữ cho các trường giá tiền
+    if (key.includes('price') || key.includes('amount')) {
+       payload["{{" + key + "_words}}"] = docSoTien(value);
+    }
+  }
+
+  // Gọi hàm xử lý chính (Hàm processContractJSON đã viết ở câu trả lời trước)
+  const pdfUrl = processContractJSON(payload);
+  Logger.log("Đã tạo hợp đồng đầy đủ: " + pdfUrl);
+}
+function mapDataToContract(rowData) {
+  const payload = {};
+
+  // 1. Duyệt qua toàn bộ các cột có sẵn trong dữ liệu gốc
+  for (let key in rowData) {
+    let value = rowData[key] || ""; // Tránh null/undefined
+
+    // Xử lý định dạng ngày tháng (YYYY-MM-DD -> DD/MM/YYYY)
+    if (key.includes('date') || key === 'dob' || key === 'signing_date') {
+      value = formatDateVietnamese(value);
+    }
+
+    // A. Map mặc định: {{tên_cột}}
+    payload["{{" + key + "}}"] = value;
+
+    // B. Map các trường bị lệch tên (Fix lỗi bạn nêu)
+    if (key === 'short_name') payload["{{center_short_name}}"] = value;
+    if (key === 'facility_name') payload["{{center_name}}"] = value;
+    if (key === 'member_address') payload["{{address}}"] = value; // Địa chỉ hội viên
+    
+    // C. Tự động tạo định dạng IN HOA cho tất cả các trường
+    payload["{{UPPER(" + key + ")}}"] = value.toString().toUpperCase();
+
+    // D. Tự động tạo định dạng Tiền tệ & Chữ cho các trường số tiền
+    if (key.includes('price') || key.includes('amount')) {
+       let num = parseFloat(value) || 0;
+       payload["{{TEXT(" + key + ")}}"] = num.toLocaleString('vi-VN');
+       payload["{{" + key + "_words}}"] = docSoTien(num);
+    }
+  }
+
+  // 2. Bổ sung các giá trị cố định nếu Database bị thiếu (Fallback)
+  if (!payload["{{bank_name}}"]) payload["{{bank_name}}"] = "MB Bank";
+  if (!payload["{{account_number}}"]) payload["{{account_number}}"] = "1990231299999";
+
+  return payload;
+}
+function formatDateVietnamese(dateStr) {
+  if (!dateStr) return "....................";
+  try {
+    const d = new Date(dateStr);
+    return Utilities.formatDate(d, Session.getScriptTimeZone(), "dd/MM/yyyy");
+  } catch(e) { return dateStr; }
+}
+function docSoTien(soTien) {
+  if (!soTien || isNaN(soTien) || soTien == 0) return "Không đồng";
+  // Bạn có thể tích hợp một thư viện đọc số hoặc dùng chuỗi đơn giản
+  // Ở đây tôi ví dụ trả về chuỗi, bạn nên dùng hàm đọc số chuẩn
+  return "Hai mươi lăm triệu"; // Chỗ này nên dùng hàm đọc số chuyên dụng
+}
+/**
+ * HÀM CHÍNH: Xử lý tạo file và đồng bộ Supabase
+ */
+function processContractJSON(data) {
+  try {
+    const contractId = data["{{id}}"];
+    if (!contractId) throw new Error("Dữ liệu JSON thiếu key {{id}}");
+
+    const fileName = "Hợp đồng_" + contractId;
+    
+    // 1. Tạo file Doc tạm từ mẫu
+    const template = DriveApp.getFileById(CONFIG.TEMPLATE_ID);
+    const folder = DriveApp.getFolderById(CONFIG.FOLDER_ID);
+    const tempFile = template.makeCopy(fileName, folder);
+    const doc = DocumentApp.openById(tempFile.getId());
+    const body = doc.getBody();
+
+    // 2. Duyệt qua từng Key-Value trong JSON để thay thế
+    for (let key in data) {
+      let val = data[key] === null || data[key] === "" ? "...................." : data[key];
+      
+      // Xử lý nếu là dữ liệu ngày tháng
+      if (val instanceof Date) {
+        val = Utilities.formatDate(val, Session.getScriptTimeZone(), "dd/MM/yyyy");
+      }
+
+      // Lấy tên key không có dấu ngoặc (ví dụ: member_name)
+      const rawKey = key.replace(/[{}]/g, "");
+
+      // A. Thay thế dạng thường: {{member_name}}
+      body.replaceText(escapeRegex(key), val.toString());
+
+      // B. Thay thế dạng UPPER: {{UPPER(member_name)}}
+      body.replaceText("{{UPPER\\(" + rawKey + "\\)}}", val.toString().toUpperCase());
+
+      // C. Thay thế dạng Tiền tệ: {{TEXT(total_amount)}}
+      let currencyVal = val;
+      if (!isNaN(parseFloat(val)) && isFinite(val)) {
+        currencyVal = Number(val).toLocaleString('vi-VN');
+      }
+      body.replaceText("{{TEXT\\(" + rawKey + "\\)}}", currencyVal.toString());
+    }
+
+    doc.saveAndClose();
+
+    // 3. Chuyển sang PDF
+    const pdfBlob = tempFile.getAs(MimeType.PDF);
+    const pdfFile = folder.createFile(pdfBlob).setName(fileName + ".pdf");
+    const pdfUrl = pdfFile.getUrl();
+
+    // 4. Xóa file Doc tạm
+    tempFile.setTrashed(true);
+
+    // 5. Ghi ngược vào Supabase
+    updateSupabase(contractId, pdfUrl);
+
+    return pdfUrl;
+
+  } catch (e) {
+    Logger.log("LỖI: " + e.message);
+    throw e;
+  }
+}

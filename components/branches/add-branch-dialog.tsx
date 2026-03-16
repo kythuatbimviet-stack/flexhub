@@ -45,6 +45,7 @@ const branchFormSchema = z.object({
     account_number: z.string().optional(),
     account_holder: z.string().optional(),
     bank_name: z.string().optional(),
+    signature_center: z.string().optional(),
 })
 
 export function AddBranchDialog({ onSuccess }: { onSuccess: () => void }) {
@@ -63,6 +64,7 @@ export function AddBranchDialog({ onSuccess }: { onSuccess: () => void }) {
             account_number: '',
             account_holder: '',
             bank_name: '',
+            signature_center: '',
         },
     })
 
@@ -243,6 +245,19 @@ export function AddBranchDialog({ onSuccess }: { onSuccess: () => void }) {
                                     )}
                                 />
                             </div>
+                            <FormField
+                                control={form.control}
+                                name="signature_center"
+                                render={({ field }) => (
+                                    <FormItem className="pt-4">
+                                        <FormLabel className="text-xs font-medium text-slate-700 dark:text-slate-300">URL Chữ ký / Dấu mộc chi nhánh</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="https://example.com/signature.png" {...field} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 transition-all h-11 border-2" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </div>
 
                         <DialogFooter className="pt-8 border-t border-slate-100 dark:border-slate-800 gap-3">

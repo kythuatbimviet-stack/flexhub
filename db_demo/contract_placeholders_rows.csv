@@ -1,0 +1,36 @@
+id,key,label,description,category,sample_value,is_active,is_default,sort_order,created_at,updated_at
+037fe650-90fc-4d15-8245-5243fdae33e7,{{payment_method}},Hình thức thanh toán,Phương thức thanh toán,contract,Tiền mặt,true,true,450,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+0b49612d-32ee-4bf4-9184-43d272f18daf,{{phone}},Số điện thoại,SĐT hội viên,member,0912 345 678,true,true,20,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+12d474bc-9d36-46f6-853d-8fe64143e40b,{{start_date}},Ngày bắt đầu,Ngày bắt đầu hợp đồng (dd/mm/yyyy),package,01/04/2026,true,true,330,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+1a5ea13f-3318-4c05-836a-21ff14608fa7,{{package_price_words}},Giá gói trước giảm (chữ),Giá niêm yết gói tập bằng chữ tiếng Việt,package,Mười lăm triệu,true,true,380,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+2f390849-fac4-42fd-91b2-b4bf33438bc5,{{initial_height}},Chiều cao,Chiều cao ban đầu (cm),member,162,true,true,70,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+33ff4349-e421-4cdc-b462-aee0268851b6,{{account_number}},Số tài khoản,Số tài khoản ngân hàng trung tâm,center,1234567890,true,true,190,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+38828d04-011c-4b65-be35-64cbaec712c0,{{end_date}},Ngày kết thúc,Ngày kết thúc hợp đồng (dd/mm/yyyy),package,30/06/2026,true,true,340,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+3b477f06-235a-4d38-9a02-e0037f1d602f,{{email}},Email,Email hội viên,member,mai.nguyen@email.com,true,true,30,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+47d7b553-cab3-4a7d-8750-f101a9d9026d,{{medical_condition}},Bệnh lý,Tình trạng bệnh lý (mặc định: Không),member,Không,true,true,90,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+4bafb308-3e16-4f1c-9f1b-b6453018e3f9,{{dob}},Ngày sinh,Ngày sinh hội viên (dd/mm/yyyy),member,15/03/1995,true,true,40,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+5c3f4f36-184e-4332-9427-fadb6755f5be,{{contract_id}},Mã hợp đồng,ID hợp đồng,contract,HĐ-2026-0001,true,true,410,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+67bb14b4-ddf1-400f-86aa-6f68ce377bda,{{center_short_name}},Tên viết tắt TT,Tên viết tắt trung tâm,center,LADY FIT,true,true,120,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+791f1ee8-f200-4be6-bbdb-f769a84309f6,{{initial_weight}},Cân nặng,Cân nặng ban đầu (kg),member,55,true,true,80,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+853cf220-6728-4ff3-9e4d-994427880010,{{total_amount}},Tổng tiền,Giá trị hợp đồng (định dạng tiền VND),contract,12.000.000 ₫,true,true,430,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+8966e02b-0829-432b-91df-8e3e434bcc5e,{{trainer_type}},Hình thức HL,Hình thức huấn luyện (trực tiếp / online),package,Trực tiếp,true,true,360,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+8c9d2883-5b44-48fe-975d-163f666af0ed,{{total_amount_words}},Tổng tiền (chữ),Giá trị hợp đồng bằng chữ tiếng Việt,contract,Mười hai triệu,true,true,440,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+8d1da006-775b-47b7-9a10-a9b609800c89,{{legal_representative}},Người đại diện PL,Người đại diện pháp luật của chi nhánh,center,NGUYỄN VĂN AN,true,true,160,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+95e029ca-0860-448f-acbc-2f6a01e6cdf5,{{bank_name}},Ngân hàng,Tên ngân hàng,center,Vietcombank,true,true,200,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+9b6007e7-0f85-449a-88a8-a215f9d823f5,{{package_name}},Tên gói tập,Tên gói dịch vụ đăng ký,package,GÓI PT CAO CẤP 3 THÁNG,true,true,310,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+9e7f1f8c-dc30-4f43-b0a9-2fa894161117,{{account_holder}},Chủ tài khoản,Tên chủ tài khoản,center,NGUYỄN VĂN AN,true,true,210,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+9e85cb20-ac3a-444d-bc79-5289994c2897,{{center_representative}},Đại diện trung tâm,Người đại diện ký hợp đồng,center,Nguyễn Minh Trí,true,true,130,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+abacf482-8ac3-47db-aa1f-247f5f15c6d1,{{trainer_name}},Tên HLV,Huấn luyện viên phụ trách,package,Trần Văn Hùng,true,true,350,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+af2a28f9-050d-4104-945b-cebc15dcc1c5,{{member_name}},Họ và tên,Họ và tên đầy đủ của hội viên (in hoa),member,NGUYỄN THỊ MAI,true,true,10,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+b2bc63a0-1dec-416d-9f99-236264bafe9b,{{id_number}},CMND/CCCD,Số chứng minh nhân dân / căn cước,member,079195012345,true,true,60,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+b63fec20-73a0-43c9-8a1f-3f6f8acc4cfd,{{discounted_price}},Giá gói trợ giá,Giá gói tập sau khi áp dụng chương trình trợ giá,package,12.000.000 ₫,true,true,390,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+c19eae09-2380-4b36-8fa2-5fcbade6ecce,{{discounted_price_words}},Giá gói trợ giá (chữ),Giá trợ giá bằng chữ tiếng Việt,package,Mười hai triệu,true,true,400,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+c584b63c-16f3-498f-95b7-9761069c1ab7,{{branch_name}},Tên chi nhánh,Tên chi nhánh trực tiếp,center,Chi nhánh Quận 1,true,true,180,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+d03f5724-e301-49b2-a32d-c8f691d414a2,{{center_name}},Tên trung tâm,Tên đầy đủ của trung tâm,center,TRUNG TÂM LADY FIT,true,true,110,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+d78fa70c-17e8-4c22-aead-6dc406e5718a,{{signing_date}},Ngày ký,Ngày ký hợp đồng (dd/mm/yyyy),contract,01/04/2026,true,true,420,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+d86da36c-36bc-412a-b600-c5b5d012f2b0,{{center_address}},Địa chỉ trung tâm,Địa chỉ trung tâm (từ bảng branches),center,"456 Nguyễn Trãi, Quận 5",true,true,150,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+da435968-e52c-4bdf-afa7-2e3d17cfbd2a,{{representative_phone}},SĐT đại diện PL,SĐT người đại diện pháp luật,center,0901 234 567,true,true,170,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+da9ad540-a30a-48ac-b433-19eaddf646d1,{{address}},Địa chỉ,Địa chỉ thường trú hội viên,member,"123 Đường Lê Lợi, Quận 1",true,true,50,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+dc63beee-d907-43cb-b55c-428b22c7516e,{{total_sessions}},Số buổi,Tổng số buổi tập,package,36,true,true,320,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+f45ca9f5-5a0c-4597-9334-2f7bf562c1b6,{{center_phone}},SĐT trung tâm,Số điện thoại trung tâm (từ bảng branches),center,028 1234 5678,true,true,140,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00
+fb75bf84-9316-4a69-8451-4cdb264eac8a,{{package_price}},Giá gói trước giảm,Giá niêm yết gói tập trước khi giảm giá (VND),package,15.000.000 ₫,true,true,370,2026-03-12 04:07:52.805657+00,2026-03-12 04:07:52.805657+00

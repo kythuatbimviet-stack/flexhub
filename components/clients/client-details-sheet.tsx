@@ -310,8 +310,9 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
                 side="right"
+                resizable
                 showCloseButton={false}
-                className="w-full sm:max-w-[480px] border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
+                className="w-full border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
             >
                 <SheetTitle className="sr-only">Thông tin khách hàng: {client?.member_name}</SheetTitle>
                 {/* Sticky Header */}

@@ -224,6 +224,7 @@ export function getContractHTMLV2(
     '{{center_address}}': contract.branches?.center_address || contract.address || '',
     '{{legal_representative}}': contract.legal_representative || contract.branches?.legal_representative || '......................',
     '{{representative_phone}}': contract.representative_phone || contract.branches?.representative_phone || '......................',
+    '{{representative_name}}': contract.representative_name || '......................',
     // V2 config values
     '{{logo_url}}': CONTRACT_CONFIG.LOGO_URL,
     '{{hotline}}': CONTRACT_CONFIG.HOTLINE,
@@ -326,6 +327,143 @@ ${bodyContent}
 ${footerHtml}
 </body>
 </html>`
+}
+
+// ---------- V3 Template builder (uses dynamic hop_dong_template.html) ----------
+export function getContractHTMLV3(
+  contract: any,
+  templateContent: string,
+  dynamicPlaceholders: any[] = []
+): string {
+  if (!contract || !templateContent) return ''
+
+  const formatCurrency = (amount: number) => {
+    if (!amount) return '0 ₫'
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
+  }
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '............'
+    try { return new Date(dateStr).toLocaleDateString('vi-VN') } catch { return '............' }
+  }
+
+  let totalWords = ''
+  try { totalWords = contract.total_amount_text || (contract.total_amount ? numberToVietnameseWords(contract.total_amount) + ' đồng chẵn' : '') } catch { totalWords = '' }
+  let packagePriceWords = ''
+  try { packagePriceWords = contract.package_price_text || (contract.package_price ? numberToVietnameseWords(contract.package_price) + ' đồng chẵn' : '') } catch { packagePriceWords = '' }
+  let discountedPriceWords = ''
+  try { discountedPriceWords = contract.discounted_price_text || (contract.discounted_price ? numberToVietnameseWords(contract.discounted_price) + ' đồng chẵn' : '') } catch { discountedPriceWords = '' }
+
+  const centerName = contract.facility_name || contract.branches?.name || 'TRUNG TÂM EVA FIT'
+  const centerShortName = contract.short_name || 'EVA FIT'
+
+  // Transparent 1x1 GIF base64 to prevent broken image icon when signature is missing but HTML has fixed <img src="...">
+  const transparentPixel = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+
+  // Signature image HTML (since the HTML template hardcodes <img src="{{signature_url}}">, we MUST provide a valid url)
+  const userSignatureUrl = contract.signature_url || transparentPixel
+    
+  // Center signature image html (using center's general signature if it exists)
+  const centerSignatureUrl = contract.center_signature_url || transparentPixel
+
+  const map: Record<string, string> = {
+    '{{member_name}}': (contract.member_name || '').toUpperCase(),
+    '{{phone}}': contract.phone || '',
+    '{{email}}': contract.email || '',
+    '{{dob}}': formatDate(contract.dob),
+    '{{address}}': contract.member_address || contract.address || '',
+    '{{id_number}}': contract.id_number || '......................',
+    '{{package_name}}': contract.package_name || '',
+    '{{total_sessions}}': String(contract.total_sessions || ''),
+    '{{start_date}}': formatDate(contract.start_date),
+    '{{end_date}}': formatDate(contract.end_date),
+    '{{total_amount}}': formatCurrency(contract.total_amount),
+    '{{total_amount_words}}': totalWords,
+    '{{trainer_name}}': contract.trainer_name || 'Đang cập nhật',
+    '{{trainer_type}}': contract.trainer_type || 'Trực tiếp',
+    '{{package_price}}': contract.package_price ? formatCurrency(contract.package_price) : '',
+    '{{package_price_words}}': packagePriceWords,
+    '{{discounted_price}}': contract.discounted_price ? formatCurrency(contract.discounted_price) : '',
+    '{{discounted_price_words}}': discountedPriceWords,
+    '{{center_representative}}': contract.center_representative || '',
+    '{{center_name}}': centerName,
+    '{{center_short_name}}': centerShortName,
+    '{{contract_id}}': contract.id || '',
+    '{{signing_date}}': formatDate(contract.signing_date),
+    '{{payment_method}}': contract.payment_method || '',
+    '{{initial_height}}': String(contract.initial_height || ''),
+    '{{initial_weight}}': String(contract.initial_weight || ''),
+    '{{medical_condition}}': contract.medical_condition || 'Không',
+    '{{branch_name}}': contract.branches?.name || '',
+    '{{account_number}}': contract.account_number || '',
+    '{{bank_name}}': contract.bank_name || '',
+    '{{account_holder}}': contract.account_holder || '',
+    '{{center_phone}}': contract.branches?.center_phone || contract.center_phone || '',
+    '{{center_address}}': contract.branches?.center_address || contract.address || '',
+    '{{legal_representative}}': contract.legal_representative || contract.branches?.legal_representative || '......................',
+    '{{representative_phone}}': contract.representative_phone || contract.branches?.representative_phone || '......................',
+    '{{representative_name}}': contract.representative_name || '......................',
+    // V3 config values
+    '{{logo_url}}': CONTRACT_CONFIG.LOGO_URL,
+    '{{hotline}}': CONTRACT_CONFIG.HOTLINE,
+    // Signatures
+    '{{signature_url}}': userSignatureUrl,
+    '{{signature_center}}': centerSignatureUrl,
+  }
+
+  dynamicPlaceholders.forEach(p => {
+    if (!map[p.key]) {
+      const cleanKey = p.key.replace(/[{}]/g, '')
+      if (contract[cleanKey] !== undefined) {
+        let val = contract[cleanKey]
+        if (typeof val === 'number' && (cleanKey.includes('amount') || cleanKey.includes('price'))) val = formatCurrency(val)
+        else if (cleanKey.includes('date')) val = formatDate(val)
+        map[p.key] = String(val ?? '')
+      }
+    }
+  })
+
+  // Thay thế tất cả placeholders trực tiếp trên toàn bộ templateContent
+  let finalHtml = templateContent
+  Object.entries(map).forEach(([key, val]) => {
+    finalHtml = finalHtml.replaceAll(key, val)
+  })
+
+  // Inject print-optimized CSS vào <head> để @page, fixed footer và màu sắc hoạt động đúng khi in/xuất PDF
+  const printInjectCss = `
+<style id="print-v3-inject">
+  @media print {
+    @page {
+      size: A4;
+      margin: 0;
+    }
+    body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .page {
+      margin: 0 !important;
+      box-shadow: none !important;
+      padding-bottom: 44px !important;
+    }
+    /* Footer hiện đúng ở cuối mỗi trang khi in */
+    .page-footer {
+      position: fixed !important;
+      bottom: 14px;
+      left: 35px;
+      right: 35px;
+    }
+  }
+</style>`
+
+  // Nếu template có </head>, inject vào trước đó; nếu không thì prepend vào đầu
+  if (finalHtml.includes('</head>')) {
+    finalHtml = finalHtml.replace('</head>', printInjectCss + '\n</head>')
+  } else {
+    finalHtml = printInjectCss + finalHtml
+  }
+
+  return finalHtml
 }
 
 // ---------- Standalone HTML builder for window.print() ----------

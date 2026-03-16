@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hợp Đồng {{contract_id}} - {{center_short_name}}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --red: #e03030;
+    --red-light: #f5e6e6;
+    --red-header: #c0392b;
+    --gray-light: #f8f8f8;
+    --gray-border: #ddd;
+    --text: #333;
+    --text-light: #666;
+    --white: #fff;
+  }
+
+  body {
+    font-family: 'Be Vietnam Pro', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    background: #e8e8e8;
+    line-height: 1.6;
+  }
+
+  .page {
+    width: 595px;
+    min-height: 842px;
+    background: var(--white);
+    margin: 20px auto;
+    padding: 30px 35px 50px;
+    position: relative;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+
+  /* HEADER */
+  .header-box {
+    display: flex;
+    border: 1.5px solid var(--gray-border);
+    margin-bottom: 18px;
+  }
+  .header-logo {
+    width: 80px;
+    min-width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1.5px solid var(--gray-border);
+    padding: 10px;
+  }
+
+  .header-info {
+    flex: 1;
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+  }
+  .header-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .header-company {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .header-address {
+    font-size: 11px;
+    color: var(--red);
+  }
+
+  /* INTRO TEXT */
+  .intro-text {
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+  .intro-text strong { font-weight: 700; }
+
+  /* SECTION TABLE */
+  .section-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 14px;
+    border: 1.5px solid var(--gray-border);
+  }
+  .section-table .table-header {
+    background: var(--red);
+    color: var(--white);
+  }
+  .section-table .table-header td {
+    padding: 8px 14px;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .section-table .table-header td:first-child {
+    width: 40%;
+    border-right: 1px solid rgba(255,255,255,0.3);
+  }
+  .section-table .row-data td {
+    padding: 6px 14px;
+    border-bottom: 1px solid var(--gray-border);
+    vertical-align: top;
+    font-size: 12.5px;
+  }
+  .section-table .row-data td:first-child {
+    width: 40%;
+    color: var(--text-light);
+    border-right: 1px solid var(--gray-border);
+  }
+  .section-table .row-data:last-child td { border-bottom: none; }
+
+  /* CENTER TABLE (for goi tap) */
+  .center-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    border: 1.5px solid var(--gray-border);
+  }
+  .center-table .section-title-row td {
+    background: var(--red);
+    color: var(--white);
+    text-align: center;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    padding: 9px 14px;
+    text-transform: uppercase;
+  }
+  .center-table .ct-row td {
+    padding: 6px 14px;
+    border-bottom: 1px solid var(--gray-border);
+    font-size: 12.5px;
+    vertical-align: top;
+  }
+  .center-table .ct-row td:first-child {
+    width: 45%;
+    color: var(--text-light);
+    border-right: 1px solid var(--gray-border);
+  }
+  .center-table .ct-row.bold-row td {
+    font-weight: 700;
+    color: var(--text);
+  }
+  .center-table .ct-row:last-child td { border-bottom: none; }
+  .italic { font-style: italic; }
+
+  /* LABELS */
+  .label-note {
+    font-size: 12.5px;
+    margin-bottom: 14px;
+  }
+
+  /* DIEU KHOAN */
+  .dieu {
+    margin-bottom: 16px;
+  }
+  .dieu-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+  .dieu p, .dieu li {
+    font-size: 12.5px;
+    margin-bottom: 5px;
+    line-height: 1.65;
+  }
+  .dieu .sub { margin-left: 10px; }
+  .dieu .subsub { margin-left: 20px; }
+  .dieu .sub-title {
+    font-weight: 700;
+    font-size: 12.5px;
+    margin-bottom: 4px;
+    margin-top: 6px;
+  }
+
+  /* SIGN SECTION */
+  .sign-section {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+  }
+  .sign-col {
+    width: 45%;
+    text-align: center;
+  }
+  .sign-col .sign-title {
+    font-weight: 800;
+    font-size: 13px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .sign-col .sign-sub {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-bottom: 50px;
+  }
+  .sign-col .sign-name {
+    font-weight: 700;
+    font-size: 13px;
+    border-top: 1.5px solid var(--text);
+    padding-top: 6px;
+    margin-top: 10px;
+  }
+  .signature-img {
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .signature-img svg {
+    height: 50px;
+  }
+
+  /* FOOTER */
+  .page-footer {
+    position: absolute;
+    bottom: 14px;
+    left: 35px;
+    right: 35px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--gray-border);
+    padding-top: 6px;
+  }
+  .footer-hotline {
+    font-size: 11px;
+    color: var(--red);
+    font-weight: 600;
+  }
+  .footer-page {
+    font-size: 11px;
+    color: var(--text-light);
+    background: var(--gray-light);
+    padding: 2px 10px;
+    border-radius: 2px;
+  }
+
+  /* HR */
+  hr.divider {
+    border: none;
+    border-top: 1px solid var(--gray-border);
+    margin: 14px 0;
+  }
+
+  /* PAGE BREAK */
+  .page-break { page-break-after: always; }
+
+  @media print {
+    @page { size: A4; margin: 0; }
+    body {
+      background: white;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .page {
+      margin: 0;
+      box-shadow: none;
+      padding-bottom: 44px; /* room for fixed footer */
+    }
+    /* Footer cố định ở cuối mỗi trang khi in */
+    .page-footer {
+      position: fixed;
+      bottom: 14px;
+      left: 35px;
+      right: 35px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- =================== TRANG 1 =================== -->
+<div class="page">
+  <!-- HEADER -->
+  <div class="header-box">
+    <div class="header-logo">
+      <div style="text-align:center;">
+        <img src="{{logo_url}}" alt="Logo" style="width:54px;height:54px;object-fit:contain;">
+      </div>
+    </div>
+    <div class="header-info">
+      <div class="header-title">Hợp đồng dịch vụ huấn luyện viên cá nhân</div>
+      <div class="header-company">{{center_short_name}}</div>
+      <div class="header-address">{{center_address}}</div>
+    </div>
+  </div>
+
+  <p class="intro-text" style="text-align:right; font-size:11px; color:#888; margin-bottom:6px;">Mã HĐ: <strong>{{contract_id}}</strong> &nbsp;|&nbsp; Ngày ký: <strong>{{signing_date}}</strong></p>
+  <p class="intro-text">Hôm nay, tại phòng tập <strong>{{branch_name}}</strong> chúng tôi gồm:</p>
+
+  <!-- TRUNG TÂM TABLE -->
+  <table class="section-table">
+    <tr class="table-header">
+      <td>TRUNG TÂM</td>
+      <td>{{branch_name}}</td>
+    </tr>
+    <tr class="row-data">
+      <td>Địa chỉ:</td>
+      <td>{{center_address}}</td>
+    </tr>
+    <tr class="row-data">
+      <td>Đại diện:</td>
+      <td>{{legal_representative}}</td>
+    </tr>
+    <tr class="row-data">
+      <td>Số điện thoại:</td>
+      <td>{{center_phone}}</td>
+    </tr>
+    <tr class="row-data">
+      <td>Số tài khoản:</td>
+      <td>{{account_number}}</td>
+    </tr>
+    <tr class="row-data">
+      <td>Chủ tài khoản:</td>
+      <td>{{account_holder}}</td>
+    </tr>
+    <tr class="row-data">
+      <td>Ngân hàng:</td>
+      <td>{{bank_name}}</td>
+    </tr>
+  </table>
+
+  <p class="label-note">(Sau đây gọi tắt là "<strong>Phòng tập</strong>") Và:</p>
+
+  <!-- HỘI VIÊN TABLE -->
+  <table class="section-table">
+    <tr class="table-header">
+      <td>HỘI VIÊN</td>
+      <td>{{member_name}}</td>
+    </tr>
+    <tr class="row-data">
+      <td>Ngày sinh:</td>
+      <td>{{dob}}</td>
+    </tr>
+    <tr class="row-data">
+      <td>Số CMND/CCCD:</td>
+      <td>{{id_number}}</td>
+    </tr>
+    <tr class="row-data">
+      <td>Địa chỉ:</td>
+      <td>{{address}}</td>
+    </tr>
+    <tr class="row-data">
+      <td>Số điện thoại:</td>
+      <td>{{phone}}</td>
+    </tr>
+    <tr class="row-data">
+      <td>Email:</td>
+      <td>{{email}}</td>
+    </tr>
+    <tr class="row-data">
+      <td>Chiều cao:</td>
+      <td>{{initial_height}} cm</td>
+    </tr>
+    <tr class="row-data">
+      <td>Cân nặng:</td>
+      <td>{{initial_weight}} kg</td>
+    </tr>
+    <tr class="row-data">
+      <td>Bệnh lý:</td>
+      <td>{{medical_condition}}</td>
+    </tr>
+  </table>
+
+  <p class="intro-text" style="margin-bottom:6px;"><strong>Thông tin người đại diện theo pháp luật (nếu có):</strong></p>
+  <div class="dieu">
+    <p class="sub">Họ và tên: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.....................</p>
+    <p class="sub">Số điện thoại: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{representative_phone}}</p>
+    <p style="font-size:12px;margin-top:4px;">(Người đại diện theo pháp luật sẽ thay mặt ký Hợp đồng này nếu Hội viên dưới 18 tuổi)</p>
+    <p style="font-size:12px;">(Sau đây gọi tắt là "<strong>Hội viên</strong>")</p>
+  </div>
+
+  <div class="page-footer">
+    <span class="footer-hotline">Hotline: {{center_phone}}</span>
+    <span class="footer-page">Trang 1/ 7</span>
+  </div>
+</div>
+
+<!-- =================== TRANG 2 =================== -->
+<div class="page">
+  <!-- HEADER -->
+  <div class="header-box">
+    <div class="header-logo">
+      <div style="text-align:center;">
+        <img src="{{logo_url}}" alt="Logo" style="width:54px;height:54px;object-fit:contain;">
+      </div>
+    </div>
+    <div class="header-info">
+      <div class="header-title">Hợp đồng dịch vụ huấn luyện viên cá nhân</div>
+      <div class="header-company">{{center_short_name}}</div>
+      <div class="header-address">{{center_address}}</div>
+    </div>
+  </div>
+
+  <p class="intro-text">Sau khi được chuyên viên của phòng tập tư vấn quyền lợi trong các gói tập, Hội viên đồng ý lựa chọn gói tập theo thông tin dưới đây với các quyền lợi và dịch vụ được kèm theo Hợp đồng này.</p>
+
+  <!-- GÓI TẬP TABLE -->
+  <table class="center-table">
+    <tr class="section-title-row">
+      <td colspan="2">THÔNG TIN GÓI TẬP HUẤN LUYỆN VIÊN CÁ NHÂN</td>
+    </tr>
+    <tr class="ct-row">
+      <td><strong>GÓI TẬP</strong></td>
+      <td>{{package_name}}</td>
+    </tr>
+    <tr class="ct-row">
+      <td>Tổng số buổi/cân khoán:</td>
+      <td>{{total_sessions}}</td>
+    </tr>
+    <tr class="ct-row">
+      <td>Giá trị gói tập:</td>
+      <td>{{package_price}}</td>
+    </tr>
+    <tr class="ct-row">
+      <td>Bằng chữ:</td>
+      <td class="italic">{{discounted_price_words}}.</td>
+    </tr>
+    <tr class="ct-row">
+      <td>Giá trợ giá :</td>
+      <td>{{discounted_price}}</td>
+    </tr>
+    <tr class="ct-row">
+      <td>Bằng chữ:</td>
+      <td class="italic">{{total_amount_words}}.</td>
+    </tr>
+    <tr class="ct-row bold-row">
+      <td>Tổng giá trị Hợp đồng:</td>
+      <td>{{total_amount}}</td>
+    </tr>
+    <tr class="ct-row bold-row">
+      <td>Bằng chữ:</td>
+      <td>{{total_amount_words}}</td>
+    </tr>
+    <tr class="ct-row">
+      <td>Thời hạn Gói tập:</td>
+      <td><strong>{{total_sessions}}</strong> &nbsp;ngày</td>
+    </tr>
+    <tr class="ct-row">
+      <td>&nbsp;&nbsp; - &nbsp;&nbsp;Ngày bắt đầu</td>
+      <td><strong>{{start_date}}</strong></td>
+    </tr>
+    <tr class="ct-row">
+      <td>&nbsp;&nbsp; - &nbsp;&nbsp;Ngày kết thúc:</td>
+      <td><strong>{{end_date}}</strong></td>
+    </tr>
+    <tr class="ct-row">
+      <td>Tên Huấn luyện viên:</td>
+      <td><strong>{{trainer_name}}</strong></td>
+    </tr>
+    <tr class="ct-row">
+      <td>Hình thức Hlv:</td>
+      <td>{{trainer_type}}</td>
+    </tr>
+  </table>
+
+  <p class="intro-text">Đồng thời, Các Bên nhất trí ký kết hợp đồng với những điều khoản và điều kiện như sau:</p>
+
+  <div class="dieu">
+    <div class="dieu-title">Điều 1: Mục đích hợp đồng</div>
+    <p>Các Bên thống nhất tại Hợp đồng này rằng phòng tập sẽ cung cấp cho Hội viên dịch vụ tập luyện cùng với Huấn luyện viên cá nhân ("HLV") với Gói tập và giá trị Gói tập được nêu bên trên. Giá trị Gói tập chưa bao gồm Thuế Giá trị Gia tăng theo quy định pháp luật hiện hành.</p>
+  </div>
+
+  <div class="dieu">
+    <div class="dieu-title">Điều 2: Gói tập, thời hạn và bảo lưu</div>
+    <p>- Các gói tập tại phòng tập được phân chia theo mục tiêu và hình thức cam kết khác nhau, bao gồm Gói Cơ Bản, Gói Nâng Cao, Gói PT và Gói Khoản. Thời hạn sử dụng của Gói tập tính từ ngày kích hoạt đến hết thời gian Gói tập, hoặc hết số buổi trong Gói tập.</p>
+  </div>
+
+  <div class="page-footer">
+    <span class="footer-hotline">Hotline: {{hotline}}</span>
+    <span class="footer-page">Trang 2/ 7</span>
+  </div>
+</div>
+
+<!-- =================== TRANG 3 =================== -->
+<div class="page">
+  <div class="header-box">
+    <div class="header-logo">
+      <div style="text-align:center;">
+        <img src="{{logo_url}}" alt="Logo" style="width:54px;height:54px;object-fit:contain;">
+      </div>
+    </div>
+    <div class="header-info">
+      <div class="header-title">Hợp đồng dịch vụ huấn luyện viên cá nhân</div>
+      <div class="header-company">{{center_short_name}}</div>
+      <div class="header-address">{{center_address}}</div>
+    </div>
+  </div>
+
+  <div class="dieu">
+    <p>- Quyền lợi và quy định bảo lưu của từng loại gói được ghi trong catalog của Gói tập.</p>
+    <p>- Gói Khoản:</p>
+    <p class="sub">a. Không áp dụng bảo lưu, kể cả các trường hợp bận công việc cá nhân hay lý do cá nhân khác, vì đây là giai đoạn tập trung theo chương trình cam kết giảm cân đặc biệt.</p>
+    <p class="sub">b. Thời hạn Gói khoản kết thúc khi Hội viên đã đủ cân nặng cam kết được ghi rõ trong Hợp đồng tại thời điểm ký kết.</p>
+    <p class="sub">c. Trường hợp Hội viên đạt mục tiêu cam kết trước thời hạn, Phòng tập sẽ hoàn trả một phần giá trị Gói tập theo mức quy định tại Bảng công sự tính toán kèm theo Hợp đồng. Trường hợp Hội viên không đạt mục tiêu đúng thời hạn, Hội viên có trách nhiệm thanh toán khoản phí phạt theo quy định tại Bảng công sự tính toán.</p>
+    <p class="sub">d. Toàn bộ thời gian tập luyện bù sau thời hạn cam kết được xem là nghĩa vụ và trách nhiệm riêng của HLV phụ trách đối với Hội viên.</p>
+    <p class="sub">e. Trong thời gian thực hiện nghĩa vụ bù hoặc trong suốt quá trình thực hiện Hợp đồng, nếu Phòng tập phát hiện Hội viên có hành vi gian lận, cung cấp thông tin sai lệch, tạo lập kết quả giả hoặc bất kỳ hành vi không trung thực nào nhằm trục lợi, Phòng tập có quyền chấm dứt Hợp đồng ngay lập tức. Trong trường hợp này, Hội viên không được hoàn trả bất kỳ khoản phí nào.</p>
+  </div>
+
+  <div class="dieu">
+    <div class="dieu-title">Điều 3: Phương thức thanh toán</div>
+    <p class="sub">3.1. Gói dưới 30 ngày: Thanh toán 1 lần.</p>
+    <p class="sub">3.2. Gói trên 30 ngày:</p>
+    <p class="subsub">a. Đối với hình thức thanh toán không mất lãi tại phòng tập, khách hàng sẽ thanh toán trong 2 đợt:</p>
+    <p class="subsub">Đợt 1: Hội viên sẽ đặt cọc một khoản tiền tương ứng bằng hoặc lớn hơn 50% giá trị Gói tập, khoản tiền đặt cọc sẽ không được hoàn trả vì bất kỳ lý do gì và không được chuyển nhượng cho người khác.</p>
+    <p class="subsub">Đợt 2: Thanh toán phần còn lại trong vòng 14 ngày. Quá hạn thanh toán số tiền đặt cọc sẽ không được hoàn trả và phòng tập có quyền ngừng cung cấp dịch vụ cho Hội viên.</p>
+    <p class="subsub">b. Đối với hình thức trả góp hàng tháng (có lãi), phòng tập sẽ cần 1 đơn vị thứ 3 từ bên ngân hàng liên kết với trung tâm thôi điểm hiện tại để tiến hành trả góp.</p>
+    <p class="sub">3.3. Hình thức thanh toán: {{payment_method}}.</p>
+  </div>
+
+  <div class="dieu">
+    <div class="dieu-title">Điều 4: Huấn luyện viên</div>
+    <p class="sub">4.1. Phòng tập đảm bảo các Huấn luyện viên (HLV) do phòng tập cung cấp đều có trình độ chuyên môn, kỹ năng và chất lượng đào tạo tốt.</p>
+  </div>
+
+  <div class="page-footer">
+    <span class="footer-hotline">Hotline: {{hotline}}</span>
+    <span class="footer-page">Trang 3/ 7</span>
+  </div>
+</div>
+
+<!-- =================== TRANG 4 =================== -->
+<div class="page">
+  <div class="header-box">
+    <div class="header-logo">
+      <div style="text-align:center;">
+        <img src="{{logo_url}}" alt="Logo" style="width:54px;height:54px;object-fit:contain;">
+      </div>
+    </div>
+    <div class="header-info">
+      <div class="header-title">Hợp đồng dịch vụ huấn luyện viên cá nhân</div>
+      <div class="header-company">{{center_short_name}}</div>
+      <div class="header-address">{{center_address}}</div>
+    </div>
+  </div>
+
+  <div class="dieu">
+    <p>Trong trường hợp HLV không thể phụ trách Hội viên trong các buổi tập vì các lý do như: ốm đau, công việc cá nhân, nghỉ việc, bị đình chỉ công tác do vi phạm quy định của công ty, hoặc khi Hội viên thay đổi Phòng tập theo Hợp đồng này, phòng tập sẽ phân công HLV thay thế trong thời gian sớm nhất nhằm đảm bảo quá trình tập luyện của Hội viên không bị gián đoạn.</p>
+    <p class="sub" style="margin-top:8px;">4.2. HLV có trách nhiệm như sau:</p>
+    <p class="subsub">a. Lên giáo án tập luyện và chế độ dinh dưỡng cho Hội viên theo quyền lợi gói tập đã đăng ký.</p>
+    <p class="subsub">b. Liên hệ và nhắn tin cho Hội viên để nhắc nhở và động viên trong suốt Thời hạn của Hợp đồng.</p>
+    <p class="subsub">c. Sắp xếp lịch tập cho Hội viên nhằm đảm bảo sự phù hợp với lịch sinh hoạt của Hội viên.</p>
+    <p class="subsub">d. Hướng dẫn và hỗ trợ cho Hội viên nhằm đảm bảo an toàn cho Hội viên trong quá trình tập luyện.</p>
+    <p class="sub" style="margin-top:6px;">4.3. Hội viên được quyền thay đổi HLV khi gặp phải một trong những trường hợp sau:</p>
+    <p class="subsub">a. Không thực hiện đơn và chương trình cho Hội viên theo quyền lợi gói tập đã đăng ký.</p>
+    <p class="subsub">b. Không nhắn tin hỏi thăm, động viên và nhắc nhở Hội viên.</p>
+    <p class="subsub">c. Không hẹn lịch tập hay lờ lịch hẹn đã đặt trước với Hội viên.</p>
+    <p class="subsub">d. Có thái độ không nghiêm túc, không tập trung trong quá trình hướng dẫn Hội viên tập luyện.</p>
+    <p class="subsub">e. Có những lời nói, hành động, cử chỉ không đúng mực, quấy rối với Hội viên.</p>
+  </div>
+
+  <div class="dieu">
+    <div class="dieu-title">Điều 5: Chuyển nhượng, hoàn tiền</div>
+    <p class="sub">5.1. Không chuyển nhượng: Hai bên thống nhất rằng để đảm bảo cung cấp dịch vụ tốt nhất cho Hội viên, phòng tập cần có thời gian để chuẩn bị chương trình huấn luyện phù hợp với từng Hội viên dựa trên thể chất, cân nặng và yêu cầu riêng. Do đó, gói tập sẽ không được chuyển nhượng dưới bất kỳ hình thức nào.</p>
+    <p class="sub">5.2. Không hoàn tiền: Hội viên sẽ không được hoàn tiền sau khi đã đăng ký tại phòng tập. Trong trường hợp bất khả kháng Hội viên phải ngừng tập, phòng tập sẽ hỗ trợ chuyển đổi sang gói tập phù hợp.</p>
+    <p class="sub">5.3. Đối với Gói khoản cân nặng, việc hoàn tiền chỉ áp dụng trong trường hợp Hội viên hoàn thành mục tiêu trước thời hạn, theo tỷ lệ quy định tại Điều 2.5.c. Các trường hợp khác, Gói khoản vẫn tuân theo nguyên tắc không hoàn tiền, không chuyển nhượng như các Gói tập thông thường.</p>
+  </div>
+
+  <div class="dieu">
+    <div class="dieu-title">Điều 6: Trách nhiệm các bên</div>
+    <p class="sub">6.1. Trách nhiệm của Hội viên:</p>
+    <p class="subsub">a. Thanh toán đầy đủ, đúng hạn.</p>
+  </div>
+
+  <div class="page-footer">
+    <span class="footer-hotline">Hotline: {{hotline}}</span>
+    <span class="footer-page">Trang 4/ 7</span>
+  </div>
+</div>
+
+<!-- =================== TRANG 5 =================== -->
+<div class="page">
+  <div class="header-box">
+    <div class="header-logo">
+      <div style="text-align:center;">
+        <img src="{{logo_url}}" alt="Logo" style="width:54px;height:54px;object-fit:contain;">
+      </div>
+    </div>
+    <div class="header-info">
+      <div class="header-title">Hợp đồng dịch vụ huấn luyện viên cá nhân</div>
+      <div class="header-company">{{center_short_name}}</div>
+      <div class="header-address">{{center_address}}</div>
+    </div>
+  </div>
+
+  <div class="dieu">
+    <p class="subsub">b. Tuân thủ nội quy Phòng tập và hướng dẫn từ HLV.</p>
+    <p class="subsub">c. Để đạt được kết quả tốt nhất, Hội viên cần nghiêm túc bám sát giáo án tập luyện và chế độ dinh dưỡng do HLV cung cấp trong thời hạn của Hợp đồng.</p>
+    <p class="subsub">d. Hội viên cần đến đúng giờ đã hẹn, nếu đến muộn, thời gian của buổi tập chỉ kéo dài đến hết thời gian của buổi tập (1 tiếng) và không bù lại thời gian đến muộn của Hội viên.</p>
+    <p class="subsub">e. Hội viên cần báo trước 3 tiếng nếu muốn thay đổi lịch tập để HLV kịp thời sắp xếp.</p>
+    <p class="subsub">f. Không được quảng cáo hay trưng bày sản phẩm, dịch vụ khác trong phòng tập.</p>
+    <p class="subsub">g. Không sử dụng phòng tập để quảng cáo mà không có sự chấp thuận của phòng tập.</p>
+    <p class="subsub">h. Hội viên có thể chuyển phòng tập cùng cơ sở trong tỉnh miễn phí một lần, nhưng từ lần thứ hai sẽ mất phí 300.000 VND/lần.</p>
+    <p class="sub" style="margin-top:8px;">6.2. Trách nhiệm của phòng tập gồm:</p>
+    <p class="subsub">a. Cung cấp HLV theo Hợp đồng.</p>
+    <p class="subsub">b. Cung cấp tiện ích và đảm bảo chất lượng, phù hợp với nhu cầu tập luyện Hội viên.</p>
+    <p class="subsub">c. Có trách nhiệm hướng dẫn cách tập với từng thiết bị trước khi Hội viên sử dụng thiết bị.</p>
+    <p class="subsub">d. Có quyền từ chối cung cấp dịch vụ HLV khi đã nhắc nhở Hội viên 03 lần khi Hội viên không tuân thủ nội quy phòng tập trong quá trình huấn luyện.</p>
+    <p class="subsub">e. Có quyền từ chối cung cấp dịch vụ cho Hội viên nếu Hội viên không đến tập luyện trong vòng 30 ngày liên tục đủ cho HLV đã nhắn tin hỏi thăm, nhắc nhở, động viên, mà không có lý do chính đáng.</p>
+    <p class="subsub">f. Cam kết bảo mật thông tin cá nhân của Hội viên và chỉ sử dụng hình ảnh đề quảng cáo với sự đồng ý của Hội viên.</p>
+  </div>
+
+  <div class="dieu">
+    <div class="dieu-title">Điều 7: Quy định của phòng tập</div>
+    <p class="sub">7.1. Trang phục: Hội viên mặc trang phục thoải mái có giản, tránh mặc các trang phục quá nhạy cảm, sử dụng giày tập để sạch đi lại trong khu vực phòng tập.</p>
+    <p class="sub">7.2. Sức khoẻ:</p>
+    <p class="subsub">a. Hội viên cần kiểm tra thể trạng sức khoẻ tại cơ sở y tế chuyên nghiệp trước khi bắt đầu bất kỳ Gói tập nào.</p>
+    <p class="subsub">b. Gói tập tại phòng tập hoàn toàn phù hợp với Hội viên có sức khoẻ bình thường và không có lưu ý từ bác sĩ. phòng tập khuyến cáo Hội viên nên thông báo đầy đủ tình trạng sức khoẻ cho HLV trước khi kích hoạt Gói tập và trong suốt quá trình tập luyện nhằm được hỗ trợ tập luyện một cách tốt nhất.</p>
+  </div>
+
+  <div class="page-footer">
+    <span class="footer-hotline">Hotline: {{hotline}}</span>
+    <span class="footer-page">Trang 5/ 7</span>
+  </div>
+</div>
+
+<!-- =================== TRANG 6 =================== -->
+<div class="page">
+  <div class="header-box">
+    <div class="header-logo">
+      <div style="text-align:center;">
+        <img src="{{logo_url}}" alt="Logo" style="width:54px;height:54px;object-fit:contain;">
+      </div>
+    </div>
+    <div class="header-info">
+      <div class="header-title">Hợp đồng dịch vụ huấn luyện viên cá nhân</div>
+      <div class="header-company">{{center_short_name}}</div>
+      <div class="header-address">{{center_address}}</div>
+    </div>
+  </div>
+
+  <div class="dieu">
+    <p class="sub">7.3. Bảo quản tài sản cá nhân:</p>
+    <p class="subsub">a. Có tủ đựng đồ, khoá tủ cho Hội viên và Hội viên có trách nhiệm trả lại nguyên vẹn sau khi dùng.</p>
+    <p class="subsub">b. Hội viên có trách nhiệm bảo quản đồ dùng, tài sản cá nhân của mình, sử dụng đúng số tủ. Phòng tập không khuyến khích Hội viên không mang những tài sản có giá trị vào khu vực Phòng tập. Phòng tập không chịu trách nhiệm về tổn thất, mất mát, hư hỏng, bị lấy cắp, bị thiệt hại đối với đồ dùng, tài sản cá nhân của Hội viên.</p>
+    <p class="sub">7.4. An toàn và Âm thanh/tiếng ồn:</p>
+    <p class="subsub">a. Hội viên cần tôn trọng không gian tập của Phòng tập. Giữ trật tự và giảm âm thanh/tiếng ồn trong mọi hoạt động ở mức thấp nhất.</p>
+    <p class="subsub">b. Hội viên sử dụng thiết bị gây ảnh hưởng đến môi trường chung, trừ máy nghe nhạc có tai nghe.</p>
+    <p class="subsub">c. Hội viên phải tôn trọng, không bạo lực với nhân viên Phòng tập. Nếu có tranh chấp, cần báo Quản lý để xử lý. Hành vi bạo lực sẽ dẫn đến việc từ chối dịch vụ và yêu cầu bồi thường theo pháp luật.</p>
+    <p class="sub">7.5. Thay đổi tên/địa điểm Phòng tập:</p>
+    <p class="subsub">a. Phòng tập có quyền thay đổi địa điểm trong bán kính 10km và sẽ thông báo cho Hội viên ít nhất 30 ngày trước. Thông báo sẽ qua tin nhắn và niêm yết tại quầy lễ tân. Nếu Hội viên không đồng ý và muốn chuyển sang Phòng khác trong hệ thống phòng tập, sẽ không phải trả thêm phí và cũng không được hoàn tiền đã đóng.</p>
+    <p class="subsub">b. Phòng tập có thể thay đổi tên bất cứ khi nào nhưng vẫn sẽ đảm bảo quyền được tập luyện của Hội viên theo Hợp đồng này.</p>
+  </div>
+
+  <div class="dieu">
+    <div class="dieu-title">Điều 8: Miễn trừ và bồi thường thiệt hại</div>
+    <p class="sub">8.1. Các Bên đồng ý rằng sử dụng thiết bị tại phòng tập có thể gây rủi ro cho Hội viên. Hội viên cam kết tuân thủ hướng dẫn tập luyện. phòng tập không chịu trách nhiệm về thương tổn của Hội viên, trừ khi do làm theo hướng dẫn của HLV. Bồi thường của phòng tập không vượt quá giá trị Hợp đồng.</p>
+    <p class="sub">8.2. Nếu gây hại cho thiết bị hoặc tài sản của phòng tập do không tuân thủ hướng dẫn, Hội viên phải bồi thường toàn bộ thiệt hại.</p>
+  </div>
+
+  <div class="dieu">
+    <div class="dieu-title">Điều 9: Chấm dứt hợp đồng</div>
+    <p class="sub">9.1. Hợp đồng tự động chấm dứt khi hết thời hạn tại Điều 2.1.</p>
+    <p class="sub">9.2. Hợp đồng không thể hủy ngay bay đơn phương chấm dứt trong bất kỳ trường hợp nào trừ khi được nêu tại Điều 6.2.d, Điều 6.2.e</p>
+  </div>
+
+  <div class="page-footer">
+    <span class="footer-hotline">Hotline: {{hotline}}</span>
+    <span class="footer-page">Trang 6/ 7</span>
+  </div>
+</div>
+
+<!-- =================== TRANG 7 =================== -->
+<div class="page">
+  <div class="header-box">
+    <div class="header-logo">
+      <div style="text-align:center;">
+        <img src="{{logo_url}}" alt="Logo" style="width:54px;height:54px;object-fit:contain;">
+      </div>
+    </div>
+    <div class="header-info">
+      <div class="header-title">Hợp đồng dịch vụ huấn luyện viên cá nhân</div>
+      <div class="header-company">{{center_short_name}}</div>
+      <div class="header-address">{{center_address}}</div>
+    </div>
+  </div>
+
+  <div class="dieu">
+    <p class="sub">9.3. Phòng tập có quyền chấm dứt Hợp đồng theo Điều 6.2.d, 6.2.e mà không cần hoàn trả tiền, kể cả các buổi tập chưa sử dụng. phòng tập phải thông báo trước 3 ngày.</p>
+  </div>
+
+  <div class="dieu">
+    <div class="dieu-title">Điều 10: Luật điều chỉnh và giải quyết tranh chấp</div>
+    <p class="sub">10.1. Hợp đồng được điều chỉnh bởi luật pháp Việt Nam.</p>
+    <p class="sub">10.2. Nếu có tranh chấp, các Bên sẽ thương lượng để tìm ra giải pháp. Nếu sau 30 ngày không đạt thỏa thuận, vụ việc sẽ được đưa ra Tòa án.</p>
+    <p class="sub">10.3. Nếu có tranh chấp, các Bên sẽ thương lượng. Nếu sau 30 ngày mà các Bên không đạt được thỏa thuận, mỗi Bên có quyền đưa vụ việc ra Tòa án nhân dân có thẩm quyền để giải quyết tranh chấp.</p>
+  </div>
+
+  <div class="dieu">
+    <div class="dieu-title">Điều 11: Điều khoản cuối cùng</div>
+    <p class="sub">11.1. Các Bên cam kết ràng buộc chặt chẽ bởi những thỏa thuận trong Hợp đồng dịch vụ này. Nếu có bất kỳ khó khăn gì này sinh trong quá trình thực hiện các điều khoản của Hợp đồng dịch vụ, các Bên sẽ bàn bạc để tìm ra biện pháp phù hợp lý nhằm khắc phục khó khăn và sẽ có văn bản về những vấn đề đề được bổ sung vào Hợp đồng dịch vụ hiện tại.</p>
+    <p class="sub">11.2. Hợp đồng dịch vụ này có hiệu lực kể từ ngày ký. <em>Ngày ký: {{signing_date}}</em></p>
+  </div>
+
+  <!-- CHỮ KÝ -->
+  <div class="sign-section">
+    <div class="sign-col">
+      <div class="sign-title">Hội viên</div>
+      <div class="sign-sub">Ký và ghi rõ họ tên</div>
+      <div class="signature-img">
+        <img src="{{signature_url}}" alt="Chữ ký hội viên" style="max-height:60px;max-width:160px;object-fit:contain;">
+      </div>
+      <div class="sign-name">{{member_name}}</div>
+    </div>
+    <div class="sign-col">
+      <div class="sign-title">Trung tâm</div>
+      <div class="sign-sub">Ký và ghi rõ họ tên</div>
+      <div class="signature-img">
+        <img src="{{signature_center}}" alt="Chữ ký trung tâm" style="max-height:60px;max-width:160px;object-fit:contain;">
+      </div>
+      <div class="sign-name">{{center_representative}}</div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span class="footer-hotline">Hotline: {{hotline}}</span>
+    <span class="footer-page">Trang 7/ 7</span>
+  </div>
+</div>
+
+</body>
+</html>

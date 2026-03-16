@@ -1,0 +1,87 @@
+﻿
+> ladyfit@0.1.0 build
+> cross-env NODE_OPTIONS=--max-old-space-size=8192 next build
+
+node.exe : ΓÜá `eslint` configuration in 
+next.config.ts is no longer supported. See 
+more info here: https://nextjs.org/docs/app/ap
+i-reference/cli/next#next-lint-options
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" 
+"C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ( 
+   ΓÜá `eslint` co...xt-lint-options:String)  
+   [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandEr 
+   ror
+ 
+ΓÜá Invalid next.config.ts options detected: 
+ΓÜá     Unrecognized key(s) in object: 
+'eslint'
+ΓÜá See more info here: https://nextjs.org/doc
+s/messages/invalid-next-config
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local, .env
+
+ΓÜá The "middleware" file convention is 
+deprecated. Please use "proxy" instead. Learn 
+more: https://nextjs.org/docs/messages/middlew
+are-to-proxy
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 36.9s
+  Skipping validation of types
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/34) ...
+  Generating static pages using 7 workers (8/34) 
+  Generating static pages using 7 workers (16/34) 
+  Generating static pages using 7 workers (25/34) 
+Γ£ô Generating static pages using 7 workers (34/34) in 954.6ms
+  Finalizing page optimization ...
+
+Route (app)
+Γöî Γùï /
+Γö£ Γùï /_not-found
+Γö£ ╞Æ /api/contract-template-v2
+Γö£ ╞Æ /api/contract-template-v3
+Γö£ ╞Æ /api/contracts/preview-gdoc/[id]
+Γö£ Γùï /app-store
+Γö£ ╞Æ /auth/callback
+Γö£ Γùï /branches
+Γö£ Γùï /cash-flow
+Γö£ Γùï /categories
+Γö£ Γùï /clients
+Γö£ Γùï /config-params
+Γö£ Γùï /contract-template
+Γö£ Γùï /contracts
+Γö£ ╞Æ /contracts/preview-gdoc/[id]
+Γö£ ╞Æ /contracts/print-v2/[id]
+Γö£ ╞Æ /contracts/print-v3/[id]
+Γö£ ╞Æ /contracts/print/[id]
+Γö£ Γùï /customers
+Γö£ Γùï /debts
+Γö£ Γùï /expense
+Γö£ Γùï /google-drive-config
+Γö£ Γùï /inventory
+Γö£ Γùï /items
+Γö£ Γùï /login
+Γö£ Γùï /orders
+Γö£ Γùï /packages
+Γö£ Γùï /packing
+Γö£ Γùï /profile
+Γö£ Γùï /quotations
+Γö£ Γùï /reports
+Γö£ Γùï /revenue
+Γö£ Γùï /settings
+Γö£ Γùï /users
+Γö£ Γùï /warehouses
+Γö£ Γùï /weight-tracking
+Γöö Γùï /zalo-users
+
+
+╞Æ Proxy (Middleware)
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

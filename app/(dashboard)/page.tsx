@@ -63,8 +63,8 @@ const featureGroups = [
             { name: 'Nhân sự', href: '/users', icon: Users, desc: 'Phân quyền và quản lý tài khoản' },
             { name: 'Gói tập', href: '/packages', icon: Package, desc: 'Thiết lập các gói dịch vụ tập luyện' },
             { name: 'Tham số', href: '/config-params', icon: Settings, desc: 'Cấu hình các hằng số hệ thống' },
-            { name: 'Mẫu HĐ', href: '/contract-template', icon: FileText, desc: 'Thiết kế mẫu in hợp đồng' },
-            { name: 'Placeholder', href: '/contract-template?tab=placeholders', icon: Tags, desc: 'Cài đặt nhãn dữ liệu động' },
+            // { name: 'Mẫu HĐ', href: '/contract-template', icon: FileText, desc: 'Thiết kế mẫu in hợp đồng' },
+            // { name: 'Placeholder', href: '/contract-template?tab=placeholders', icon: Tags, desc: 'Cài đặt nhãn dữ liệu động' },
         ]
     }
 ]

@@ -31,7 +31,8 @@ import {
     HandCoins,
     BanknoteArrowUp,
     Tags,
-    Home
+    Home,
+    Cloud
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -62,8 +63,9 @@ const systemNavigation = [
     { name: 'Nhân sự', href: '/users', icon: Users },
     { name: 'Gói tập', href: '/packages', icon: Package },
     { name: 'Tham số', href: '/config-params', icon: Settings },
-    { name: 'Mẫu HĐ', href: '/contract-template', icon: FileText },
-    { name: 'Quản lý Placeholder', href: '/contract-template?tab=placeholders', icon: Tags },
+    // { name: 'Mẫu HĐ', href: '/contract-template', icon: FileText },
+    // { name: 'Quản lý Placeholder', href: '/contract-template?tab=placeholders', icon: Tags },
+    // { name: 'Google Drive', href: '/google-drive-config', icon: Cloud },
     { name: 'Báo cáo', href: '/reports', icon: LayoutDashboard },
     // { name: 'Cài đặt', href: '/settings', icon: Settings },
 ]

@@ -20,6 +20,7 @@ import {
     Save,
     Trash2,
     X,
+    Cloud,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateBranch, deleteBranch } from '@/app/actions/branches'
@@ -109,7 +110,7 @@ export function BranchDetailsSheet({
         </div>
     )
 
-    const DetailRow = ({ label, value, name, type = 'text', icon: Icon }: any) => (
+    const DetailRow = ({ label, value, name, type = 'text', icon: Icon, placeholder }: any) => (
         <div className="space-y-1.5">
             <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
                 {Icon && <Icon className="w-3 h-3" />}
@@ -121,6 +122,7 @@ export function BranchDetailsSheet({
                     type={type}
                     value={formData[name] || ''}
                     onChange={handleInputChange}
+                    placeholder={placeholder}
                     className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
                 />
             ) : (
@@ -135,8 +137,9 @@ export function BranchDetailsSheet({
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
                 side="right"
+                resizable
                 showCloseButton={false}
-                className="w-full sm:max-w-[480px] border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
+                className="w-full border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
             >
                 {/* Sticky Header */}
                 <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
@@ -241,6 +244,29 @@ export function BranchDetailsSheet({
                                 <DetailRow label="Số tài khoản" value={formData.account_number} name="account_number" type="number" icon={CreditCard} />
                             </div>
                             <DetailRow label="Chủ tài khoản" value={formData.account_holder} name="account_holder" icon={User} />
+                        </div>
+                    </CardSection>
+
+                    {/* Section: Chữ ký & Dấu mộc */}
+                    <CardSection title="Chữ ký & Dấu mộc" icon={Cloud}>
+                        <div className="space-y-5">
+                            <DetailRow 
+                                label="URL Chữ ký chi nhánh" 
+                                value={formData.signature_center} 
+                                name="signature_center" 
+                                icon={Cloud}
+                                placeholder="https://.../signature.png"
+                            />
+                            {!isEditing && formData.signature_center && (
+                                <div className="mt-2 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex justify-center">
+                                    <img 
+                                        src={formData.signature_center} 
+                                        alt="Branch Signature" 
+                                        className="h-20 object-contain"
+                                        onError={(e: any) => e.target.style.display = 'none'}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </CardSection>
 
