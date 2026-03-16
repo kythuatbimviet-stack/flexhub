@@ -46,6 +46,42 @@ import { createClient } from '@/lib/supabase'
 import { FinalizeContractDialog } from './finalize-contract-dialog'
 import { Loader2, Download } from 'lucide-react'
 
+// ─── Component con nằm NGOÀI component cha để tránh re-mount khi state thay đổi ───
+const ContractCardSection = ({ title, icon: Icon, children }: any) => (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+        <div className="flex items-center gap-3 mb-6">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
+                <Icon className="w-4 h-4" />
+            </div>
+            <h3 className="text-[12px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">{title}</h3>
+        </div>
+        {children}
+    </div>
+)
+
+const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEditing, formData, onChange }: any) => (
+    <div className="space-y-1.5">
+        <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+            {Icon && <Icon className="w-3 h-3" />}
+            {label} {isEditing && ['package_name', 'payment_method', 'quantity', 'total_amount', 'status', 'id_number', 'email'].includes(name) && <span className="text-red-500">*</span>}
+        </Label>
+        {isEditing ? (
+            <Input
+                name={name}
+                type={type}
+                value={formData[name] ?? ''}
+                onChange={onChange}
+                className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
+            />
+        ) : (
+            <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                {type === 'number' && value ? Number(value).toLocaleString('vi-VN') + ' ₫' : (value || '-')}
+            </p>
+        )}
+    </div>
+)
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface ContractDetailsSheetProps {
     contract: any | null
     open: boolean
@@ -193,39 +229,7 @@ export function ContractDetailsSheet({
         }
     }
 
-    const CardSection = ({ title, icon: Icon, children }: any) => (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
-                    <Icon className="w-4 h-4" />
-                </div>
-                <h3 className="text-[12px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">{title}</h3>
-            </div>
-            {children}
-        </div>
-    )
-
-    const DetailRow = ({ label, value, name, type = 'text', icon: Icon }: any) => (
-        <div className="space-y-1.5">
-            <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                {Icon && <Icon className="w-3 h-3" />}
-                {label} {isEditing && ['package_name', 'payment_method', 'quantity', 'total_amount', 'status', 'id_number', 'email'].includes(name) && <span className="text-red-500">*</span>}
-            </Label>
-            {isEditing ? (
-                <Input
-                    name={name}
-                    type={type}
-                    value={formData[name] || ''}
-                    onChange={handleInputChange}
-                    className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
-                />
-            ) : (
-                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
-                    {type === 'number' && value ? Number(value).toLocaleString('vi-VN') + ' ₫' : (value || '-')}
-                </p>
-            )}
-        </div>
-    )
+    const sharedRowProps = { isEditing, formData, onChange: handleInputChange }
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -352,29 +356,29 @@ export function ContractDetailsSheet({
                     </div>
 
                     {/* Section: Thông tin khách hàng */}
-                    <CardSection title="Thông tin khách hàng" icon={User}>
+                    <ContractCardSection title="Thông tin khách hàng" icon={User}>
                         <div className="space-y-5">
-                            <DetailRow label="Hội viên" value={formData.member_name} name="member_name" icon={User} />
+                            <ContractDetailRow label="Hội viên" value={formData.member_name} name="member_name" icon={User} {...sharedRowProps} />
                             <div className="grid grid-cols-2 gap-5">
-                                <DetailRow label="Số điện thoại" value={formData.phone} name="phone" icon={Phone} />
-                                <DetailRow label="Email" value={formData.email} name="email" icon={Mail} />
+                                <ContractDetailRow label="Số điện thoại" value={formData.phone} name="phone" icon={Phone} {...sharedRowProps} />
+                                <ContractDetailRow label="Email" value={formData.email} name="email" icon={Mail} {...sharedRowProps} />
                             </div>
-                            <DetailRow label="Căn cước công dân" value={formData.id_number} name="id_number" icon={FileText} />
-                            <DetailRow label="Địa chỉ" value={formData.member_address} name="member_address" icon={MapPin} />
+                            <ContractDetailRow label="Căn cước công dân" value={formData.id_number} name="id_number" icon={FileText} {...sharedRowProps} />
+                            <ContractDetailRow label="Địa chỉ" value={formData.member_address} name="member_address" icon={MapPin} {...sharedRowProps} />
                         </div>
-                    </CardSection>
+                    </ContractCardSection>
 
                     {/* Section: Chi tiết hợp đồng */}
-                    <CardSection title="Chi tiết hợp đồng" icon={Package}>
+                    <ContractCardSection title="Chi tiết hợp đồng" icon={Package}>
                         <div className="space-y-5">
-                            <DetailRow label="Gói tập" value={formData.package_name} name="package_name" icon={Package} />
+                            <ContractDetailRow label="Gói tập" value={formData.package_name} name="package_name" icon={Package} {...sharedRowProps} />
                             <div className="grid grid-cols-2 gap-5">
-                                <DetailRow label="Ngày bắt đầu" value={formData.start_date} name="start_date" type="date" icon={Calendar} />
-                                <DetailRow label="Ngày kết thúc" value={formData.end_date} name="end_date" type="date" icon={Calendar} />
+                                <ContractDetailRow label="Ngày bắt đầu" value={formData.start_date} name="start_date" type="date" icon={Calendar} {...sharedRowProps} />
+                                <ContractDetailRow label="Ngày kết thúc" value={formData.end_date} name="end_date" type="date" icon={Calendar} {...sharedRowProps} />
                             </div>
                             <div className="grid grid-cols-2 gap-5">
-                                <DetailRow label="Số lượng/Tháng" value={formData.quantity} name="quantity" type="number" icon={Clock} />
-                                <DetailRow label="Huấn luyện viên" value={formData.trainer_name} name="trainer_name" icon={Dumbbell} />
+                                <ContractDetailRow label="Số lượng/Tháng" value={formData.quantity} name="quantity" type="number" icon={Clock} {...sharedRowProps} />
+                                <ContractDetailRow label="Huấn luyện viên" value={formData.trainer_name} name="trainer_name" icon={Dumbbell} {...sharedRowProps} />
                             </div>
                             <div className="grid grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
@@ -427,45 +431,45 @@ export function ContractDetailsSheet({
                                 </div>
                             </div>
                         </div>
-                    </CardSection>
+                    </ContractCardSection>
 
                     {/* Section: Thanh toán */}
-                    <CardSection title="Thanh toán" icon={CreditCard}>
+                    <ContractCardSection title="Thanh toán" icon={CreditCard}>
                         <div className="space-y-5">
-                            <DetailRow label="Hình thức" value={formData.payment_method} name="payment_method" icon={CreditCard} />
+                            <ContractDetailRow label="Hình thức" value={formData.payment_method} name="payment_method" icon={CreditCard} {...sharedRowProps} />
                             <div className="grid grid-cols-2 gap-5">
-                                <DetailRow label="Giá gói (niêm yết)" value={formData.package_price} name="package_price" type="number" icon={CreditCard} />
+                                <ContractDetailRow label="Giá gói (niêm yết)" value={formData.package_price} name="package_price" type="number" icon={CreditCard} {...sharedRowProps} />
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bằng chữ</Label>
                                     <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.package_price_text || '-'}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-5">
-                                <DetailRow label="Giá trợ giá" value={formData.discounted_price} name="discounted_price" type="number" icon={CreditCard} />
+                                <ContractDetailRow label="Giá trợ giá" value={formData.discounted_price} name="discounted_price" type="number" icon={CreditCard} {...sharedRowProps} />
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bằng chữ</Label>
                                     <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.discounted_price_text || '-'}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-5">
-                                <DetailRow label="Tổng giá trị HĐ" value={formData.total_amount} name="total_amount" type="number" icon={CreditCard} />
+                                <ContractDetailRow label="Tổng giá trị HĐ" value={formData.total_amount} name="total_amount" type="number" icon={CreditCard} {...sharedRowProps} />
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bằng chữ</Label>
                                     <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.total_amount_text || '-'}</p>
                                 </div>
                             </div>
                         </div>
-                    </CardSection>
+                    </ContractCardSection>
 
                     {/* Section: Chữ ký khách hàng */}
-                    <CardSection title="Chữ ký khách hàng" icon={Cloud}>
+                    <ContractCardSection title="Chữ ký khách hàng" icon={Cloud}>
                         <div className="space-y-4">
-                            <DetailRow 
+                            <ContractDetailRow 
                                 label="URL Chữ ký khách hàng" 
                                 value={formData.signature_url} 
                                 name="signature_url" 
                                 icon={Cloud}
-                                placeholder="https://.../signature.png"
+                                {...sharedRowProps}
                             />
                             
                             {!isEditing && (
@@ -483,7 +487,7 @@ export function ContractDetailsSheet({
                                 </div>
                             )}
                         </div>
-                    </CardSection>
+                    </ContractCardSection>
                 </div>
 
                 {/* Sticky Footer */}

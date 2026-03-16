@@ -30,6 +30,42 @@ import { toast } from 'sonner'
 import { updateUser, deleteUser } from '@/app/actions/users'
 import { cn } from '@/lib/utils'
 
+// ─── Component con nằm NGOÀI component cha để tránh re-mount khi state thay đổi ───
+const CardSection = ({ title, icon: Icon, children }: any) => (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+        <div className="flex items-center gap-3 mb-6">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
+                <Icon className="w-4 h-4" />
+            </div>
+            <h3 className="text-[12px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">{title}</h3>
+        </div>
+        {children}
+    </div>
+)
+
+const UserDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEditing, formData, onChange }: any) => (
+    <div className="space-y-1.5">
+        <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+            {Icon && <Icon className="w-3 h-3" />}
+            {label}
+        </Label>
+        {isEditing ? (
+            <Input
+                name={name}
+                type={type}
+                value={formData[name] ?? ''}
+                onChange={onChange}
+                className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
+            />
+        ) : (
+            <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                {value || '-'}
+            </p>
+        )}
+    </div>
+)
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface UserDetailsSheetProps {
     user: any | null
     open: boolean
@@ -99,39 +135,7 @@ export function UserDetailsSheet({
         }
     }
 
-    const CardSection = ({ title, icon: Icon, children }: any) => (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
-                    <Icon className="w-4 h-4" />
-                </div>
-                <h3 className="text-[12px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">{title}</h3>
-            </div>
-            {children}
-        </div>
-    )
-
-    const DetailRow = ({ label, value, name, type = 'text', icon: Icon }: any) => (
-        <div className="space-y-1.5">
-            <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                {Icon && <Icon className="w-3 h-3" />}
-                {label}
-            </Label>
-            {isEditing ? (
-                <Input
-                    name={name}
-                    type={type}
-                    value={formData[name] || ''}
-                    onChange={handleInputChange}
-                    className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
-                />
-            ) : (
-                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
-                    {value || '-'}
-                </p>
-            )}
-        </div>
-    )
+    const sharedRowProps = { isEditing, formData, onChange: handleInputChange }
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -221,10 +225,10 @@ export function UserDetailsSheet({
                     {/* Section: Liên hệ */}
                     <CardSection title="Thông tin liên hệ" icon={Mail}>
                         <div className="space-y-5">
-                            <DetailRow label="Họ và tên" value={formData.name} name="name" icon={User} />
+                            <UserDetailRow label="Họ và tên" value={formData.name} name="name" icon={User} {...sharedRowProps} />
                             <div className="grid grid-cols-2 gap-5">
-                                <DetailRow label="Số điện thoại" value={formData.phone} name="phone" icon={Phone} />
-                                <DetailRow label="Email" value={formData.email} name="email" icon={Mail} />
+                                <UserDetailRow label="Số điện thoại" value={formData.phone} name="phone" icon={Phone} {...sharedRowProps} />
+                                <UserDetailRow label="Email" value={formData.email} name="email" icon={Mail} {...sharedRowProps} />
                             </div>
                         </div>
                     </CardSection>
@@ -233,12 +237,12 @@ export function UserDetailsSheet({
                     <CardSection title="Vị trí công tác" icon={Briefcase}>
                         <div className="space-y-5">
                             <div className="grid grid-cols-2 gap-5">
-                                <DetailRow label="Chi nhánh" value={user.branches?.name || user.branch_name} name="branch_name" icon={Building2} />
-                                <DetailRow label="Phòng ban" value={formData.department} name="department" icon={Briefcase} />
+                                <UserDetailRow label="Chi nhánh" value={user.branches?.name || user.branch_name} name="branch_name" icon={Building2} {...sharedRowProps} />
+                                <UserDetailRow label="Phòng ban" value={formData.department} name="department" icon={Briefcase} {...sharedRowProps} />
                             </div>
                             <div className="grid grid-cols-2 gap-5">
-                                <DetailRow label="Chức vụ" value={formData.position} name="position" icon={BadgeCheck} />
-                                <DetailRow label="Vai trò" value={formData.role_id} name="role_id" icon={Shield} />
+                                <UserDetailRow label="Chức vụ" value={formData.position} name="position" icon={BadgeCheck} {...sharedRowProps} />
+                                <UserDetailRow label="Vai trò" value={formData.role_id} name="role_id" icon={Shield} {...sharedRowProps} />
                             </div>
                         </div>
                     </CardSection>
@@ -246,13 +250,14 @@ export function UserDetailsSheet({
                     {/* Section: Hệ thống */}
                     <CardSection title="Thông tin hệ thống" icon={Clock}>
                         <div className="grid grid-cols-2 gap-5">
-                            <DetailRow
+                            <UserDetailRow
                                 label="Ngày tham gia"
                                 value={user.created_at ? new Date(user.created_at).toLocaleDateString('vi-VN') : '-'}
                                 name="created_at"
                                 icon={Calendar}
+                                {...sharedRowProps}
                             />
-                            <DetailRow label="Trạng thái" value={user.status === 'Activated' ? 'Đang hoạt động' : 'Tạm ngưng'} name="status" icon={BadgeCheck} />
+                            <UserDetailRow label="Trạng thái" value={user.status === 'Activated' ? 'Đang hoạt động' : 'Tạm ngưng'} name="status" icon={BadgeCheck} {...sharedRowProps} />
                         </div>
                     </CardSection>
                 </div>

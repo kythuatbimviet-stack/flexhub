@@ -33,6 +33,58 @@ interface BranchDetailsSheetProps {
     onSuccess: () => void
 }
 
+// ─── Component con được định nghĩa NGOÀI component cha ───────────────────────
+// Điều này ngăn React unmount/remount chúng mỗi khi state cha thay đổi,
+// từ đó giữ nguyên focus của ô nhập liệu khi người dùng gõ phím.
+
+const CardSection = ({ title, icon: Icon, children }: any) => (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+        <div className="flex items-center gap-3 mb-6">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
+                <Icon className="w-4 h-4" />
+            </div>
+            <h3 className="text-[12px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">{title}</h3>
+        </div>
+        {children}
+    </div>
+)
+
+interface DetailRowProps {
+    label: string
+    value?: any
+    name: string
+    type?: string
+    icon?: any
+    placeholder?: string
+    isEditing: boolean
+    formData: any
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+}
+
+const DetailRow = ({ label, value, name, type = 'text', icon: Icon, placeholder, isEditing, formData, onChange }: DetailRowProps) => (
+    <div className="space-y-1.5">
+        <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+            {Icon && <Icon className="w-3 h-3" />}
+            {label}
+        </Label>
+        {isEditing ? (
+            <Input
+                name={name}
+                type={type}
+                value={formData[name] ?? ''}
+                onChange={onChange}
+                placeholder={placeholder}
+                className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
+            />
+        ) : (
+            <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                {value || '-'}
+            </p>
+        )}
+    </div>
+)
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function BranchDetailsSheet({
     branch,
     open,
@@ -98,40 +150,7 @@ export function BranchDetailsSheet({
         }
     }
 
-    const CardSection = ({ title, icon: Icon, children }: any) => (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
-                    <Icon className="w-4 h-4" />
-                </div>
-                <h3 className="text-[12px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">{title}</h3>
-            </div>
-            {children}
-        </div>
-    )
-
-    const DetailRow = ({ label, value, name, type = 'text', icon: Icon, placeholder }: any) => (
-        <div className="space-y-1.5">
-            <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                {Icon && <Icon className="w-3 h-3" />}
-                {label}
-            </Label>
-            {isEditing ? (
-                <Input
-                    name={name}
-                    type={type}
-                    value={formData[name] || ''}
-                    onChange={handleInputChange}
-                    placeholder={placeholder}
-                    className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
-                />
-            ) : (
-                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
-                    {value || '-'}
-                </p>
-            )}
-        </div>
-    )
+    const sharedRowProps = { isEditing, formData, onChange: handleInputChange }
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -218,21 +237,21 @@ export function BranchDetailsSheet({
                     {/* Section: Thông tin cơ bản */}
                     <CardSection title="Thông tin cơ bản" icon={Building2}>
                         <div className="space-y-5">
-                            <DetailRow label="Tên chi nhánh" value={formData.name} name="name" icon={Building2} />
+                            <DetailRow label="Tên chi nhánh" value={formData.name} name="name" icon={Building2} {...sharedRowProps} />
                             <div className="grid grid-cols-2 gap-5">
-                                <DetailRow label="Tên viết tắt" value={formData.short_name} name="short_name" icon={Building2} />
-                                <DetailRow label="Số điện thoại trung tâm" value={formData.center_phone || formData.phone} name="center_phone" icon={Phone} />
+                                <DetailRow label="Tên viết tắt" value={formData.short_name} name="short_name" icon={Building2} {...sharedRowProps} />
+                                <DetailRow label="Số điện thoại trung tâm" value={formData.center_phone || formData.phone} name="center_phone" icon={Phone} {...sharedRowProps} />
                             </div>
-                            <DetailRow label="Người đại diện (hiển thị HĐ)" value={formData.representative} name="representative" icon={User} />
-                            <DetailRow label="Địa chỉ trung tâm" value={formData.center_address || formData.address} name="center_address" icon={MapPin} />
+                            <DetailRow label="Người đại diện (hiển thị HĐ)" value={formData.representative} name="representative" icon={User} {...sharedRowProps} />
+                            <DetailRow label="Địa chỉ trung tâm" value={formData.center_address || formData.address} name="center_address" icon={MapPin} {...sharedRowProps} />
                         </div>
                     </CardSection>
 
                     {/* Section: Đại diện pháp lý */}
                     <CardSection title="Đại diện theo pháp luật" icon={User}>
                         <div className="space-y-5">
-                            <DetailRow label="Họ và tên người đại diện PL" value={formData.legal_representative} name="legal_representative" icon={User} />
-                            <DetailRow label="Số điện thoại người đại diện" value={formData.representative_phone} name="representative_phone" icon={Phone} />
+                            <DetailRow label="Họ và tên người đại diện PL" value={formData.legal_representative} name="legal_representative" icon={User} {...sharedRowProps} />
+                            <DetailRow label="Số điện thoại người đại diện" value={formData.representative_phone} name="representative_phone" icon={Phone} {...sharedRowProps} />
                         </div>
                     </CardSection>
 
@@ -240,28 +259,29 @@ export function BranchDetailsSheet({
                     <CardSection title="Thông tin thanh toán" icon={CreditCard}>
                         <div className="space-y-5">
                             <div className="grid grid-cols-2 gap-5">
-                                <DetailRow label="Ngân hàng" value={formData.bank_name} name="bank_name" icon={CreditCard} />
-                                <DetailRow label="Số tài khoản" value={formData.account_number} name="account_number" type="number" icon={CreditCard} />
+                                <DetailRow label="Ngân hàng" value={formData.bank_name} name="bank_name" icon={CreditCard} {...sharedRowProps} />
+                                <DetailRow label="Số tài khoản" value={formData.account_number} name="account_number" type="number" icon={CreditCard} {...sharedRowProps} />
                             </div>
-                            <DetailRow label="Chủ tài khoản" value={formData.account_holder} name="account_holder" icon={User} />
+                            <DetailRow label="Chủ tài khoản" value={formData.account_holder} name="account_holder" icon={User} {...sharedRowProps} />
                         </div>
                     </CardSection>
 
                     {/* Section: Chữ ký & Dấu mộc */}
                     <CardSection title="Chữ ký & Dấu mộc" icon={Cloud}>
                         <div className="space-y-5">
-                            <DetailRow 
-                                label="URL Chữ ký chi nhánh" 
-                                value={formData.signature_center} 
-                                name="signature_center" 
+                            <DetailRow
+                                label="URL Chữ ký chi nhánh"
+                                value={formData.signature_center}
+                                name="signature_center"
                                 icon={Cloud}
                                 placeholder="https://.../signature.png"
+                                {...sharedRowProps}
                             />
                             {!isEditing && formData.signature_center && (
                                 <div className="mt-2 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex justify-center">
-                                    <img 
-                                        src={formData.signature_center} 
-                                        alt="Branch Signature" 
+                                    <img
+                                        src={formData.signature_center}
+                                        alt="Branch Signature"
                                         className="h-20 object-contain"
                                         onError={(e: any) => e.target.style.display = 'none'}
                                     />

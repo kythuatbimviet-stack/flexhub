@@ -66,6 +66,88 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { SignatureField } from '@/components/ui/signature-field'
 
+// ─── Component con nằm NGOÀI component cha để tránh re-mount khi state thay đổi ───
+const ClientCardSection = ({ title, icon: Icon, children }: any) => (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-visible mb-5">
+        <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                <Icon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h3 className="text-[12px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">{title}</h3>
+        </div>
+        <div className="p-5 space-y-5">
+            {children}
+        </div>
+    </div>
+)
+
+const ClientInfoRow = ({ label, value, name, type = "text", options, isEditing, formData, onChange, onSelectChange }: any) => {
+    const listId = options && type !== 'select' ? `${name}-list` : undefined;
+    const requiredNames = ['member_name', 'branch_id', 'status', 'assigned_pt', 'pt_name', 'age', 'height', 'weight', 'source', 'goal'];
+    return (
+        <div className="space-y-1">
+            <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                {label} {isEditing && requiredNames.includes(name) && <span className="text-red-500">*</span>}
+            </Label>
+            {isEditing ? (
+                type === 'textarea' ? (
+                    <Textarea
+                        name={name}
+                        value={formData[name] || ''}
+                        onChange={onChange}
+                        className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[80px] text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
+                    />
+                ) : type === 'select' ? (
+                    <Select value={formData[name] || ''} onValueChange={(val) => onSelectChange(name, val)}>
+                        <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-blue-500 shadow-sm">
+                            <SelectValue placeholder={`Chọn...`} />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                            {options?.map((opt: any, idx: number) => {
+                                const optValue = typeof opt === 'object' ? opt.value : opt;
+                                const optLabel = typeof opt === 'object' ? opt.label : opt;
+                                return (
+                                    <SelectItem key={idx} value={optValue}>
+                                        {optLabel}
+                                    </SelectItem>
+                                );
+                            })}
+                        </SelectContent>
+                    </Select>
+                ) : (
+                    <div className="relative">
+                        <Input
+                            name={name}
+                            type={type}
+                            step={type === 'number' ? '0.1' : undefined}
+                            value={formData[name] ?? ''}
+                            onChange={onChange}
+                            readOnly={name === 'age'}
+                            list={listId}
+                            className={cn("w-full rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-blue-500 shadow-sm", name === 'age' && "bg-slate-50 dark:bg-slate-800/50 text-slate-500 cursor-not-allowed")}
+                        />
+                        {options && type !== 'select' && (
+                            <datalist id={listId}>
+                                {options.map((opt: any, idx: number) => {
+                                    const optValue = typeof opt === 'object' ? opt.value : opt;
+                                    return <option key={idx} value={optValue} />;
+                                })}
+                            </datalist>
+                        )}
+                    </div>
+                )
+            ) : (
+                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                    {type === 'select' && options
+                        ? (options.find((o: any) => (typeof o === 'object' ? o.value : o) === value)?.label || options.find((o: any) => (typeof o === 'object' ? o.value : o) === value)?.value || value || <span className="text-slate-300 italic font-normal text-sm">Chưa cập nhật</span>)
+                        : (value || <span className="text-slate-300 italic font-normal text-sm">Chưa cập nhật</span>)}
+                </p>
+            )}
+        </div>
+    )
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface ClientDetailsSheetProps {
     client: any | null
     open: boolean
@@ -227,83 +309,11 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
         setFormData((prev: any) => ({ ...prev, branch_id: value }))
     }
 
-    const CardSection = ({ title, icon: Icon, children }: any) => (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-visible mb-5">
-            <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                    <Icon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                </div>
-                <h3 className="text-[12px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">{title}</h3>
-            </div>
-            <div className="p-5 space-y-5">
-                {children}
-            </div>
-        </div>
-    )
-
-    const InfoRow = ({ label, value, name, type = "text", options }: any) => {
-        const listId = options && type !== 'select' ? `${name}-list` : undefined;
-        return (
-            <div className="space-y-1">
-                <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                    {label} {isEditing && ['member_name', 'branch_id', 'status', 'assigned_pt', 'pt_name', 'age', 'height', 'weight', 'source', 'goal'].includes(name) && <span className="text-red-500">*</span>}
-                </Label>
-                {isEditing ? (
-                    type === 'textarea' ? (
-                        <Textarea
-                            name={name}
-                            value={formData[name] || ''}
-                            onChange={handleChange}
-                            className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[80px] text-sm focus:ring-2 focus:ring-blue-500 shadow-sm"
-                        />
-                    ) : type === 'select' ? (
-                        <Select value={formData[name] || ''} onValueChange={(val) => setFormData((prev: any) => ({ ...prev, [name]: val }))}>
-                            <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-blue-500 shadow-sm">
-                                <SelectValue placeholder={`Chọn...`} />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                {options?.map((opt: any, idx: number) => {
-                                    const optValue = typeof opt === 'object' ? opt.value : opt;
-                                    const optLabel = typeof opt === 'object' ? opt.label : opt;
-                                    return (
-                                        <SelectItem key={idx} value={optValue}>
-                                            {optLabel}
-                                        </SelectItem>
-                                    );
-                                })}
-                            </SelectContent>
-                        </Select>
-                    ) : (
-                        <div className="relative">
-                            <Input
-                                name={name}
-                                type={type}
-                                step={type === 'number' ? '0.1' : undefined}
-                                value={formData[name] ?? ''}
-                                onChange={handleChange}
-                                readOnly={name === 'age'}
-                                list={listId}
-                                className={cn("w-full rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-blue-500 shadow-sm", name === 'age' && "bg-slate-50 dark:bg-slate-800/50 text-slate-500 cursor-not-allowed")}
-                            />
-                            {options && type !== 'select' && (
-                                <datalist id={listId}>
-                                    {options.map((opt: any, idx: number) => {
-                                        const optValue = typeof opt === 'object' ? opt.value : opt;
-                                        return <option key={idx} value={optValue} />
-                                    })}
-                                </datalist>
-                            )}
-                        </div>
-                    )
-                ) : (
-                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
-                        {type === 'select' && options
-                            ? (options.find((o: any) => (typeof o === 'object' ? o.value : o) === value)?.label || options.find((o: any) => (typeof o === 'object' ? o.value : o) === value)?.value || value || <span className="text-slate-300 italic font-normal text-sm">Chưa cập nhật</span>)
-                            : (value || <span className="text-slate-300 italic font-normal text-sm">Chưa cập nhật</span>)}
-                    </p>
-                )}
-            </div>
-        )
+    const sharedRowProps = {
+        isEditing,
+        formData,
+        onChange: handleChange,
+        onSelectChange: (name: string, val: string) => setFormData((prev: any) => ({ ...prev, [name]: val }))
     }
 
     return (
@@ -512,18 +522,18 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                     )}
 
                     {/* Section: Thông tin cá nhân */}
-                    <CardSection title="Thông tin cá nhân" icon={User}>
+                    <ClientCardSection title="Thông tin cá nhân" icon={User}>
                         <div className="space-y-5">
-                            <InfoRow label="Họ và Tên" value={formData.member_name} name="member_name" />
+                            <ClientInfoRow label="Họ và Tên" value={formData.member_name} name="member_name" {...sharedRowProps} />
                             <div className="grid grid-cols-2 gap-5">
-                                <InfoRow label="Số điện thoại" value={formData.phone} name="phone" />
-                                <InfoRow label="Email" value={formData.email} name="email" />
+                                <ClientInfoRow label="Số điện thoại" value={formData.phone} name="phone" {...sharedRowProps} />
+                                <ClientInfoRow label="Email" value={formData.email} name="email" {...sharedRowProps} />
                             </div>
                             <div className="grid grid-cols-2 gap-5">
-                                <InfoRow label="Ngày sinh" value={formData.dob} name="dob" type="date" />
-                                <InfoRow label="Tuổi" value={formData.age} name="age" type="number" />
+                                <ClientInfoRow label="Ngày sinh" value={formData.dob} name="dob" type="date" {...sharedRowProps} />
+                                <ClientInfoRow label="Tuổi" value={formData.age} name="age" type="number" {...sharedRowProps} />
                             </div>
-                            <InfoRow label="Địa chỉ" value={formData.address} name="address" />
+                            <ClientInfoRow label="Địa chỉ" value={formData.address} name="address" {...sharedRowProps} />
                             <div className="grid grid-cols-2 gap-5">
                                 <div className="space-y-1">
                                     <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Zalo</Label>
@@ -607,26 +617,26 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                         </p>
                                     )}
                                 </div>
-                                <InfoRow label="Facebook ID" value={formData.facebook_id} name="facebook_id" />
+                                <ClientInfoRow label="Facebook ID" value={formData.facebook_id} name="facebook_id" {...sharedRowProps} />
                             </div>
                         </div>
-                    </CardSection>
+                    </ClientCardSection>
 
                     {/* Section: Chỉ số cơ thể */}
-                    <CardSection title="Chỉ số cơ thể & Mục tiêu" icon={Activity}>
+                    <ClientCardSection title="Chỉ số cơ thể & Mục tiêu" icon={Activity}>
                         <div className="grid grid-cols-3 gap-5 mb-5">
-                            <InfoRow label="Chiều cao (cm)" value={formData.height} name="height" type="number" />
-                            <InfoRow label="Cân nặng (kg)" value={formData.weight} name="weight" type="number" />
-                            <InfoRow label="Mục tiêu (kg)" value={formData.target_weight} name="target_weight" type="number" />
+                            <ClientInfoRow label="Chiều cao (cm)" value={formData.height} name="height" type="number" {...sharedRowProps} />
+                            <ClientInfoRow label="Cân nặng (kg)" value={formData.weight} name="weight" type="number" {...sharedRowProps} />
+                            <ClientInfoRow label="Mục tiêu (kg)" value={formData.target_weight} name="target_weight" type="number" {...sharedRowProps} />
                         </div>
                         <div className="space-y-5">
-                            <InfoRow label="Mục tiêu tập luyện" value={formData.goal} name="goal" type="select" options={clientGoals.map((g: any) => g.nam)} />
-                            <InfoRow label="Tiền sử bệnh lý" value={formData.medical_history} name="medical_history" type="textarea" />
+                            <ClientInfoRow label="Mục tiêu tập luyện" value={formData.goal} name="goal" type="select" options={clientGoals.map((g: any) => g.nam)} {...sharedRowProps} />
+                            <ClientInfoRow label="Tiền sử bệnh lý" value={formData.medical_history} name="medical_history" type="textarea" {...sharedRowProps} />
                         </div>
-                    </CardSection>
+                    </ClientCardSection>
 
                     {/* Section: Huấn luyện & Gói tập */}
-                    <CardSection title="Huấn luyện & Gói tập" icon={Dumbbell}>
+                    <ClientCardSection title="Huấn luyện & Gói tập" icon={Dumbbell}>
                         <div className="space-y-5">
                             <div className="grid grid-cols-2 gap-5">
                                 <div className="space-y-1">
@@ -702,31 +712,31 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                         </p>
                                     )}
                                 </div>
-                                <InfoRow label="Cơ sở" value={formData.branch_id} name="branch_id" type="select" options={branches?.map((b: any) => ({ value: b.id, label: b.name }))} />
+                                <ClientInfoRow label="Cơ sở" value={formData.branch_id} name="branch_id" type="select" options={branches?.map((b: any) => ({ value: b.id, label: b.name }))} {...sharedRowProps} />
                             </div>
                             <div className="grid grid-cols-2 gap-5">
-                                <InfoRow label="Lộ trình đăng ký" value={formData.registration_type} name="registration_type" options={clientRegistrationTypes.map((t: any) => t.nam)} />
-                                <InfoRow label="Thời gian tập" value={formData.training_time} name="training_time" type="select" options={clientTrainingTimes.map((t: any) => t.nam)} />
+                                <ClientInfoRow label="Lộ trình đăng ký" value={formData.registration_type} name="registration_type" options={clientRegistrationTypes.map((t: any) => t.nam)} {...sharedRowProps} />
+                                <ClientInfoRow label="Thời gian tập" value={formData.training_time} name="training_time" type="select" options={clientTrainingTimes.map((t: any) => t.nam)} {...sharedRowProps} />
                             </div>
                             <div className="grid grid-cols-2 gap-5">
-                                <InfoRow label="Chu kỳ khách" value={formData.customer_cycle} name="customer_cycle" />
+                                <ClientInfoRow label="Chu kỳ khách" value={formData.customer_cycle} name="customer_cycle" {...sharedRowProps} />
                             </div>
-                            <InfoRow label="Ghi chú thêm" value={formData.notes} name="notes" type="textarea" />
+                            <ClientInfoRow label="Ghi chú thêm" value={formData.notes} name="notes" type="textarea" {...sharedRowProps} />
                         </div>
-                    </CardSection>
+                    </ClientCardSection>
 
                     {/* Section: Nguồn khách */}
-                    <CardSection title="Nguồn khách khách hàng" icon={Star}>
+                    <ClientCardSection title="Nguồn khách khách hàng" icon={Star}>
                         <div className="space-y-5">
                             <div className="grid grid-cols-2 gap-5">
-                                <InfoRow label="Nguồn khách hàng" value={formData.source} name="source" type="select" options={clientSources.map((s: any) => s.nam)} />
-                                <InfoRow label="Người giới thiệu" value={formData.referrer} name="referrer" />
+                                <ClientInfoRow label="Nguồn khách hàng" value={formData.source} name="source" type="select" options={clientSources.map((s: any) => s.nam)} {...sharedRowProps} />
+                                <ClientInfoRow label="Người giới thiệu" value={formData.referrer} name="referrer" {...sharedRowProps} />
                             </div>
                         </div>
-                    </CardSection>
+                    </ClientCardSection>
                     
                     {/* Section: Chữ ký khách hàng */}
-                    <CardSection title="Chữ ký khách hàng" icon={FileText}>
+                    <ClientCardSection title="Chữ ký khách hàng" icon={FileText}>
                         <div className="space-y-4">
                             {isEditing ? (
                                 <SignatureField 
@@ -747,7 +757,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                 </div>
                             )}
                         </div>
-                    </CardSection>
+                    </ClientCardSection>
                 </div>
 
                 {/* Sticky Footer */}

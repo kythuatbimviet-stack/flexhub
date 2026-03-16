@@ -34,6 +34,65 @@ import { updateMembership, deleteMembership } from '@/app/actions/memberships'
 import { fetchBranches } from '@/app/actions/branches'
 import { useQuery } from '@tanstack/react-query'
 
+// ─── Component con nằm NGOÀI component cha để tránh re-mount khi state thay đổi ───
+const MembershipCardSection = ({ title, icon: Icon, children }: any) => (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+        <div className="flex items-center gap-3 mb-6">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
+                <Icon className="w-4 h-4" />
+            </div>
+            <h3 className="text-[12px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">{title}</h3>
+        </div>
+        {children}
+    </div>
+)
+
+const MembershipDetailRow = ({ label, value, name, type = 'text', icon: Icon, isSelect = false, options = [], isEditing, formData, onChange, onSelectChange }: any) => {
+    const formatNumber = (val: string | number) => {
+        if (val === undefined || val === null || val === '') return ''
+        const num = val.toString().replace(/\D/g, '')
+        return num.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    }
+    return (
+        <div className="space-y-1.5 text-left">
+            <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                {Icon && <Icon className="w-3 h-3" />}
+                {label}
+            </Label>
+            {isEditing ? (
+                isSelect ? (
+                    <Select onValueChange={(v) => onSelectChange(name, v)} defaultValue={formData[name] || 'null'}>
+                        <SelectTrigger className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
+                            <SelectValue placeholder="Chọn..." />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                            {options.map((opt: any) => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ) : (
+                    <Input
+                        name={name}
+                        type={type === 'currency' ? 'text' : type}
+                        value={type === 'currency' ? formatNumber(formData[name]) : formData[name] ?? ''}
+                        onChange={onChange}
+                        className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
+                    />
+                )
+            ) : (
+                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                    {type === 'currency'
+                        ? (value ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value).replace('₫', '₫') : '-')
+                        : value || '-'
+                    }
+                </p>
+            )}
+        </div>
+    )
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface MembershipDetailsSheetProps {
     pkg: any | null
     open: boolean
@@ -135,55 +194,7 @@ export function MembershipDetailsSheet({
         }
     }
 
-    const CardSection = ({ title, icon: Icon, children }: any) => (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
-                    <Icon className="w-4 h-4" />
-                </div>
-                <h3 className="text-[12px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">{title}</h3>
-            </div>
-            {children}
-        </div>
-    )
-
-    const DetailRow = ({ label, value, name, type = 'text', icon: Icon, isSelect = false, options = [] }: any) => (
-        <div className="space-y-1.5 text-left">
-            <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                {Icon && <Icon className="w-3 h-3" />}
-                {label}
-            </Label>
-            {isEditing ? (
-                isSelect ? (
-                    <Select onValueChange={(v) => handleSelectChange(name!, v)} defaultValue={formData[name!] || 'null'}>
-                        <SelectTrigger className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all">
-                            <SelectValue placeholder="Chọn..." />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                            {options.map((opt: any) => (
-                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                ) : (
-                    <Input
-                        name={name}
-                        type={type === 'currency' ? 'text' : type}
-                        value={type === 'currency' ? formatNumber(formData[name]) : formData[name] || ''}
-                        onChange={handleInputChange}
-                        className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
-                    />
-                )
-            ) : (
-                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
-                    {type === 'currency'
-                        ? (value ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value).replace('₫', '₫') : '-')
-                        : value || '-'
-                    }
-                </p>
-            )}
-        </div>
-    )
+    const sharedRowProps = { isEditing, formData, onChange: handleInputChange, onSelectChange: handleSelectChange }
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -268,10 +279,10 @@ export function MembershipDetailsSheet({
                     </div>
 
                     {/* Section: Thông tin chung */}
-                    <CardSection title="Thông tin gói dịch vụ" icon={TrendingUp}>
+                    <MembershipCardSection title="Thông tin gói dịch vụ" icon={TrendingUp}>
                         <div className="space-y-5 text-left">
-                            <DetailRow label="Tên gói tập" value={formData.package_name} name="package_name" icon={Package} />
-                            <DetailRow
+                            <MembershipDetailRow label="Tên gói tập" value={formData.package_name} name="package_name" icon={Package} {...sharedRowProps} />
+                            <MembershipDetailRow
                                 icon={Building2}
                                 label="Chi nhánh áp dụng"
                                 value={pkg.branches?.name || 'Toàn hệ thống'}
@@ -281,9 +292,10 @@ export function MembershipDetailsSheet({
                                     { label: 'Toàn hệ thống', value: 'null' },
                                     ...(branches?.map((b: any) => ({ label: b.name, value: b.id })) || [])
                                 ]}
+                                {...sharedRowProps}
                             />
                             <div className="grid grid-cols-2 gap-5">
-                                <DetailRow
+                                <MembershipDetailRow
                                     icon={Clock}
                                     label="Hình thức tập"
                                     value={formData.package_type}
@@ -294,8 +306,9 @@ export function MembershipDetailsSheet({
                                         { label: 'Online', value: 'Online' },
                                         { label: 'Hybrid', value: 'Hybrid' }
                                     ]}
+                                    {...sharedRowProps}
                                 />
-                                <DetailRow
+                                <MembershipDetailRow
                                     icon={Package}
                                     label="Huấn luyện viên"
                                     value={formData.trainer_type}
@@ -306,24 +319,25 @@ export function MembershipDetailsSheet({
                                         { label: 'Không kèm PT', value: 'Không kèm PT' },
                                         { label: 'Tự do', value: 'Tự do' }
                                     ]}
+                                    {...sharedRowProps}
                                 />
                             </div>
                         </div>
-                    </CardSection>
+                    </MembershipCardSection>
 
                     {/* Section: Chi tiết giá & thời gian */}
-                    <CardSection title="Giá & Thời hạn sử dụng" icon={DollarSign}>
+                    <MembershipCardSection title="Giá & Thời hạn sử dụng" icon={DollarSign}>
                         <div className="space-y-5 text-left">
                             <div className="grid grid-cols-2 gap-5">
-                                <DetailRow icon={DollarSign} label="Giá niêm yết" value={formData.unit_price} name="unit_price" type="currency" />
-                                <DetailRow icon={DollarSign} label="Giá ưu đãi" value={formData.discounted_price} name="discounted_price" type="currency" />
+                                <MembershipDetailRow icon={DollarSign} label="Giá niêm yết" value={formData.unit_price} name="unit_price" type="currency" {...sharedRowProps} />
+                                <MembershipDetailRow icon={DollarSign} label="Giá ưu đãi" value={formData.discounted_price} name="discounted_price" type="currency" {...sharedRowProps} />
                             </div>
                             <div className="grid grid-cols-2 gap-5">
-                                <DetailRow icon={Calendar} label="Thời hạn (Ngày)" value={formData.duration_days} name="duration_days" type="number" />
-                                <DetailRow icon={Calendar} label="Số tháng (Hệ số)" value={formData.months_purchased} name="months_purchased" type="number" />
+                                <MembershipDetailRow icon={Calendar} label="Thời hạn (Ngày)" value={formData.duration_days} name="duration_days" type="number" {...sharedRowProps} />
+                                <MembershipDetailRow icon={Calendar} label="Số tháng (Hệ số)" value={formData.months_purchased} name="months_purchased" type="number" {...sharedRowProps} />
                             </div>
                         </div>
-                    </CardSection>
+                    </MembershipCardSection>
                 </div>
 
                 {/* Sticky Footer */}
