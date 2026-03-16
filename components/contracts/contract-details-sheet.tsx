@@ -40,6 +40,8 @@ import {
 import { fetchBranches } from '@/app/actions/branches'
 import { toast } from 'sonner'
 import { updateContract, deleteContract } from '@/app/actions/contracts'
+import { uploadSignature } from '@/app/actions/storage'
+import { SignatureField } from '@/components/ui/signature-field'
 import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase'
@@ -169,7 +171,22 @@ export function ContractDetailsSheet({
     const handleSave = async () => {
         setLoading(true)
         try {
-            const result = await updateContract(contract.id, formData)
+            let finalFormData = { ...formData }
+
+            // Nếu chữ ký khách hàng là base64, upload lên Storage
+            if (formData.signature_url && formData.signature_url.startsWith('data:image')) {
+                const fileName = `client_sig_${contract.id}_${Date.now()}.png`
+                const uploadResult = await uploadSignature(formData.signature_url, fileName)
+                
+                if (uploadResult.success) {
+                    finalFormData.signature_url = uploadResult.url
+                } else {
+                    toast.error('Không thể upload chữ ký khách hàng: ' + uploadResult.error)
+                    return
+                }
+            }
+
+            const result = await updateContract(contract.id, finalFormData)
             if (result.success) {
                 toast.success('Đã cập nhật hợp đồng')
                 setIsEditing(false)
@@ -464,28 +481,31 @@ export function ContractDetailsSheet({
                     {/* Section: Chữ ký khách hàng */}
                     <ContractCardSection title="Chữ ký khách hàng" icon={Cloud}>
                         <div className="space-y-4">
-                            <ContractDetailRow 
-                                label="URL Chữ ký khách hàng" 
-                                value={formData.signature_url} 
-                                name="signature_url" 
-                                icon={Cloud}
-                                {...sharedRowProps}
-                            />
-                            
-                            {!isEditing && (
-                                <div className="flex flex-col items-center justify-center p-4 min-h-[120px] bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-                                    {formData.signature_url ? (
-                                        <img 
-                                            src={formData.signature_url} 
-                                            alt="Chữ ký khách hàng" 
-                                            className="max-h-32 object-contain"
-                                            onError={(e: any) => e.target.style.display = 'none'}
-                                        />
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                    <Cloud className="w-3 h-3" />
+                                    Chữ ký khách hàng
+                                </Label>
+                                {isEditing ? (
+                                    <SignatureField
+                                        value={formData.signature_url}
+                                        onChange={(val) => setFormData((prev: any) => ({ ...prev, signature_url: val }))}
+                                    />
+                                ) : (
+                                    formData.signature_url ? (
+                                        <div className="flex flex-col items-center justify-center p-4 min-h-[120px] bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                                            <img 
+                                                src={formData.signature_url} 
+                                                alt="Chữ ký khách hàng" 
+                                                className="max-h-32 object-contain"
+                                                onError={(e: any) => e.target.style.display = 'none'}
+                                            />
+                                        </div>
                                     ) : (
                                         <p className="text-sm text-slate-400 italic">Chưa có chữ ký</p>
-                                    )}
-                                </div>
-                            )}
+                                    )
+                                )}
+                            </div>
                         </div>
                     </ContractCardSection>
                 </div>

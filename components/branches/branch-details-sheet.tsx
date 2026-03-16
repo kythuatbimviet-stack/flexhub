@@ -24,6 +24,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateBranch, deleteBranch } from '@/app/actions/branches'
+import { uploadSignature } from '@/app/actions/storage'
+import { SignatureField } from '@/components/ui/signature-field'
 import { cn } from '@/lib/utils'
 
 interface BranchDetailsSheetProps {
@@ -112,9 +114,24 @@ export function BranchDetailsSheet({
     const handleSave = async () => {
         setLoading(true)
         try {
+            let finalFormData = { ...formData }
+
+            // Nếu chữ ký là base64 (người dùng vừa ký hoặc upload ảnh mới), tiến hành upload lên Storage
+            if (formData.signature_center && formData.signature_center.startsWith('data:image')) {
+                const fileName = `branch_sig_${branch.id}_${Date.now()}.png`
+                const uploadResult = await uploadSignature(formData.signature_center, fileName)
+                
+                if (uploadResult.success) {
+                    finalFormData.signature_center = uploadResult.url
+                } else {
+                    toast.error('Không thể upload chữ ký: ' + uploadResult.error)
+                    return
+                }
+            }
+
             const result = await updateBranch(branch.id, {
-                ...formData,
-                account_number: formData.account_number ? parseInt(formData.account_number) : null
+                ...finalFormData,
+                account_number: finalFormData.account_number ? parseInt(finalFormData.account_number) : null
             })
             if (result.success) {
                 toast.success('Đã cập nhật thông tin chi nhánh')
@@ -269,24 +286,31 @@ export function BranchDetailsSheet({
                     {/* Section: Chữ ký & Dấu mộc */}
                     <CardSection title="Chữ ký & Dấu mộc" icon={Cloud}>
                         <div className="space-y-5">
-                            <DetailRow
-                                label="URL Chữ ký chi nhánh"
-                                value={formData.signature_center}
-                                name="signature_center"
-                                icon={Cloud}
-                                placeholder="https://.../signature.png"
-                                {...sharedRowProps}
-                            />
-                            {!isEditing && formData.signature_center && (
-                                <div className="mt-2 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex justify-center">
-                                    <img
-                                        src={formData.signature_center}
-                                        alt="Branch Signature"
-                                        className="h-20 object-contain"
-                                        onError={(e: any) => e.target.style.display = 'none'}
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                    <Cloud className="w-3 h-3" />
+                                    Chữ ký chi nhánh
+                                </Label>
+                                {isEditing ? (
+                                    <SignatureField
+                                        value={formData.signature_center}
+                                        onChange={(val) => setFormData((prev: any) => ({ ...prev, signature_center: val }))}
                                     />
-                                </div>
-                            )}
+                                ) : (
+                                    formData.signature_center ? (
+                                        <div className="mt-2 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex justify-center">
+                                            <img
+                                                src={formData.signature_center}
+                                                alt="Branch Signature"
+                                                className="h-20 object-contain"
+                                                onError={(e: any) => e.target.style.display = 'none'}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-slate-400 italic">Chưa có chữ ký</p>
+                                    )
+                                )}
+                            </div>
                         </div>
                     </CardSection>
 

@@ -14,8 +14,14 @@ interface SignatureFieldProps {
 export function SignatureField({ value, onChange, className }: SignatureFieldProps) {
     const canvasRef = React.useRef<HTMLCanvasElement>(null)
     const [isDrawing, setIsDrawing] = React.useState(false)
-    const [mode, setMode] = React.useState<'draw' | 'upload'>('draw')
+    // Tự động chuyển sang 'upload' nếu value là một URL ảnh (không phải base64)
+    const [mode, setMode] = React.useState<'draw' | 'upload'>(
+        (value && !value.startsWith('data:image')) ? 'upload' : 'draw'
+    )
     const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+    const isBase64 = value?.startsWith('data:image')
+    const isUrl = value?.startsWith('http') || value?.startsWith('/')
 
     const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
         setIsDrawing(true)
@@ -81,17 +87,17 @@ export function SignatureField({ value, onChange, className }: SignatureFieldPro
             canvas.width = canvas.offsetWidth
             canvas.height = canvas.offsetHeight
             
-            // If there's an existing value (base64), draw it on the canvas
-            if (value && value.startsWith('data:image')) {
+            // If there's an existing base64 value, draw it
+            if (isBase64) {
                 const img = new Image()
                 img.onload = () => {
                     const ctx = canvas.getContext('2d')
                     if (ctx) ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
                 }
-                img.src = value
+                img.src = value!
             }
         }
-    }, [mode, open])
+    }, [mode, isBase64])
 
     return (
         <div className={cn("space-y-3", className)}>
@@ -114,7 +120,7 @@ export function SignatureField({ value, onChange, className }: SignatureFieldPro
                     className="rounded-lg h-8 text-[10px]"
                 >
                     <Upload className="w-3 h-3 mr-1" />
-                    Tải ảnh lên
+                    Tải ảnh lên / Preview
                 </Button>
             </div>
 
@@ -143,27 +149,43 @@ export function SignatureField({ value, onChange, className }: SignatureFieldPro
                         </Button>
                     </>
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-[150px] p-4">
-                        {value && value.startsWith('data:image') ? (
-                            <div className="relative w-full h-full flex items-center justify-center">
-                                <img src={value} alt="Signature" className="max-h-full object-contain" />
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => onChange('')}
-                                    className="absolute top-0 right-0 h-6 w-6 rounded-full bg-red-100 text-red-600"
-                                >
-                                    <Eraser className="w-3 h-3" />
-                                </Button>
+                    <div className="flex flex-col items-center justify-center h-[150px] p-4 text-center">
+                        {value ? (
+                            <div className="relative w-full h-full flex items-center justify-center group">
+                                <img 
+                                    src={value} 
+                                    alt="Signature Preview" 
+                                    className="max-h-full max-w-full object-contain p-2"
+                                    onError={(e: any) => {
+                                        e.target.style.display = 'none'
+                                    }}
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 rounded-xl">
+                                     <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => {
+                                            onChange('')
+                                            if (fileInputRef.current) fileInputRef.current.value = ''
+                                        }}
+                                        className="rounded-full h-8 px-4"
+                                    >
+                                        <Eraser className="w-3 h-3 mr-2" />
+                                        Xóa chữ ký
+                                    </Button>
+                                </div>
                             </div>
                         ) : (
                             <div 
                                 onClick={() => fileInputRef.current?.click()}
-                                className="flex flex-col items-center gap-2 cursor-pointer text-gray-400 hover:text-red-500 transition-colors"
+                                className="flex flex-col items-center gap-2 cursor-pointer text-gray-400 hover:text-blue-500 transition-all"
                             >
-                                <Upload className="w-8 h-8" />
-                                <span className="text-xs">Nhấp để chọn ảnh chữ ký</span>
+                                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-1">
+                                    <Upload className="w-6 h-6" />
+                                </div>
+                                <span className="text-[11px] font-medium uppercase tracking-wider">Nhấp để chọn ảnh chữ ký</span>
+                                <span className="text-[10px] text-gray-400">Hỗ trợ định dạng PNG, JPG</span>
                             </div>
                         )}
                         <input
@@ -176,9 +198,16 @@ export function SignatureField({ value, onChange, className }: SignatureFieldPro
                     </div>
                 )}
             </div>
-            <p className="text-[10px] text-gray-400 italic">
-                * Chữ ký sẽ được lưu cùng hồ sơ khách hàng
-            </p>
+            {mode === 'draw' && (
+                <p className="text-[10px] text-gray-400 italic">
+                    * Ký trực tiếp vào khung trên bằng chuột hoặc bút cảm ứng
+                </p>
+            )}
+            {mode === 'upload' && !value && (
+                <p className="text-[10px] text-gray-400 italic">
+                    * Đính kèm ảnh chữ ký đã có (khuyên dùng ảnh nền trong suốt)
+                </p>
+            )}
         </div>
     )
 }

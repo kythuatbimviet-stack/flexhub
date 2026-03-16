@@ -265,36 +265,72 @@ function formatDate(dateStr) {
 
 /**
  * Chèn ảnh vào placeholder trong Google Doc
+ * Cải tiến: Tự động điều chỉnh kích thước và xử lý vị trí tốt hơn
+ */
+/**
+ * Chèn ảnh vào placeholder trong Google Doc
+ * Cải tiến: Tự động điều chỉnh kích thước, xử lý vị trí tốt hơn và xóa placeholder nếu không có ảnh
  */
 function replacePlaceholderWithImage(body, placeholder, imageUrl) {
-  if (!imageUrl || imageUrl.startsWith('data:')) return; 
+  if (!imageUrl || imageUrl.trim() === "" || imageUrl.startsWith('data:')) {
+    // Nếu không có URL hoặc là base64 (chưa được upload), xóa placeholder để tránh lộ mã placeholder trong PDF
+    body.replaceText(placeholder, "");
+    if (imageUrl && imageUrl.startsWith('data:')) {
+      console.warn("Bỏ qua placeholder " + placeholder + " do dữ liệu là base64 chưa upload.");
+    }
+    return;
+  }
+  
   try {
-    const response = UrlFetchApp.fetch(imageUrl);
+    const response = UrlFetchApp.fetch(imageUrl, { "muteHttpExceptions": true });
+    if (response.getResponseCode() !== 200) {
+      console.error("Không thể tải ảnh từ URL: " + imageUrl + " (Status: " + response.getResponseCode() + ")");
+      body.replaceText(placeholder, ""); // Xóa placeholder dù lỗi để PDF trông sạch sẽ hơn
+      return;
+    }
+    
     const imageBlob = response.getBlob();
     let next = body.findText(placeholder);
+    
     while (next) {
       const el = next.getElement();
       const offset = next.getStartOffset();
-      
-      // Chèn ảnh vào paragraph chứa placeholder
       const parent = el.getParent();
+      
+      let img;
+      // Xác định kích thước mong muốn (Chữ ký khách hàng thường nhỏ hơn dấu mộc chi nhánh)
+      const targetWidth = placeholder.includes("signature_center") ? 180 : 150;
+
       if (parent.getType() === DocumentApp.ElementType.PARAGRAPH) {
         const p = parent.asParagraph();
-        const img = p.appendInlineImage(imageBlob);
+        // Chèn ảnh inline vào cuối paragraph hoặc thay thế vị trí text?
+        // appendInlineImage sẽ thêm vào cuối. Để thay thế chính xác vị trí, có thể dùng insert nhưng phức tạp hơn.
+        // Với layout hợp đồng hiện tại, thường placeholder nằm riêng 1 dòng/ô.
+        img = p.appendInlineImage(imageBlob);
         
-        // Tùy chỉnh kích thước
-        img.setWidth(120);
-        img.setHeight(60); 
+        const ratio = img.getHeight() / img.getWidth();
+        img.setWidth(targetWidth);
+        img.setHeight(targetWidth * ratio); 
         
         // Xóa text placeholder
         el.asText().deleteText(offset, offset + placeholder.length - 1);
+      } else if (parent.getType() === DocumentApp.ElementType.TABLE_CELL) {
+        const cell = parent.asTableCell();
+        img = cell.appendImage(imageBlob);
+        
+        const ratio = img.getHeight() / img.getWidth();
+        img.setWidth(targetWidth - 10);
+        img.setHeight((targetWidth - 10) * ratio);
+        
+        el.asText().deleteText(offset, offset + placeholder.length - 1);
       }
       
-      // Tìm placeholder tiếp theo nếu có
+      // Tìm placeholder tiếp theo (nếu cùng 1 ảnh dùng nhiều nơi)
       next = body.findText(placeholder, next);
     }
   } catch (e) {
-    console.error("Lỗi chèn ảnh " + placeholder + ": " + e.message);
+    console.error("Lỗi nghiêm trọng khi chèn ảnh " + placeholder + ": " + e.message);
+    body.replaceText(placeholder, "");
   }
 }
 
