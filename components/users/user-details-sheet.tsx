@@ -242,7 +242,7 @@ export function UserDetailsSheet({
                             </div>
                             <div className="grid grid-cols-2 gap-5">
                                 <UserDetailRow label="Chức vụ" value={formData.position} name="position" icon={BadgeCheck} {...sharedRowProps} />
-                                <UserDetailRow label="Vai trò" value={formData.role_id} name="role_id" icon={Shield} {...sharedRowProps} />
+                                <UserDetailRow label="Vai trò" value={formData.permissions} name="permissions" icon={Shield} {...sharedRowProps} />
                             </div>
                         </div>
                     </CardSection>

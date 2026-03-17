@@ -407,7 +407,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                     {timelineHeader.months.map((m, i) => (
                                         <div
                                             key={i}
-                                            className="h-full flex items-center justify-center border-r border-slate-200 dark:border-slate-800 text-[9px] font-bold text-blue-600 uppercase bg-blue-50 dark:bg-blue-900/30 shrink-0"
+                                            className="h-full flex items-center justify-center border-r border-slate-200 dark:border-slate-700 text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase bg-blue-50/80 dark:bg-blue-900/40 shrink-0"
                                             style={{ width: `${m.days.length * 50}px` }}
                                         >
                                             Tháng {m.month}
@@ -419,8 +419,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                     {timelineHeader.weeks.map((w, i) => (
                                         <div
                                             key={i}
-                                            className="h-full flex items-center justify-center border-r border-slate-200 dark:border-slate-800 text-[9px] font-bold text-slate-500 uppercase bg-slate-100/50 dark:bg-slate-800/50 shrink-0"
-                                            style={{ width: `${w.days.length * 50}px` }}
+                                            className="h-full flex items-center justify-center border-r border-slate-200 dark:border-slate-700 text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase bg-slate-100/80 dark:bg-slate-800/60 shrink-0"
+                                            style={{ width: `${m.days.length * 50}px` }}
                                         >
                                             Tuần {w.weekNum}
                                         </div>
@@ -451,16 +451,16 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                         <div
                                             key={i}
                                             className={cn(
-                                                "w-[50px] shrink-0 border-r border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-[10px] gap-0.5",
+                                                "w-[50px] shrink-0 border-r border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-[10px] gap-0.5",
                                                 isFriday && "bg-amber-100/60 dark:bg-amber-900/40",
-                                                isWeekend && "bg-rose-50/30 dark:bg-rose-900/10",
-                                                isToday(day) && "bg-blue-100/50 dark:bg-blue-900/30"
+                                                isWeekend && "bg-rose-50/30 dark:bg-rose-900/20",
+                                                isToday(day) && "bg-blue-100/50 dark:bg-blue-900/40"
                                             )}
                                         >
-                                            <span className={cn("font-bold uppercase", isFriday ? "text-amber-700 dark:text-amber-500" : isWeekend ? "text-rose-500" : "text-slate-400")}>
+                                            <span className={cn("font-bold uppercase", isFriday ? "text-amber-700 dark:text-amber-500" : isWeekend ? "text-rose-500 dark:text-rose-400" : "text-slate-400 dark:text-slate-500")}>
                                                 {format(day, 'EE', { locale: vi }).replace('Th ', 'T')}
                                             </span>
-                                            <span className={cn("font-bold", isToday(day) ? "text-blue-600" : isFriday ? "text-amber-800 dark:text-amber-400" : "text-slate-700 dark:text-slate-200")}>
+                                            <span className={cn("font-bold", isToday(day) ? "text-blue-600 dark:text-blue-400" : isFriday ? "text-amber-800 dark:text-amber-400" : "text-slate-700 dark:text-slate-200")}>
                                                 {format(day, 'dd/MM')}
                                             </span>
                                         </div>
@@ -536,13 +536,13 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                             isSelected ? "bg-transparent" : "bg-white dark:bg-slate-900"
                                         )}>
                                             {showTarget && (
-                                                <div className="h-8 flex items-center justify-center border-b border-blue-100 bg-blue-50/50 text-blue-600 px-1">Cần đạt</div>
+                                                <div className="h-8 flex items-center justify-center border-b border-blue-100 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1">Cần đạt</div>
                                             )}
                                             {showActual && (
-                                                <div className="h-8 flex items-center justify-center border-b border-emerald-100 bg-emerald-50/50 text-emerald-600 px-1">Thực tế</div>
+                                                <div className="h-8 flex items-center justify-center border-b border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-1">Thực tế</div>
                                             )}
                                             {showHeight && (
-                                                <div className="h-8 flex items-center justify-center border-purple-100 bg-purple-50/50 text-purple-600 px-1">Chiều cao</div>
+                                                <div className="h-8 flex items-center justify-center border-purple-100 dark:border-purple-900/50 bg-purple-50/50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-1">Chiều cao</div>
                                             )}
                                         </div>
                                     </div>
@@ -562,12 +562,12 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                         <div
                                                             key={i}
                                                             className={cn(
-                                                                "w-[50px] shrink-0 border-r border-slate-100 dark:border-slate-800/50 flex items-center justify-center bg-blue-50/10 dark:bg-blue-900/5",
+                                                                "w-[50px] shrink-0 border-r border-slate-100 dark:border-slate-800/50 flex items-center justify-center bg-blue-50/10 dark:bg-blue-400/5",
                                                                 isFriday && "bg-amber-200/20 dark:bg-amber-900/30"
                                                             )}
                                                         >
                                                             {isSameDay(day, parseISO(startDate)) && client.latestContract?.target_weight && (
-                                                                <span className="text-[10px] font-bold text-blue-500">{client.latestContract.target_weight}</span>
+                                                                <span className="text-[10px] font-bold text-blue-500 dark:text-blue-400">{client.latestContract.target_weight}</span>
                                                             )}
                                                         </div>
                                                     )
@@ -591,7 +591,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                             onClick={() => handleCellClick(client.id, day)}
                                                             onDoubleClick={() => handleOpenEdit(client.id, day)}
                                                         >
-                                                            <span className={cn("text-[11px] font-semibold", isCellSelected ? "text-emerald-700 dark:text-emerald-300" : "text-emerald-600")}>
+                                                            <span className={cn("text-[11px] font-semibold", isCellSelected ? "text-emerald-700 dark:text-emerald-300" : "text-emerald-600 dark:text-emerald-400")}>
                                                                 {record?.weight || '-'}
                                                             </span>
                                                         </div>
@@ -616,7 +616,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                             onClick={() => handleCellClick(client.id, day)}
                                                             onDoubleClick={() => handleOpenEdit(client.id, day)}
                                                         >
-                                                            <span className={cn("text-[11px] font-semibold", isCellSelected ? "text-purple-700 dark:text-purple-300" : "text-purple-600")}>
+                                                            <span className={cn("text-[11px] font-semibold", isCellSelected ? "text-purple-700 dark:text-purple-300" : "text-purple-600 dark:text-purple-400")}>
                                                                 {record?.height || '-'}
                                                             </span>
                                                         </div>
@@ -674,16 +674,16 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
 
                 {/* Legend */}
                 <div className="flex items-center gap-8 border-l border-slate-200 dark:border-slate-800 pl-12 h-6">
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-blue-600 whitespace-nowrap">
-                        <div className="w-2.5 h-2.5 rounded-full bg-blue-100 border border-blue-400 shadow-sm" />
+                    <div className="flex items-center gap-2 text-[11px] font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                        <div className="w-2.5 h-2.5 rounded-full bg-blue-100 dark:bg-blue-900 border border-blue-400 shadow-sm" />
                         <span>Cân cần đạt</span>
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-emerald-600 whitespace-nowrap">
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-100 border border-emerald-400 shadow-sm" />
+                    <div className="flex items-center gap-2 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-100 dark:bg-emerald-900 border border-emerald-400 shadow-sm" />
                         <span>Cân thực tế</span>
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-purple-600 whitespace-nowrap">
-                        <div className="w-2.5 h-2.5 rounded-full bg-purple-100 border border-purple-400 shadow-sm" />
+                    <div className="flex items-center gap-2 text-[11px] font-bold text-purple-600 dark:text-purple-400 whitespace-nowrap">
+                        <div className="w-2.5 h-2.5 rounded-full bg-purple-100 dark:bg-purple-900 border border-purple-400 shadow-sm" />
                         <span>Chiều cao</span>
                     </div>
                 </div>

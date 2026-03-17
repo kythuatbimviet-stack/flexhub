@@ -1,11 +1,10 @@
 
-export type UserRole = 'Admin' | 'User'
 export type UserPosition = 'CEO' | 'Quản lý' | 'Quản lý chi nhánh' | 'Nhân viên'
 
 export interface UserProfile {
     email: string
     name: string
-    role_id: UserRole
+    permissions: string | null
     position: UserPosition
     branch_id?: string
 }
@@ -18,11 +17,11 @@ export interface AccessControl {
 }
 
 export function getAccessControl(user: UserProfile): AccessControl {
-    const role = user.role_id
+    const permissions = user.permissions
     const position = user.position
 
     // Admin: Full access
-    if (role === 'Admin') {
+    if (permissions === 'Admin') {
         return {
             canViewAllBranches: true,
             canManageUsers: true,
@@ -30,7 +29,7 @@ export function getAccessControl(user: UserProfile): AccessControl {
         }
     }
 
-    // Role User depends on Position
+    // Positions that can see everything (CEO, Manager)
     if (position === 'CEO' || position === 'Quản lý') {
         return {
             canViewAllBranches: true,
@@ -82,5 +81,5 @@ export function canAccessRecord(user: UserProfile, record: any): boolean {
  * Check if user can perform Admin actions (like deleting users)
  */
 export function isAdmin(user: UserProfile): boolean {
-    return user.role_id === 'Admin'
+    return user.permissions === 'Admin'
 }

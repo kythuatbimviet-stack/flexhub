@@ -52,7 +52,7 @@ const userFormSchema = z.object({
     branch_id: z.string().optional(),
     position: z.string().optional(),
     department: z.string().optional(),
-    role_id: z.string().optional(),
+    permissions: z.string().optional(),
     status: z.string().min(1, { message: 'Trạng thái không được để trống' }),
 })
 
@@ -70,7 +70,7 @@ export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
             branch_id: '',
             position: '',
             department: '',
-            role_id: 'User',
+            permissions: 'User',
             status: 'Activated',
         },
     })
@@ -255,7 +255,7 @@ export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
                                 />
                                 <FormField
                                     control={form.control}
-                                    name="role_id"
+                                    name="permissions"
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel className="text-xs font-medium text-slate-700 dark:text-slate-300">Vai trò hệ thống</FormLabel>

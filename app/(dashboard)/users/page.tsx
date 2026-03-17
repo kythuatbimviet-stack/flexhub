@@ -152,7 +152,7 @@ export default function UsersPage() {
             'Chi nhánh': u.branches?.name || u.branch_name,
             'Phòng ban': u.department,
             'Chức vụ': u.position,
-            'Vai trò': u.role_id,
+            'Vai trò': u.permissions,
             'Trạng thái': u.status === 'Activated' ? 'Đang hoạt động' : 'Tạm ngưng',
             'Ngày tham gia': u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN') : ''
         }))
@@ -425,7 +425,7 @@ export default function UsersPage() {
                                         </TableCell>
                                         <TableCell>
                                             <div className="inline-flex items-center px-4 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-800">
-                                                {user.role_id || 'User'}
+                                                {user.permissions || 'User'}
                                             </div>
                                         </TableCell>
                                         <TableCell>

@@ -58,7 +58,7 @@ export function ImportUsersDialog({ onSuccess }: { onSuccess: () => void }) {
                 branch_name: 'Eva\'s Fit Thanh Xuân',
                 position: 'Huấn luyện viên',
                 department: 'Kinh doanh',
-                role_id: 'User',
+                permissions: 'User',
                 status: 'Activated'
             }
         ]
@@ -93,7 +93,7 @@ export function ImportUsersDialog({ onSuccess }: { onSuccess: () => void }) {
                         branch_name: branch?.name || user.branch_name?.toString() || null,
                         position: user.position?.toString() || 'Nhân viên',
                         department: user.department?.toString() || 'Văn phòng',
-                        role_id: user.role_id?.toString() || 'User',
+                        permissions: user.permissions?.toString() || 'User',
                         status: user.status?.toString() || 'Activated'
                     }
                 })
