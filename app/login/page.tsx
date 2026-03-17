@@ -99,11 +99,11 @@ export default function LoginPage() {
                     transition={{ duration: 0.8 }}
                     className="w-full max-w-md space-y-10"
                 >
-                    <div className="text-center lg:text-left">
-                        <div className="mb-8 flex justify-center lg:justify-start">
+                    <div className="text-center">
+                        <div className="mb-10 flex justify-center">
                             <Logo
                                 variant="horizontal"
-                                className="h-32 md:h-36 lg:h-48 w-auto"
+                                className="h-48 md:h-64 lg:h-80 w-auto drop-shadow-2xl"
                                 priority
                             />
                         </div>

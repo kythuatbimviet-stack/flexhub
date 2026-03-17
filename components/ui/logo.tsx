@@ -64,8 +64,8 @@ export function Logo({
                 key={src}
                 src={src}
                 alt="Eva's Fit Logo"
-                width={width || 64}
-                height={height || 64}
+                width={width || 800}
+                height={height || 800}
                 className="max-w-full max-h-full object-contain"
                 priority={priority}
                 unoptimized
