@@ -309,12 +309,15 @@ export async function generateContractId(branchId?: string | null) {
     }
 }
 
-export async function shareContractViaZalo(id: string) {
+export async function shareContractViaZalo(id: string, message?: string) {
     const supabase = await createClient()
     try {
         const { error } = await supabase
             .from('contracts')
-            .update({ sendzalo: new Date().toISOString() })
+            .update({ 
+                sendzalo: new Date().toISOString(),
+                zalo_message: message || null
+            })
             .eq('id', id)
 
         if (error) throw error
@@ -325,18 +328,124 @@ export async function shareContractViaZalo(id: string) {
     }
 }
 
-export async function shareContractViaEmail(id: string) {
+export async function shareContractViaEmail(id: string, message?: string) {
     const supabase = await createClient()
     try {
         const { error } = await supabase
             .from('contracts')
-            .update({ sendemail: new Date().toISOString() })
+            .update({ 
+                sendemail: new Date().toISOString(),
+                // We'll pass the message so GAS can see it in the record
+                email_message: message || null
+            })
             .eq('id', id)
 
         if (error) throw error
         return { success: true }
     } catch (error: any) {
         console.error('Share Email Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+export async function sendCustomContractEmail(id: string, to: string, subject: string, body: string) {
+    const supabase = await createAdminClient()
+    try {
+        // 1. Fetch contract data including branch webhook
+        const { data: contract, error: fetchError } = await supabase
+            .from('contracts')
+            .select('*, clients(member_name, email), branches(name, url_guimail)')
+            .eq('id', id)
+            .single()
+
+        if (fetchError || !contract) throw fetchError || new Error('Không tìm thấy hợp đồng')
+
+        // 2. Identify PDF file ID
+        const fileUrl = contract.contract_file_url
+        if (!fileUrl || fileUrl === 'create_contract') {
+            throw new Error('Hợp đồng chưa sẵn sàng (PDF chưa được tạo)')
+        }
+
+        const match = fileUrl.match(/[-\w]{25,}/)
+        const fileId = match ? match[0] : null
+        if (!fileId) throw new Error('Không tìm thấy ID file Google Drive')
+
+        const { getGoogleDriveFileContent } = await import('@/lib/google-drive')
+        const pdfBuffer = await getGoogleDriveFileContent(fileId)
+
+        // 3. Choose sending method: Branch Webhook or System Email
+        const branchWebhook = (contract.branches as any)?.url_guimail
+
+        if (branchWebhook && branchWebhook.startsWith('http')) {
+            // --- BRANCH WEBHOOK PATH ---
+            const fileName = `HD_${id}_${contract.clients?.member_name || 'KhachHang'}.pdf`
+            const pdfBase64 = pdfBuffer.toString('base64')
+
+            const payload = {
+                "email": to,
+                "name": contract.clients?.member_name || 'Quý khách',
+                "fileName": fileName,
+                "pdfBase64": pdfBase64,
+                "subject": subject, // Adding subject and message as well in case the webhook supports them
+                "message": body
+            }
+
+            const response = await fetch(branchWebhook, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+
+            if (!response.ok) {
+                const errorText = await response.text()
+                throw new Error(`Lỗi từ Webhook chi nhánh (${response.status}): ${errorText}`)
+            }
+
+            const result = await response.json()
+            if (result.success === false) {
+                throw new Error(result.error || 'Webhook chi nhánh trả về lỗi')
+            }
+
+            // Update status in DB
+            await supabase
+                .from('contracts')
+                .update({ sendemail: new Date().toISOString() })
+                .eq('id', id)
+
+            return { success: true, method: 'branch_webhook' }
+        }
+
+        // --- SYSTEM EMAIL PATH (Existing Logic) ---
+        const html = body.replace(/\n/g, '<br/>')
+        const { sendContractEmail } = await import('./send-email')
+
+        let attachments: any[] = []
+        if (process.env.RESEND_API_KEY) {
+            attachments = [{
+                filename: `HD_${id}_${contract.clients?.member_name || 'KhachHang'}.pdf`,
+                content: pdfBuffer
+            }]
+        }
+
+        const res = await sendContractEmail({
+            to,
+            subject,
+            html,
+            attachments,
+            memberName: contract.clients?.member_name,
+            contractId: id
+        })
+
+        if (res.success && res.method === 'resend') {
+            await supabase
+                .from('contracts')
+                .update({ sendemail: new Date().toISOString() })
+                .eq('id', id)
+        }
+
+        return res
+    } catch (error: any) {
+        console.error('Send Custom Contract Email Error:', error)
         return { success: false, error: error.message }
     }
 }

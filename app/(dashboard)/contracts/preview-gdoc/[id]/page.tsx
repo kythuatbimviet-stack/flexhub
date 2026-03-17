@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { fetchContractById, updateContract, shareContractViaZalo, shareContractViaEmail } from '@/app/actions/contracts'
 import { createClient } from '@/lib/supabase'
 import { toast } from 'sonner'
+import { EmailShareDialog } from '@/components/contracts/email-share-dialog'
+import { ZaloShareDialog } from '@/components/contracts/zalo-share-dialog'
 
 export default function GDocPreviewPage() {
   const rawId = useParams<{ id: string }>().id
@@ -18,6 +20,8 @@ export default function GDocPreviewPage() {
   const [generating, setGenerating] = React.useState(false)
   const [sharingZalo, setSharingZalo] = React.useState(false)
   const [sharingEmail, setSharingEmail] = React.useState(false)
+  const [emailDialogOpen, setEmailDialogOpen] = React.useState(false)
+  const [zaloDialogOpen, setZaloDialogOpen] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
   const loadData = React.useCallback(async () => {
@@ -134,36 +138,12 @@ export default function GDocPreviewPage() {
 
   const handleShareZalo = async () => {
     if (!contract) return
-    setSharingZalo(true)
-    try {
-      const res = await shareContractViaZalo(id)
-      if (res.success) {
-        toast.info('Đang yêu cầu gửi qua Zalo...')
-      } else {
-        setSharingZalo(false)
-        toast.error(res.error || 'Lỗi khi yêu cầu gửi Zalo')
-      }
-    } catch (e: any) {
-      setSharingZalo(false)
-      toast.error(e.message)
-    }
+    setZaloDialogOpen(true)
   }
 
   const handleShareEmail = async () => {
     if (!contract) return
-    setSharingEmail(true)
-    try {
-      const res = await shareContractViaEmail(id)
-      if (res.success) {
-        toast.info('Đang yêu cầu gửi Email...')
-      } else {
-        setSharingEmail(false)
-        toast.error(res.error || 'Lỗi khi yêu cầu gửi Email')
-      }
-    } catch (e: any) {
-      setSharingEmail(false)
-      toast.error(e.message)
-    }
+    setEmailDialogOpen(true)
   }
 
   const getEmbedUrl = (url?: string) => {
@@ -366,6 +346,19 @@ export default function GDocPreviewPage() {
            </div>
         </div>
       </main>
+
+      <EmailShareDialog 
+        open={emailDialogOpen}
+        onOpenChange={setEmailDialogOpen}
+        contractId={id}
+        contractData={contract}
+      />
+      <ZaloShareDialog 
+        open={zaloDialogOpen}
+        onOpenChange={setZaloDialogOpen}
+        contractId={id}
+        contractData={contract}
+      />
     </div>
   )
 }

@@ -12,6 +12,10 @@ export interface SendEmailPayload {
     html: string
     contractId?: string
     memberName?: string
+    attachments?: {
+        filename: string
+        content: string | Buffer // Base64 string or Buffer
+    }[]
 }
 
 export interface SendEmailResult {
@@ -22,7 +26,7 @@ export interface SendEmailResult {
 }
 
 export async function sendContractEmail(payload: SendEmailPayload): Promise<SendEmailResult> {
-    const { to, subject, html, contractId, memberName } = payload
+    const { to, subject, html, contractId, memberName, attachments } = payload
     const apiKey = process.env.RESEND_API_KEY
 
     // ── Resend path ────────────────────────────────
@@ -38,6 +42,10 @@ export async function sendContractEmail(payload: SendEmailPayload): Promise<Send
                 to: [to],
                 subject,
                 html,
+                attachments: attachments?.map(att => ({
+                    filename: att.filename,
+                    content: att.content,
+                }))
             })
 
             if (error) {

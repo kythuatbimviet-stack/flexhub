@@ -21,6 +21,7 @@ import {
     Trash2,
     X,
     Cloud,
+    Mail,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateBranch, deleteBranch } from '@/app/actions/branches'
@@ -269,6 +270,23 @@ export function BranchDetailsSheet({
                         <div className="space-y-5">
                             <DetailRow label="Họ và tên người đại diện PL" value={formData.legal_representative} name="legal_representative" icon={User} {...sharedRowProps} />
                             <DetailRow label="Số điện thoại người đại diện" value={formData.representative_phone} name="representative_phone" icon={Phone} {...sharedRowProps} />
+                        </div>
+                    </CardSection>
+
+                    {/* Section: Cấu hình Webhook */}
+                    <CardSection title="Cấu hình hệ thống" icon={Cloud}>
+                        <div className="space-y-5">
+                            <DetailRow 
+                                label="Webhook Gửi Email (Bản chi nhánh)" 
+                                value={formData.url_guimail} 
+                                name="url_guimail" 
+                                icon={Mail} 
+                                placeholder="https://script.google.com/macros/s/.../exec"
+                                {...sharedRowProps} 
+                            />
+                            <p className="text-[10px] text-slate-400 italic mt-1">
+                                Nếu để trống, hệ thống sẽ sử dụng email mặc định hoặc mailto fallback.
+                            </p>
                         </div>
                     </CardSection>
 

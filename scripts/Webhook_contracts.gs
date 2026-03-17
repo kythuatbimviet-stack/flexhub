@@ -56,7 +56,7 @@ function doPost(e) {
         if (isZaloReq) {
           const zaloUserId = contract.zalo_id || (contract.clients && contract.clients.zalo_id);
           if (zaloUserId) {
-            const msg = `Eva's Fit gửi chị ${contract.member_name} hợp đồng điện tử. Chị vui lòng xem file đính kèm.`;
+            const msg = record.zalo_message || `Eva's Fit gửi chị ${contract.member_name} hợp đồng điện tử. Chị vui lòng xem file đính kèm.`;
             webapp_guizalo(zaloUserId, msg, pdfBlob);
             updateSupabaseSharingStatus(contract.id, 'sendzalo', 'done');
           } else {
@@ -68,7 +68,8 @@ function doPost(e) {
           const email = contract.email || (contract.clients && contract.clients.email);
           if (email) {
             const subject = `Hợp đồng ${contract.member_name} - Eva's Fit Nam Định`;
-            webapp_guiemail(subject, email, pdfBlob, contract.member_name);
+            const customMessage = record.email_message || ""; // Check if dynamic message was passed in record
+            webapp_guiemail(subject, email, pdfBlob, contract.member_name, contract, customMessage);
             updateSupabaseSharingStatus(contract.id, 'sendemail', 'done');
           } else {
             console.warn("No Email found for contract: " + record.id);
@@ -384,9 +385,41 @@ function webapp_guizalo(userid, text_message, pdfBlob) {
   }
 }
 
-function webapp_guiemail(emailSubject, client_email, pdfBlob, client_name) {
+function webapp_guiemail(subject, email, pdfBlob, client_name, contract, customMessage) {
   try {
-    const htmlBody = `
+    const emailMessage = customMessage || "";
+    // Check for branch-specific email webhook
+    const branch = contract && contract.branches;
+    if (branch && branch.url_guimail && branch.url_guimail.startsWith('http')) {
+      console.log("Sử dụng Webhook chi nhánh để gửi email: " + branch.url_guimail);
+      const pdfBase64 = Utilities.base64Encode(pdfBlob.getBytes());
+      const fileName = `HD_${contract.id}_${client_name}.pdf`;
+
+      const payload = {
+        "email": email,
+        "name": client_name,
+        "fileName": fileName,
+        "pdfBase64": pdfBase64,
+        "subject": subject,
+        "message": emailMessage
+      };
+
+      const options = {
+        "method": "post",
+        "contentType": "application/json",
+        "payload": JSON.stringify(payload),
+        "muteHttpExceptions": true
+      };
+
+      const resp = UrlFetchApp.fetch(branch.url_guimail, options);
+      console.log("Kết quả gửi mail từ Webhook chi nhánh: " + resp.getContentText());
+      return;
+    }
+
+    // Default system email body if no custom message or as a wrapper
+    const htmlBody = emailMessage ? 
+      `<div style="font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6; white-space: pre-wrap;">${emailMessage}</div>` :
+      `
       <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6;">
           <p>Trung tâm Eva's Fit Nam Định xin chào chị <strong>${client_name}</strong>,</p>
           
