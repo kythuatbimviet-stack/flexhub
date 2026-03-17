@@ -211,7 +211,7 @@ export default function PackagesPage() {
                         <Package className="w-8 h-8 text-red-600" />
                         Gói tập
                     </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Danh mục các gói dịch vụ Eva Fit.</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Danh mục các gói dịch vụ Eva's Fit.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <AnimatePresence>

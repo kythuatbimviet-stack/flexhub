@@ -1,7 +1,23 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
+import { createClient, createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
+import { isAdmin, UserProfile } from '@/lib/permissions'
+
+async function checkAdmin() {
+    const supabase = await createClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser?.email) return false
+
+    const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', authUser.email)
+        .single()
+
+    if (!profile) return false
+    return isAdmin(profile as UserProfile)
+}
 
 export async function fetchUsers() {
     const supabase = await createClient()
@@ -22,6 +38,7 @@ export async function fetchUsers() {
 }
 
 export async function createUser(user: any) {
+    if (!(await checkAdmin())) return { success: false, error: 'Chỉ Admin mới có quyền tạo người dùng' }
     const supabase = await createClient()
     try {
         const { data, error } = await supabase
@@ -38,6 +55,7 @@ export async function createUser(user: any) {
 }
 
 export async function updateUser(id: string, updates: any) {
+    if (!(await checkAdmin())) return { success: false, error: 'Chỉ Admin mới có quyền cập nhật người dùng' }
     const supabase = await createClient()
     try {
         const { data, error } = await supabase
@@ -55,6 +73,7 @@ export async function updateUser(id: string, updates: any) {
 }
 
 export async function deleteUser(id: string) {
+    if (!(await checkAdmin())) return { success: false, error: 'Chỉ Admin mới có quyền xóa người dùng' }
     const supabase = await createClient()
     try {
         const { error } = await supabase
@@ -71,6 +90,7 @@ export async function deleteUser(id: string) {
 }
 
 export async function bulkDeleteUsers(ids: string[]) {
+    if (!(await checkAdmin())) return { success: false, error: 'Chỉ Admin mới có quyền xóa người dùng' }
     const supabase = await createClient()
     try {
         const { error } = await supabase
@@ -87,6 +107,7 @@ export async function bulkDeleteUsers(ids: string[]) {
 }
 
 export async function bulkCreateUsers(users: any[]) {
+    if (!(await checkAdmin())) return { success: false, error: 'Chỉ Admin mới có quyền tạo người dùng' }
     const supabase = await createClient()
     try {
         const { data, error } = await supabase

@@ -1,8 +1,24 @@
 'use server'
 
-import { createClient, createAdminClient } from '@/lib/supabase-server'
+import { createClient, createAdminClient, createClient as createSupabaseClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { numberToVietnameseWords } from '@/lib/utils'
+import { getAccessControl, UserProfile } from '@/lib/permissions'
+
+async function getAccessFilter() {
+    const supabase = await createSupabaseClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser?.email) return null
+
+    const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', authUser.email)
+        .single()
+
+    if (!profile) return null
+    return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
+}
 
 // Tự động tính các trường "bằng chữ" từ số tiền và ép kiểu số cho các trường numeric
 function computeAmountTextFields(data: any): any {
@@ -64,7 +80,10 @@ function computeAmountTextFields(data: any): any {
 export async function fetchContracts() {
     const supabase = await createClient()
     try {
-        const { data, error } = await supabase
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        let query = supabase
             .from('contracts')
             .select(`
                 *,
@@ -72,6 +91,16 @@ export async function fetchContracts() {
                 branches (name)
             `)
             .order('created_at', { ascending: false })
+
+        // Apply RBAC filters
+        if (!accessInfo.access.canViewAllBranches) {
+            query = query.eq('branch_id', accessInfo.user.branch_id)
+        }
+        if (accessInfo.access.isStaffOnly) {
+            query = query.or(`created_by_email.eq.${accessInfo.user.email},assigned_pt.eq.${accessInfo.user.email},trainer_name.ilike.%${accessInfo.user.name}%`)
+        }
+
+        const { data, error } = await query
 
         if (error) throw error
         return { success: true, data }
@@ -103,6 +132,11 @@ export async function fetchContractById(id: string) {
 export async function createContract(contract: any) {
     const supabase = await createClient()
     try {
+        const accessInfo = await getAccessFilter()
+        if (accessInfo) {
+            contract.created_by_email = accessInfo.user.email
+        }
+
         const enriched = computeAmountTextFields(contract)
         
         const { data, error } = await supabase

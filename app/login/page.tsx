@@ -63,10 +63,14 @@ export default function LoginPage() {
 
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 text-white mb-12">
-                        <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30">
-                            <Dumbbell className="w-6 h-6 text-white" />
+                        <div className="w-10 h-10 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center border border-white/30 overflow-hidden">
+                            <img
+                                src="/logo_evasfit.png"
+                                alt="Eva's Fit Logo"
+                                className="w-8 h-8 object-contain"
+                            />
                         </div>
-                        <span className="text-2xl font-bold tracking-tight uppercase">EVA FIT CRM</span>
+                        <span className="text-2xl font-bold tracking-tight">Eva's Fit</span>
                     </div>
                 </div>
 
@@ -80,14 +84,14 @@ export default function LoginPage() {
                             Hệ thống quản lý phòng tập hiện đại.
                         </h1>
                         <p className="text-white/80 text-lg max-w-sm leading-relaxed">
-                            Tối ưu hóa quy trình, nâng cao trải nghiệm khách hàng và quản lý tài chính hiệu quả với EVA FIT CRM.
+                            Tối ưu hóa quy trình, nâng cao trải nghiệm khách hàng và quản lý tài chính hiệu quả với Eva's Fit.
                         </p>
                     </motion.div>
                 </div>
 
                 <div className="relative z-10 flex items-center gap-4">
                     <div className="h-px w-12 bg-white/40" />
-                    <span className="text-white/40 text-xs tracking-[0.3em] uppercase font-medium">EVA Fit Team Product</span>
+                    <span className="text-white/40 text-xs tracking-[0.3em] uppercase font-medium">Eva's Fit Team Product</span>
                 </div>
             </div>
 

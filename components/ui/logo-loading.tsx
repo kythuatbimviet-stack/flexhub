@@ -18,7 +18,7 @@ export function LogoLoading({ className, size = 60 }: LogoLoadingProps) {
                 {/* Logo container */}
                 <div className="relative bg-white dark:bg-gray-900 rounded-full p-2 shadow-xl border border-gray-100 dark:border-gray-800 animate-pulse">
                     <Image
-                        src="/logo.png"
+                        src="/logo_evasfit.png"
                         alt="Loading..."
                         width={size}
                         height={size}
@@ -30,7 +30,7 @@ export function LogoLoading({ className, size = 60 }: LogoLoadingProps) {
 
             <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#FD5771] animate-pulse">
-                    Eva Fit
+                    Eva's Fit
                 </span>
                 <div className="flex gap-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-[#FD5771] animate-bounce [animation-delay:-0.3s]" />

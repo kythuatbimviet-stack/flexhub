@@ -168,7 +168,7 @@ export default function ReportsPage() {
                         <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
                             <LayoutDashboard className="w-5 h-5 text-red-600 dark:text-red-400" />
                         </div>
-                        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-50 tracking-tight">Tổng quan Eva Fit ERP</h1>
+                        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-50 tracking-tight">Tổng quan Eva's Fit ERP</h1>
                     </div>
                 </div>
                 

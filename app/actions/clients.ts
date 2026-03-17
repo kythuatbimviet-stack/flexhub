@@ -1,15 +1,44 @@
 'use server'
 
-import { createAdminClient } from '@/lib/supabase-server'
+import { createAdminClient, createClient as createSupabaseClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
+import { getAccessControl, UserProfile } from '@/lib/permissions'
+
+async function getAccessFilter() {
+    const supabase = await createSupabaseClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser?.email) return null
+
+    const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', authUser.email)
+        .single()
+
+    if (!profile) return null
+    return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
+}
 
 export async function fetchClients() {
     try {
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
         const adminClient = await createAdminClient()
-        const { data, error } = await adminClient
+        let query = adminClient
             .from('clients')
             .select('*')
             .order('created_at', { ascending: false })
+
+        // Apply RBAC filters
+        if (!accessInfo.access.canViewAllBranches) {
+            query = query.eq('branch_id', accessInfo.user.branch_id)
+        }
+        if (accessInfo.access.isStaffOnly) {
+            query = query.or(`created_by_email.eq.${accessInfo.user.email},assigned_pt.eq.${accessInfo.user.email},pt_name.ilike.%${accessInfo.user.name}%`)
+        }
+
+        const { data, error } = await query
 
         if (error) {
             console.error('Fetch Clients Error:', error)
@@ -43,6 +72,9 @@ export async function fetchClientsPage({
     regType?: string
 } = {}) {
     try {
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
         const adminClient = await createAdminClient()
         const isAll = pageSize === -1
 
@@ -55,6 +87,16 @@ export async function fetchClientsPage({
             if (pt) q = q.ilike('pt_name', `%${pt}%`)
             if (source) q = q.eq('source', source)
             if (regType) q = q.eq('registration_type', regType)
+
+            // Apply RBAC filters
+            if (!accessInfo.access.canViewAllBranches) {
+                q = q.eq('branch_id', accessInfo.user.branch_id)
+            }
+            if (accessInfo.access.isStaffOnly) {
+                // If filtering by PT name explicitly, we still restrict to what staff can see
+                q = q.or(`created_by_email.eq.${accessInfo.user.email},assigned_pt.eq.${accessInfo.user.email},pt_name.ilike.%${accessInfo.user.name}%`)
+            }
+
             return q
         }
 
@@ -184,6 +226,7 @@ export async function createClient(client: any) {
         // Auto-fetch branch_id and branch_name based on user email
         const { data: { user: authUser } } = await adminClient.auth.getUser()
         if (authUser?.email) {
+            client.created_by_email = authUser.email
             const { data: userProfile } = await adminClient
                 .from('users')
                 .select('branch_id, branch_name')

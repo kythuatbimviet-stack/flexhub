@@ -33,8 +33,8 @@ export function getContractHTMLFromTemplate(
   let discountedPriceWords = ''
   try { discountedPriceWords = contract.discounted_price_text || (contract.discounted_price ? numberToVietnameseWords(contract.discounted_price) + ' đồng chẵn' : '') } catch { discountedPriceWords = '' }
 
-  const centerName = contract.facility_name || contract.branches?.name || 'TRUNG TÂM EVA FIT'
-  const centerShortName = contract.short_name || 'EVA FIT'
+  const centerName = contract.facility_name || contract.branches?.name || 'TRUNG TÂM EVA\'S FIT'
+  const centerShortName = contract.short_name || 'EVA\'S FIT'
 
   // 1. Start with the "hardcoded" core mappings that need logic
   const map: Record<string, string> = {
@@ -180,8 +180,8 @@ export function getContractHTMLV2(
   let discountedPriceWords = ''
   try { discountedPriceWords = contract.discounted_price_text || (contract.discounted_price ? numberToVietnameseWords(contract.discounted_price) + ' đồng chẵn' : '') } catch { discountedPriceWords = '' }
 
-  const centerName = contract.facility_name || contract.branches?.name || 'TRUNG TÂM EVA FIT'
-  const centerShortName = contract.short_name || 'EVA FIT'
+  const centerName = contract.facility_name || contract.branches?.name || 'TRUNG TÂM EVA\'S FIT'
+  const centerShortName = contract.short_name || 'EVA\'S FIT'
 
   // Signature image HTML
   const sigHtml = contract.signature_url
@@ -354,8 +354,8 @@ export function getContractHTMLV3(
   let discountedPriceWords = ''
   try { discountedPriceWords = contract.discounted_price_text || (contract.discounted_price ? numberToVietnameseWords(contract.discounted_price) + ' đồng chẵn' : '') } catch { discountedPriceWords = '' }
 
-  const centerName = contract.facility_name || contract.branches?.name || 'TRUNG TÂM EVA FIT'
-  const centerShortName = contract.short_name || 'EVA FIT'
+  const centerName = contract.facility_name || contract.branches?.name || 'TRUNG TÂM EVA\'S FIT'
+  const centerShortName = contract.short_name || 'EVA\'S FIT'
 
   // Transparent 1x1 GIF base64 to prevent broken image icon when signature is missing but HTML has fixed <img src="...">
   const transparentPixel = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"

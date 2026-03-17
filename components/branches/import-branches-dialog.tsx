@@ -42,7 +42,7 @@ export function ImportBranchesDialog({ onSuccess }: { onSuccess: () => void }) {
     const downloadTemplate = () => {
         const template = [
             {
-                name: 'Eva Fit Thanh Xuân',
+                name: 'Eva\'s Fit Thanh Xuân',
                 short_name: 'LF TX',
                 address: 'Số 123 Nguyễn Trãi, Thanh Xuân, Hà Nội',
                 phone: '024.1234.5678',

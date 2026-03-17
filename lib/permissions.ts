@@ -1,0 +1,86 @@
+
+export type UserRole = 'Admin' | 'User'
+export type UserPosition = 'CEO' | 'Quản lý' | 'Quản lý chi nhánh' | 'Nhân viên'
+
+export interface UserProfile {
+    email: string
+    name: string
+    role_id: UserRole
+    position: UserPosition
+    branch_id?: string
+}
+
+export interface AccessControl {
+    canViewAllBranches: boolean
+    canManageUsers: boolean
+    branchIdLimit?: string // If set, user only sees data from this branch
+    isStaffOnly: boolean   // If true, user only sees data they created or are assigned to
+}
+
+export function getAccessControl(user: UserProfile): AccessControl {
+    const role = user.role_id
+    const position = user.position
+
+    // Admin: Full access
+    if (role === 'Admin') {
+        return {
+            canViewAllBranches: true,
+            canManageUsers: true,
+            isStaffOnly: false
+        }
+    }
+
+    // Role User depends on Position
+    if (position === 'CEO' || position === 'Quản lý') {
+        return {
+            canViewAllBranches: true,
+            canManageUsers: false,
+            isStaffOnly: false
+        }
+    }
+
+    if (position === 'Quản lý chi nhánh') {
+        return {
+            canViewAllBranches: false,
+            canManageUsers: false,
+            branchIdLimit: user.branch_id,
+            isStaffOnly: false
+        }
+    }
+
+    // Staff (Nhân viên)
+    return {
+        canViewAllBranches: false,
+        canManageUsers: false,
+        branchIdLimit: user.branch_id,
+        isStaffOnly: true
+    }
+}
+
+/**
+ * Check if a user can access a specific record (client or contract)
+ */
+export function canAccessRecord(user: UserProfile, record: any): boolean {
+    const access = getAccessControl(user)
+
+    // 1. Check branch access
+    if (!access.canViewAllBranches) {
+        if (record.branch_id !== user.branch_id) return false
+    }
+
+    // 2. Check ownership/assignment for staff
+    if (access.isStaffOnly) {
+        const isOwner = record.created_by_email === user.email
+        const isAssigned = record.assigned_pt === user.email || record.trainer_name === user.name // some tables use trainer_name
+        return isOwner || isAssigned
+    }
+
+    return true
+}
+
+/**
+ * Check if user can perform Admin actions (like deleting users)
+ */
+export function isAdmin(user: UserProfile): boolean {
+    return user.role_id === 'Admin'
+}

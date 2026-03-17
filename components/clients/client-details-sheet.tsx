@@ -65,6 +65,8 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SignatureField } from '@/components/ui/signature-field'
+import { usePermissions } from '@/hooks/use-permissions'
+import { canAccessRecord } from '@/lib/permissions'
 
 // ─── Component con nằm NGOÀI component cha để tránh re-mount khi state thay đổi ───
 const ClientCardSection = ({ title, icon: Icon, children }: any) => (
@@ -159,6 +161,12 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
     const [isEditing, setIsEditing] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
     const [formData, setFormData] = React.useState<any>(null)
+    const { permissions, user: currentUser, isLoading: permsLoading } = usePermissions()
+
+    const hasAccess = React.useMemo(() => {
+        if (!currentUser || !client) return false
+        return canAccessRecord(currentUser, client)
+    }, [currentUser, client])
 
     React.useEffect(() => {
         if (client) {
@@ -337,7 +345,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                         </div>
                     </div>
                     <div className="flex items-center gap-1">
-                        {!isEditing && (
+                        {!isEditing && hasAccess && (
                             <>
                                 <Button
                                     variant="ghost"
@@ -398,8 +406,8 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                 </div>
                             </div>
                         </div>
-
-                        {!isEditing && (
+                        {/* Only show actions if user has access to edit/delete this record */}
+                        {!isEditing && hasAccess && (
                             <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between gap-3">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -488,7 +496,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                         )}
                     </div>
 
-                    {!isEditing && (
+                    {!isEditing && hasAccess && (
                         <div className="grid grid-cols-2 gap-3">
                             <AddContractDialog
                                 initialClientId={client.id}
@@ -772,7 +780,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                     </Button>
 
                     <div className="flex items-center gap-2">
-                        {!isEditing && (
+                        {!isEditing && hasAccess && (
                             <Button
                                 variant="outline"
                                 onClick={handleDelete}
@@ -792,7 +800,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                 <Save className="w-4 h-4 mr-2" />
                                 {loading ? 'Đang lưu...' : 'Lưu lại'}
                             </Button>
-                        ) : (
+                        ) : hasAccess ? (
                             <Button
                                 onClick={() => setIsEditing(true)}
                                 className="rounded-xl h-11 px-10 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
@@ -801,7 +809,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                 <Edit2 className="w-4 h-4 mr-2" />
                                 Sửa hồ sơ
                             </Button>
-                        )}
+                        ) : null}
                     </div>
                 </div>
             </SheetContent>

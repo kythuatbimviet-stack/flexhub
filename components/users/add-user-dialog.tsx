@@ -122,7 +122,7 @@ export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
                         Thêm nhân viên mới
                     </DialogTitle>
                     <DialogDescription className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                        Nhập thông tin cơ bản để tạo tài khoản nhân viên trong hệ thống Eva Fit.
+                        Nhập thông tin cơ bản để tạo tài khoản nhân viên trong hệ thống Eva's Fit.
                     </DialogDescription>
                 </DialogHeader>
 

@@ -103,7 +103,7 @@ export function ImportExcelExpenseDialog({ onSuccess }: ImportExcelExpenseDialog
                 'Ngày': '2026-03-06',
                 'Số tiền': 2000000,
                 'Danh mục': 'Tiền điện',
-                'Chi nhánh': 'Eva Fit Quận 1',
+                'Chi nhánh': 'Eva\'s Fit Quận 1',
                 'Thanh toán': 'Chuyển khoản',
                 'Diễn giải': 'Thanh toán tiền điện tháng 2',
             }

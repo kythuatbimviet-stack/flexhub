@@ -55,7 +55,7 @@ export function ImportUsersDialog({ onSuccess }: { onSuccess: () => void }) {
                 name: 'Nguyễn Văn A',
                 email: 'nva@evafit.vn',
                 phone: '0987654321',
-                branch_name: 'Eva Fit Thanh Xuân',
+                branch_name: 'Eva\'s Fit Thanh Xuân',
                 position: 'Huấn luyện viên',
                 department: 'Kinh doanh',
                 role_id: 'User',

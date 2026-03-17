@@ -104,7 +104,7 @@ export function ImportExcelRevenueDialog({ onSuccess }: ImportExcelRevenueDialog
                 'Ngày': '2026-03-06',
                 'Số tiền': 500000,
                 'Danh mục': 'Phí hội viên',
-                'Chi nhánh': 'Eva Fit Quận 1',
+                'Chi nhánh': 'Eva\'s Fit Quận 1',
                 'Thanh toán': 'Tiền mặt',
                 'Diễn giải': 'Thu học phí chị Lan',
             }

@@ -174,7 +174,7 @@ export function AddCustomerDialog({ onSuccess }: AddCustomerDialogProps) {
                                         <FormItem className="md:col-span-2">
                                             <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-500">Tên Công ty</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Công ty TNHH Eva Fit" {...field} className="rounded-xl border-gray-200" />
+                                                <Input placeholder="Công ty TNHH Eva's Fit" {...field} className="rounded-xl border-gray-200" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

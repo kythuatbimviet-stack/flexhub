@@ -53,7 +53,7 @@ export function ImportMembershipsDialog({ onSuccess }: { onSuccess: () => void }
         const template = [
             {
                 id: 'GOI-1M',
-                branch_name: 'Eva Fit Thanh Xuân',
+                branch_name: 'Eva\'s Fit Thanh Xuân',
                 package_type: 'Trực tiếp',
                 package_name: 'Gói 1 tháng cơ bản',
                 trainer_type: 'Không kèm PT',
@@ -138,7 +138,7 @@ export function ImportMembershipsDialog({ onSuccess }: { onSuccess: () => void }
                             Nhập danh sách gói tập
                         </DialogTitle>
                         <DialogDescription className="text-slate-500 dark:text-slate-400 mt-2 font-medium">
-                            Tải lên tệp Excel chứa danh sách các gói dịch vụ của Eva Fit.
+                            Tải lên tệp Excel chứa danh sách các gói dịch vụ của Eva's Fit.
                         </DialogDescription>
                     </DialogHeader>
                 </div>

@@ -47,6 +47,8 @@ import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase'
 import { FinalizeContractDialog } from './finalize-contract-dialog'
 import { Loader2, Download } from 'lucide-react'
+import { usePermissions } from '@/hooks/use-permissions'
+import { canAccessRecord } from '@/lib/permissions'
 
 // ─── Component con nằm NGOÀI component cha để tránh re-mount khi state thay đổi ───
 const ContractCardSection = ({ title, icon: Icon, children }: any) => (
@@ -100,6 +102,13 @@ export function ContractDetailsSheet({
     const [isEditing, setIsEditing] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
     const [formData, setFormData] = React.useState<any>({})
+    const { permissions, user: currentUser, isLoading: permsLoading } = usePermissions()
+
+    const hasAccess = React.useMemo(() => {
+        if (!currentUser || !contract) return false
+        // For contracts, we check against the contract record
+        return canAccessRecord(currentUser, contract)
+    }, [currentUser, contract])
     const [branches, setBranches] = React.useState<any[]>([])
     const [statuses, setStatuses] = React.useState<ConfigItem[]>([])
     const [showFinalizeDialog, setShowFinalizeDialog] = React.useState(false)
@@ -270,7 +279,7 @@ export function ContractDetailsSheet({
                         </div>
                     </div>
                     <div className="flex items-center gap-1">
-                        {!isEditing && (
+                        {!isEditing && hasAccess && (
                             <>
                                 <Button
                                     variant="ghost"
@@ -338,7 +347,7 @@ export function ContractDetailsSheet({
                             </div>
                         </div>
 
-                        {formData.status === 'Chờ ký HĐ' && !isEditing && (
+                        {formData.status === 'Chờ ký HĐ' && !isEditing && hasAccess && (
                             <div className="mt-6 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 flex flex-col gap-3">
                                 <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
                                     <BadgeCheck className="w-5 h-5" />
@@ -353,6 +362,7 @@ export function ContractDetailsSheet({
                             </div>
                         )}
 
+                        {/* Show summary even if no edit access, but actions are restricted elsewhere */}
                         {!isEditing && (
                             <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between gap-3">
                                 <div className="flex-1 flex flex-col items-center">
@@ -535,7 +545,7 @@ export function ContractDetailsSheet({
                             </Button>
                         ) : (
                             <div className="flex items-center gap-2">
-                                {formData.status === 'Chờ ký HĐ' && (
+                                {formData.status === 'Chờ ký HĐ' && hasAccess && (
                                     <Button
                                         onClick={() => setShowFinalizeDialog(true)}
                                         className="rounded-xl h-11 px-6 font-bold text-[13px] bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-100 dark:shadow-emerald-900/20 transition-all font-inter active:scale-95"
@@ -545,29 +555,11 @@ export function ContractDetailsSheet({
                                         Chốt Ký HĐ
                                     </Button>
                                 )}
-                                {/* 
-                                <Button
-                                    onClick={handleExportPDF}
-                                    variant="outline"
-                                    className="rounded-xl h-11 px-6 font-bold text-[13px] border-blue-50 text-blue-600 hover:bg-blue-50 dark:border-blue-900/30 dark:hover:bg-blue-950/20 transition-all font-inter border-2"
-                                >
-                                    <Download className="w-4 h-4 mr-2" />
-                                    Xuất hợp đồng
-                                </Button>
-                                <Button
-                                    onClick={handleExportPDFV2}
-                                    variant="outline"
-                                    className="rounded-xl h-11 px-6 font-bold text-[13px] border-emerald-100 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900/30 dark:hover:bg-emerald-950/20 transition-all font-inter border-2"
-                                    title="Xuất hợp đồng theo mẫu chuẩn (V2)"
-                                >
-                                    <Download className="w-4 h-4 mr-2" />
-                                    In HĐ (v2)
-                                </Button>
-                                */}
+                                {/* Other export actions might be allowed for everyone who can see the record */}
                                 <Button
                                     onClick={handleGenerateDocPDF}
                                     variant="outline"
-                                    disabled={generatingPdf}
+                                    disabled={generatingPdf || !hasAccess} // maybe prevent regen if no access
                                     className="rounded-xl h-11 px-6 font-bold text-[13px] border-blue-100 text-blue-700 hover:bg-blue-50 dark:border-blue-900/30 dark:hover:bg-blue-950/20 transition-all font-inter border-2"
                                     title="Tạo file PDF từ mẫu Google Doc và lưu vào Drive"
                                 >
@@ -588,7 +580,7 @@ export function ContractDetailsSheet({
                                         <ExternalLink className="w-4 h-4" />
                                     </Button>
                                 )}
-                                {contract.status === 'Chờ ký HĐ' && (
+                                {contract.status === 'Chờ ký HĐ' && hasAccess && (
                                     <Button
                                         variant="outline"
                                         size="icon"
@@ -599,14 +591,16 @@ export function ContractDetailsSheet({
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
                                 )}
-                                <Button
-                                    onClick={() => setIsEditing(true)}
-                                    className="rounded-xl h-11 px-8 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
-                                    disabled={loading}
-                                >
-                                    <Edit2 className="w-4 h-4 mr-2" />
-                                    Sửa
-                                </Button>
+                                {hasAccess && (
+                                    <Button
+                                        onClick={() => setIsEditing(true)}
+                                        className="rounded-xl h-11 px-8 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
+                                        disabled={loading}
+                                    >
+                                        <Edit2 className="w-4 h-4 mr-2" />
+                                        Sửa
+                                    </Button>
+                                )}
                             </div>
                         )}
                     </div>
