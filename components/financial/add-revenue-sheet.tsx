@@ -10,6 +10,7 @@ import {
     SheetContent,
     SheetHeader,
     SheetTitle,
+    SheetDescription,
     SheetTrigger,
 } from '@/components/ui/sheet'
 import { useQuery } from '@tanstack/react-query'
@@ -220,9 +221,9 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                             <SheetTitle className="text-sm font-bold text-slate-900 leading-tight">
                                 Ghi nhận thu
                             </SheetTitle>
-                            <p className="text-[10px] font-medium text-slate-500 hidden sm:block">
+                            <SheetDescription className="text-[10px] font-medium text-slate-500 hidden sm:block">
                                 Điền thông tin giao dịch
-                            </p>
+                            </SheetDescription>
                         </div>
                     </div>
 

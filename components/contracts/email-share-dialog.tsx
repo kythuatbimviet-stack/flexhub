@@ -78,13 +78,13 @@ export function EmailShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] rounded-3xl p-6">
+      <DialogContent className="sm:max-w-[500px] rounded-3xl p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
         <DialogHeader>
-          <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mb-2">
-            <Mail className="w-6 h-6 text-emerald-600" />
+          <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/30 rounded-full flex items-center justify-center mb-2">
+            <Mail className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <DialogTitle className="text-xl font-bold text-slate-900">Gửi Email Hợp đồng</DialogTitle>
-          <DialogDescription className="text-slate-500">
+          <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Gửi Email Hợp đồng</DialogTitle>
+          <DialogDescription className="text-slate-500 dark:text-slate-400">
             Điền thông tin email và nội dung tin nhắn để gửi cho khách hàng.
           </DialogDescription>
         </DialogHeader>
@@ -131,15 +131,15 @@ export function EmailShareDialog({
             />
           </div>
 
-          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
-            <div className="w-10 h-10 bg-white rounded-lg border border-slate-200 flex items-center justify-center text-red-500">
+          <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
+            <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-red-500">
               <FileText className="w-6 h-6" />
             </div>
             <div className="flex-1 min-w-0">
-               <p className="text-xs font-bold text-slate-700 truncate">
+               <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
                   HD_{contractId}_{contractData?.clients?.member_name || 'KhachHang'}.pdf
                </p>
-               <p className="text-[10px] text-slate-400 font-medium italic">Đính kèm tự động</p>
+               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium italic">Đính kèm tự động</p>
             </div>
           </div>
         </div>
@@ -148,14 +148,14 @@ export function EmailShareDialog({
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="rounded-xl h-11 px-6 font-bold"
+            className="rounded-xl h-11 px-6 font-bold dark:text-slate-400 dark:hover:bg-slate-800"
           >
             Hủy
           </Button>
           <Button
             onClick={handleSend}
             disabled={loading}
-            className="rounded-xl h-11 px-8 font-bold bg-slate-900 hover:bg-slate-800 text-white"
+            className="rounded-xl h-11 px-8 font-bold bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-700 text-white shadow-xl"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />

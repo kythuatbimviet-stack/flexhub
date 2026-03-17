@@ -24,6 +24,7 @@ import {
     SheetContent,
     SheetHeader,
     SheetTitle,
+    SheetDescription,
     SheetTrigger,
 } from "@/components/ui/sheet"
 import { createClient } from '@/lib/supabase'
@@ -86,6 +87,7 @@ export function MobileNav() {
                     <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full mx-auto mt-3 mb-6" />
                     <SheetHeader className="px-6 pb-4">
                         <SheetTitle className="text-left text-lg font-bold">Danh mục quản lý</SheetTitle>
+                        <SheetDescription className="sr-only">Menu điều hướng nhanh cho các tính năng quản lý trên điện thoại</SheetDescription>
                     </SheetHeader>
                     <div className="px-6 py-2 overflow-y-auto max-h-[calc(70vh-100px)]">
                         <div className="grid grid-cols-3 gap-4 pb-12">

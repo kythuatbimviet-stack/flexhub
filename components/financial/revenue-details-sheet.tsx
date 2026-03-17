@@ -4,6 +4,9 @@ import * as React from 'react'
 import {
     Sheet,
     SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -165,6 +168,11 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
                 showCloseButton={false}
                 className="w-full sm:max-w-[480px] border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
             >
+                <SheetHeader className="sr-only">
+                    <SheetTitle>Chi tiết khoản thu</SheetTitle>
+                    <SheetDescription>Thông tin chi tiết về giao dịch tài chính #{revenue.id.split('-')[0]}</SheetDescription>
+                </SheetHeader>
+
                 {/* Sticky Header */}
                 <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">

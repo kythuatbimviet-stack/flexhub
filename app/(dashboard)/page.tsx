@@ -22,11 +22,11 @@ import {
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase'
-import { useQuery } from '@tanstack/react-query'
+import { usePermissions } from '@/hooks/use-permissions'
 
 const featureGroups = [
     {
+        id: 'member-management',
         title: 'Quản lý hội viên',
         description: 'Quản lý khách hàng, hợp đồng và lộ trình tập luyện.',
         color: 'text-blue-600',
@@ -40,6 +40,7 @@ const featureGroups = [
         ]
     },
     {
+        id: 'financial',
         title: 'Tài chính',
         description: 'Theo dõi dòng tiền, doanh thu, chi phí và công nợ.',
         color: 'text-emerald-600',
@@ -53,6 +54,7 @@ const featureGroups = [
         ]
     },
     {
+        id: 'system',
         title: 'Hệ thống',
         description: 'Cấu hình chi nhánh, nhân sự và các tham số phần mềm.',
         color: 'text-amber-600',
@@ -63,21 +65,12 @@ const featureGroups = [
             { name: 'Nhân sự', href: '/users', icon: Users, desc: 'Phân quyền và quản lý tài khoản' },
             { name: 'Gói tập', href: '/packages', icon: Package, desc: 'Thiết lập các gói dịch vụ tập luyện' },
             { name: 'Tham số', href: '/config-params', icon: Settings, desc: 'Cấu hình các hằng số hệ thống' },
-            // { name: 'Mẫu HĐ', href: '/contract-template', icon: FileText, desc: 'Thiết kế mẫu in hợp đồng' },
-            // { name: 'Placeholder', href: '/contract-template?tab=placeholders', icon: Tags, desc: 'Cài đặt nhãn dữ liệu động' },
         ]
     }
 ]
 
 export default function DashboardPage() {
-    const supabase = createClient()
-    const { data: user } = useQuery({
-        queryKey: ['user-profile'],
-        queryFn: async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            return user
-        }
-    })
+    const { user, permissions, isLoading } = usePermissions()
 
     const getGreeting = () => {
         const hour = new Date().getHours()
@@ -87,7 +80,15 @@ export default function DashboardPage() {
         return 'Chào buổi tối'
     }
 
-    const userName = user?.user_metadata?.full_name || 'Admin'
+    if (isLoading) return null
+
+    const userName = user?.name || 'Admin'
+    const isStaff = permissions.isStaffOnly
+
+    const visibleGroups = featureGroups.filter(group => {
+        if (isStaff && group.id !== 'member-management') return false
+        return true
+    })
 
     return (
         <div className="space-y-12 font-inter pb-20">
@@ -109,19 +110,22 @@ export default function DashboardPage() {
                     >
                         Truy cập nhanh các tính năng và quản lý mọi hoạt động của phòng tập một cách hiệu quả nhất.
                     </motion.p>
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                    >
-                        <Link href="/reports">
-                            <button className="flex items-center gap-2 bg-white text-[#FD5771] px-5 py-2.5 rounded-2xl font-bold hover:bg-white/90 transition-all shadow-lg hover:shadow-xl text-sm">
-                                <LayoutDashboard className="w-4 h-4" />
-                                <span>Xem báo cáo phân tích</span>
-                                <ArrowRight className="w-4 h-4" />
-                            </button>
-                        </Link>
-                    </motion.div>
+                    
+                    {!isStaff && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                        >
+                            <Link href="/reports">
+                                <button className="flex items-center gap-2 bg-white text-[#FD5771] px-5 py-2.5 rounded-2xl font-bold hover:bg-white/90 transition-all shadow-lg hover:shadow-xl text-sm">
+                                    <LayoutDashboard className="w-4 h-4" />
+                                    <span>Xem báo cáo phân tích</span>
+                                    <ArrowRight className="w-4 h-4" />
+                                </button>
+                            </Link>
+                        </motion.div>
+                    )}
                 </div>
                 {/* Background decorative elements */}
                 <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
@@ -130,7 +134,7 @@ export default function DashboardPage() {
 
             {/* Desktop View: Categorized Sections */}
             <div className="hidden md:block space-y-12">
-                {featureGroups.map((group, groupIdx) => (
+                {visibleGroups.map((group, groupIdx) => (
                     <section key={groupIdx} className="space-y-6">
                         <div className="flex items-end justify-between px-2">
                             <div>
@@ -173,7 +177,7 @@ export default function DashboardPage() {
 
             {/* Mobile View: App-style Grid */}
             <div className="md:hidden space-y-8">
-                {featureGroups.map((group, groupIdx) => (
+                {visibleGroups.map((group, groupIdx) => (
                     <div key={groupIdx} className="space-y-4">
                         <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 px-4">
                             {group.title}

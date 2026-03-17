@@ -399,7 +399,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                         {/* Top Toolbar Header Intersection */}
                         <div className="flex">
                             <div className="sticky left-0 z-50 bg-slate-100 dark:bg-slate-800 border-b border-r border-slate-200 dark:border-slate-800 h-10 flex items-center justify-center shrink-0" style={{ width: getLeftPaneWidth() }}>
-                                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest px-4">Thông tin khách hàng</span>
+                                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-100 uppercase tracking-widest px-4">Thông tin khách hàng</span>
                             </div>
                             <div className="flex-1">
                                 {/* Months */}
@@ -419,8 +419,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                     {timelineHeader.weeks.map((w, i) => (
                                         <div
                                             key={i}
-                                            className="h-full flex items-center justify-center border-r border-slate-200 dark:border-slate-700 text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase bg-slate-100/80 dark:bg-slate-800/60 shrink-0"
-                                            style={{ width: `${m.days.length * 50}px` }}
+                                            className="h-full flex items-center justify-center border-r border-slate-200 dark:border-slate-700 text-[9px] font-bold text-slate-500 dark:text-slate-200 uppercase bg-slate-100/80 dark:bg-slate-800/60 shrink-0"
+                                            style={{ width: `${w.days.length * 50}px` }}
                                         >
                                             Tuần {w.weekNum}
                                         </div>
@@ -488,19 +488,19 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                         style={{ display: 'grid', gridTemplateColumns: getGridTemplate(), width: getLeftPaneWidth(), minHeight: `${visibleCount * 32}px` }}
                                         onClick={() => handleRowClick(client.id)}
                                     >
-                                        <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-xs text-slate-400 font-medium">{idx + 1}</div>
+                                        <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-xs text-slate-400 dark:text-slate-300 font-medium">{idx + 1}</div>
                                         <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-start justify-center px-4 py-2 gap-1.5 overflow-hidden">
-                                            <div className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate w-full">{client.member_name}</div>
+                                            <div className="font-bold text-xs text-slate-900 dark:text-blue-400 truncate w-full">{client.member_name}</div>
                                             <div className="flex flex-col gap-0.5 w-full">
-                                                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 whitespace-nowrap">
+                                                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-300 whitespace-nowrap">
                                                     <span className="font-medium">SĐT:</span>
                                                     <span>{contract?.phone || '-'}</span>
                                                 </div>
-                                                <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                                                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-300">
                                                     <span className="font-medium whitespace-nowrap">ĐC:</span>
                                                     <span className="truncate" title={contract?.member_address}>{contract?.member_address || '-'}</span>
                                                 </div>
-                                                <div className="flex items-center gap-3 text-[10px] text-slate-500">
+                                                <div className="flex items-center gap-3 text-[10px] text-slate-500 dark:text-slate-300">
                                                     <div className="flex items-center gap-1">
                                                         <span className="font-medium">H:</span>
                                                         <span>{contract?.initial_height ? `${contract.initial_height}cm` : '-'}</span>
@@ -512,17 +512,17 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                 </div>
                                             </div>
                                         </div>
-                                        {visibleColumns.branch && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-500 text-center px-2">{contract?.branches?.name || '-'}</div>}
-                                        {visibleColumns.pt && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-500 text-center px-2">{contract?.trainer_name || '-'}</div>}
+                                        {visibleColumns.branch && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-500 dark:text-slate-300 text-center px-2">{contract?.branches?.name || '-'}</div>}
+                                        {visibleColumns.pt && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-500 dark:text-slate-300 text-center px-2">{contract?.trainer_name || '-'}</div>}
                                         {visibleColumns.time && (
-                                            <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-[10px] text-slate-500 gap-0.5">
+                                            <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-[10px] text-slate-500 dark:text-slate-300 gap-0.5">
                                                 <span>{contract?.start_date ? format(new Date(contract.start_date), 'dd/MM/yyyy') : '-'}</span>
-                                                <span className="text-slate-300">|</span>
+                                                <span className="text-slate-300 dark:text-slate-600">|</span>
                                                 <span>{contract?.end_date ? format(new Date(contract.end_date), 'dd/MM/yyyy') : '-'}</span>
                                             </div>
                                         )}
                                         {visibleColumns.package && (
-                                            <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-[10px] text-slate-500 text-center px-2 gap-0.5">
+                                            <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-[10px] text-slate-500 dark:text-slate-200 text-center px-2 gap-0.5">
                                                 <div className="line-clamp-1 font-medium">{contract?.package_name || '-'}</div>
                                                 {contract?.total_amount && (
                                                     <div className="font-bold text-blue-600 dark:text-blue-400">

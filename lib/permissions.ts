@@ -62,15 +62,18 @@ export function getAccessControl(user: UserProfile): AccessControl {
 export function canAccessRecord(user: UserProfile, record: any): boolean {
     const access = getAccessControl(user)
 
-    // 1. Check branch access
+    // 1. Ownership/Assignment always grants access regardless of branch
+    const isOwner = record.created_by_email === user.email
+    const isAssigned = record.assigned_pt === user.email || record.trainer_name === user.name
+    if (isOwner || isAssigned) return true
+
+    // 2. Check branch access for non-owners
     if (!access.canViewAllBranches) {
         if (record.branch_id !== user.branch_id) return false
     }
 
-    // 2. Check ownership/assignment for staff
+    // 3. Check ownership/assignment for staff (redundant but safe)
     if (access.isStaffOnly) {
-        const isOwner = record.created_by_email === user.email
-        const isAssigned = record.assigned_pt === user.email || record.trainer_name === user.name // some tables use trainer_name
         return isOwner || isAssigned
     }
 

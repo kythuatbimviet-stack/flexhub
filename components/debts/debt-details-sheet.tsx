@@ -6,6 +6,7 @@ import {
     SheetContent,
     SheetHeader,
     SheetTitle,
+    SheetDescription,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -81,8 +82,8 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
                 showCloseButton={false}
             >
                 {/* Sticky Header */}
-                <div className="shrink-0 bg-white/80 backdrop-blur-md border-b border-slate-100 px-5 py-4 flex items-center justify-between z-10">
-                    <div className="flex items-center gap-3">
+                <div className="shrink-0 flex flex-row items-center justify-between px-4 py-3 bg-white border-b border-slate-100">
+                    <SheetHeader className="flex flex-row items-center gap-3 space-y-0 text-left">
                         <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
                             <HandCoinsIcon className="w-5 h-5 text-amber-600" />
                         </div>
@@ -90,11 +91,11 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
                             <SheetTitle className="text-[15px] font-bold text-slate-900 line-clamp-1">
                                 {debt?.clients?.member_name || 'Chi tiết công nợ'}
                             </SheetTitle>
-                            <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
+                            <SheetDescription className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
                                 ID: {debt?.id?.split('-')[0]}
-                            </p>
+                            </SheetDescription>
                         </div>
-                    </div>
+                    </SheetHeader>
                     <Button
                         variant="ghost"
                         size="icon"

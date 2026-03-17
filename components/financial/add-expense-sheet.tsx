@@ -10,6 +10,7 @@ import {
     SheetContent,
     SheetHeader,
     SheetTitle,
+    SheetDescription,
 } from '@/components/ui/sheet'
 import { useQuery } from '@tanstack/react-query'
 import { fetchBranches } from '@/app/actions/branches'
@@ -151,7 +152,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                     <SheetTitle className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                                         Ghi nhận chi
                                     </SheetTitle>
-                                    <span className="text-[10px] text-slate-500 dark:text-slate-400 capitalize hidden sm:block">Thêm giao dịch mới</span>
+                                    <SheetDescription className="text-[10px] text-slate-500 dark:text-slate-400 capitalize hidden sm:block">Thêm giao dịch mới</SheetDescription>
                                 </div>
                             </div>
 

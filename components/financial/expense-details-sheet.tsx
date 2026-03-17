@@ -6,6 +6,7 @@ import {
     SheetContent,
     SheetHeader,
     SheetTitle,
+    SheetDescription,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -185,7 +186,7 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                                 <SheetTitle className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                                     Chi tiết khoản chi
                                 </SheetTitle>
-                                <span className="text-[11px] text-slate-500 dark:text-slate-400">ID: {expense.id.split('-')[0]}</span>
+                                <SheetDescription className="text-[11px] text-slate-500 dark:text-slate-400">ID: {expense.id.split('-')[0]}</SheetDescription>
                             </div>
                         </div>
                         <div className="flex items-center gap-1">

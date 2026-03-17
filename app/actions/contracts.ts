@@ -93,11 +93,10 @@ export async function fetchContracts() {
             .order('created_at', { ascending: false })
 
         // Apply RBAC filters
-        if (!accessInfo.access.canViewAllBranches) {
-            query = query.eq('branch_id', accessInfo.user.branch_id)
-        }
         if (accessInfo.access.isStaffOnly) {
             query = query.or(`created_by_email.eq.${accessInfo.user.email},assigned_pt.eq.${accessInfo.user.email},trainer_name.ilike.%${accessInfo.user.name}%`)
+        } else if (!accessInfo.access.canViewAllBranches) {
+            query = query.or(`branch_id.eq.${accessInfo.user.branch_id},created_by_email.eq.${accessInfo.user.email}`)
         }
 
         const { data, error } = await query

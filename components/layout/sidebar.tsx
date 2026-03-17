@@ -89,7 +89,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
     const visibleFinancial = permissions.isStaffOnly ? [] : financialNavigation
     const visibleSystem = systemNavigation.filter(item => {
         if (item.adminOnly && !isAdmin) return false
-        if (permissions.isStaffOnly && item.name !== 'Báo cáo') return false // Staff only see reports in system
+        if (permissions.isStaffOnly) return false // Staff don't see any system items
         return true
     })
 

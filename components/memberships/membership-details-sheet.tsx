@@ -6,6 +6,7 @@ import {
     SheetContent,
     SheetHeader,
     SheetTitle,
+    SheetDescription,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -211,10 +212,10 @@ export function MembershipDetailsSheet({
                             <Package className="w-6 h-6" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                            <SheetTitle className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                                 {isEditing ? 'Chỉnh sửa gói tập' : pkg.package_name}
-                            </span>
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400">ID: {pkg.id}</span>
+                            </SheetTitle>
+                            <SheetDescription className="text-[11px] text-slate-500 dark:text-slate-400">ID: {pkg.id}</SheetDescription>
                         </div>
                     </div>
                     <div className="flex items-center gap-1">

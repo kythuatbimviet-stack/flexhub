@@ -6,6 +6,7 @@ import {
     SheetContent,
     SheetHeader,
     SheetTitle,
+    SheetDescription,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -165,13 +166,15 @@ export function ZaloUserDetailsSheet({
                                 <UserStar className="w-6 h-6" />
                             )}
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight flex items-center gap-1.5">
+                        <SheetHeader className="flex flex-col gap-0.5">
+                            <SheetTitle className="text-sm font-bold text-slate-900 dark:text-white leading-tight flex items-center gap-1.5">
                                 {isEditing ? 'Chỉnh sửa Zalo User' : user.display_name}
                                 {user.is_sensitive && <Shield className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
-                            </span>
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400">ID: {user.zalo_user_id?.slice(0, 12)}...</span>
-                        </div>
+                            </SheetTitle>
+                            <SheetDescription className="text-[11px] text-slate-500 dark:text-slate-400">
+                                ID: {user.zalo_user_id?.slice(0, 12)}...
+                            </SheetDescription>
+                        </SheetHeader>
                     </div>
                     <div className="flex items-center gap-1">
                         {!isEditing && (

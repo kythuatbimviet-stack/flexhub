@@ -31,11 +31,10 @@ export async function fetchClients() {
             .order('created_at', { ascending: false })
 
         // Apply RBAC filters
-        if (!accessInfo.access.canViewAllBranches) {
-            query = query.eq('branch_id', accessInfo.user.branch_id)
-        }
         if (accessInfo.access.isStaffOnly) {
             query = query.or(`created_by_email.eq.${accessInfo.user.email},assigned_pt.eq.${accessInfo.user.email},pt_name.ilike.%${accessInfo.user.name}%`)
+        } else if (!accessInfo.access.canViewAllBranches) {
+            query = query.or(`branch_id.eq.${accessInfo.user.branch_id},created_by_email.eq.${accessInfo.user.email}`)
         }
 
         const { data, error } = await query
@@ -89,12 +88,10 @@ export async function fetchClientsPage({
             if (regType) q = q.eq('registration_type', regType)
 
             // Apply RBAC filters
-            if (!accessInfo.access.canViewAllBranches) {
-                q = q.eq('branch_id', accessInfo.user.branch_id)
-            }
             if (accessInfo.access.isStaffOnly) {
-                // If filtering by PT name explicitly, we still restrict to what staff can see
                 q = q.or(`created_by_email.eq.${accessInfo.user.email},assigned_pt.eq.${accessInfo.user.email},pt_name.ilike.%${accessInfo.user.name}%`)
+            } else if (!accessInfo.access.canViewAllBranches) {
+                q = q.or(`branch_id.eq.${accessInfo.user.branch_id},created_by_email.eq.${accessInfo.user.email}`)
             }
 
             return q

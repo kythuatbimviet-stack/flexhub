@@ -332,16 +332,14 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                 showCloseButton={false}
                 className="w-full border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
             >
-                <SheetTitle className="sr-only">Thông tin khách hàng: {client?.member_name}</SheetTitle>
-                {/* Sticky Header */}
-                <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
+                <SheetHeader className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0 space-y-0">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
                             <UserCircle className="w-6 h-6" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{client.member_name}</span>
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400">ID: {client.id} | {client.email || 'No email provided'}</span>
+                            <SheetTitle className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{client.member_name}</SheetTitle>
+                            <SheetDescription className="text-[11px] text-slate-500 dark:text-slate-400">ID: {client.id} | {client.email || 'No email provided'}</SheetDescription>
                         </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -376,7 +374,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                             <X className="w-5 h-5 text-slate-400" />
                         </Button>
                     </div>
-                </div>
+                </SheetHeader>
 
                 <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4">
                     {/* Top Profile Card */}
