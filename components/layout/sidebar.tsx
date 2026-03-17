@@ -43,6 +43,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { Logo } from '@/components/ui/logo'
 
 const mainNavigation = [
     { name: 'Trang chủ', href: '/', icon: Home },
@@ -108,10 +109,11 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                                 <div className="h-9 w-9 relative group">
                                     <div className="absolute -inset-1.5 bg-[#FD5771]/10 rounded-xl blur opacity-0 group-hover:opacity-100 transition duration-500" />
                                     <div className="relative h-9 w-9 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center shadow-lg shadow-[#FD5771]/10 border border-gray-100 dark:border-gray-800 overflow-hidden">
-                                        <img
-                                            src="/logo_evasfit.png"
-                                            alt="Eva's Fit Logo"
-                                            className="w-7 h-7 object-contain transform group-hover:scale-110 transition-transform duration-300"
+                                        <Logo
+                                            variant="square"
+                                            isDashboard
+                                            className="w-7 h-7"
+                                            priority
                                         />
                                     </div>
                                 </div>

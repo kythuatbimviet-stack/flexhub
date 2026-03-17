@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 import { LogIn, Mail, Lock, Dumbbell } from 'lucide-react'
+import { Logo } from '@/components/ui/logo'
 
 export default function LoginPage() {
     const router = useRouter()
@@ -63,14 +64,9 @@ export default function LoginPage() {
 
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 text-white mb-12">
-                        <div className="w-10 h-10 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center border border-white/30 overflow-hidden">
-                            <img
-                                src="/logo_evasfit.png"
-                                alt="Eva's Fit Logo"
-                                className="w-8 h-8 object-contain"
-                            />
-                        </div>
-                        <span className="text-2xl font-bold tracking-tight">Eva's Fit</span>
+                        <span className="text-2xl font-bold tracking-tight">
+                            Eva's Fit <span className="text-red-600 dark:text-white font-semibold text-[10px] ml-1 px-2 py-0.5 bg-white dark:bg-red-900/30 rounded-full tracking-wider">CRM</span>
+                        </span>
                     </div>
                 </div>
 
@@ -104,6 +100,13 @@ export default function LoginPage() {
                     className="w-full max-w-md space-y-10"
                 >
                     <div className="text-center lg:text-left">
+                        <div className="mb-8 flex justify-center lg:justify-start">
+                            <Logo
+                                variant="horizontal"
+                                className="h-32 md:h-36 lg:h-48 w-auto"
+                                priority
+                            />
+                        </div>
                         <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-2">Chào mừng trở lại</h2>
                         <p className="text-gray-500 dark:text-gray-400 text-sm">Đăng nhập để truy cập vào hệ thống quản lý</p>
                     </div>

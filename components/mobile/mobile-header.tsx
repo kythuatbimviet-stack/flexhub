@@ -5,16 +5,17 @@ import { Bell, Search } from 'lucide-react'
 import { ThemeToggle } from '@/components/layout/theme-toggle'
 import { UserMenu } from '@/components/layout/user-menu'
 import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/ui/logo'
 
 export function MobileHeader() {
     return (
         <header className="lg:hidden sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md px-4 transition-all">
             <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center shadow-lg shadow-gray-100 dark:shadow-gray-900 border border-gray-100 dark:border-gray-800 overflow-hidden">
-                    <img
-                        src="/logo_evasfit.png"
-                        alt="Eva's Fit Logo"
-                        className="w-7 h-7 object-contain"
+                    <Logo
+                        variant="square"
+                        isDashboard
+                        className="w-7 h-7"
                     />
                 </div>
                 <span className="font-semibold text-lg tracking-tight text-gray-900 dark:text-white">

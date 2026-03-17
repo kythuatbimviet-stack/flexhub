@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { Logo } from '@/components/ui/logo'
 
 interface LogoLoadingProps {
     className?: string
@@ -17,12 +18,12 @@ export function LogoLoading({ className, size = 60 }: LogoLoadingProps) {
 
                 {/* Logo container */}
                 <div className="relative bg-white dark:bg-gray-900 rounded-full p-2 shadow-xl border border-gray-100 dark:border-gray-800 animate-pulse">
-                    <Image
-                        src="/logo_evasfit.png"
-                        alt="Loading..."
+                    <Logo
+                        variant="square"
+                        isDashboard
+                        className="object-contain"
                         width={size}
                         height={size}
-                        className="object-contain"
                         priority
                     />
                 </div>
