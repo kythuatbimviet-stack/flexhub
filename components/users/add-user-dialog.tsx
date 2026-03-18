@@ -182,7 +182,7 @@ export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
                                             <FormLabel className="text-xs font-medium text-slate-700 dark:text-slate-300">Trạng thái</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 border-2">
+                                                    <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 border-2 w-full max-w-[240px]">
                                                         <SelectValue placeholder="Chọn trạng thái" />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -213,7 +213,7 @@ export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
                                             <FormLabel className="text-xs font-medium text-slate-700 dark:text-slate-300">Chi nhánh</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 border-2">
+                                                    <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 border-2 w-full max-w-[240px]">
                                                         <SelectValue placeholder="Chọn chi nhánh" />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -233,9 +233,17 @@ export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel className="text-xs font-medium text-slate-700 dark:text-slate-300">Phòng ban</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Kinh doanh, Kỹ thuật..." {...field} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 border-2" />
-                                            </FormControl>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 border-2 w-full max-w-[240px]">
+                                                        <SelectValue placeholder="Chọn phòng ban" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                                    <SelectItem value="PT">PT</SelectItem>
+                                                    <SelectItem value="Quản lý">Quản lý</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -246,9 +254,19 @@ export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel className="text-xs font-medium text-slate-700 dark:text-slate-300">Chức vụ</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Trưởng phòng, Nhân viên..." {...field} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 border-2" />
-                                            </FormControl>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 border-2 w-full max-w-[240px]">
+                                                        <SelectValue placeholder="Chọn chức vụ" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                                    <SelectItem value="Nhân viên">Nhân viên</SelectItem>
+                                                    <SelectItem value="Quản lý chi nhánh">Quản lý chi nhánh</SelectItem>
+                                                    <SelectItem value="Quản lý">Quản lý</SelectItem>
+                                                    <SelectItem value="CEO">CEO</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -261,7 +279,7 @@ export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
                                             <FormLabel className="text-xs font-medium text-slate-700 dark:text-slate-300">Vai trò hệ thống</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 border-2">
+                                                    <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-11 border-2 w-full max-w-[240px]">
                                                         <SelectValue placeholder="Chọn vai trò" />
                                                     </SelectTrigger>
                                                 </FormControl>

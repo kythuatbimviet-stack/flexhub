@@ -129,6 +129,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             : []
     )
     const [packages, setPackages] = React.useState<any[]>([])
+    const [selectedPackageId, setSelectedPackageId] = React.useState<string>('')
     const [statuses, setStatuses] = React.useState<ConfigItem[]>([])
 
     const { data: clients = [], isLoading: clientsLoading } = useQuery({
@@ -411,6 +412,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
         const pkg = packages.find(p => p.id === packageId)
         if (pkg) {
             selectedPackageRef.current = pkg
+            setSelectedPackageId(packageId)
             form.setValue('package_name', pkg.package_name)
             const unitPrice = pkg.discounted_price || pkg.unit_price
             const qty = parseInt(form.getValues('quantity') || '1')
@@ -457,6 +459,27 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
 
     const watchBranchId = form.watch('branch_id')
 
+    // Filter packages by the selected client's branch
+    const filteredPackages = React.useMemo(() => {
+        if (!watchBranchId) return []
+        return packages.filter((pkg: any) => pkg.branch_id === watchBranchId)
+    }, [packages, watchBranchId])
+
+    // Reset package selection when branch changes
+    const prevBranchRef = React.useRef<string>('')
+    React.useEffect(() => {
+        if (!open) return
+        if (prevBranchRef.current && prevBranchRef.current !== watchBranchId) {
+            form.setValue('package_name', '')
+            form.setValue('package_price', '')
+            form.setValue('total_amount', '')
+            form.setValue('end_date', '')
+            selectedPackageRef.current = null
+            setSelectedPackageId('')
+        }
+        prevBranchRef.current = watchBranchId
+    }, [watchBranchId, open, form])
+
     React.useEffect(() => {
         if (!open) return
         setGeneratingId(true)
@@ -480,6 +503,8 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                 toast.success('Hợp đồng đã được tạo thành công!')
                 setOpen(false)
                 form.reset()
+                selectedPackageRef.current = null
+                setSelectedPackageId('')
                 onSuccess()
             } else {
                 toast.error('Lỗi khi tạo hợp đồng: ' + result.error)
@@ -891,14 +916,14 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormItem>
                                     <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Chọn Gói tập (Sẵn có)</FormLabel>
-                                    <Select onValueChange={(e: string) => onPackageChange(e)}>
+                                    <Select onValueChange={(e: string) => onPackageChange(e)} value={selectedPackageId}>
                                         <FormControl>
                                             <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11 overflow-hidden">
-                                                <SelectValue placeholder="Chọn gói tập..." className="truncate" />
+                                                <SelectValue placeholder={watchBranchId ? (filteredPackages.length > 0 ? 'Chọn gói tập...' : 'Không có gói tập cho chi nhánh này') : 'Chọn khách hàng trước...'} className="truncate" />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800" position="popper" sideOffset={4}>
-                                            {packages.map(pkg => (
+                                            {filteredPackages.map((pkg: any) => (
                                                 <SelectItem key={`pkg-${pkg.id}`} value={pkg.id}>
                                                     {pkg.package_name} ({pkg.duration_days} ngày)
                                                 </SelectItem>

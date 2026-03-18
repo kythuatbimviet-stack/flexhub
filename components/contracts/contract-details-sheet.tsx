@@ -26,10 +26,13 @@ import {
     BadgeCheck,
     Clock,
     Phone,
-    Mail,
-    MapPin,
     Cloud,
-    ExternalLink
+    ExternalLink,
+    MapPin,
+    Mail,
+    MessageSquare,
+    Loader2,
+    Download
 } from 'lucide-react'
 import {
     Select,
@@ -47,7 +50,6 @@ import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase'
 import { FinalizeContractDialog } from './finalize-contract-dialog'
-import { Loader2, Download } from 'lucide-react'
 import { usePermissions } from '@/hooks/use-permissions'
 import { canAccessRecord } from '@/lib/permissions'
 
@@ -525,6 +527,44 @@ export function ContractDetailsSheet({
                                         <p className="text-sm text-slate-400 italic">Chưa có chữ ký</p>
                                     )
                                 )}
+                            </div>
+                        </div>
+                    </ContractCardSection>
+
+                    {/* Section: Gửi Hợp đồng Khách hàng */}
+                    <ContractCardSection title="Gửi Hợp đồng Khách hàng" icon={Cloud}>
+                        <div className="space-y-5">
+                            <div className="grid grid-cols-2 gap-5">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                        <Mail className="w-3 h-3" />
+                                        Gửi Email
+                                    </Label>
+                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                                        {formData.sendemail ? new Date(formData.sendemail).toLocaleDateString('vi-VN', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        }) : 'Chưa gửi'}
+                                    </p>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                        <MessageSquare className="w-3 h-3" />
+                                        Gửi Zalo
+                                    </Label>
+                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                                        {formData.sendzalo ? new Date(formData.sendzalo).toLocaleDateString('vi-VN', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        }) : 'Chưa gửi'}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </ContractCardSection>

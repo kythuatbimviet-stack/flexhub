@@ -33,7 +33,13 @@ import {
     Target,
     HeartPulse,
     MessageSquare,
-    ClipboardList
+    ClipboardList,
+    FileText,
+    PlusCircle,
+    ChevronDown,
+    Search,
+    Check,
+    Cloud
 } from 'lucide-react'
 import { updateClient, bulkDeleteClients } from '@/app/actions/clients'
 import { toast } from 'sonner'
@@ -51,7 +57,7 @@ import { AddContractDialog } from '@/components/contracts/add-contract-dialog'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
 import { fetchZaloUsers } from '@/app/actions/zalo-users'
 import { fetchUsers } from '@/app/actions/users'
-import { FileText, PlusCircle, ChevronDown, Search, Check } from 'lucide-react'
+import { fetchLatestContractByClientId } from '@/app/actions/contracts'
 import {
     Popover,
     PopoverContent,
@@ -244,6 +250,12 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
     const clientTrainingTimes = React.useMemo<ConfigItem[]>(() => {
         return configResult?.data?.trainingTimes || []
     }, [configResult])
+
+    const { data: latestContract } = useQuery({
+        queryKey: ['latest-contract', client?.id],
+        queryFn: () => fetchLatestContractByClientId(client!.id),
+        enabled: !!client?.id,
+    })
 
     if (!client || !formData) return null
 
@@ -764,6 +776,46 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                             )}
                         </div>
                     </ClientCardSection>
+
+                    {/* Section: Gửi Hợp đồng Khách hàng */}
+                    {latestContract?.data && (
+                        <ClientCardSection title="Gửi Hợp đồng Khách hàng" icon={Cloud}>
+                            <div className="space-y-5">
+                                <div className="grid grid-cols-2 gap-5">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                            <Mail className="w-3 h-3" />
+                                            Gửi Email
+                                        </Label>
+                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                                            {latestContract.data.sendemail ? new Date(latestContract.data.sendemail).toLocaleDateString('vi-VN', {
+                                                day: '2-digit',
+                                                month: '2-digit',
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            }) : 'Chưa gửi'}
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                            <MessageSquare className="w-3 h-3" />
+                                            Gửi Zalo
+                                        </Label>
+                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                                            {latestContract.data.sendzalo ? new Date(latestContract.data.sendzalo).toLocaleDateString('vi-VN', {
+                                                day: '2-digit',
+                                                month: '2-digit',
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            }) : 'Chưa gửi'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </ClientCardSection>
+                    )}
                 </div>
 
                 {/* Sticky Footer */}

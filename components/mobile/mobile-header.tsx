@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Bell, Search } from 'lucide-react'
+import { Bell, Search, RefreshCw } from 'lucide-react'
 import { ThemeToggle } from '@/components/layout/theme-toggle'
 import { UserMenu } from '@/components/layout/user-menu'
 import { Button } from '@/components/ui/button'
@@ -24,6 +24,14 @@ export function MobileHeader() {
             </div>
 
             <div className="flex items-center gap-1">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-full"
+                    onClick={() => window.location.reload()}
+                >
+                    <RefreshCw className="w-5 h-5" />
+                </Button>
                 <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-full">
                     <Bell className="w-5 h-5" />
                     <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#FD5771] rounded-full border-2 border-white dark:border-gray-900"></span>

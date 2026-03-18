@@ -482,3 +482,25 @@ export async function sendCustomContractEmail(id: string, to: string, subject: s
         return { success: false, error: error.message }
     }
 }
+
+export async function fetchLatestContractByClientId(clientId: string) {
+    const supabase = await createAdminClient()
+    try {
+        const { data, error } = await supabase
+            .from('contracts')
+            .select('*')
+            .eq('client_id', clientId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+
+        if (error) {
+            if (error.code === 'PGRST116') return { success: true, data: null }
+            throw error
+        }
+        return { success: true, data }
+    } catch (error: any) {
+        console.error('Fetch Latest Contract Error:', error)
+        return { success: false, error: error.message }
+    }
+}
