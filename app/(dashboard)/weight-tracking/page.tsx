@@ -65,7 +65,7 @@ export default function WeightTrackingPage() {
     const [selectedRecord, setSelectedRecord] = React.useState<any>(null)
     const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
     const [showMobileFilters, setShowMobileFilters] = React.useState(false)
-    const [viewMode, setViewMode] = React.useState<'table' | 'gantt'>('table')
+    const [viewMode, setViewMode] = React.useState<'table' | 'gantt'>('gantt')
     const [searchTerm, setSearchTerm] = React.useState('')
     const [filterBranch, setFilterBranch] = React.useState('all')
     const [filterPT, setFilterPT] = React.useState('all')
@@ -305,7 +305,7 @@ export default function WeightTrackingPage() {
                 <div className="space-y-1">
                     <h1 className="text-3xl font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
                         <Activity className="w-8 h-8 text-[#FD5771]" />
-                        Lộ trình tăng cân
+                        Tiến trình thay đổi
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Theo dõi và quản lý cân nặng của khách hàng theo thời gian.</p>
                 </div>

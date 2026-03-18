@@ -39,8 +39,22 @@ import {
     ChevronDown,
     Search,
     Check,
-    Cloud
+    Cloud,
+    Building2,
+    Calendar,
+    Quote,
+    TrendingUp,
+    History,
+    CreditCard,
+    Instagram,
+    Facebook,
+    Users
 } from 'lucide-react'
+import {
+    Avatar,
+    AvatarImage,
+    AvatarFallback,
+} from '@/components/ui/avatar'
 import { updateClient, bulkDeleteClients } from '@/app/actions/clients'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -346,9 +360,12 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
             >
                 <SheetHeader className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0 space-y-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
-                            <UserCircle className="w-6 h-6" />
-                        </div>
+                        <Avatar className="w-10 h-10 border-2 border-white dark:border-slate-800 shadow-sm">
+                            <AvatarImage src={formData.avatar_url} alt={formData.member_name} className="object-cover" />
+                            <AvatarFallback className="bg-blue-100 text-blue-600 dark:bg-blue-900/30">
+                                <UserCircle className="w-6 h-6" />
+                            </AvatarFallback>
+                        </Avatar>
                         <div className="flex flex-col">
                             <SheetTitle className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{client.member_name}</SheetTitle>
                             <SheetDescription className="text-[11px] text-slate-500 dark:text-slate-400">ID: {client.id} | {client.email || 'No email provided'}</SheetDescription>
@@ -392,9 +409,12 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                     {/* Top Profile Card */}
                     <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
                         <div className="flex items-start gap-5">
-                            <div className="w-20 h-20 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20 shrink-0">
-                                <UserCircle className="w-12 h-12" />
-                            </div>
+                            <Avatar className="w-20 h-20 rounded-2xl border-4 border-white dark:border-slate-800 shadow-lg shadow-blue-200 dark:shadow-blue-900/20 shrink-0">
+                                <AvatarImage src={formData.avatar_url} alt={formData.member_name} className="object-cover rounded-2xl" />
+                                <AvatarFallback className="bg-blue-600 text-white rounded-2xl">
+                                    <UserCircle className="w-12 h-12" />
+                                </AvatarFallback>
+                            </Avatar>
                             <div className="flex-1 min-w-0 pt-1">
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">
                                     {client.member_name}
@@ -407,7 +427,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                         "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
                                         formData.status === 'Đang tập' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" : "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
                                     )}>
-                                        <div className={cn("w-1.5 h-1.5 rounded-full", formData.status === 'Đang tập' ? "bg-emerald-500" : "bg-slate-400")} />
+                                        <div className="w-1.5 h-1.5 rounded-full" />
                                         {formData.status}
                                     </div>
                                     <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30">
@@ -451,7 +471,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                     }}
                                                     className={cn(
                                                         "rounded-lg text-[13px] font-medium px-3 py-2 cursor-pointer transition-colors",
-                                                        formData.status === s.nam ? "bg-blue-50 text-blue-600 dark:bg-blue-950/30" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                        formData.status === s.nam ? "bg-blue-50/50 text-blue-600 dark:bg-blue-950/30" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                                                     )}
                                                 >
                                                     {s.nam}
@@ -475,7 +495,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                     }}
                                                     className={cn(
                                                         "rounded-lg text-[13px] font-medium px-3 py-2 cursor-pointer",
-                                                        formData.status === status ? "bg-blue-50 text-blue-600" : "text-slate-600"
+                                                        formData.status === status ? "bg-blue-50/50 text-blue-600" : "text-slate-600"
                                                     )}
                                                 >
                                                     {status}
@@ -637,6 +657,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                     )}
                                 </div>
                                 <ClientInfoRow label="Facebook ID" value={formData.facebook_id} name="facebook_id" {...sharedRowProps} />
+                                <ClientInfoRow label="Avatar URL" value={formData.avatar_url} name="avatar_url" {...sharedRowProps} />
                             </div>
                         </div>
                     </ClientCardSection>

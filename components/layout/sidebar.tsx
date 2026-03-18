@@ -49,7 +49,7 @@ const mainNavigation = [
     { name: 'Trang chủ', href: '/', icon: Home },
     { name: 'Khách hàng', href: '/clients', icon: Users },
     { name: 'Hợp đồng', href: '/contracts', icon: FileText },
-    { name: 'Lộ trình tăng cân', href: '/weight-tracking', icon: Activity },
+    { name: 'Tiến trình thay đổi', href: '/weight-tracking', icon: Activity },
     { name: 'Zalo', href: '/zalo-users', icon: UserStar },
 ]
 

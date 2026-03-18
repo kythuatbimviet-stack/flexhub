@@ -257,6 +257,15 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                 if (initialClient.branch_id) {
                     form.setValue('branch_id', initialClient.branch_id)
                 }
+                if (initialClient.height) {
+                    form.setValue('initial_height', initialClient.height.toString())
+                }
+                if (initialClient.weight) {
+                    form.setValue('initial_weight', initialClient.weight.toString())
+                }
+                if (initialClient.medical_history) {
+                    form.setValue('medical_condition', initialClient.medical_history)
+                }
             }
 
             const loadData = async () => {
@@ -342,6 +351,16 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                     if (client.branch_id) {
                         form.setValue('branch_id', client.branch_id)
                     }
+
+                    if (client.height) {
+                        form.setValue('initial_height', client.height.toString())
+                    }
+                    if (client.weight) {
+                        form.setValue('initial_weight', client.weight.toString())
+                    }
+                    if (client.medical_history) {
+                        form.setValue('medical_condition', client.medical_history)
+                    }
                 }
             }
         }
@@ -386,6 +405,16 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             if (client.branch_id) {
                 form.setValue('branch_id', client.branch_id)
                 onBranchChange(client.branch_id)
+            }
+
+            if (client.height) {
+                form.setValue('initial_height', client.height.toString())
+            }
+            if (client.weight) {
+                form.setValue('initial_weight', client.weight.toString())
+            }
+            if (client.medical_history) {
+                form.setValue('medical_condition', client.medical_history)
             }
         }
     }

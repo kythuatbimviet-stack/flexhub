@@ -90,6 +90,7 @@ const clientSchema = z.object({
     notes: z.string().optional(),
     branch_id: z.string().min(1, 'Chi nhánh là bắt buộc').nullable(),
     signature_url: z.string().optional(),
+    avatar_url: z.string().optional(),
 })
 
 type ClientFormValues = z.infer<typeof clientSchema>
@@ -186,6 +187,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
             notes: '',
             branch_id: null,
             signature_url: '',
+            avatar_url: '',
         },
     })
 
@@ -383,6 +385,19 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                             <FormLabel className="text-xs text-gray-500 font-medium">Email</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="a@gmail.com" {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="avatar_url"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs text-gray-500 font-medium">Avatar URL</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="https://..." {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

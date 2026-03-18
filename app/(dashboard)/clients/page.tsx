@@ -31,6 +31,11 @@ import { fetchBranches } from '@/app/actions/branches'
 import { AddContractDialog } from '@/components/contracts/add-contract-dialog'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
 import { useRouter } from 'next/navigation'
+import {
+    Avatar,
+    AvatarImage,
+    AvatarFallback,
+} from '@/components/ui/avatar'
 
 const THIRTY_MINUTES = 30 * 60 * 1000
 
@@ -491,12 +496,20 @@ export default function ClientsPage() {
                                                 onCheckedChange={() => toggleRow(client.id)} className="rounded-lg" />
                                         </TableCell>
                                         <TableCell className="py-2">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-normal text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
-                                                    {client.member_name}
-                                                    {client.status === 'Đang tập' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
-                                                </span>
-                                                <span className="text-[10px] text-gray-400 font-medium">{client.id}</span>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-9 w-9 border-2 border-white dark:border-gray-800 shadow-sm">
+                                                    <AvatarImage src={client.avatar_url} alt={client.member_name} className="object-cover" />
+                                                    <AvatarFallback className="bg-red-50 text-red-600 font-bold text-[10px]">
+                                                        {client.member_name?.charAt(0)}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-normal text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
+                                                        {client.member_name}
+                                                        {client.status === 'Đang tập' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
+                                                    </span>
+                                                    <span className="text-[10px] text-gray-400 font-medium">{client.id}</span>
+                                                </div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="hidden md:table-cell">
