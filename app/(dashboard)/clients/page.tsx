@@ -4,7 +4,8 @@ import * as React from 'react'
 import {
     Search, Filter, MoreHorizontal, Edit2, Trash2, Mail, Phone,
     FileDown, Trash, Loader2, Activity, Dumbbell, RotateCcw,
-    ChevronRight, ChevronLeft, TrendingUp, Users, Target, UserStar, Check
+    ChevronRight, ChevronLeft, TrendingUp, Users, Target, UserStar, Check,
+    Building2, FilePlus2, ArrowUpDown, ChevronUp, ChevronDown
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -30,7 +31,6 @@ import { fetchBranches } from '@/app/actions/branches'
 import { AddContractDialog } from '@/components/contracts/add-contract-dialog'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
 import { useRouter } from 'next/navigation'
-import { FilePlus2 } from 'lucide-react'
 
 const THIRTY_MINUTES = 30 * 60 * 1000
 
@@ -53,6 +53,7 @@ export default function ClientsPage() {
     const [regTypeFilter, setRegTypeFilter] = React.useState('all')
     const [sourceFilter, setSourceFilter] = React.useState('all')
     const [showMobileFilters, setShowMobileFilters] = React.useState(false)
+    const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'created_at', direction: 'desc' })
 
     // Debounce search
     React.useEffect(() => {
@@ -104,8 +105,27 @@ export default function ClientsPage() {
             if (regTypeFilter !== 'all' && c.registration_type !== regTypeFilter) return false
             if (sourceFilter !== 'all' && c.source !== sourceFilter) return false
             return true
+        }).sort((a: any, b: any) => {
+            if (!sortConfig) return 0
+            const { key, direction } = sortConfig
+            
+            let valA = a[key]
+            let valB = b[key]
+
+            // Special handling for branch name lookup if sorting by branch
+            if (key === 'branch_name') {
+                valA = branches.find((br: any) => br.id === a.branch_id)?.name || ''
+                valB = branches.find((br: any) => br.id === b.branch_id)?.name || ''
+            }
+
+            if (valA === valB) return 0
+            if (valA === null || valA === undefined) return 1
+            if (valB === null || valB === undefined) return -1
+
+            const comparison = valA < valB ? -1 : 1
+            return direction === 'asc' ? comparison : -comparison
         })
-    }, [allClients, debouncedSearch, statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter])
+    }, [allClients, debouncedSearch, statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter, sortConfig, branches])
 
     // ── Pagination (client-side) ──────────────────────────────────────────────
     const totalCount = filteredClients.length
@@ -138,7 +158,23 @@ export default function ClientsPage() {
     const clearFilters = () => {
         setSearchTerm(''); setStatusFilter('all'); setBranchFilter('all')
         setPtFilter('all'); setRegTypeFilter('all'); setSourceFilter('all'); setPage(1)
+        setSortConfig({ key: 'created_at', direction: 'desc' })
         toast.info('Đã xóa tất cả bộ lọc')
+    }
+
+    const handleSort = (key: string) => {
+        let direction: 'asc' | 'desc' = 'asc'
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc'
+        }
+        setSortConfig({ key, direction })
+    }
+
+    const SortIcon = ({ columnKey }: { columnKey: string }) => {
+        if (!sortConfig || sortConfig.key !== columnKey) return <ArrowUpDown className="ml-1 w-3 h-3 opacity-30" />
+        return sortConfig.direction === 'asc' 
+            ? <ChevronUp className="ml-1 w-3 h-3 text-red-500" /> 
+            : <ChevronDown className="ml-1 w-3 h-3 text-red-500" />
     }
 
     const handleRowClick = (client: any, e: React.MouseEvent) => {
@@ -166,21 +202,47 @@ export default function ClientsPage() {
     }
 
     const exportToExcel = () => {
-        const dataToExport = pagedClients.length > 0
-            ? pagedClients.map((c: any) => ({
-                'Mã KH': c.id, 'Tên hội viên': c.member_name, 'Số điện thoại': c.phone,
-                'Email': c.email, 'Trạng thái': c.status,
-                'Chi nhánh': branches?.find((b: any) => b.id === c.branch_id)?.name || '',
-                'PT Phụ trách': c.pt_name, 'Cân nặng': c.weight, 'Mục tiêu': c.goal,
-                'Gói tập': c.registration_type,
-                'Ngày tạo': new Date(c.created_at).toLocaleDateString('vi-VN')
+        const dataToExport = filteredClients.length > 0
+            ? filteredClients.map((c: any) => ({
+                'Mã KH': c.id,
+                'Tên hội viên': c.member_name,
+                'Số điện thoại': c.phone,
+                'Email': c.email,
+                'Địa chỉ': c.address,
+                'Ngày sinh': c.date_of_birth,
+                'Tuổi': c.age,
+                'Chiều cao': c.height,
+                'Cân nặng': c.weight,
+                'Mục tiêu cân nặng': c.target_weight,
+                'Mục tiêu': c.goal,
+                'Trạng thái': c.status,
+                'Tên PT phụ trách': c.pt_name,
+                'PT được gán (Email)': c.assigned_pt,
+                'Mã chi nhánh': c.branch_id,
+                'Tên chi nhánh': branches.find((b: any) => b.id === c.branch_id)?.name || 'Hệ thống',
+                'Nguồn khách': c.source,
+                'Người giới thiệu': c.referrer,
+                'Loại đăng ký': c.registration_type,
+                'Tiền sử bệnh lý': c.medical_history,
+                'Thời gian tập luyện': c.training_time,
+                'Ghi chú': c.notes,
+                'Chu kỳ khách hàng': c.customer_cycle,
+                'Zalo ID': c.zalo_id,
+                'Facebook ID': c.facebook_id,
+                'Lịch sử tác động': c.action_log,
+                'dob': c.dob,
+                'URL chữ ký': c.signature_url,
+                'Người tạo (ID)': c.created_by,
+                'Email người tạo': c.created_by_email,
+                'Ngày tạo': c.created_at ? new Date(c.created_at).toLocaleString('vi-VN') : '',
+                'Ngày cập nhật': c.updated_at ? new Date(c.updated_at).toLocaleString('vi-VN') : '',
             }))
             : [{ 'Thông báo': 'Danh sách trống' }]
         const ws = XLSX.utils.json_to_sheet(dataToExport)
         const wb = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(wb, ws, 'Clients')
-        XLSX.writeFile(wb, 'ladyfit_clients_list.xlsx')
-        toast.success('Đã xuất file Excel thành công')
+        XLSX.writeFile(wb, 'eva_fit_clients_full_export.xlsx')
+        toast.success('Đã xuất file Excel thành công với 32 trường dữ liệu')
     }
 
     const toggleRow = (id: string) =>
@@ -377,12 +439,22 @@ export default function ClientsPage() {
                                         className="rounded-lg border-gray-300 dark:border-gray-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                                     />
                                 </TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Hội viên</TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 hidden md:table-cell">Liên hệ</TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 hidden sm:table-cell">Chỉ số & PT</TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 hidden lg:table-cell">Gói tập</TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Trạng thái</TableHead>
-                                <TableHead className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Tùy chọn</TableHead>
+                                <TableHead onClick={() => handleSort('member_name')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-gray-600 transition-colors">
+                                    <div className="flex items-center">Hội viên <SortIcon columnKey="member_name" /></div>
+                                </TableHead>
+                                <TableHead onClick={() => handleSort('phone')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 hidden md:table-cell cursor-pointer hover:text-gray-600 transition-colors">
+                                    <div className="flex items-center">Liên hệ <SortIcon columnKey="phone" /></div>
+                                </TableHead>
+                                <TableHead onClick={() => handleSort('branch_name')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 hidden sm:table-cell cursor-pointer hover:text-gray-600 transition-colors">
+                                    <div className="flex items-center">PT & Chi nhánh <SortIcon columnKey="branch_name" /></div>
+                                </TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 hidden lg:table-cell">Chỉ số & Mục tiêu</TableHead>
+                                <TableHead onClick={() => handleSort('status')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-gray-600 transition-colors">
+                                    <div className="flex items-center">Trạng thái <SortIcon columnKey="status" /></div>
+                                </TableHead>
+                                <TableHead onClick={() => handleSort('created_at')} className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-gray-600 transition-colors">
+                                    <div className="flex items-center justify-end">Tùy chọn <SortIcon columnKey="created_at" /></div>
+                                </TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -436,12 +508,19 @@ export default function ClientsPage() {
                                         <TableCell className="hidden sm:table-cell">
                                             <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
                                                 <div className="flex items-center gap-1.5"><Dumbbell className="w-3 h-3 text-red-500/20" />{client.pt_name || 'Chưa gán PT'}</div>
-                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]"><Activity className="w-3 h-3" />{client.weight ? `${client.weight}kg` : '-'} → {client.target_weight ? `${client.target_weight}kg` : '-'}</div>
+                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]"><Building2 className="w-3 h-3" />{branches.find((b: any) => b.id === client.branch_id)?.name || 'Hệ thống'}</div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="hidden lg:table-cell">
-                                            <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
-                                                <Target className="w-3 h-3 text-red-500/20" />{client.registration_type || 'N/A'}
+                                            <div className="flex flex-col text-[11px] text-gray-600 dark:text-gray-300 leading-normal">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Activity className="w-3 h-3 text-red-500/20" />
+                                                    {client.height ? `${client.height}cm` : '-'} | {client.weight ? `${client.weight}kg` : '-'} → {client.target_weight ? `${client.target_weight}kg` : '-'}
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-gray-400 line-clamp-1 max-w-[150px]">
+                                                    <Target className="w-3 h-3" />
+                                                    {client.medical_history || 'Không có tiền sử bệnh lý'}
+                                                </div>
                                             </div>
                                         </TableCell>
                                         <TableCell>

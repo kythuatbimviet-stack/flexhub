@@ -553,6 +553,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                             </div>
                             <ClientInfoRow label="Địa chỉ" value={formData.address} name="address" {...sharedRowProps} />
                             <div className="grid grid-cols-2 gap-5">
+                                <ClientInfoRow label="Chi nhánh" value={formData.branch_id} name="branch_id" type="select" options={branches?.map((b: any) => ({ value: b.id, label: b.name }))} {...sharedRowProps} />
                                 <div className="space-y-1">
                                     <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Zalo</Label>
                                     {isEditing ? (
@@ -730,7 +731,6 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                         </p>
                                     )}
                                 </div>
-                                <ClientInfoRow label="Cơ sở" value={formData.branch_id} name="branch_id" type="select" options={branches?.map((b: any) => ({ value: b.id, label: b.name }))} {...sharedRowProps} />
                             </div>
                             <div className="grid grid-cols-2 gap-5">
                                 <ClientInfoRow label="Lộ trình đăng ký" value={formData.registration_type} name="registration_type" options={clientRegistrationTypes.map((t: any) => t.nam)} {...sharedRowProps} />
