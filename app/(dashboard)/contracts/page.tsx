@@ -19,8 +19,11 @@ import {
     FileDown,
     ChevronLeft,
     ChevronRight,
+    User,
+    CalendarClock
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 import {
     Table,
     TableBody,
@@ -320,9 +323,15 @@ export default function ContractsPage() {
                     <div className="flex gap-2">
                         <ImportExcelContractDialog onSuccess={refetch} />
                         <Button variant="ghost" onClick={exportToExcel}
-                            className="rounded-xl border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300 h-11 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
-                            <FileDown className="w-4.5 h-4.5 mr-2" />
-                            <span className="hidden sm:inline">Xuất Excel</span>
+                            className="rounded-xl border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300 h-11 w-11 p-0 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
+                            <FileDown className="w-5 h-5" />
+                        </Button>
+                        <Button variant="ghost" asChild
+                            className="rounded-xl border border-gray-100 dark:border-gray-800 text-red-600 dark:text-red-400 h-11 px-4 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all font-medium gap-2">
+                            <Link href="/contracts/due" className="flex items-center gap-2">
+                                <CalendarClock className="w-5 h-5" />
+                                <span className="text-sm">HĐ Đến hạn</span>
+                            </Link>
                         </Button>
                         <AddContractDialog onSuccess={refetch} />
                     </div>
@@ -331,17 +340,41 @@ export default function ContractsPage() {
 
             {/* Status Tabs */}
             <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-                <TabsList className="bg-transparent h-auto p-0 flex flex-nowrap overflow-x-auto no-scrollbar gap-1 px-1 mb-1 w-full justify-start">
-                    <TabsTrigger value="all" className={cn("flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm border-none text-gray-600 hover:text-gray-700 data-[state=active]:text-red-600")}>
-                        Tất cả trạng thái
-                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600">{statusCounts.total}</span>
+                <TabsList className="bg-transparent h-auto p-0 flex flex-nowrap overflow-x-auto no-scrollbar gap-2 px-1 mb-1 w-full justify-start py-1">
+                    <TabsTrigger value="all" className={cn(
+                        "flex shrink-0 items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all border border-gray-100 dark:border-gray-800",
+                        "data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-red-200 data-[state=active]:text-red-600",
+                        "bg-white/50 dark:bg-gray-800/50 text-gray-500"
+                    )}>
+                        Tất cả
+                        <span className="px-1.5 py-0.5 rounded-lg text-[10px] font-bold bg-gray-100 text-gray-600">{statusCounts.total}</span>
                     </TabsTrigger>
-                    {contractStatuses.map((s: any) => (
-                        <TabsTrigger key={`status-tab-${s.id}`} value={s.nam} className={cn("flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm border-none text-gray-500 hover:text-gray-700 data-[state=active]:text-red-600")}>
-                            {s.nam}
-                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-600">{statusCounts[s.nam] || 0}</span>
-                        </TabsTrigger>
-                    ))}
+                    {contractStatuses.map((s: any) => {
+                        const statusColors: any = {
+                            'Đang tập': { active: 'bg-emerald-50 text-emerald-700 border-emerald-200', inactive: 'bg-emerald-50/30 text-emerald-600/70 border-emerald-100/50', badge: 'bg-emerald-500 text-white' },
+                            'Chờ ký': { active: 'bg-slate-100 text-slate-700 border-slate-300', inactive: 'bg-slate-50/50 text-slate-500 border-slate-100', badge: 'bg-slate-400 text-white' },
+                            'Hết hạn': { active: 'bg-rose-50 text-rose-700 border-rose-200', inactive: 'bg-rose-50/30 text-rose-600/70 border-rose-100/50', badge: 'bg-rose-500 text-white' },
+                            'Hoàn thành': { active: 'bg-blue-50 text-blue-700 border-blue-200', inactive: 'bg-blue-50/30 text-blue-600/70 border-blue-100/50', badge: 'bg-blue-500 text-white' },
+                            'Hủy': { active: 'bg-neutral-100 text-neutral-700 border-neutral-300', inactive: 'bg-neutral-50/50 text-neutral-500 border-neutral-100', badge: 'bg-neutral-400 text-white' },
+                            'Gia hạn': { active: 'bg-amber-50 text-amber-700 border-amber-200', inactive: 'bg-amber-50/30 text-amber-600/70 border-amber-100/50', badge: 'bg-amber-500 text-white' }
+                        }
+                        const colors = statusColors[s.nam] || { active: 'bg-white text-red-600 border-red-200', inactive: 'bg-white/50 text-gray-500 border-gray-100', badge: 'bg-red-500 text-white' }
+
+                        return (
+                            <TabsTrigger key={`status-tab-${s.id}`} value={s.nam} 
+                                className={cn(
+                                    "flex shrink-0 items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-none border",
+                                    "data-[state=active]:shadow-md hover:scale-105 active:scale-95",
+                                    colors.inactive,
+                                    "data-[state=active]:" + colors.active.split(' ').join(' data-[state=active]:')
+                                )}>
+                                {s.nam}
+                                <span className={cn("px-1.5 py-0.5 rounded-lg text-[10px] font-bold", colors.badge)}>
+                                    {statusCounts[s.nam] || 0}
+                                </span>
+                            </TabsTrigger>
+                        )
+                    })}
                 </TabsList>
             </Tabs>
 
@@ -490,7 +523,8 @@ export default function ContractsPage() {
                                 <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Hợp đồng & Hội viên</TableHead>
                                 <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Dịch vụ & Gói tập</TableHead>
                                 <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Giá trị & Thanh toán</TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Chi nhánh & Ngày ký</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Chi nhánh và PT</TableHead>
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Ngày hợp đồng</TableHead>
                                 <TableHead className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Tùy chọn</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -503,12 +537,13 @@ export default function ContractsPage() {
                                         <TableCell><div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-3 w-20" /></div></TableCell>
                                         <TableCell><div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-3 w-16" /></div></TableCell>
                                         <TableCell><div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-3 w-16" /></div></TableCell>
+                                        <TableCell><div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-3 w-16" /></div></TableCell>
                                         <TableCell className="text-right pr-8"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                                     </TableRow>
                                 ))
                             ) : pagedContracts.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-64 text-center">
+                                    <TableCell colSpan={7} className="h-64 text-center">
                                         <div className="flex flex-col items-center gap-4">
                                             <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-3xl flex items-center justify-center">
                                                 <FileText className="w-8 h-8 text-gray-200 dark:text-gray-700" />
@@ -518,74 +553,100 @@ export default function ContractsPage() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                pagedContracts.map((contract: any) => (
-                                    <TableRow key={contract.id} onClick={(e) => handleRowClick(contract, e)}
-                                        className={cn('border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors',
-                                            selectedRows.includes(contract.id) && 'bg-red-50/30 dark:bg-red-950/20')}>
-                                        <TableCell className="pl-6" onClick={(e) => e.stopPropagation()}>
-                                            <Checkbox checked={selectedRows.includes(contract.id)}
-                                                onCheckedChange={() => toggleRow(contract.id)} className="rounded-lg" />
-                                        </TableCell>
-                                        <TableCell className="py-2">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-normal text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
-                                                    {contract.member_name}
-                                                    <BadgeCheck className="w-3.5 h-3.5 text-blue-500 fill-blue-50" />
-                                                </span>
-                                                <span className="text-[10px] text-gray-400 font-medium">{contract.id}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Package className="w-3 h-3 text-gray-400" />
-                                                    {contract.package_name || 'Chưa chọn gói'}
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
-                                                    <Clock className="w-3 h-3" />
-                                                    {contract.contract_type || 'Dịch vụ'}
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
-                                                <span className="text-sm font-medium text-red-600">
-                                                    {contract.total_amount ? Number(contract.total_amount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
-                                                </span>
-                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
-                                                    <CreditCard className="w-3 h-3" />
-                                                    {contract.payment_method || 'N/A'}
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Building2 className="w-3 h-3 text-gray-400" />
-                                                    {contract.branches?.name || 'Văn phòng'}
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
-                                                    <Calendar className="w-3 h-3" />
-                                                    {contract.start_date ? new Date(contract.start_date).toLocaleDateString('vi-VN') : '-'}
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right pr-8">
-                                            <div className="flex items-center justify-end gap-1">
-                                                <Button variant="ghost" size="icon"
-                                                    onClick={(e) => { e.stopPropagation(); setSelectedContract(contract); setIsDetailsOpen(true) }}
-                                                    className="w-8 h-8 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600">
-                                                    <Edit2 className="h-3.5 w-3.5" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon"
-                                                    onClick={(e) => { e.stopPropagation(); handleDelete(contract.id) }}
-                                                    className="w-8 h-8 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600">
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                    pagedContracts.map((contract: any) => {
+                                        const remainingDays = (() => {
+                                            if (!contract.end_date) return null
+                                            const end = new Date(contract.end_date)
+                                            const today = new Date()
+                                            today.setHours(0, 0, 0, 0)
+                                            const diff = end.getTime() - today.getTime()
+                                            return Math.ceil(diff / (1000 * 60 * 60 * 24))
+                                        })()
+
+                                        return (
+                                            <TableRow key={contract.id} onClick={(e) => handleRowClick(contract, e)}
+                                                className={cn('border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors',
+                                                    selectedRows.includes(contract.id) && 'bg-red-50/30 dark:bg-red-950/20')}>
+                                                <TableCell className="pl-6" onClick={(e) => e.stopPropagation()}>
+                                                    <Checkbox checked={selectedRows.includes(contract.id)}
+                                                        onCheckedChange={() => toggleRow(contract.id)} className="rounded-lg" />
+                                                </TableCell>
+                                                <TableCell className="py-2">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-normal text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
+                                                            {contract.member_name}
+                                                            <BadgeCheck className="w-3.5 h-3.5 text-blue-500 fill-blue-50" />
+                                                        </span>
+                                                        <span className="text-[10px] text-gray-400 font-medium">{contract.id}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Package className="w-3 h-3 text-gray-400" />
+                                                            {contract.package_name || 'Chưa chọn gói'}
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
+                                                            <Clock className="w-3 h-3" />
+                                                            {contract.contract_type || 'Dịch vụ'}
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
+                                                        <span className="text-sm font-medium text-red-600">
+                                                            {contract.total_amount ? Number(contract.total_amount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
+                                                        </span>
+                                                        <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
+                                                            <CreditCard className="w-3 h-3" />
+                                                            {contract.payment_method || 'N/A'}
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Building2 className="w-3 h-3 text-gray-400" />
+                                                            {contract.branches?.name || 'Văn phòng'}
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
+                                                            <User className="w-3 h-3" />
+                                                            {contract.trainer_name || 'Chưa có PT'}
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col text-[11px] text-gray-400">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Calendar className="w-3 h-3" />
+                                                            <span>Ký: {contract.start_date ? new Date(contract.start_date).toLocaleDateString('vi-VN') : '-'}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Clock className="w-3 h-3" />
+                                                            <span>Hết: {contract.end_date ? new Date(contract.end_date).toLocaleDateString('vi-VN') : '-'}</span>
+                                                        </div>
+                                                        <div className={cn("mt-1 font-bold", remainingDays !== null && remainingDays <= 0 ? "text-red-500" : "text-blue-500")}>
+                                                            Còn: {remainingDays !== null ? (remainingDays > 0 ? `${remainingDays} ngày` : 'Hết hạn') : '-'}
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right pr-8">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <Button variant="ghost" size="icon"
+                                                            onClick={(e) => { e.stopPropagation(); setSelectedContract(contract); setIsDetailsOpen(true) }}
+                                                            className="w-8 h-8 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600">
+                                                            <Edit2 className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon"
+                                                            onClick={(e) => { e.stopPropagation(); handleDelete(contract.id) }}
+                                                            className="w-8 h-8 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600">
+                                                            <Trash2 className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })
                             )}
                         </TableBody>
                     </Table>

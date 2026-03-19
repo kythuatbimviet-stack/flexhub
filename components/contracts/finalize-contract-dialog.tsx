@@ -113,6 +113,16 @@ export function FinalizeContractDialog({
         setLoading(true)
         try {
             const paidUpfront = Number(values.paid_upfront.replace(/\./g, ''))
+            
+            if (paidUpfront > totalAmountNum) {
+                form.setError('paid_upfront', {
+                    type: 'manual',
+                    message: 'Số tiền trả trước không được vượt quá giá hợp đồng'
+                })
+                setLoading(false)
+                return
+            }
+
             const remaining = totalAmountNum - paidUpfront
 
             // Prepare Debt Plan
@@ -195,7 +205,7 @@ export function FinalizeContractDialog({
                                         <FormItem>
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Ngày ký HĐ</FormLabel>
                                             <FormControl>
-                                                <Input type="date" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white h-11" />
+                                                <Input type="date" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -208,7 +218,7 @@ export function FinalizeContractDialog({
                                         <FormItem>
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Ngày bắt đầu tập</FormLabel>
                                             <FormControl>
-                                                <Input type="date" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white h-11" />
+                                                <Input type="date" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -221,7 +231,7 @@ export function FinalizeContractDialog({
                                         <FormItem>
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Ngày kết thúc tập</FormLabel>
                                             <FormControl>
-                                                <Input type="date" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white h-11" />
+                                                <Input type="date" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -252,7 +262,7 @@ export function FinalizeContractDialog({
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Hình thức thanh toán (Trả trước)</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11">
+                                                    <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11">
                                                         <SelectValue placeholder="Chọn hình thức" />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -283,7 +293,7 @@ export function FinalizeContractDialog({
                                                             field.onChange(val)
                                                         }
                                                     }}
-                                                    className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11 font-medium text-gray-900"
+                                                    className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11 font-medium text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-800"
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -315,7 +325,7 @@ export function FinalizeContractDialog({
                                                     <FormLabel className="text-[10px] text-gray-500 font-medium tracking-tight">Số kỳ thanh toán</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl>
-                                                            <SelectTrigger className="rounded-xl border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 h-11">
+                                                            <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 h-11">
                                                                 <SelectValue placeholder="Chọn số kỳ" />
                                                             </SelectTrigger>
                                                         </FormControl>
@@ -336,7 +346,7 @@ export function FinalizeContractDialog({
                                                     <FormLabel className="text-[10px] text-gray-500 font-medium tracking-tight">Tần suất thanh toán</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl>
-                                                            <SelectTrigger className="rounded-xl border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 h-11">
+                                                            <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 h-11">
                                                                 <SelectValue placeholder="Chọn tần suất" />
                                                             </SelectTrigger>
                                                         </FormControl>
@@ -360,7 +370,7 @@ export function FinalizeContractDialog({
                                     </div>
                                 </div>
                             ) : paidUpfrontNum > 0 ? (
-                                <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 flex items-center gap-3 text-emerald-700">
+                                <div className="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 flex items-center gap-3 text-emerald-700 dark:text-emerald-400">
                                     <BadgeCheck className="w-5 h-5 text-emerald-600" />
                                     <p className="text-xs font-medium">Hợp đồng đã thanh toán 100%. Không phát sinh công nợ.</p>
                                 </div>

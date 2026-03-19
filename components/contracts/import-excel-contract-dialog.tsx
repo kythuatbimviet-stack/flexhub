@@ -153,7 +153,7 @@ export function ImportExcelContractDialog({ onSuccess }: { onSuccess: () => void
                 'Ngày sinh (birth)': '1990-01-01',
                 'Số CMND/CCCD': '0123456789',
                 'Địa chỉ hội viên': '123 Đường ABC, Quận 1, HCM',
-                'Trạng thái': 'Đã ký HĐ',
+                'Trạng thái': 'Chờ ký HĐ',
                 'Mã chi nhánh': 'LGT',
                 'Chi nhánh': 'Eva\'s Fit Lê Gia Định',
                 'Loại hợp đồng': 'Hội viên',
@@ -182,10 +182,9 @@ export function ImportExcelContractDialog({ onSuccess }: { onSuccess: () => void
             <DialogTrigger asChild>
                 <Button
                     variant="ghost"
-                    className="rounded-xl text-gray-600 dark:text-gray-300 font-medium h-11 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-red-600 transition-all border border-gray-100 dark:border-gray-800"
+                    className="rounded-xl border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300 h-11 w-11 p-0 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
                 >
-                    <FileUp className="w-4.5 h-4.5 mr-2" />
-                    Nhập Excel
+                    <FileUp className="w-5 h-5" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-w-xl rounded-3xl p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-gray-950">

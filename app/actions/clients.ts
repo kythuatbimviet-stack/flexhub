@@ -156,10 +156,17 @@ export async function fetchClientsPage({
 
 export async function importClients(clients: any[]) {
     try {
+        // Sanitize every client in the array
+        const sanitizedClients = clients.map(c => {
+            const sanitized = { ...c }
+            delete sanitized.avata_url
+            return sanitized
+        })
+
         const adminClient = await createAdminClient()
         const { data, error } = await adminClient
             .from('clients')
-            .upsert(clients, { onConflict: 'id' })
+            .upsert(sanitizedClients, { onConflict: 'id' })
 
         if (error) {
             console.error('Import Clients Error:', error)
@@ -197,6 +204,11 @@ export async function bulkDeleteClients(ids: string[]) {
 
 export async function updateClient(id: string, updates: any) {
     try {
+        // Sanitize updates to remove any legacy fields
+        if (updates && typeof updates === 'object') {
+            delete (updates as any).avata_url
+        }
+
         const adminClient = await createAdminClient()
         const { data, error } = await adminClient
             .from('clients')
@@ -236,6 +248,11 @@ export async function createClient(client: any) {
             if (userProfile?.branch_name) {
                 client.branch_name = userProfile.branch_name
             }
+        }
+
+        // Sanitize client object
+        if (client && typeof client === 'object') {
+            delete (client as any).avata_url
         }
 
         const { data, error } = await adminClient

@@ -48,7 +48,8 @@ import {
     CreditCard,
     Instagram,
     Facebook,
-    Users
+    Users,
+    Camera
 } from 'lucide-react'
 import {
     Avatar,
@@ -56,6 +57,7 @@ import {
     AvatarFallback,
 } from '@/components/ui/avatar'
 import { updateClient, bulkDeleteClients } from '@/app/actions/clients'
+import { uploadSignature } from '@/app/actions/storage'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
@@ -181,6 +183,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
     const [isEditing, setIsEditing] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
     const [formData, setFormData] = React.useState<any>(null)
+    const avatarInputRef = React.useRef<HTMLInputElement>(null)
     const { permissions, user: currentUser, isLoading: permsLoading } = usePermissions()
 
     const hasAccess = React.useMemo(() => {
@@ -276,7 +279,21 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
     const handleSave = async () => {
         setLoading(true)
         try {
-            const result = await updateClient(client.id, formData)
+            let finalFormData = { ...formData }
+
+            // 1. Upload avatar if changed (detected as base64)
+            if (formData.avatar_url && formData.avatar_url.startsWith('data:image')) {
+                const fileName = `avatar_${client.id}_${Date.now()}.png`
+                const uploadResult = await uploadSignature(formData.avatar_url, fileName)
+                
+                if (uploadResult.success) {
+                    finalFormData.avatar_url = uploadResult.url
+                } else {
+                    toast.error('Không thể upload ảnh đại diện: ' + uploadResult.error)
+                }
+            }
+
+            const result = await updateClient(client.id, finalFormData)
             if (!result.success) throw new Error(result.error)
 
             toast.success('Cập nhật thông tin khách hàng thành công')
@@ -304,6 +321,17 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
             } finally {
                 setLoading(false)
             }
+        }
+    }
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                setFormData((prev: any) => ({ ...prev, avatar_url: reader.result as string }))
+            }
+            reader.readAsDataURL(file)
         }
     }
 
@@ -409,12 +437,32 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                     {/* Top Profile Card */}
                     <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
                         <div className="flex items-start gap-5">
-                            <Avatar className="w-20 h-20 rounded-2xl border-4 border-white dark:border-slate-800 shadow-lg shadow-blue-200 dark:shadow-blue-900/20 shrink-0">
-                                <AvatarImage src={formData.avatar_url} alt={formData.member_name} className="object-cover rounded-2xl" />
-                                <AvatarFallback className="bg-blue-600 text-white rounded-2xl">
-                                    <UserCircle className="w-12 h-12" />
-                                </AvatarFallback>
-                            </Avatar>
+                            <div className="relative group/avatar shrink-0">
+                                <Avatar className="w-20 h-20 rounded-2xl border-4 border-white dark:border-slate-800 shadow-lg shadow-blue-200 dark:shadow-blue-900/20">
+                                    <AvatarImage src={formData.avatar_url} alt={formData.member_name} className="object-cover rounded-2xl" />
+                                    <AvatarFallback className="bg-blue-600 text-white rounded-2xl">
+                                        <UserCircle className="w-12 h-12" />
+                                    </AvatarFallback>
+                                </Avatar>
+                                {isEditing && (
+                                    <>
+                                        <input
+                                            type="file"
+                                            ref={avatarInputRef}
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleAvatarChange}
+                                        />
+                                        <Button
+                                            size="icon"
+                                            onClick={() => avatarInputRef.current?.click()}
+                                            className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg border-2 border-white dark:border-slate-900 p-0 z-10"
+                                        >
+                                            <Camera className="w-4 h-4" />
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
                             <div className="flex-1 min-w-0 pt-1">
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">
                                     {client.member_name}

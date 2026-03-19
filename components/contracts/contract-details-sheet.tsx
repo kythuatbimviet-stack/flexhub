@@ -24,15 +24,17 @@ import {
     Trash2,
     X,
     BadgeCheck,
-    Clock,
     Phone,
     Cloud,
     ExternalLink,
     MapPin,
     Mail,
+    Clock,
+    UserCircle,
+    Hash,
     MessageSquare,
-    Loader2,
-    Download
+    Camera,
+    Loader2
 } from 'lucide-react'
 import {
     Select,
@@ -41,9 +43,15 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
+import {
+    Avatar,
+    AvatarImage,
+    AvatarFallback,
+} from '@/components/ui/avatar'
 import { fetchBranches } from '@/app/actions/branches'
 import { toast } from 'sonner'
 import { updateContract, deleteContract } from '@/app/actions/contracts'
+import { updateClient } from '@/app/actions/clients'
 import { uploadSignature } from '@/app/actions/storage'
 import { SignatureField } from '@/components/ui/signature-field'
 import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
@@ -66,27 +74,50 @@ const ContractCardSection = ({ title, icon: Icon, children }: any) => (
     </div>
 )
 
-const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEditing, formData, onChange }: any) => (
-    <div className="space-y-1.5">
-        <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
-            {Icon && <Icon className="w-3 h-3" />}
-            {label} {isEditing && ['package_name', 'payment_method', 'quantity', 'total_amount', 'status', 'id_number', 'email'].includes(name) && <span className="text-red-500">*</span>}
-        </Label>
-        {isEditing ? (
-            <Input
-                name={name}
-                type={type}
-                value={formData[name] ?? ''}
-                onChange={onChange}
-                className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
-            />
-        ) : (
-            <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
-                {type === 'number' && value ? Number(value).toLocaleString('vi-VN') + ' ₫' : (value || '-')}
-            </p>
-        )}
-    </div>
-)
+const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEditing, formData, onChange }: any) => {
+    const isCurrency = ['package_price', 'discounted_price', 'total_amount'].includes(name)
+    
+    // Format the value for display in the input while editing
+    const getEditValue = () => {
+        const val = formData[name] ?? ''
+        if (isCurrency && val) {
+            return Number(val).toLocaleString('vi-VN')
+        }
+        return val
+    }
+
+    const handleInternalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (isCurrency) {
+            // Strip non-digit characters to keep the underlying value as a raw number string
+            const rawValue = e.target.value.replace(/\D/g, '')
+            onChange(name, rawValue)
+        } else {
+            onChange(e)
+        }
+    }
+
+    return (
+        <div className="space-y-1.5 w-full">
+            <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                {Icon && <Icon className="w-3 h-3" />}
+                {label} {isEditing && ['package_name', 'payment_method', 'quantity', 'total_amount', 'status', 'id_number', 'email'].includes(name) && <span className="text-red-500">*</span>}
+            </Label>
+            {isEditing ? (
+                <Input
+                    name={name}
+                    type={isCurrency ? 'text' : type}
+                    value={getEditValue()}
+                    onChange={handleInternalChange}
+                    className="w-full rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
+                />
+            ) : (
+                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px] w-full break-words">
+                    {type === 'number' && value ? (['quantity', 'total_sessions', 'package_duration'].includes(name) ? Number(value).toLocaleString('vi-VN') : Number(value).toLocaleString('vi-VN') + ' ₫') : (value || '-')}
+                </p>
+            )}
+        </div>
+    )
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface ContractDetailsSheetProps {
@@ -106,6 +137,7 @@ export function ContractDetailsSheet({
     const [loading, setLoading] = React.useState(false)
     const [formData, setFormData] = React.useState<any>({})
     const { permissions, user: currentUser, isLoading: permsLoading } = usePermissions()
+    const avatarInputRef = React.useRef<HTMLInputElement>(null)
 
     const hasAccess = React.useMemo(() => {
         if (!currentUser || !contract) return false
@@ -118,7 +150,7 @@ export function ContractDetailsSheet({
     const [generatingPdf, setGeneratingPdf] = React.useState(false)
 
     const defaultStatus = React.useMemo(() => {
-        return statuses.find(s => s.is_default)?.nam || statuses[0]?.nam || 'Đang thực hiện'
+        return statuses.find(s => s.is_default)?.nam || statuses[0]?.nam || 'Chờ ký HĐ'
     }, [statuses])
 
     React.useEffect(() => {
@@ -137,7 +169,13 @@ export function ContractDetailsSheet({
 
     React.useEffect(() => {
         if (contract) {
-            setFormData(contract)
+            // Include client's avatar and core info in the form data
+            setFormData({
+                ...contract,
+                avatar_url: contract.clients?.avatar_url || '',
+                dob: contract.clients?.dob || '',
+                client_status: contract.clients?.status || ''
+            })
             setIsEditing(false)
         }
     }, [contract])
@@ -173,19 +211,70 @@ export function ContractDetailsSheet({
         }
     }, [open, contract?.id])
 
-    if (!contract) return null
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target
-        setFormData((prev: any) => ({ ...prev, [name]: value }))
+    const handleInputChange = (eOrName: React.ChangeEvent<HTMLInputElement> | string, value?: string) => {
+        if (typeof eOrName === 'string') {
+            setFormData((prev: any) => ({ ...prev, [eOrName]: value }))
+        } else {
+            const { name, value } = eOrName.target
+            setFormData((prev: any) => ({ ...prev, [name]: value }))
+        }
     }
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                setFormData((prev: any) => ({ ...prev, avatar_url: reader.result as string }))
+            }
+            reader.readAsDataURL(file)
+        }
+    }
+
+    const daysRemaining = React.useMemo(() => {
+        if (!formData.end_date) return '-'
+        const end = new Date(formData.end_date)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const diff = end.getTime() - today.getTime()
+        const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
+        return days > 0 ? `${days} ngày` : 'Hết hạn'
+    }, [formData.end_date])
+
+    const sharedRowProps = React.useMemo(() => ({ isEditing, formData, onChange: handleInputChange }), [isEditing, formData, handleInputChange])
+
+    if (!contract) return null
 
     const handleSave = async () => {
         setLoading(true)
         try {
             let finalFormData = { ...formData }
 
-            // Nếu chữ ký khách hàng là base64, upload lên Storage
+            // 1. Upload avata if changed (and it's a base64 string)
+            if (formData.avatar_url && formData.avatar_url.startsWith('data:image')) {
+                const fileName = `avatar_${contract.client_id}_${Date.now()}.png`
+                const uploadResult = await uploadSignature(formData.avatar_url, fileName)
+                
+                if (uploadResult.success) {
+                    finalFormData.avatar_url = uploadResult.url
+                } else {
+                    toast.error('Không thể upload ảnh đại diện: ' + uploadResult.error)
+                }
+            }
+
+            // Sync client profile info
+            const clientUpdates: any = {
+                avatar_url: finalFormData.avatar_url,
+                member_name: formData.member_name,
+                phone: formData.phone,
+                email: formData.email,
+                address: formData.member_address,
+                dob: formData.dob,
+                status: formData.client_status
+            }
+            await updateClient(contract.client_id, clientUpdates)
+
+            // 2. Nếu chữ ký khách hàng là base64, upload lên Storage
             if (formData.signature_url && formData.signature_url.startsWith('data:image')) {
                 const fileName = `client_sig_${contract.id}_${Date.now()}.png`
                 const uploadResult = await uploadSignature(formData.signature_url, fileName)
@@ -198,7 +287,10 @@ export function ContractDetailsSheet({
                 }
             }
 
-            const result = await updateContract(contract.id, finalFormData)
+            // Remove avatar_url before updating contract table (since it's not in the contracts table)
+            const { avatar_url, ...contractDataOnly } = finalFormData
+
+            const result = await updateContract(contract.id, contractDataOnly)
             if (result.success) {
                 toast.success('Đã cập nhật hợp đồng')
                 setIsEditing(false)
@@ -233,16 +325,6 @@ export function ContractDetailsSheet({
         }
     }
 
-    const handleExportPDF = () => {
-        if (!contract?.id) return
-        window.open(`/contracts/print/${encodeURIComponent(contract.id)}`, '_blank')
-    }
-
-    const handleExportPDFV2 = () => {
-        if (!contract?.id) return
-        window.open(`/contracts/print-v3/${encodeURIComponent(contract.id)}`, '_blank')
-    }
-
     const handleGenerateDocPDF = async () => {
         if (!contract?.id) return
         
@@ -258,7 +340,6 @@ export function ContractDetailsSheet({
         }
     }
 
-    const sharedRowProps = { isEditing, formData, onChange: handleInputChange }
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -280,9 +361,32 @@ export function ContractDetailsSheet({
                 {/* Sticky Header */}
                 <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
-                            <FileText className="w-6 h-6" />
+                        <div 
+                            className={cn(
+                                "w-10 h-10 rounded-full flex items-center justify-center overflow-visible transition-all relative group",
+                                isEditing ? "ring-2 ring-blue-500 cursor-pointer hover:ring-blue-600" : "bg-blue-100 dark:bg-blue-900/30 shadow-sm"
+                            )}
+                            onClick={() => isEditing && avatarInputRef.current?.click()}
+                        >
+                            <Avatar className="w-full h-full rounded-full overflow-hidden">
+                                <AvatarImage src={formData.avatar_url || ''} className="object-cover" />
+                                <AvatarFallback className="bg-blue-100 text-blue-600 dark:bg-blue-900/40">
+                                    <UserCircle className="w-6 h-6" />
+                                </AvatarFallback>
+                            </Avatar>
+                            {isEditing && (
+                                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm border border-white dark:border-slate-900">
+                                    <Camera className="w-2.5 h-2.5" />
+                                </div>
+                            )}
                         </div>
+                        <input
+                            type="file"
+                            ref={avatarInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleAvatarChange}
+                        />
                         <div className="flex flex-col">
                             <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                                 {isEditing ? 'Chỉnh sửa Hợp đồng' : `Hợp đồng: ${contract.member_name}`}
@@ -328,8 +432,31 @@ export function ContractDetailsSheet({
                     {/* Top Status Card */}
                     <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
                         <div className="flex items-start gap-5">
-                            <div className="w-20 h-20 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20 shrink-0">
-                                <FileText className="w-12 h-12" />
+                            <div 
+                                className={cn(
+                                    "w-20 h-20 rounded-2xl flex items-center justify-center overflow-visible shrink-0 shadow-lg relative transition-all bg-white dark:bg-slate-800",
+                                    isEditing ? "ring-4 ring-blue-500/20 shadow-blue-100 dark:shadow-none" : "shadow-blue-200 dark:shadow-blue-900/20"
+                                )}
+                            >
+                                <Avatar className="w-full h-full rounded-2xl overflow-hidden ring-1 ring-slate-100 dark:ring-slate-700">
+                                    <AvatarImage src={formData.avatar_url || ''} className="object-cover" />
+                                    <AvatarFallback className="bg-blue-600 text-white flex items-center justify-center">
+                                        <UserCircle className="w-12 h-12" />
+                                    </AvatarFallback>
+                                </Avatar>
+                                {isEditing && (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            avatarInputRef.current?.click()
+                                        }}
+                                        className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900 hover:bg-blue-700 transition-all active:scale-90 z-20"
+                                        title="Thay đổi ảnh đại diện"
+                                    >
+                                        <Camera className="w-4 h-4" />
+                                    </button>
+                                )}
                             </div>
                             <div className="flex-1 min-w-0 pt-1">
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">
@@ -352,6 +479,21 @@ export function ContractDetailsSheet({
                                         )} />
                                         {formData.status || defaultStatus}
                                     </div>
+                                    {contract.clients?.status && (
+                                        <div className={cn(
+                                            "flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border",
+                                            {
+                                                "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30": contract.clients.status === 'Đã khảo sát',
+                                                "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900": contract.clients.status === 'Đang tập thử',
+                                                "bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-950/20 dark:border-purple-900/30": contract.clients.status === 'Đang tư vấn',
+                                                "bg-red-50 text-red-600 border-red-100 dark:bg-red-950/20 dark:border-red-900/30": contract.clients.status === 'Tư vấn không tham gia',
+                                                "bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-950/20 dark:border-orange-900/30": contract.clients.status === 'Không tham gia',
+                                                "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30": ['Chốt đăng ký', 'CHỐT ĐĂNG KÝ', 'CHỐT ĐĂNG KÍ'].includes(contract.clients.status),
+                                            }
+                                        )}>
+                                            {contract.clients.status}
+                                        </div>
+                                    )}
                                     <div className="px-3 py-1 rounded-full text-[10px] font-medium tracking-tight bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30">
                                         {branches?.find((b: any) => b.id === formData.branch_id)?.name || contract.branches?.name || 'Chi nhánh'}
                                     </div>
@@ -378,14 +520,14 @@ export function ContractDetailsSheet({
                         {!isEditing && (
                             <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between gap-3">
                                 <div className="flex-1 flex flex-col items-center">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Tổng tiền</span>
+                                    <span className="text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-widest leading-none mb-1">Tổng tiền</span>
                                     <span className="text-lg font-bold text-blue-600">
                                         {formData.total_amount ? Number(formData.total_amount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
                                     </span>
                                 </div>
                                 <div className="w-px h-8 bg-slate-100 dark:bg-slate-800" />
                                 <div className="flex-1 flex flex-col items-center text-center">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Kết thúc</span>
+                                    <span className="text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-widest leading-none mb-1">Kết thúc</span>
                                     <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                                         {formData.end_date ? new Date(formData.end_date).toLocaleDateString('vi-VN') : '-'}
                                     </span>
@@ -402,7 +544,10 @@ export function ContractDetailsSheet({
                                 <ContractDetailRow label="Số điện thoại" value={formData.phone} name="phone" icon={Phone} {...sharedRowProps} />
                                 <ContractDetailRow label="Email" value={formData.email} name="email" icon={Mail} {...sharedRowProps} />
                             </div>
-                            <ContractDetailRow label="Căn cước công dân" value={formData.id_number} name="id_number" icon={FileText} {...sharedRowProps} />
+                            <div className="grid grid-cols-2 gap-5">
+                                <ContractDetailRow label="Căn cước công dân" value={formData.id_number} name="id_number" icon={FileText} {...sharedRowProps} />
+                                <ContractDetailRow label="Ngày sinh" value={formData.dob} name="dob" type="date" icon={Calendar} {...sharedRowProps} />
+                            </div>
                             <ContractDetailRow label="Địa chỉ" value={formData.member_address} name="member_address" icon={MapPin} {...sharedRowProps} />
                         </div>
                     </ContractCardSection>
@@ -410,18 +555,29 @@ export function ContractDetailsSheet({
                     {/* Section: Chi tiết hợp đồng */}
                     <ContractCardSection title="Chi tiết hợp đồng" icon={Package}>
                         <div className="space-y-5">
-                            <ContractDetailRow label="Gói tập" value={formData.package_name} name="package_name" icon={Package} {...sharedRowProps} />
+                            <div className="grid grid-cols-2 gap-5">
+                                <ContractDetailRow label="Gói tập" value={formData.package_name} name="package_name" icon={Package} {...sharedRowProps} />
+                                <ContractDetailRow label="Số lượng" value={formData.quantity} name="quantity" type="number" icon={Hash} {...sharedRowProps} />
+                            </div>
                             <div className="grid grid-cols-2 gap-5">
                                 <ContractDetailRow label="Ngày bắt đầu" value={formData.start_date} name="start_date" type="date" icon={Calendar} {...sharedRowProps} />
                                 <ContractDetailRow label="Ngày kết thúc" value={formData.end_date} name="end_date" type="date" icon={Calendar} {...sharedRowProps} />
                             </div>
                             <div className="grid grid-cols-2 gap-5">
-                                <ContractDetailRow label="Số lượng/Tháng" value={formData.quantity} name="quantity" type="number" icon={Clock} {...sharedRowProps} />
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                        <Clock className="w-3 h-3" />
+                                        Số ngày còn lại
+                                    </Label>
+                                    <p className="text-[15px] font-medium text-blue-600 dark:text-blue-400">
+                                        {daysRemaining}
+                                    </p>
+                                </div>
                                 <ContractDetailRow label="Huấn luyện viên" value={formData.trainer_name} name="trainer_name" icon={Dumbbell} {...sharedRowProps} />
                             </div>
                             <div className="grid grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
                                         <Building2 className="w-3 h-3" />
                                         Chi nhánh
                                     </Label>
@@ -430,7 +586,7 @@ export function ContractDetailsSheet({
                                             value={formData.branch_id}
                                             onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, branch_id: val }))}
                                         >
-                                            <SelectTrigger className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm">
+                                            <SelectTrigger className="w-full rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm">
                                                 <SelectValue placeholder="Chọn chi nhánh" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -446,7 +602,7 @@ export function ContractDetailsSheet({
                                     )}
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
                                         <Clock className="w-3 h-3" />
                                         Trạng thái
                                     </Label>
@@ -455,7 +611,7 @@ export function ContractDetailsSheet({
                                             value={formData.status}
                                             onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, status: val }))}
                                         >
-                                            <SelectTrigger className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm">
+                                            <SelectTrigger className="w-full rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm">
                                                 <SelectValue placeholder="Chọn trạng thái" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -479,21 +635,21 @@ export function ContractDetailsSheet({
                             <div className="grid grid-cols-2 gap-5">
                                 <ContractDetailRow label="Giá gói (niêm yết)" value={formData.package_price} name="package_price" type="number" icon={CreditCard} {...sharedRowProps} />
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bằng chữ</Label>
+                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider">Bằng chữ</Label>
                                     <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.package_price_text || '-'}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-5">
                                 <ContractDetailRow label="Giá trợ giá" value={formData.discounted_price} name="discounted_price" type="number" icon={CreditCard} {...sharedRowProps} />
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bằng chữ</Label>
+                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider">Bằng chữ</Label>
                                     <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.discounted_price_text || '-'}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-5">
                                 <ContractDetailRow label="Tổng giá trị HĐ" value={formData.total_amount} name="total_amount" type="number" icon={CreditCard} {...sharedRowProps} />
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bằng chữ</Label>
+                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider">Bằng chữ</Label>
                                     <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.total_amount_text || '-'}</p>
                                 </div>
                             </div>
@@ -504,7 +660,7 @@ export function ContractDetailsSheet({
                     <ContractCardSection title="Chữ ký khách hàng" icon={Cloud}>
                         <div className="space-y-4">
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
                                     <Cloud className="w-3 h-3" />
                                     Chữ ký khách hàng
                                 </Label>
@@ -536,7 +692,7 @@ export function ContractDetailsSheet({
                         <div className="space-y-5">
                             <div className="grid grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
                                         <Mail className="w-3 h-3" />
                                         Gửi Email
                                     </Label>
@@ -551,7 +707,7 @@ export function ContractDetailsSheet({
                                     </p>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
                                         <MessageSquare className="w-3 h-3" />
                                         Gửi Zalo
                                     </Label>

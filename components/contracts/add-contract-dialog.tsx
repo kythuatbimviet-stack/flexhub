@@ -175,7 +175,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             payment_method: 'Tiền mặt',
             trainer_name: '',
             center_representative: '',
-            status: 'Đang thực hiện',
+            status: 'Chờ ký HĐ',
             facility_name: '',
             short_name: '',
             address: '',
@@ -278,7 +278,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                 if (statusRes.success && statusRes.data) {
                     setStatuses(statusRes.data)
                     const currentStatus = form.getValues('status')
-                    if (currentStatus === 'Đang thực hiện' || !currentStatus) {
+                    if (currentStatus === 'Chờ ký HĐ' || !currentStatus) {
                         const defaultStatus = statusRes.data.find(s => s.is_default) || statusRes.data[0]
                         if (defaultStatus) {
                             form.setValue('status', defaultStatus.nam)
@@ -557,7 +557,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                         )}
                     >
                         <Plus className={cn(isQuickAction ? "w-5 h-5" : "w-4 h-4 mr-2")} />
-                        Tạo hợp đồng
+                        Tạo mới
                     </Button>
                 )}
             </DialogTrigger>

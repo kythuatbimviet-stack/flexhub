@@ -64,7 +64,7 @@ const UserDetailRow = ({ label, value, name, type = 'text', options, icon: Icon,
                     value={formData[name] || undefined}
                     onValueChange={(val) => onValueChange(name, val)}
                 >
-                    <SelectTrigger className="w-full max-w-[280px] rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all border-2">
+                    <SelectTrigger className="w-full rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all border-2">
                         <SelectValue placeholder={`Chọn ${label.toLowerCase()}...`} />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800 z-[100]">
