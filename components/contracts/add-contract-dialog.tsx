@@ -115,8 +115,9 @@ const contractFormSchema = z.object({
     assigned_pt: z.string().optional(),
     custom_selection: z.string().optional(),
     trainer_type: z.string().optional(),
-    total_sessions: z.string().optional(),
+    total_sessions: z.string().min(1, { message: 'Vui lòng nhập số buổi tập' }),
     signature_url: z.string().optional(),
+    signature_center: z.string().optional(),
 })
 
 export function AddContractDialog({ onSuccess, initialClientId, initialClient, isQuickAction, triggerOverride }: { onSuccess: () => void, initialClientId?: string, initialClient?: any, isQuickAction?: boolean, triggerOverride?: React.ReactNode }) {
@@ -299,9 +300,10 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                             form.setValue('address', branch.address || '')
                             form.setValue('center_phone', branch.center_phone || branch.phone || '')
                             form.setValue('center_address', branch.center_address || branch.address || '')
-                            form.setValue('legal_representative', branch.legal_representative || '')
+                            // We no longer auto-fill legal_representative from the branch, as it's now client-side
                             form.setValue('representative_phone', '')
                             form.setValue('center_representative', branch.representative || '')
+                            form.setValue('signature_center', branch.representative || '')
                             form.setValue('representative_name', '')
                             form.setValue('account_number', branch.account_number?.toString() || '')
                             form.setValue('account_holder', branch.account_holder || '')
@@ -427,9 +429,10 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             form.setValue('address', branch.address || '')
             form.setValue('center_phone', branch.center_phone || branch.phone || '')
             form.setValue('center_address', branch.center_address || branch.address || '')
-            form.setValue('legal_representative', branch.legal_representative || '')
+            // We no longer auto-fill legal_representative from the branch, as it's now client-side
             form.setValue('representative_phone', '')
             form.setValue('center_representative', branch.representative || '')
+            form.setValue('signature_center', branch.representative || '')
             form.setValue('representative_name', '')
             form.setValue('account_number', branch.account_number?.toString() || '')
             form.setValue('account_holder', branch.account_holder || '')
@@ -999,7 +1002,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                     name="total_sessions"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Tổng số buổi cân khoán</FormLabel>
+                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Tổng số buổi cân khoán <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
                                                 <Input type="number" placeholder="24" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
                                             </FormControl>
@@ -1319,12 +1322,12 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <FormField
                                         control={form.control}
-                                        name="representative_name"
+                                        name="legal_representative"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Tên người đại diện pháp luật</FormLabel>
+                                                <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Người đại diện PL (Bên B)</FormLabel>
                                                 <FormControl>
-                                                    <Input {...field} placeholder="Nhập tên..." className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
+                                                    <Input {...field} placeholder="Nhập tên người đại diện..." className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>

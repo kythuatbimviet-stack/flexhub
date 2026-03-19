@@ -13,7 +13,7 @@ async function getAccessFilter() {
         .from('users')
         .select('*')
         .eq('email', authUser.email)
-        .single()
+        .maybeSingle()
 
     if (!profile) return null
     return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
@@ -240,7 +240,7 @@ export async function createClient(client: any) {
                 .from('users')
                 .select('branch_id, branch_name')
                 .eq('email', authUser.email)
-                .single()
+                .maybeSingle()
 
             if (userProfile?.branch_id) {
                 client.branch_id = userProfile.branch_id
@@ -294,7 +294,7 @@ export async function generateClientId(clientBranchId?: string | null) {
                     .from('users')
                     .select('branch_id')
                     .eq('email', authUser.email)
-                    .single()
+                    .maybeSingle()
 
                 if (userProfile?.branch_id) {
                     branchCode = String(userProfile.branch_id).toUpperCase()

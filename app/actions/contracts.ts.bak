@@ -14,7 +14,7 @@ async function getAccessFilter() {
         .from('users')
         .select('*')
         .eq('email', authUser.email)
-        .maybeSingle()
+        .single()
 
     if (!profile) return null
     return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
@@ -119,10 +119,9 @@ export async function fetchContractById(id: string) {
                 branches (name, id, legal_representative, representative_phone, center_address, center_phone)
             `)
             .eq('id', id)
-            .maybeSingle()
+            .single()
 
         if (error) throw error
-        if (!data) return { success: false, error: 'Không tìm thấy dữ liệu hợp đồng' }
         return { success: true, data }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -142,10 +141,10 @@ export async function createContract(contract: any) {
         const { data, error } = await supabase
             .from('contracts')
             .insert([enriched])
-            .maybeSingle()
+            .select()
+            .single()
 
         if (error) throw error
-        if (!data) throw new Error('Không thể tạo hợp đồng')
 
         revalidatePath('/contracts')
         return { success: true, data }
@@ -169,10 +168,9 @@ export async function finalizeContract(id: string, finalizeData: any) {
             })
             .eq('id', id)
             .select()
-            .maybeSingle()
+            .single()
 
         if (contractError) throw contractError
-        if (!contractData) throw new Error('Không tìm thấy hợp đồng để chốt')
 
         // 2. Nếu có trả trước, tạo khoản thu (Revenue)
         if (debtPlan && Number(debtPlan.paid_upfront) > 0) {
@@ -206,17 +204,17 @@ export async function finalizeContract(id: string, finalizeData: any) {
                     branch_id: contractData.branch_id,
                     note: `Tự động tạo khi chốt ký HĐ ${contractData.id}`
                 }])
-                .maybeSingle()
+                .select()
+                .single()
 
             if (debtError) throw debtError
-            if (!debtData) throw new Error('Không thể tạo hồ sơ nợ')
 
             if (debtPlan.installments && debtPlan.installments.length > 0) {
                 const { error: instError } = await supabase
                     .from('debt_installments')
                     .insert(debtPlan.installments.map((inst: any) => ({
                         ...inst,
-                        debt_id: (debtData as any).id
+                        debt_id: debtData.id
                     })))
 
                 if (instError) throw instError
@@ -321,7 +319,7 @@ export async function generateContractId(branchId?: string | null) {
                     .from('users')
                     .select('branch_id')
                     .eq('email', authUser.email)
-                    .maybeSingle()
+                    .single()
                 if (userProfile?.branch_id) {
                     branchCode = String(userProfile.branch_id).toUpperCase()
                 }
@@ -391,10 +389,9 @@ export async function sendCustomContractEmail(id: string, to: string, subject: s
             .from('contracts')
             .select('*, clients(member_name, email), branches(name, url_guimail)')
             .eq('id', id)
-            .maybeSingle()
+            .single()
 
-        if (fetchError) throw fetchError
-        if (!contract) throw new Error('Không tìm thấy hợp đồng')
+        if (fetchError || !contract) throw fetchError || new Error('Không tìm thấy hợp đồng')
 
         // 2. Identify PDF file ID
         const fileUrl = contract.contract_file_url
@@ -495,7 +492,7 @@ export async function fetchLatestContractByClientId(clientId: string) {
             .eq('client_id', clientId)
             .order('created_at', { ascending: false })
             .limit(1)
-            .maybeSingle()
+            .single()
 
         if (error) {
             if (error.code === 'PGRST116') return { success: true, data: null }

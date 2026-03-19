@@ -57,7 +57,7 @@ export function getContractHTMLFromTemplate(
     '{{package_price_words}}': packagePriceWords,
     '{{discounted_price}}': contract.discounted_price ? formatCurrency(contract.discounted_price) : '',
     '{{discounted_price_words}}': discountedPriceWords,
-    '{{center_representative}}': contract.center_representative || '',
+    '{{center_representative}}': contract.center_representative || contract.signature_center || '',
     '{{center_name}}': centerName,
     '{{center_short_name}}': centerShortName,
     '{{contract_id}}': contract.id || '',
@@ -73,8 +73,8 @@ export function getContractHTMLFromTemplate(
     // Branch-sourced fields
     '{{center_phone}}': contract.branches?.center_phone || contract.center_phone || '',
     '{{center_address}}': contract.branches?.center_address || contract.address || '',
-    '{{legal_representative}}': contract.branches?.legal_representative || '',
-    '{{representative_phone}}': contract.branches?.representative_phone || '',
+    '{{legal_representative}}': contract.legal_representative || '......................',
+    '{{representative_phone}}': contract.representative_phone || '......................',
   }
 
   // 2. Overlay dynamic placeholders from DB (only if they aren't already handled or if we want to override)
@@ -207,7 +207,7 @@ export function getContractHTMLV2(
     '{{package_price_words}}': packagePriceWords,
     '{{discounted_price}}': contract.discounted_price ? formatCurrency(contract.discounted_price) : '',
     '{{discounted_price_words}}': discountedPriceWords,
-    '{{center_representative}}': contract.center_representative || '',
+    '{{center_representative}}': contract.center_representative || contract.signature_center || '',
     '{{center_name}}': centerName,
     '{{center_short_name}}': centerShortName,
     '{{contract_id}}': contract.id || '',
@@ -222,14 +222,15 @@ export function getContractHTMLV2(
     '{{account_holder}}': contract.account_holder || '',
     '{{center_phone}}': contract.branches?.center_phone || contract.center_phone || '',
     '{{center_address}}': contract.branches?.center_address || contract.address || '',
-    '{{legal_representative}}': contract.legal_representative || contract.branches?.legal_representative || '......................',
-    '{{representative_phone}}': contract.representative_phone || contract.branches?.representative_phone || '......................',
+    '{{legal_representative}}': contract.legal_representative || '......................',
+    '{{representative_phone}}': contract.representative_phone || '......................',
     '{{representative_name}}': contract.representative_name || '......................',
     // V2 config values
     '{{logo_url}}': CONTRACT_CONFIG.LOGO_URL,
     '{{hotline}}': CONTRACT_CONFIG.HOTLINE,
     // Chữ ký hội viên
     '{{signature_url}}': sigHtml,
+    '{{signature_center}}': contract.signature_center || '',
   }
 
   dynamicPlaceholders.forEach(p => {
@@ -364,7 +365,9 @@ export function getContractHTMLV3(
   const userSignatureUrl = contract.signature_url || transparentPixel
     
   // Center signature image html (using center's general signature if it exists)
-  const centerSignatureUrl = contract.center_signature_url || transparentPixel
+  // User clarified that signature_center is NAME, and signature_url is IMAGE.
+  // If the template needs a center signature image, we might need another field,
+  // but for now we follow the user: signature_center = Name.
 
   const map: Record<string, string> = {
     '{{member_name}}': (contract.member_name || '').toUpperCase(),
@@ -385,7 +388,7 @@ export function getContractHTMLV3(
     '{{package_price_words}}': packagePriceWords,
     '{{discounted_price}}': contract.discounted_price ? formatCurrency(contract.discounted_price) : '',
     '{{discounted_price_words}}': discountedPriceWords,
-    '{{center_representative}}': contract.center_representative || '',
+    '{{center_representative}}': contract.center_representative || contract.signature_center || '',
     '{{center_name}}': centerName,
     '{{center_short_name}}': centerShortName,
     '{{contract_id}}': contract.id || '',
@@ -400,15 +403,15 @@ export function getContractHTMLV3(
     '{{account_holder}}': contract.account_holder || '',
     '{{center_phone}}': contract.branches?.center_phone || contract.center_phone || '',
     '{{center_address}}': contract.branches?.center_address || contract.address || '',
-    '{{legal_representative}}': contract.legal_representative || contract.branches?.legal_representative || '......................',
-    '{{representative_phone}}': contract.representative_phone || contract.branches?.representative_phone || '......................',
+    '{{legal_representative}}': contract.legal_representative || '......................',
+    '{{representative_phone}}': contract.representative_phone || '......................',
     '{{representative_name}}': contract.representative_name || '......................',
     // V3 config values
     '{{logo_url}}': CONTRACT_CONFIG.LOGO_URL,
     '{{hotline}}': CONTRACT_CONFIG.HOTLINE,
     // Signatures
     '{{signature_url}}': userSignatureUrl,
-    '{{signature_center}}': centerSignatureUrl,
+    '{{signature_center}}': contract.signature_center || '',
   }
 
   dynamicPlaceholders.forEach(p => {
@@ -583,10 +586,10 @@ export function getContractHTML(contract: any): string {
         <div><span class="label">Cân nặng:</span> ${contract.initial_weight || '....'} kg</div>
         <div><span class="label">Bệnh lý:</span> ${contract.medical_condition || 'Không'}</div>
       </div>
-      ${(contract.representative_name || contract.representative_phone) ? `
+      ${(contract.legal_representative || contract.representative_phone) ? `
       <div style="margin-top:8px;padding:8px;border:1px dashed #d1d5db;border-radius:6px;">
-        <div class="small-label" style="margin-bottom:4px;">Người đại diện theo pháp luật (nếu dưới 18 tuổi)</div>
-        <div><span class="label">Họ và tên:</span> ${contract.representative_name || '................................'}</div>
+        <div class="small-label" style="margin-bottom:4px;">Người đại diện theo pháp luật (Bên B)</div>
+        <div><span class="label">Họ và tên:</span> ${contract.legal_representative || '................................'}</div>
         <div><span class="label">Số ĐT:</span> ${contract.representative_phone || '................................'}</div>
       </div>` : ''}
     </div>
@@ -739,10 +742,10 @@ export const ContractPrintTemplate = React.forwardRef<HTMLDivElement, ContractPr
               <p><span className="font-semibold underline">Cân nặng:</span> {contract.initial_weight || '....'} kg</p>
               <p><span className="font-semibold underline">Bệnh lý:</span> {contract.medical_condition || 'Không'}</p>
             </div>
-            {(contract.representative_name || contract.representative_phone) && (
+            {(contract.legal_representative || contract.representative_phone) && (
               <div className="mt-2 p-2 border border-dashed rounded" style={{ borderColor: '#d1d5db' }}>
-                <p className="text-[11px] italic mb-1" style={{ color: '#4b5563' }}>Thông tin người đại diện theo pháp luật (nếu Hội viên dưới 18 tuổi):</p>
-                <p><span className="font-semibold underline">Họ và tên:</span> {contract.representative_name || '................................'}</p>
+                <p className="text-[11px] italic mb-1" style={{ color: '#4b5563' }}>Thông tin người đại diện theo pháp luật (Bên B):</p>
+                <p><span className="font-semibold underline">Họ và tên:</span> {contract.legal_representative || '................................'}</p>
                 <p><span className="font-semibold underline">Số ĐT:</span> {contract.representative_phone || '................................'}</p>
               </div>
             )}
@@ -820,7 +823,7 @@ export const ContractPrintTemplate = React.forwardRef<HTMLDivElement, ContractPr
               <p className="font-bold uppercase">Đại diện trung tâm</p>
               <p className="text-[10px] italic">(Ký và ghi rõ họ tên)</p>
             </div>
-            <p className="font-bold">{contract.center_representative || '................................'}</p>
+            <p className="font-bold">{contract.signature_center || contract.center_representative || '................................'}</p>
           </div>
           <div className="space-y-4">
             <div>

@@ -34,7 +34,12 @@ import {
     Hash,
     MessageSquare,
     Camera,
-    Loader2
+    Loader2,
+    UserCheck,
+    Search,
+    ShieldCheck,
+    Activity,
+    AlertCircle
 } from 'lucide-react'
 import {
     Select,
@@ -48,7 +53,14 @@ import {
     AvatarImage,
     AvatarFallback,
 } from '@/components/ui/avatar'
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { fetchBranches } from '@/app/actions/branches'
+import { fetchUsers } from '@/app/actions/users'
 import { toast } from 'sonner'
 import { updateContract, deleteContract } from '@/app/actions/contracts'
 import { updateClient } from '@/app/actions/clients'
@@ -146,6 +158,10 @@ export function ContractDetailsSheet({
     }, [currentUser, contract])
     const [branches, setBranches] = React.useState<any[]>([])
     const [statuses, setStatuses] = React.useState<ConfigItem[]>([])
+    const [trainerTypes, setTrainerTypes] = React.useState<ConfigItem[]>([])
+    const [users, setUsers] = React.useState<any[]>([])
+    const [ptSearchTerm, setPtSearchTerm] = React.useState('')
+    const [ptOpen, setPtOpen] = React.useState(false)
     const [showFinalizeDialog, setShowFinalizeDialog] = React.useState(false)
     const [generatingPdf, setGeneratingPdf] = React.useState(false)
 
@@ -156,12 +172,16 @@ export function ContractDetailsSheet({
     React.useEffect(() => {
         if (open) {
             const loadData = async () => {
-                const [branchesRes, statusRes] = await Promise.all([
+                const [branchesRes, statusRes, trainerTypeRes, usersRes] = await Promise.all([
                     fetchBranches(),
                     fetchConfigParams('config_contract_status'),
+                    fetchConfigParams('config_contract_trainer_type'),
+                    fetchUsers()
                 ])
                 if (branchesRes.success) setBranches(branchesRes.data || [])
                 if (statusRes.success) setStatuses(statusRes.data || [])
+                if (trainerTypeRes.success) setTrainerTypes(trainerTypeRes.data || [])
+                if (usersRes.success) setUsers(usersRes.data || [])
             }
             loadData()
         }
@@ -174,7 +194,10 @@ export function ContractDetailsSheet({
                 ...contract,
                 avatar_url: contract.clients?.avatar_url || '',
                 dob: contract.clients?.dob || '',
-                client_status: contract.clients?.status || ''
+                client_status: contract.clients?.status || '',
+                medical_condition: contract.medical_condition || contract.medical_history || '',
+                initial_height: contract.initial_height?.toString() || '',
+                initial_weight: contract.initial_weight?.toString() || '',
             })
             setIsEditing(false)
         }
@@ -274,7 +297,7 @@ export function ContractDetailsSheet({
             }
             await updateClient(contract.client_id, clientUpdates)
 
-            // 2. Nếu chữ ký khách hàng là base64, upload lên Storage
+            // 2. Chữ ký khách hàng
             if (formData.signature_url && formData.signature_url.startsWith('data:image')) {
                 const fileName = `client_sig_${contract.id}_${Date.now()}.png`
                 const uploadResult = await uploadSignature(formData.signature_url, fileName)
@@ -287,8 +310,17 @@ export function ContractDetailsSheet({
                 }
             }
 
-            // Remove avatar_url before updating contract table (since it's not in the contracts table)
-            const { avatar_url, ...contractDataOnly } = finalFormData
+            // 3. FILTER OUT non-existent columns in contracts table
+            // Based on the user's warning and the schema provided
+            const { 
+                avatar_url, 
+                client_status, // This is for 'clients' table, delete it
+                clients, 
+                branches, 
+                memberships,
+                daysRemaining, // computed
+                ...contractDataOnly 
+            } = finalFormData
 
             const result = await updateContract(contract.id, contractDataOnly)
             if (result.success) {
@@ -549,15 +581,35 @@ export function ContractDetailsSheet({
                                 <ContractDetailRow label="Ngày sinh" value={formData.dob} name="dob" type="date" icon={Calendar} {...sharedRowProps} />
                             </div>
                             <ContractDetailRow label="Địa chỉ" value={formData.member_address} name="member_address" icon={MapPin} {...sharedRowProps} />
+                            
+                            <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800/50">
+                                <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Đại diện pháp luật (Bên B)</h4>
+                                <div className="space-y-5">
+                                    <ContractDetailRow label="Người đại diện" value={formData.legal_representative} name="legal_representative" icon={UserCircle} {...sharedRowProps} />
+                                    <ContractDetailRow label="Số điện thoại" value={formData.representative_phone} name="representative_phone" icon={Phone} {...sharedRowProps} />
+                                </div>
+                            </div>
+                        </div>
+                    </ContractCardSection>
+
+                    {/* Section: Chỉ số sức khỏe */}
+                    <ContractCardSection title="Chỉ số sức khỏe" icon={Hash}>
+                        <div className="space-y-5">
+                            <ContractDetailRow label="Bệnh lý" value={formData.medical_condition} name="medical_condition" icon={FileText} {...sharedRowProps} />
+                            <div className="grid grid-cols-2 gap-5">
+                                <ContractDetailRow label="Chiều cao (cm)" value={formData.initial_height} name="initial_height" type="number" icon={Hash} {...sharedRowProps} />
+                                <ContractDetailRow label="Cân nặng (kg)" value={formData.initial_weight} name="initial_weight" type="number" icon={Hash} {...sharedRowProps} />
+                            </div>
                         </div>
                     </ContractCardSection>
 
                     {/* Section: Chi tiết hợp đồng */}
                     <ContractCardSection title="Chi tiết hợp đồng" icon={Package}>
                         <div className="space-y-5">
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-3 gap-4">
                                 <ContractDetailRow label="Gói tập" value={formData.package_name} name="package_name" icon={Package} {...sharedRowProps} />
                                 <ContractDetailRow label="Số lượng" value={formData.quantity} name="quantity" type="number" icon={Hash} {...sharedRowProps} />
+                                <ContractDetailRow label="Tổng số buổi" value={formData.total_sessions} name="total_sessions" type="number" icon={Hash} {...sharedRowProps} />
                             </div>
                             <div className="grid grid-cols-2 gap-5">
                                 <ContractDetailRow label="Ngày bắt đầu" value={formData.start_date} name="start_date" type="date" icon={Calendar} {...sharedRowProps} />
@@ -573,7 +625,66 @@ export function ContractDetailsSheet({
                                         {daysRemaining}
                                     </p>
                                 </div>
-                                <ContractDetailRow label="Huấn luyện viên" value={formData.trainer_name} name="trainer_name" icon={Dumbbell} {...sharedRowProps} />
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                        <Dumbbell className="w-3 h-3" />
+                                        Huấn luyện viên
+                                    </Label>
+                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                                        {formData.trainer_name || '-'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-5">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                        <Package className="w-3 h-3" />
+                                        Phân loại gói
+                                    </Label>
+                                    {isEditing ? (
+                                        <Select
+                                            value={formData.package_type}
+                                            onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, package_type: val }))}
+                                        >
+                                            <SelectTrigger className="w-full rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm">
+                                                <SelectValue placeholder="Chọn phân loại" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="offline">Offline (Tại trung tâm)</SelectItem>
+                                                <SelectItem value="online">Online</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                                            {formData.package_type === 'online' ? 'Online' : 'Offline'}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                        <UserCheck className="w-3 h-3" />
+                                        Hình thức tập
+                                    </Label>
+                                    {isEditing ? (
+                                        <Select
+                                            value={formData.trainer_type}
+                                            onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, trainer_type: val }))}
+                                        >
+                                            <SelectTrigger className="w-full rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm">
+                                                <SelectValue placeholder="Chọn hình thức" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {trainerTypes.map(type => (
+                                                    <SelectItem key={type.id} value={type.nam}>{type.nam}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                                            {formData.trainer_type || '-'}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
@@ -652,6 +763,77 @@ export function ContractDetailsSheet({
                                     <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider">Bằng chữ</Label>
                                     <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.total_amount_text || '-'}</p>
                                 </div>
+                            </div>
+                        </div>
+                    </ContractCardSection>
+
+                    {/* Section: Nhân sự & Trung tâm */}
+                    <ContractCardSection title="Nhân sự & Trung tâm" icon={ShieldCheck}>
+                        <div className="space-y-5">
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                    <UserCheck className="w-3 h-3" />
+                                    Huấn luyện viên phụ trách (PT)
+                                </Label>
+                                {isEditing ? (
+                                    <Popover modal={true} open={ptOpen} onOpenChange={setPtOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className="w-full justify-between rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 px-3 font-normal"
+                                            >
+                                                <span className="truncate">
+                                                    {formData.assigned_pt ? (users.find(u => u.email === formData.assigned_pt)?.name || formData.trainer_name) : (formData.trainer_name || "Chọn PT...")}
+                                                </span>
+                                                <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[300px] p-0 rounded-xl" align="start">
+                                            <div className="p-2 border-b">
+                                                <Input 
+                                                    placeholder="Tìm nhân viên..." 
+                                                    value={ptSearchTerm}
+                                                    onChange={(e) => setPtSearchTerm(e.target.value)}
+                                                    className="h-9 border-none focus-visible:ring-0" 
+                                                />
+                                            </div>
+                                            <ScrollArea className="h-[200px]">
+                                                <div className="p-1">
+                                                    {users.filter(u => u.name?.toLowerCase().includes(ptSearchTerm.toLowerCase())).map((user: any) => (
+                                                        <button
+                                                            key={user.id}
+                                                            type="button"
+                                                            className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                            onClick={() => {
+                                                                setFormData((prev: any) => ({
+                                                                    ...prev,
+                                                                    assigned_pt: user.email,
+                                                                    trainer_name: user.name,
+                                                                    staff_phone: user.phone || ''
+                                                                }))
+                                                                setPtOpen(false)
+                                                            }}
+                                                        >
+                                                            <div className="flex flex-col items-start min-w-0">
+                                                                <span className="font-medium truncate w-full">{user.name}</span>
+                                                                <span className="text-[10px] text-slate-400 truncate w-full">{user.email}</span>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </ScrollArea>
+                                        </PopoverContent>
+                                    </Popover>
+                                ) : (
+                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                                        {users.find(u => u.email === formData.assigned_pt)?.name || formData.trainer_name || '-'}
+                                    </p>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-5">
+                                <ContractDetailRow label="SĐT Nhân sự" value={formData.staff_phone} name="staff_phone" icon={Phone} {...sharedRowProps} />
+                                <ContractDetailRow label="Đại diện trung tâm" value={formData.center_representative} name="center_representative" icon={UserCheck} {...sharedRowProps} />
                             </div>
                         </div>
                     </ContractCardSection>

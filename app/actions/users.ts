@@ -13,7 +13,7 @@ async function checkAdmin() {
         .from('users')
         .select('*')
         .eq('email', authUser.email)
-        .single()
+        .maybeSingle()
 
     if (!profile) return false
     return isAdmin(profile as UserProfile)
@@ -133,7 +133,7 @@ export async function fetchCurrentUserProfile() {
             .from('users')
             .select('*')
             .eq('email', user.email)
-            .single()
+            .maybeSingle()
 
         if (error) return { success: false, error: 'User profile not found' }
         return { success: true, data: data }
@@ -149,7 +149,7 @@ export async function fetchUserByEmail(email: string) {
             .from('users')
             .select('*')
             .eq('email', email)
-            .single()
+            .maybeSingle()
 
         if (error) throw error
         return { success: true, data }
