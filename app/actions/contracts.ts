@@ -344,15 +344,21 @@ export async function generateContractId(branchId?: string | null) {
     }
 }
 
-export async function shareContractViaZalo(id: string, message?: string) {
+export async function shareContractViaZalo(id: string, message?: string, zaloId?: string) {
     const supabase = await createClient()
     try {
+        const updates: any = { 
+            sendzalo: new Date().toISOString(),
+            zalo_message: message || null
+        }
+        
+        if (zaloId) {
+            updates.zalo_id = zaloId
+        }
+
         const { error } = await supabase
             .from('contracts')
-            .update({ 
-                sendzalo: new Date().toISOString(),
-                zalo_message: message || null
-            })
+            .update(updates)
             .eq('id', id)
 
         if (error) throw error

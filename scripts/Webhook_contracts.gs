@@ -157,6 +157,9 @@ function generateContractPDF(contract) {
 
   // Replace images (Signatures)
   replacePlaceholderWithImage(body, "{{signature_url}}", contract.signature_url);
+  
+  const branchSig = (contract.branches && contract.branches.signature_center) || "";
+  replacePlaceholderWithImage(body, "{{signature_center}}", branchSig);
 
   doc.saveAndClose();
 
@@ -190,7 +193,7 @@ function buildFullPlaceholders(contract) {
   data["{{member_name}}"] = (cl.member_name || c.member_name || "").toUpperCase();
   data["{{phone}}"] = cl.phone || c.phone || "";
   data["{{email}}"] = cl.email || c.email || "";
-  data["{{dob}}"] = formatDate(cl.dob || c.dob || c.date_of_birth);
+  data["{{dob}}"] = formatDate(cl.dob || c.dob);
   data["{{initial_height}}"] = cl.height || cl.initial_height || c.initial_height || "";
   data["{{initial_weight}}"] = cl.weight || cl.initial_weight || c.initial_weight || "";
   data["{{id_number}}"] = cl.id_number || c.id_number || "";
@@ -231,7 +234,6 @@ function buildFullPlaceholders(contract) {
   data["{{center_phone}}"] = c.center_phone || br.center_phone || br.phone || "";
   data["{{representative_phone}}"] = c.representative_phone || br.representative_phone || "";
   data["{{center_representative}}"] = c.center_representative || br.representative || "Nguyễn Minh Trí"; 
-  data["{{signature_center}}"] = c.signature_center || c.center_representative || br.representative || "";
   data["{{legal_representative}}"] = c.legal_representative || br.legal_representative || "";
   data["{{account_number}}"] = br.account_number ? String(br.account_number) : (c.account_number ? String(c.account_number) : "");
   data["{{bank_name}}"] = br.bank_name || c.bank_name || "";

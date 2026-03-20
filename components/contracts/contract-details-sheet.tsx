@@ -193,7 +193,7 @@ export function ContractDetailsSheet({
             setFormData({
                 ...contract,
                 avatar_url: contract.clients?.avatar_url || '',
-                dob: contract.clients?.dob || '',
+                dob: contract.dob || contract.clients?.dob || '',
                 client_status: contract.clients?.status || '',
                 medical_condition: contract.medical_condition || contract.medical_history || '',
                 initial_height: contract.initial_height?.toString() || '',
