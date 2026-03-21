@@ -329,13 +329,29 @@ export async function generateContractId(branchId?: string | null) {
         }
 
         const prefix = `HD-${branchCode}-${year}${month}`
-        const { data: existing } = await adminClient
+        
+        // Find the latest ID with this prefix to get the highest sequence number
+        const { data: latest } = await adminClient
             .from('contracts')
             .select('id')
             .like('id', `${prefix}%`)
+            .order('id', { ascending: false })
+            .limit(1)
+            .maybeSingle()
 
-        const seq = String((existing?.length ?? 0) + 1).padStart(3, '0')
-        const newId = `${prefix}${seq}`
+        let nextSeq = 1
+        if (latest && latest.id) {
+            // Extract the last 3 digits from the ID (e.g., HD-CN1-2403005 -> 005)
+            const match = latest.id.match(/\d{3}$/)
+            if (match) {
+                const currentSeq = parseInt(match[0], 10)
+                if (!isNaN(currentSeq)) {
+                    nextSeq = currentSeq + 1
+                }
+            }
+        }
+
+        const newId = `${prefix}${String(nextSeq).padStart(3, '0')}`
 
         return { success: true, data: newId }
     } catch (error: any) {

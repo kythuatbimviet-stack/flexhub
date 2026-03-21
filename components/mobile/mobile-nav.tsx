@@ -28,6 +28,7 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet"
 import { createClient } from '@/lib/supabase'
+import { usePermissions } from '@/hooks/use-permissions'
 
 const mobileMainItems = [
     { name: 'Trang chủ', href: '/', icon: Home },
@@ -49,8 +50,22 @@ const secondaryNavigation = [
 export function MobileNav() {
     const pathname = usePathname()
     const supabase = createClient()
+    const { permissions } = usePermissions()
+    const isStaff = permissions.isStaffOnly
+
+    // Permissions logic: Hide these items for regular "Staff" (Nhân viên)
+    const filteredSecondaryNav = secondaryNavigation.filter(item => {
+        if (isStaff) {
+            // Staff cannot see management items
+            return false
+        }
+        return true
+    })
+
+    const [open, setOpen] = React.useState(false)
 
     const handleLogout = async () => {
+        setOpen(false)
         await supabase.auth.signOut()
         window.location.href = '/login'
     }
@@ -76,7 +91,7 @@ export function MobileNav() {
                 )
             })}
 
-            <Sheet>
+            <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger asChild>
                     <button className="flex flex-col items-center gap-1 p-2 rounded-xl text-gray-500 dark:text-gray-400 min-w-16">
                         <Menu className="w-6 h-6" />
@@ -91,12 +106,13 @@ export function MobileNav() {
                     </SheetHeader>
                     <div className="px-6 py-2 overflow-y-auto max-h-[calc(70vh-100px)]">
                         <div className="grid grid-cols-3 gap-4 pb-12">
-                            {secondaryNavigation.map((item) => {
+                            {filteredSecondaryNav.map((item) => {
                                 const isActive = pathname === item.href
                                 return (
                                     <Link
                                         key={item.name}
                                         href={item.href}
+                                        onClick={() => setOpen(false)}
                                         className={cn(
                                             "flex flex-col items-center gap-3 p-4 rounded-2xl transition-all border",
                                             isActive

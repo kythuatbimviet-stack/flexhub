@@ -10,10 +10,13 @@ import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 import { LogIn, Mail, Lock, Dumbbell } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
+import { useQueryClient } from '@tanstack/react-query'
+import { del } from 'idb-keyval'
 
 export default function LoginPage() {
     const router = useRouter()
     const supabase = createClient()
+    const queryClient = useQueryClient()
     const [loading, setLoading] = React.useState(false)
     const [email, setEmail] = React.useState('')
     const [password, setPassword] = React.useState('')
@@ -27,6 +30,15 @@ export default function LoginPage() {
                 password,
             })
             if (error) throw error
+            
+            // Clear all caches before proceeding to dashboard
+            queryClient.clear()
+            try {
+                await del('gymcrm-cache-v1')
+            } catch (e) {
+                console.error('Failed to clear persistent cache:', e)
+            }
+
             router.push('/')
         } catch (error: any) {
             toast.error(error.message || 'Đã xảy ra lỗi khi đăng nhập')
@@ -190,6 +202,84 @@ export default function LoginPage() {
                                 )}
                             </Button>
                         </form>
+
+                        <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">Tài khoản dùng thử</p>
+                            <div className="grid grid-cols-3 gap-2">
+                                <Button
+                                    variant="outline"
+                                    type="button"
+                                    onClick={async () => {
+                                        try {
+                                            const { error } = await supabase.auth.signInWithPassword({
+                                                email: 'admin@evafit.com',
+                                                password: 'admin',
+                                            })
+                                            if (error) throw error
+                                            
+                                            // Clear cache on quick login
+                                            queryClient.clear()
+                                            try { await del('gymcrm-cache-v1') } catch (e) { console.error('Failed to clear persistent cache:', e) }
+
+                                            router.push('/')
+                                        } catch (error: any) {
+                                            toast.error(error.message || 'Đã xảy ra lỗi khi đăng nhập nhanh')
+                                        }
+                                    }}
+                                    className="text-[10px] h-10 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-all border-gray-100 dark:border-gray-800"
+                                >
+                                    Admin
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    type="button"
+                                    onClick={async () => {
+                                        try {
+                                            const { error } = await supabase.auth.signInWithPassword({
+                                                email: 'demo1@evafit.com',
+                                                password: '12345',
+                                            })
+                                            if (error) throw error
+                                            
+                                            // Clear cache on quick login
+                                            queryClient.clear()
+                                            try { await del('gymcrm-cache-v1') } catch (e) { console.error('Failed to clear persistent cache:', e) }
+
+                                            router.push('/')
+                                        } catch (error: any) {
+                                            toast.error(error.message || 'Đã xảy ra lỗi khi đăng nhập nhanh')
+                                        }
+                                    }}
+                                    className="text-[10px] h-10 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-all border-gray-100 dark:border-gray-800"
+                                >
+                                    Staff
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    type="button"
+                                    onClick={async () => {
+                                        try {
+                                            const { error } = await supabase.auth.signInWithPassword({
+                                                email: 'demo2@evafit.com',
+                                                password: '12345',
+                                            })
+                                            if (error) throw error
+                                            
+                                            // Clear cache on quick login
+                                            queryClient.clear()
+                                            try { await del('gymcrm-cache-v1') } catch (e) { console.error('Failed to clear persistent cache:', e) }
+
+                                            router.push('/')
+                                        } catch (error: any) {
+                                            toast.error(error.message || 'Đã xảy ra lỗi khi đăng nhập nhanh')
+                                        }
+                                    }}
+                                    className="text-[10px] h-10 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-all border-gray-100 dark:border-gray-800"
+                                >
+                                    Branch Mgr
+                                </Button>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="text-center pt-8">

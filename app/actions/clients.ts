@@ -305,15 +305,29 @@ export async function generateClientId(clientBranchId?: string | null) {
         // Build prefix: EF-[BranchCode]-[YYMM]-
         const prefix = `EF-${branchCode}-${year}${month}`
 
-        // Count existing clients with same prefix to determine next seq number
-        // We need to look for IDs starting with LF-BranchCode-YYMM
-        const { data: existing } = await adminClient
+        // Find the latest ID with this prefix to get the highest sequence number
+        const { data: latest } = await adminClient
             .from('clients')
             .select('id')
             .like('id', `${prefix}%`)
+            .order('id', { ascending: false })
+            .limit(1)
+            .maybeSingle()
 
-        const seq = String((existing?.length ?? 0) + 1).padStart(3, '0')
-        const newId = `${prefix}${seq}`
+        let nextSeq = 1
+        if (latest && latest.id) {
+            // Extract the last 3 digits from the ID (e.g., EF-CN1-2603005 -> 3005 which match \d{3}$ -> 005)
+            // Note: the regex \d{3}$ will pick up the last 3 digits correctly.
+            const match = latest.id.match(/\d{3}$/)
+            if (match) {
+                const currentSeq = parseInt(match[0], 10)
+                if (!isNaN(currentSeq)) {
+                    nextSeq = currentSeq + 1
+                }
+            }
+        }
+
+        const newId = `${prefix}${String(nextSeq).padStart(3, '0')}`
 
         return { success: true, data: newId }
     } catch (error: any) {

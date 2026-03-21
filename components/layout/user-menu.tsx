@@ -13,7 +13,8 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { del } from 'idb-keyval'
 
 export function UserMenu() {
     const supabase = createClient()
@@ -26,8 +27,22 @@ export function UserMenu() {
         }
     })
 
+    const queryClient = useQueryClient()
     const handleLogout = async () => {
+        // 1. Clear memory cache
+        queryClient.clear()
+        
+        // 2. Clear persistent cache (IndexedDB)
+        try {
+            await del('gymcrm-cache-v1')
+        } catch (e) {
+            console.error('Failed to clear persistent cache:', e)
+        }
+
+        // 3. Sign out from Supabase
         await supabase.auth.signOut()
+        
+        // 4. Force reload to login
         window.location.href = '/login'
     }
 
