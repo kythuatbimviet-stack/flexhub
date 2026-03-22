@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import {
     Sheet,
     SheetContent,
@@ -181,6 +182,7 @@ interface ClientDetailsSheetProps {
 
 export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: ClientDetailsSheetProps) {
     const [isEditing, setIsEditing] = React.useState(false)
+    const isMobile = useIsMobile()
     const [loading, setLoading] = React.useState(false)
     const [formData, setFormData] = React.useState<any>(null)
     const avatarInputRef = React.useRef<HTMLInputElement>(null)
@@ -382,7 +384,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
                 side="right"
-                resizable
+                resizable={!isMobile}
                 showCloseButton={false}
                 className="w-full border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
             >
@@ -611,16 +613,16 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                     <ClientCardSection title="Thông tin cá nhân" icon={User}>
                         <div className="space-y-5">
                             <ClientInfoRow label="Họ và Tên" value={formData.member_name} name="member_name" {...sharedRowProps} />
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ClientInfoRow label="Số điện thoại" value={formData.phone} name="phone" {...sharedRowProps} />
                                 <ClientInfoRow label="Email" value={formData.email} name="email" {...sharedRowProps} />
                             </div>
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ClientInfoRow label="Ngày sinh" value={formData.dob} name="dob" type="date" {...sharedRowProps} />
                                 <ClientInfoRow label="Tuổi" value={formData.age} name="age" type="number" {...sharedRowProps} />
                             </div>
                             <ClientInfoRow label="Địa chỉ" value={formData.address} name="address" {...sharedRowProps} />
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ClientInfoRow label="Chi nhánh" value={formData.branch_id} name="branch_id" type="select" options={branches?.map((b: any) => ({ value: b.id, label: b.name }))} {...sharedRowProps} />
                                 <div className="space-y-1">
                                     <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Zalo</Label>
@@ -712,7 +714,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
 
                     {/* Section: Chỉ số cơ thể */}
                     <ClientCardSection title="Chỉ số cơ thể & Mục tiêu" icon={Activity}>
-                        <div className="grid grid-cols-3 gap-5 mb-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
                             <ClientInfoRow label="Chiều cao (cm)" value={formData.height} name="height" type="number" {...sharedRowProps} />
                             <ClientInfoRow label="Cân nặng (kg)" value={formData.weight} name="weight" type="number" {...sharedRowProps} />
                             <ClientInfoRow label="Mục tiêu (kg)" value={formData.target_weight} name="target_weight" type="number" {...sharedRowProps} />
@@ -726,7 +728,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                     {/* Section: Huấn luyện & Gói tập */}
                     <ClientCardSection title="Huấn luyện & Gói tập" icon={Dumbbell}>
                         <div className="space-y-5">
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div className="space-y-1">
                                     <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">PT Phụ trách</Label>
                                     {isEditing ? (
@@ -801,11 +803,11 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                     )}
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ClientInfoRow label="Lộ trình đăng ký" value={formData.registration_type} name="registration_type" options={clientRegistrationTypes.map((t: any) => t.nam)} {...sharedRowProps} />
                                 <ClientInfoRow label="Thời gian tập" value={formData.training_time} name="training_time" type="select" options={clientTrainingTimes.map((t: any) => t.nam)} {...sharedRowProps} />
                             </div>
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ClientInfoRow label="Chu kỳ khách" value={formData.customer_cycle} name="customer_cycle" {...sharedRowProps} />
                             </div>
                             <ClientInfoRow label="Ghi chú thêm" value={formData.notes} name="notes" type="textarea" {...sharedRowProps} />
@@ -815,7 +817,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                     {/* Section: Nguồn khách */}
                     <ClientCardSection title="Nguồn khách khách hàng" icon={Star}>
                         <div className="space-y-5">
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ClientInfoRow label="Nguồn khách hàng" value={formData.source} name="source" type="select" options={clientSources.map((s: any) => s.nam)} {...sharedRowProps} />
                                 <ClientInfoRow label="Người giới thiệu" value={formData.referrer} name="referrer" {...sharedRowProps} />
                             </div>
@@ -850,7 +852,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                     {latestContract?.data && (
                         <ClientCardSection title="Gửi Hợp đồng Khách hàng" icon={Cloud}>
                             <div className="space-y-5">
-                                <div className="grid grid-cols-2 gap-5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
                                             <Mail className="w-3 h-3" />

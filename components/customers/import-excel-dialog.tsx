@@ -103,20 +103,20 @@ export function ImportExcelDialog({ onSuccess }: ImportExcelDialogProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" className="rounded-xl border-gray-200 text-gray-600 font-medium">
-                    <FileUp className="w-4 h-4 mr-2" />
-                    Nhập Excel
+                <Button variant="outline" className="rounded-xl border-gray-200 text-gray-600 font-medium h-11 px-3 sm:px-4">
+                    <FileUp className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Nhập Excel</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] rounded-2xl border-none shadow-2xl">
+            <DialogContent className="sm:max-w-[425px] rounded-2xl border-none shadow-2xl bg-white dark:bg-gray-950 dark:border-gray-800">
                 <DialogHeader>
-                    <DialogTitle className="text-xl font-bold text-gray-900 leading-tight">Nhập khách hàng từ Excel</DialogTitle>
-                    <DialogDescription className="text-gray-500 font-medium mt-1">
+                    <DialogTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 leading-tight">Nhập khách hàng từ Excel</DialogTitle>
+                    <DialogDescription className="text-gray-500 dark:text-gray-400 font-medium mt-1">
                         Tải lên file Excel (.xlsx, .xls) chứa danh sách khách hàng.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-6 py-6">
-                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-2xl p-10 bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer group relative">
+                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-2xl p-10 bg-gray-50/50 dark:bg-gray-900/50 hover:bg-gray-50 dark:hover:bg-gray-900/80 transition-colors cursor-pointer group relative">
                         <input
                             type="file"
                             accept=".xlsx, .xls"
@@ -127,20 +127,20 @@ export function ImportExcelDialog({ onSuccess }: ImportExcelDialogProps) {
                         {isUploading ? (
                             <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
                         ) : (
-                            <FileUp className="h-10 w-10 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                            <FileUp className="h-10 w-10 text-gray-300 dark:text-gray-600 group-hover:text-blue-500 transition-colors" />
                         )}
-                        <p className="mt-4 text-sm font-semibold text-gray-700">
+                        <p className="mt-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
                             {isUploading ? 'Đang xử lý...' : 'Chọn file hoặc kéo thả vào đây'}
                         </p>
-                        <p className="mt-1 text-xs text-gray-400">Hỗ trợ .xlsx, .xls</p>
+                        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Hỗ trợ .xlsx, .xls</p>
                     </div>
 
-                    <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100/50">
+                    <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-100/50 dark:border-blue-900/20">
                         <div className="flex items-start gap-3">
                             <Download className="w-5 h-5 text-blue-500 mt-0.5" />
                             <div className="flex-1">
-                                <p className="text-sm font-bold text-gray-900">Mẫu file Excel</p>
-                                <p className="text-xs text-gray-500 mt-1 leading-relaxed">Sử dụng file mẫu để đảm bảo dữ liệu được nhập chính xác nhất.</p>
+                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Mẫu file Excel</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">Sử dụng file mẫu để đảm bảo dữ liệu được nhập chính xác nhất.</p>
                                 <Button
                                     variant="link"
                                     className="p-0 h-auto text-blue-600 text-xs font-bold mt-2 hover:no-underline"
@@ -156,7 +156,7 @@ export function ImportExcelDialog({ onSuccess }: ImportExcelDialogProps) {
                     <Button
                         variant="ghost"
                         onClick={() => setOpen(false)}
-                        className="rounded-xl font-semibold text-gray-500"
+                        className="rounded-xl font-semibold text-gray-500 dark:text-gray-400"
                     >
                         Hủy bỏ
                     </Button>

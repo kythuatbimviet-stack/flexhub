@@ -92,7 +92,7 @@ export function CustomerDetailsSheet({ customer, open, onOpenChange, onSuccess }
 
     const InfoRow = ({ icon: Icon, label, value, name, type = "text" }: any) => (
         <div className="space-y-2">
-            <Label className="text-xs font-semibold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+            <Label className="text-xs font-semibold text-gray-400 dark:text-gray-200 uppercase tracking-widest flex items-center gap-2">
                 <Icon className="w-3.5 h-3.5" />
                 {label}
             </Label>
@@ -138,11 +138,11 @@ export function CustomerDetailsSheet({ customer, open, onOpenChange, onSuccess }
                     <div className="space-y-6">
                         <div className="flex items-center gap-2 border-b border-gray-50 pb-2">
                             <User className="w-4 h-4 text-blue-500" />
-                            <h3 className="text-sm font-bold text-gray-900">Thông tin cơ bản</h3>
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Thông tin cơ bản</h3>
                         </div>
                         <div className="grid grid-cols-1 gap-6">
                             <InfoRow icon={User} label="Họ và Tên" value={customer.name} name="name" />
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <InfoRow icon={Phone} label="Số điện thoại" value={customer.phone} name="phone" />
                                 <InfoRow icon={Mail} label="Email" value={customer.email} name="email" />
                             </div>
@@ -153,11 +153,11 @@ export function CustomerDetailsSheet({ customer, open, onOpenChange, onSuccess }
                     <div className="space-y-6">
                         <div className="flex items-center gap-2 border-b border-gray-50 pb-2">
                             <Building className="w-4 h-4 text-blue-500" />
-                            <h3 className="text-sm font-bold text-gray-900">Thông tin Doanh nghiệp</h3>
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Thông tin Doanh nghiệp</h3>
                         </div>
                         <div className="grid grid-cols-1 gap-6">
                             <InfoRow icon={Building} label="Tên công ty" value={customer.company_name} name="company_name" />
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <InfoRow icon={Receipt} label="Mã số thuế" value={customer.tax_code} name="tax_code" />
                                 <InfoRow icon={Briefcase} label="Chức vụ" value={customer.position} name="position" />
                             </div>
@@ -169,7 +169,7 @@ export function CustomerDetailsSheet({ customer, open, onOpenChange, onSuccess }
                     <div className="space-y-6">
                         <div className="flex items-center gap-2 border-b border-gray-50 pb-2">
                             <MapPin className="w-4 h-4 text-blue-500" />
-                            <h3 className="text-sm font-bold text-gray-900">Địa chỉ & Giao nhận</h3>
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Địa chỉ & Giao nhận</h3>
                         </div>
                         <div className="grid grid-cols-1 gap-6">
                             <InfoRow icon={MapPin} label="Địa chỉ giao hàng" value={customer.shipping_address} name="shipping_address" />
@@ -184,7 +184,7 @@ export function CustomerDetailsSheet({ customer, open, onOpenChange, onSuccess }
                             <Button
                                 variant="outline"
                                 onClick={() => setIsEditing(false)}
-                                className="flex-1 rounded-xl h-11 font-semibold text-gray-500 border-gray-200 bg-white"
+                                className="flex-1 rounded-xl h-11 font-semibold text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
                                 disabled={loading}
                             >
                                 <X className="w-4 h-4 mr-2" />
@@ -204,7 +204,7 @@ export function CustomerDetailsSheet({ customer, open, onOpenChange, onSuccess }
                             <Button
                                 variant="outline"
                                 onClick={handleDelete}
-                                className="flex-1 rounded-xl h-11 font-semibold text-red-500 border-red-100 bg-white hover:bg-red-50 hover:text-red-600 transition-all"
+                                className="flex-1 rounded-xl h-11 font-semibold text-red-500 border-red-100 dark:border-red-900/30 bg-white dark:bg-gray-900 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-all"
                                 disabled={loading}
                             >
                                 <Trash2 className="w-4 h-4 mr-2" />
@@ -212,7 +212,7 @@ export function CustomerDetailsSheet({ customer, open, onOpenChange, onSuccess }
                             </Button>
                             <Button
                                 onClick={() => setIsEditing(true)}
-                                className="flex-1 rounded-xl h-11 font-bold bg-gray-900 hover:bg-black text-white shadow-lg shadow-gray-200"
+                                className="flex-1 rounded-xl h-11 font-bold bg-gray-900 dark:bg-white hover:bg-black dark:hover:bg-gray-100 text-white dark:text-gray-900 shadow-lg shadow-gray-200 dark:shadow-none"
                                 disabled={loading}
                             >
                                 <Edit2 className="w-4 h-4 mr-2" />

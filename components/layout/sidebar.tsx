@@ -131,7 +131,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                             variant="ghost"
                             size="icon"
                             onClick={onToggle}
-                            className="h-8 w-8 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                            className="h-8 w-8 rounded-lg text-gray-400 dark:text-gray-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
                         >
                             <ChevronLeft className="h-5 w-5" />
                         </Button>
@@ -144,7 +144,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                             variant="ghost"
                             size="icon"
                             onClick={onToggle}
-                            className="h-9 w-9 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all border border-gray-50 dark:border-gray-800"
+                            className="h-9 w-9 rounded-xl text-gray-400 dark:text-gray-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all border border-gray-50 dark:border-gray-800"
                         >
                             <ChevronRight className="h-5 w-5" />
                         </Button>
@@ -163,7 +163,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                                             className={cn(
                                                 isActive
                                                     ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                                                    : 'text-gray-700 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800/50',
+                                                    : 'text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800/50',
                                                 'group flex gap-x-3 rounded-xl p-2.5 text-sm leading-6 font-semibold transition-all duration-200',
                                                 isCollapsed && "justify-center px-0"
                                             )}
@@ -172,7 +172,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                                                 className={cn(
                                                     isActive
                                                         ? 'text-red-600 dark:text-red-400'
-                                                        : 'text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400',
+                                                        : 'text-gray-400 dark:text-gray-500 group-hover:text-red-600 dark:group-hover:text-red-400',
                                                     'h-5 w-5 shrink-0 transition-colors duration-200'
                                                 )}
                                                 aria-hidden="true"
@@ -204,7 +204,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                         {visibleFinancial.length > 0 && (
                             <li>
                                 {!isCollapsed ? (
-                                    <div className="text-[10px] font-bold leading-6 text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-2 px-2">Tài chính</div>
+                                    <div className="text-[10px] font-bold leading-6 text-gray-400 dark:text-gray-300 uppercase tracking-[0.2em] mb-2 px-2">Tài chính</div>
                                 ) : (
                                     <div className="h-px bg-gray-100 dark:bg-gray-800 mx-2 mb-4" />
                                 )}
@@ -217,7 +217,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                                                 className={cn(
                                                     isActive
                                                         ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                                                        : 'text-gray-700 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800/50',
+                                                        : 'text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800/50',
                                                     'group flex gap-x-3 rounded-xl p-2.5 text-sm leading-6 font-semibold transition-all duration-200',
                                                     isCollapsed && "justify-center px-0"
                                                 )}
@@ -226,7 +226,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                                                     className={cn(
                                                         isActive
                                                             ? 'text-red-600 dark:text-red-400'
-                                                            : 'text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400',
+                                                            : 'text-gray-400 dark:text-gray-500 group-hover:text-red-600 dark:group-hover:text-red-400',
                                                         'h-5 w-5 shrink-0 transition-colors duration-200'
                                                     )}
                                                     aria-hidden="true"
@@ -259,7 +259,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                         {visibleSystem.length > 0 && (
                             <li>
                                 {!isCollapsed ? (
-                                    <div className="text-[10px] font-bold leading-6 text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-2 px-2">Hệ thống</div>
+                                    <div className="text-[10px] font-bold leading-6 text-gray-400 dark:text-gray-300 uppercase tracking-[0.2em] mb-2 px-2">Hệ thống</div>
                                 ) : (
                                     <div className="h-px bg-gray-100 dark:bg-gray-800 mx-2 mb-4" />
                                 )}
@@ -272,7 +272,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                                                 className={cn(
                                                     isActive
                                                         ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                                                        : 'text-gray-700 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800/50',
+                                                        : 'text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800/50',
                                                     'group flex gap-x-3 rounded-xl p-2.5 text-sm leading-6 font-semibold transition-all duration-200',
                                                     isCollapsed && "justify-center px-0"
                                                 )}
@@ -281,7 +281,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                                                     className={cn(
                                                         isActive
                                                             ? 'text-red-600 dark:text-red-400'
-                                                            : 'text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400',
+                                                            : 'text-gray-400 dark:text-gray-500 group-hover:text-red-600 dark:group-hover:text-red-400',
                                                         'h-5 w-5 shrink-0 transition-colors duration-200'
                                                     )}
                                                     aria-hidden="true"
@@ -315,12 +315,12 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                             <button
                                 onClick={handleLogout}
                                 className={cn(
-                                    "group -mx-2 flex gap-x-3 rounded-xl p-2.5 text-sm font-semibold leading-6 text-gray-700 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400 w-full transition-all duration-200",
+                                    "group -mx-2 flex gap-x-3 rounded-xl p-2.5 text-sm font-semibold leading-6 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400 w-full transition-all duration-200",
                                     isCollapsed && "justify-center px-0 mx-0"
                                 )}
                             >
                                 <LogOut
-                                    className="h-5 w-5 shrink-0 text-gray-400 group-hover:text-red-600 transition-colors duration-200"
+                                    className="h-5 w-5 shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-red-600 transition-colors duration-200"
                                     aria-hidden="true"
                                 />
                                 {!isCollapsed && <span>Đăng xuất</span>}

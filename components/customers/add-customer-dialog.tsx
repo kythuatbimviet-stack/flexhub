@@ -88,9 +88,9 @@ export function AddCustomerDialog({ onSuccess }: AddCustomerDialogProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add New
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 sm:px-6">
+                    <Plus className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Thêm mới</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">

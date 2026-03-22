@@ -286,7 +286,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 h-10 transition-colors shadow-sm font-medium">
+                <Button className="bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 h-10 transition-colors shadow-sm font-medium dark:shadow-red-900/20">
                     <Plus className="w-4 h-4 mr-2" />
                     <span className="hidden sm:inline">Thêm Khách hàng</span>
                     <span className="sm:hidden">Thêm mới</span>
@@ -294,11 +294,11 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
             </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border-none shadow-2xl">
                 <DialogHeader>
-                    <DialogTitle className="text-xl font-medium text-gray-900 border-b pb-4 mb-2">
+                    <DialogTitle className="text-xl font-medium text-gray-900 dark:text-white border-b dark:border-gray-800 pb-4 mb-2">
                         Thông tin Khách hàng mới
                     </DialogTitle>
-                    <DialogDescription className="text-gray-500 flex items-center justify-between gap-4">
-                        <span>Hoàn tất thông tin bên dưới (<span className="text-red-600">*</span> là bắt buộc)</span>
+                    <DialogDescription className="text-gray-500 dark:text-gray-400 flex items-center justify-between gap-4">
+                        <span>Hoàn tất thông tin bên dưới (<span className="text-red-600 font-bold">*</span> là bắt buộc)</span>
                         <Select
                             value={form.watch('status')}
                             onValueChange={(val) => form.setValue('status', val)}
@@ -338,13 +338,13 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="id"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-bold">Mã Khách hàng <span className="text-red-600">*</span></FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-bold">Mã Khách hàng <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
                                                 <Input
                                                     readOnly
                                                     placeholder={generatingId ? "Đang tạo mã..." : "LF-XX-YY-MM-001"}
                                                     {...field}
-                                                    className="rounded-xl border-gray-100 bg-gray-100/50 text-gray-900 font-bold font-mono text-sm"
+                                                    className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-100/50 dark:bg-gray-900/50 text-gray-900 dark:text-white font-bold font-mono text-sm"
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -356,9 +356,9 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="member_name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Họ và Tên hội viên <span className="text-red-600">*</span></FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Họ và Tên hội viên <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Nguyễn Văn A" {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                                <Input placeholder="Nguyễn Văn A" {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -371,7 +371,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                         <FormItem>
                                             <FormLabel className="text-xs text-gray-500 font-medium">Số điện thoại</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="090..." {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                                <Input placeholder="090..." {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -384,7 +384,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                         <FormItem>
                                             <FormLabel className="text-xs text-gray-500 font-medium">Email</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="a@gmail.com" {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                                <Input placeholder="a@gmail.com" {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -425,7 +425,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                         <FormItem>
                                             <FormLabel className="text-xs text-gray-500 font-medium">Tuổi <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
-                                                <Input readOnly placeholder="Tự động" type="number" {...field} value={field.value ?? ''} className="rounded-xl border-gray-100 bg-gray-100/50 text-gray-500" />
+                                                <Input readOnly placeholder="Tự động" type="number" {...field} value={field.value ?? ''} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-100/50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -439,7 +439,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     <FormItem>
                                         <FormLabel className="text-xs text-gray-500 font-medium">Địa chỉ</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Số nhà, đường, quận/huyện..." {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                            <Input placeholder="Số nhà, đường, quận/huyện..." {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -504,7 +504,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                                                 placeholder="Tìm kiếm..."
                                                                 value={zaloSearchTerm}
                                                                 onChange={(e) => setZaloSearchTerm(e.target.value)}
-                                                                className="pl-8 h-9 border-none bg-gray-50/50 rounded-lg focus-visible:ring-0"
+                                                                className="pl-8 h-9 border-none bg-gray-50/50 dark:bg-gray-900 rounded-lg focus-visible:ring-0"
                                                             />
                                                         </div>
                                                     </div>
@@ -578,7 +578,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                         <FormItem>
                                             <FormLabel className="text-xs text-gray-500 font-medium">Chiều cao (cm) <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
-                                                <Input type="number" step="0.1" {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                                <Input type="number" step="0.1" {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -591,7 +591,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                         <FormItem>
                                             <FormLabel className="text-xs text-gray-500 font-medium">Cân nặng (kg) <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
-                                                <Input type="number" step="0.1" {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                                <Input type="number" step="0.1" {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -604,7 +604,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                         <FormItem>
                                             <FormLabel className="text-xs text-gray-500 font-medium">Cân nặng mục tiêu</FormLabel>
                                             <FormControl>
-                                                <Input type="number" step="0.1" {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                                <Input type="number" step="0.1" {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -616,14 +616,14 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                 name="goal"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs text-gray-500 font-medium">Mục tiêu của bạn <span className="text-red-600">*</span></FormLabel>
+                                        <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Mục tiêu của bạn <span className="text-red-600">*</span></FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
-                                                <SelectTrigger className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm">
+                                                <SelectTrigger className="w-full rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
                                                     <SelectValue placeholder="Chọn mục tiêu" />
                                                 </SelectTrigger>
                                             </FormControl>
-                                            <SelectContent className="rounded-xl border-gray-100">
+                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
                                                 {clientGoals.map((g) => (
                                                     <SelectItem key={g.id} value={g.nam}>
                                                         {g.nam}
@@ -639,7 +639,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
 
                         {/* Section 3: Quản lý & Ghi chú */}
                         <div className="space-y-4">
-                            <h3 className="text-sm font-medium text-red-600 flex items-center gap-2">
+                            <h3 className="text-sm font-medium text-red-600 dark:text-red-500 flex items-center gap-2">
                                 <Dumbbell className="w-4 h-4" />
                                 Huấn luyện & Gói tập
                             </h3>
@@ -649,7 +649,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="pt_name"
                                     render={({ field }) => (
                                         <FormItem className="flex flex-col">
-                                            <FormLabel className="text-xs text-gray-500 font-medium">PT phụ trách <span className="text-red-600">*</span></FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">PT phụ trách <span className="text-red-600">*</span></FormLabel>
                                             <Popover modal={true} open={ptOpen} onOpenChange={(open) => {
                                                 setPtOpen(open)
                                                 if (!open) setPtSearchTerm('')
@@ -660,7 +660,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                                             variant="outline"
                                                             role="combobox"
                                                             className={cn(
-                                                                "w-full justify-between rounded-xl border-gray-100 bg-gray-50/50 text-sm font-normal h-10 px-3",
+                                                                "w-full justify-between rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-sm font-normal h-10 px-3 text-gray-900 dark:text-white",
                                                                 !field.value && "text-muted-foreground"
                                                             )}
                                                         >
@@ -744,14 +744,14 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="branch_id"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Chi nhánh <span className="text-red-600">*</span></FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Chi nhánh <span className="text-red-600">*</span></FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value || undefined} defaultValue={field.value || undefined}>
                                                 <FormControl>
-                                                    <SelectTrigger className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm">
+                                                    <SelectTrigger className="w-full rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
                                                         <SelectValue placeholder="Chọn chi nhánh" />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent className="rounded-xl border-gray-100">
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
                                                     {branches?.map((branch: any) => (
                                                         <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
                                                     ))}
@@ -766,14 +766,14 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="registration_type"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Lộ trình đăng ký</FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Lộ trình đăng ký</FormLabel>
                                             <FormControl>
                                                 <div className="relative">
                                                     <Input
                                                         placeholder="Chọn hoặc nhập lộ trình"
                                                         {...field}
                                                         list="registration-types-list"
-                                                        className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm"
+                                                        className="w-full rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-sm text-gray-900 dark:text-white"
                                                     />
                                                     <datalist id="registration-types-list">
                                                         {clientRegistrationTypes.map((t) => (
@@ -791,14 +791,14 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="training_time"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Thời gian tập</FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Thời gian tập</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm">
+                                                    <SelectTrigger className="w-full rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
                                                         <SelectValue placeholder="Chọn thời gian" />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent className="rounded-xl border-gray-100">
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
                                                     {clientTrainingTimes.map((t) => (
                                                         <SelectItem key={t.id} value={t.nam}>
                                                             {t.nam}
@@ -815,9 +815,9 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="customer_cycle"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Chu kỳ khách</FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Chu kỳ khách</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Chu kỳ chăm sóc..." {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                                <Input placeholder="Chu kỳ chăm sóc..." {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -829,9 +829,9 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                 name="medical_history"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs text-gray-500 font-medium">Tiền sử bệnh lý</FormLabel>
+                                        <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Tiền sử bệnh lý</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Chấn thương, bệnh lý cần lưu ý..." {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                            <Input placeholder="Chấn thương, bệnh lý cần lưu ý..." {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -842,9 +842,9 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                 name="notes"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs text-gray-500 font-medium">Ghi chú thêm</FormLabel>
+                                        <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Ghi chú thêm</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="..." {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                            <Input placeholder="..." {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -864,14 +864,14 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="source"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Nguồn khách hàng <span className="text-red-600">*</span></FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Nguồn khách hàng <span className="text-red-600">*</span></FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="w-full rounded-xl border-gray-100 bg-gray-50/50 text-sm">
+                                                    <SelectTrigger className="w-full rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
                                                         <SelectValue placeholder="Chọn nguồn khách" />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent className="rounded-xl border-gray-100">
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
                                                     {clientSources.map((s) => (
                                                         <SelectItem key={s.id} value={s.nam}>
                                                             {s.nam}
@@ -888,9 +888,9 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     name="referrer"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 font-medium">Người giới thiệu</FormLabel>
+                                            <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Người giới thiệu</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Tên/SĐT người giới thiệu" {...field} className="rounded-xl border-gray-100 bg-gray-50/50" />
+                                                <Input placeholder="Tên/SĐT người giới thiệu" {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -927,7 +927,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                 type="button"
                                 variant="ghost"
                                 onClick={() => setOpen(false)}
-                                className="rounded-xl px-6 text-gray-500 hover:text-gray-900"
+                                className="rounded-xl px-6 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                             >
                                 Hủy bỏ
                             </Button>

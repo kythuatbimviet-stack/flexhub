@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import {
     Sheet,
     SheetContent,
@@ -110,7 +111,7 @@ const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEd
 
     return (
         <div className="space-y-1.5 w-full">
-            <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
                 {Icon && <Icon className="w-3 h-3" />}
                 {label} {isEditing && ['package_name', 'payment_method', 'quantity', 'total_amount', 'status', 'id_number', 'email'].includes(name) && <span className="text-red-500">*</span>}
             </Label>
@@ -123,7 +124,7 @@ const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEd
                     className="w-full rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
                 />
             ) : (
-                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px] w-full break-words">
+                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-100 min-h-[20px] w-full break-words">
                     {type === 'number' && value ? (['quantity', 'total_sessions', 'package_duration'].includes(name) ? Number(value).toLocaleString('vi-VN') : Number(value).toLocaleString('vi-VN') + ' ₫') : (value || '-')}
                 </p>
             )}
@@ -145,6 +146,7 @@ export function ContractDetailsSheet({
     onOpenChange,
     onSuccess
 }: ContractDetailsSheetProps) {
+    const isMobile = useIsMobile()
     const [isEditing, setIsEditing] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
     const [formData, setFormData] = React.useState<any>({})
@@ -377,7 +379,7 @@ export function ContractDetailsSheet({
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
                 side="right"
-                resizable
+                resizable={!isMobile}
                 showCloseButton={false}
                 className="w-full border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
             >
@@ -572,11 +574,11 @@ export function ContractDetailsSheet({
                     <ContractCardSection title="Thông tin khách hàng" icon={User}>
                         <div className="space-y-5">
                             <ContractDetailRow label="Hội viên" value={formData.member_name} name="member_name" icon={User} {...sharedRowProps} />
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Số điện thoại" value={formData.phone} name="phone" icon={Phone} {...sharedRowProps} />
                                 <ContractDetailRow label="Email" value={formData.email} name="email" icon={Mail} {...sharedRowProps} />
                             </div>
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Căn cước công dân" value={formData.id_number} name="id_number" icon={FileText} {...sharedRowProps} />
                                 <ContractDetailRow label="Ngày sinh" value={formData.dob} name="dob" type="date" icon={Calendar} {...sharedRowProps} />
                             </div>
@@ -596,7 +598,7 @@ export function ContractDetailsSheet({
                     <ContractCardSection title="Chỉ số sức khỏe" icon={Hash}>
                         <div className="space-y-5">
                             <ContractDetailRow label="Bệnh lý" value={formData.medical_condition} name="medical_condition" icon={FileText} {...sharedRowProps} />
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Chiều cao (cm)" value={formData.initial_height} name="initial_height" type="number" icon={Hash} {...sharedRowProps} />
                                 <ContractDetailRow label="Cân nặng (kg)" value={formData.initial_weight} name="initial_weight" type="number" icon={Hash} {...sharedRowProps} />
                             </div>
@@ -606,16 +608,16 @@ export function ContractDetailsSheet({
                     {/* Section: Chi tiết hợp đồng */}
                     <ContractCardSection title="Chi tiết hợp đồng" icon={Package}>
                         <div className="space-y-5">
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <ContractDetailRow label="Gói tập" value={formData.package_name} name="package_name" icon={Package} {...sharedRowProps} />
                                 <ContractDetailRow label="Số lượng" value={formData.quantity} name="quantity" type="number" icon={Hash} {...sharedRowProps} />
                                 <ContractDetailRow label="Tổng số buổi" value={formData.total_sessions} name="total_sessions" type="number" icon={Hash} {...sharedRowProps} />
                             </div>
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Ngày bắt đầu" value={formData.start_date} name="start_date" type="date" icon={Calendar} {...sharedRowProps} />
                                 <ContractDetailRow label="Ngày kết thúc" value={formData.end_date} name="end_date" type="date" icon={Calendar} {...sharedRowProps} />
                             </div>
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
                                         <Clock className="w-3 h-3" />
@@ -635,7 +637,7 @@ export function ContractDetailsSheet({
                                     </p>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
                                         <Package className="w-3 h-3" />
@@ -686,7 +688,7 @@ export function ContractDetailsSheet({
                                     )}
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
                                         <Building2 className="w-3 h-3" />
@@ -743,21 +745,21 @@ export function ContractDetailsSheet({
                     <ContractCardSection title="Thanh toán" icon={CreditCard}>
                         <div className="space-y-5">
                             <ContractDetailRow label="Hình thức" value={formData.payment_method} name="payment_method" icon={CreditCard} {...sharedRowProps} />
-                            <div className="grid grid-cols-2 gap-5">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Giá gói (niêm yết)" value={formData.package_price} name="package_price" type="number" icon={CreditCard} {...sharedRowProps} />
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider">Bằng chữ</Label>
                                     <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.package_price_text || '-'}</p>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-5">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Giá trợ giá" value={formData.discounted_price} name="discounted_price" type="number" icon={CreditCard} {...sharedRowProps} />
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider">Bằng chữ</Label>
                                     <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.discounted_price_text || '-'}</p>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-5">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Tổng giá trị HĐ" value={formData.total_amount} name="total_amount" type="number" icon={CreditCard} {...sharedRowProps} />
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider">Bằng chữ</Label>
@@ -831,7 +833,7 @@ export function ContractDetailsSheet({
                                     </p>
                                 )}
                             </div>
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="SĐT Nhân sự" value={formData.staff_phone} name="staff_phone" icon={Phone} {...sharedRowProps} />
                                 <ContractDetailRow label="Đại diện trung tâm" value={formData.center_representative} name="center_representative" icon={UserCheck} {...sharedRowProps} />
                             </div>
@@ -872,7 +874,7 @@ export function ContractDetailsSheet({
                     {/* Section: Gửi Hợp đồng Khách hàng */}
                     <ContractCardSection title="Gửi Hợp đồng Khách hàng" icon={Cloud}>
                         <div className="space-y-5">
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
                                         <Mail className="w-3 h-3" />
@@ -913,15 +915,13 @@ export function ContractDetailsSheet({
                     <Button
                         variant="ghost"
                         onClick={() => onOpenChange(false)}
-                        className="rounded-xl h-11 px-6 font-bold text-[13px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-inter"
+                        className="rounded-xl h-11 px-6 font-bold text-[13px] text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-inter"
                         disabled={loading}
                     >
                         Đóng
                     </Button>
 
-                    <div className="flex items-center gap-2">
-
-
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
                         {isEditing ? (
                             <Button
                                 onClick={handleSave}
@@ -932,7 +932,7 @@ export function ContractDetailsSheet({
                                 {loading ? 'Đang lưu...' : 'Lưu lại'}
                             </Button>
                         ) : (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap justify-end">
                                 {formData.status === 'Chờ ký HĐ' && hasAccess && (
                                     <Button
                                         onClick={() => setShowFinalizeDialog(true)}
@@ -948,7 +948,7 @@ export function ContractDetailsSheet({
                                     onClick={handleGenerateDocPDF}
                                     variant="outline"
                                     disabled={generatingPdf || !hasAccess} // maybe prevent regen if no access
-                                    className="rounded-xl h-11 px-6 font-bold text-[13px] border-blue-100 text-blue-700 hover:bg-blue-50 dark:border-blue-900/30 dark:hover:bg-blue-950/20 transition-all font-inter border-2"
+                                    className="rounded-xl h-11 px-6 font-bold text-[13px] border-blue-100 text-blue-700 hover:bg-blue-50 dark:border-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-950/40 transition-all font-inter border-2"
                                     title="Tạo file PDF từ mẫu Google Doc và lưu vào Drive"
                                 >
                                     {generatingPdf ? (
@@ -962,7 +962,7 @@ export function ContractDetailsSheet({
                                     <Button
                                         onClick={() => window.open(`/contracts/preview-gdoc/${encodeURIComponent(contract.id)}`, '_blank')}
                                         variant="ghost"
-                                        className="rounded-xl h-11 px-4 font-bold text-[13px] text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all font-inter"
+                                        className="rounded-xl h-11 px-4 font-bold text-[13px] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all font-inter"
                                         title="Xem bản xem trước PDF (Print Preview)"
                                     >
                                         <ExternalLink className="w-4 h-4" />
@@ -973,7 +973,7 @@ export function ContractDetailsSheet({
                                         variant="outline"
                                         size="icon"
                                         onClick={() => handleDelete()}
-                                        className="h-11 w-11 rounded-xl border-red-50 text-red-500 hover:bg-red-50 hover:border-red-100 transition-all active:scale-95 border-2"
+                                        className="h-11 w-11 rounded-xl border-red-50 dark:border-red-900/30 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-100 transition-all active:scale-95 border-2"
                                         title="Xóa hợp đồng"
                                     >
                                         <Trash2 className="w-4 h-4" />

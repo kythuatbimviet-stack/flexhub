@@ -305,7 +305,7 @@ export default function ContractsPage() {
                         <FileText className="w-8 h-8 text-[#FD5771]" />
                         Hợp đồng
                     </h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Theo dõi và quản lý các hợp đồng dịch vụ của hội viên.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-300 font-medium tracking-tight">Theo dõi và quản lý các hợp đồng dịch vụ của hội viên.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <AnimatePresence>
@@ -322,7 +322,7 @@ export default function ContractsPage() {
                     <div className="flex gap-2">
                         <ImportExcelContractDialog onSuccess={refetch} />
                         <Button variant="ghost" onClick={exportToExcel}
-                            className="rounded-xl border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300 h-11 w-11 p-0 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
+                            className="rounded-xl border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-100 h-11 w-11 p-0 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
                             <FileDown className="w-5 h-5" />
                         </Button>
                         <Button variant="ghost" asChild
@@ -343,7 +343,7 @@ export default function ContractsPage() {
                     <TabsTrigger value="all" className={cn(
                         "flex shrink-0 items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all border border-gray-100 dark:border-gray-800",
                         "data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:border-red-200 data-[state=active]:text-red-600",
-                        "bg-white/50 dark:bg-gray-800/50 text-gray-500"
+                        "bg-white/50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-300"
                     )}>
                         Tất cả
                         <span className="px-1.5 py-0.5 rounded-lg text-[10px] font-bold bg-gray-100 text-gray-600">{statusCounts.total}</span>
@@ -383,7 +383,7 @@ export default function ContractsPage() {
                     <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2">
                         <div className="flex items-center gap-2 flex-1">
                             <div className="relative group flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-red-600 transition-colors" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-300 group-focus-within:text-red-600 transition-colors" />
                                 <input
                                     placeholder="Tìm kiếm hợp đồng..."
                                     value={searchTerm}
@@ -576,27 +576,27 @@ export default function ContractsPage() {
                                                             {contract.member_name}
                                                             <BadgeCheck className="w-3.5 h-3.5 text-blue-500 fill-blue-50" />
                                                         </span>
-                                                        <span className="text-[10px] text-gray-400 font-medium">{contract.id}</span>
+                                                        <span className="text-[10px] text-gray-400 dark:text-gray-300 font-medium">{contract.id}</span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
+                                                    <div className="flex flex-col text-sm text-gray-600 dark:text-gray-100">
                                                         <div className="flex items-center gap-1.5">
-                                                            <Package className="w-3 h-3 text-gray-400" />
+                                                            <Package className="w-3 h-3 text-gray-400 dark:text-gray-300" />
                                                             {contract.package_name || 'Chưa chọn gói'}
                                                         </div>
-                                                        <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
+                                                        <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-300 text-[11px]">
                                                             <Clock className="w-3 h-3" />
                                                             {contract.contract_type || 'Dịch vụ'}
                                                         </div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
+                                                    <div className="flex flex-col text-sm text-gray-600 dark:text-gray-100">
                                                         <span className="text-sm font-medium text-red-600">
                                                             {contract.total_amount ? Number(contract.total_amount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
                                                         </span>
-                                                        <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
+                                                        <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-300 text-[11px]">
                                                             <CreditCard className="w-3 h-3" />
                                                             {contract.payment_method || 'N/A'}
                                                         </div>

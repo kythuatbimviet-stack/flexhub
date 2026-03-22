@@ -173,7 +173,7 @@ export default function CustomersPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Khách hàng</h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">Quản lý thông tin khách hàng và đối tác kinh doanh.</p>
+                    <p className="text-gray-500 dark:text-gray-300 mt-1">Quản lý thông tin khách hàng và đối tác kinh doanh.</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <AnimatePresence>
@@ -201,7 +201,7 @@ export default function CustomersPage() {
             <Card className="border-none shadow-sm dark:shadow-none rounded-2xl overflow-hidden bg-white dark:bg-gray-900 transition-all duration-300">
                 <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex flex-col lg:flex-row gap-4 justify-between bg-gray-50/50 dark:bg-gray-800/20">
                     <div className="relative max-w-sm w-full">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-300" />
                         <Input
                             placeholder="Tìm kiếm khách hàng..."
                             value={searchTerm}
@@ -214,14 +214,14 @@ export default function CustomersPage() {
                         <Button
                             variant="outline"
                             onClick={exportToExcel}
-                            className="rounded-xl border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 font-medium h-11"
+                            className="rounded-xl border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-100 font-medium h-11 px-3 sm:px-4 bg-white dark:bg-gray-900"
                         >
-                            <FileDown className="w-4 h-4 mr-2" />
-                            Xuất Excel
+                            <FileDown className="w-4 h-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Xuất Excel</span>
                         </Button>
-                        <Button variant="outline" className="rounded-xl border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 font-medium h-11">
-                            <Filter className="w-4 h-4 mr-2" />
-                            Lọc
+                        <Button variant="outline" className="rounded-xl border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-100 font-medium h-11 px-3 sm:px-4 bg-white dark:bg-gray-900">
+                            <Filter className="w-4 h-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Lọc</span>
                         </Button>
                     </div>
                 </div>

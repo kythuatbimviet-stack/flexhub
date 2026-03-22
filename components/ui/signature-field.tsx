@@ -48,7 +48,10 @@ export function SignatureField({ value, onChange, className }: SignatureFieldPro
 
         ctx.lineWidth = 2
         ctx.lineCap = 'round'
-        ctx.strokeStyle = '#000'
+        
+        // Dynamic stroke color based on dark mode
+        const isDarkMode = document.documentElement.classList.contains('dark')
+        ctx.strokeStyle = isDarkMode ? '#fff' : '#000'
 
         if (!isDrawing) {
             ctx.beginPath()

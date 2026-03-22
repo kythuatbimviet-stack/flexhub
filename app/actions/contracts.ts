@@ -131,28 +131,55 @@ export async function fetchContractById(id: string) {
 
 export async function createContract(contract: any) {
     const supabase = await createClient()
-    try {
-        const accessInfo = await getAccessFilter()
-        if (accessInfo) {
-            contract.created_by_email = accessInfo.user.email
+    const maxRetries = 5
+    let attempt = 0
+    let lastError = null
+
+    while (attempt < maxRetries) {
+        try {
+            const accessInfo = await getAccessFilter()
+            if (accessInfo) {
+                contract.created_by_email = accessInfo.user.email
+            }
+
+            // Always generate a fresh ID on the server to avoid race conditions from the client
+            const idResult = await generateContractId(contract.branch_id)
+            if (idResult.success && idResult.data) {
+                contract.id = idResult.data
+            }
+
+            const enriched = computeAmountTextFields(contract)
+            
+            const { data, error } = await supabase
+                .from('contracts')
+                .insert([enriched])
+                .select()
+                .maybeSingle()
+
+            if (error) {
+                // Check if it's a unique constraint violation (PostgreSQL code 23505)
+                if (error.code === '23505') {
+                    attempt++
+                    console.warn(`Unique constraint violation for ID ${contract.id}. Retrying... (Attempt ${attempt}/${maxRetries})`)
+                    continue 
+                }
+                throw error
+            }
+
+            if (!data) throw new Error('Không thể tạo hợp đồng')
+
+            revalidatePath('/contracts')
+            return { success: true, data }
+        } catch (error: any) {
+            lastError = error
+            console.error('Create Contract Error (Attempt ' + (attempt + 1) + '):', error)
+            // If it's not a retryable error, break early
+            if (error.code !== '23505') break
+            attempt++
         }
-
-        const enriched = computeAmountTextFields(contract)
-        
-        const { data, error } = await supabase
-            .from('contracts')
-            .insert([enriched])
-            .maybeSingle()
-
-        if (error) throw error
-        if (!data) throw new Error('Không thể tạo hợp đồng')
-
-        revalidatePath('/contracts')
-        return { success: true, data }
-    } catch (error: any) {
-        console.error('Create Contract Error:', error)
-        return { success: false, error: error.message }
     }
+
+    return { success: false, error: lastError?.message || 'Không thể tạo hợp đồng sau nhiều lần thử' }
 }
 
 export async function finalizeContract(id: string, finalizeData: any) {
