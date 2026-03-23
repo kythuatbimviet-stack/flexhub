@@ -30,6 +30,7 @@ import {
 import { toast } from 'sonner'
 import { updateUser, deleteUser } from '@/app/actions/users'
 import { cn } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/use-mobile'
 import {
     Select,
     SelectContent,
@@ -110,6 +111,7 @@ export function UserDetailsSheet({
     onOpenChange,
     onSuccess
 }: UserDetailsSheetProps) {
+    const isMobile = useIsMobile()
     const [isEditing, setIsEditing] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
     const [formData, setFormData] = React.useState<any>({})
@@ -197,10 +199,13 @@ export function UserDetailsSheet({
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
-                side="right"
-                resizable
+                side={isMobile ? "bottom" : "right"}
+                resizable={!isMobile}
                 showCloseButton={false}
-                className="w-full sm:max-w-[540px] border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
+                className={cn(
+                    "border-none shadow-2xl p-0 flex flex-col bg-slate-50 dark:bg-gray-950 font-inter transition-all duration-300",
+                    isMobile ? "h-[92vh] rounded-t-[32px]" : "h-full w-full sm:max-w-[540px]"
+                )}
             >
                 <SheetHeader className="sr-only">
                     <SheetTitle>{isEditing ? 'Chỉnh sửa nhân sự' : user.name}</SheetTitle>
@@ -208,76 +213,81 @@ export function UserDetailsSheet({
                 </SheetHeader>
 
                 {/* Sticky Header */}
-                <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
-                            <UserCircle className="w-6 h-6" />
+                <div className={cn(
+                    "sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-4 sm:px-5 py-3 flex items-center justify-between shrink-0",
+                    isMobile && "py-4"
+                )}>
+                    {isMobile && (
+                        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mb-2" />
+                    )}
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 shrink-0">
+                            <UserCircle className="w-5 h-5 sm:w-6 sm:h-6" />
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[14px] sm:text-sm font-bold text-slate-900 dark:text-white leading-tight truncate">
                                 {isEditing ? 'Chỉnh sửa nhân sự' : user.name}
                             </span>
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400">{user.email || 'Hệ thống ladyfit'}</span>
+                            <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate">{user.email || 'Ladyfit System'}</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                        {!isEditing && (
-                            <>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handleDelete}
-                                    className="sm:hidden rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
-                                    disabled={loading}
-                                >
-                                    <Trash2 className="w-5 h-5" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setIsEditing(true)}
-                                    className="sm:hidden rounded-full text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20"
-                                    disabled={loading}
-                                >
-                                    <Edit2 className="w-5 h-5" />
-                                </Button>
-                            </>
+                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                        {isEditing ? (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsEditing(false)}
+                                className="h-9 px-2 sm:px-4 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-all font-semibold active:scale-95"
+                            >
+                                <XCircle className="w-4 h-4 sm:mr-2" />
+                                <span className="hidden sm:inline text-xs">Hủy</span>
+                            </Button>
+                        ) : (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsEditing(true)}
+                                className="h-9 px-2 sm:px-4 rounded-xl text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950/20 transition-all font-semibold active:scale-95"
+                            >
+                                <Edit2 className="w-4 h-4 sm:mr-2" />
+                                <span className="hidden sm:inline text-xs">Sửa</span>
+                            </Button>
                         )}
                         <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => onOpenChange(false)}
-                            className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className="h-9 w-9 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
                         >
                             <X className="w-5 h-5 text-slate-400" />
                         </Button>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4">
+                <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4 pb-44 sm:pb-24">
                     {/* Top Profile Card */}
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-                        <div className="flex items-start gap-4 sm:gap-5">
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20 shrink-0">
+                    <div className="bg-white dark:bg-slate-900 rounded-[28px] p-5 sm:p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 text-center sm:text-left">
+                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/20 shrink-0">
                                 <UserCircle className="w-10 h-10 sm:w-12 sm:h-12" />
                             </div>
-                            <div className="flex-1 min-w-0 pt-1">
-                                <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">
+                            <div className="flex-1 min-w-0 pt-1 space-y-1">
+                                <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white truncate tracking-tight leading-none uppercase">
                                     {user.name}
                                 </h2>
-                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 truncate italic">
-                                    {user.position || 'Nhân sự ladyfit'}
+                                <p className="text-[13px] sm:text-sm text-slate-500 dark:text-slate-400 italic">
+                                    {user.position || 'Nhân sự Ladyfit'}
                                 </p>
-                                <div className="flex flex-wrap items-center gap-2 mt-3">
+                                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
                                     <div className={cn(
                                         "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
-                                        user.status === 'Activated' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" : "bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30"
+                                        user.status === 'Activated' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30 shadow-sm" : "bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 shadow-sm"
                                     )}>
                                         <div className={cn("w-1.5 h-1.5 rounded-full", user.status === 'Activated' ? "bg-emerald-500" : "bg-rose-500")} />
                                         {user.status === 'Activated' ? 'Đang hoạt động' : 'Tạm ngưng'}
                                     </div>
-                                    <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30">
-                                        ID: {user.id.slice(0, 8)}...
+                                    <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30 shadow-sm">
+                                        ID: {user.id.slice(0, 8)}
                                     </div>
                                 </div>
                             </div>
@@ -380,45 +390,53 @@ export function UserDetailsSheet({
                 </div>
 
                 {/* Sticky Footer */}
-                <div className="sticky bottom-0 bg-white dark:bg-gray-950 border-t border-slate-100 dark:border-slate-800 p-4 flex items-center justify-between gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0">
-                    <Button
-                        variant="ghost"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-xl h-11 px-6 font-bold text-[13px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-inter"
-                        disabled={loading}
-                    >
-                        Đóng
-                    </Button>
+                <div className={cn(
+                    "sticky bottom-0 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 p-4 sm:p-5 flex items-center justify-between gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0",
+                    isMobile && "pb-8"
+                )}>
+                    {!isMobile && (
+                        <Button
+                            variant="ghost"
+                            onClick={() => onOpenChange(false)}
+                            className="rounded-xl h-12 px-6 font-semibold text-[13px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95"
+                            disabled={loading}
+                        >
+                            Đóng cửa sổ
+                        </Button>
+                    )}
 
-                    <div className="flex items-center gap-2">
-                        {!isEditing && (
+                    <div className={cn(
+                        "flex items-center gap-2 flex-1",
+                        !isMobile && "max-w-[400px]"
+                    )}>
+                        {user && !isEditing && (
                             <Button
                                 variant="outline"
                                 onClick={handleDelete}
-                                className="rounded-xl h-11 px-4 font-bold text-[13px] border-red-50 text-red-500 hover:bg-red-50 hover:text-red-600 dark:border-red-900/30 dark:hover:bg-red-950/20 transition-all font-inter border-2"
+                                className="rounded-xl h-11 sm:h-12 px-4 font-semibold text-[13px] border-slate-200 text-rose-600 hover:bg-rose-50 hover:border-rose-100 dark:border-slate-800 dark:hover:bg-rose-950/20 transition-all active:scale-95"
                                 disabled={loading}
                             >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-5 h-5 sm:mr-2" />
+                                <span className="hidden sm:inline">Xóa nhân sự</span>
                             </Button>
                         )}
-
                         {isEditing ? (
                             <Button
                                 onClick={handleSave}
-                                className="rounded-xl h-11 px-8 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
+                                className="flex-1 h-11 sm:h-12 rounded-xl sm:rounded-2xl bg-slate-950 dark:bg-red-600 text-white font-bold shadow-lg active:scale-95 transition-all hover:bg-black dark:hover:bg-red-700"
                                 disabled={loading}
                             >
                                 <Save className="w-4 h-4 mr-2" />
-                                {loading ? 'Đang lưu...' : 'Lưu lại'}
+                                {loading ? 'Đang lưu...' : 'Lưu thông tin'}
                             </Button>
                         ) : (
                             <Button
                                 onClick={() => setIsEditing(true)}
-                                className="rounded-xl h-11 px-10 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
+                                className="flex-1 h-11 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-600 text-white font-bold shadow-lg active:scale-95 transition-all hover:bg-blue-700"
                                 disabled={loading}
                             >
                                 <Edit2 className="w-4 h-4 mr-2" />
-                                Sửa nhân sự
+                                {isMobile ? 'Sửa thông tin' : 'Chỉnh sửa'}
                             </Button>
                         )}
                     </div>

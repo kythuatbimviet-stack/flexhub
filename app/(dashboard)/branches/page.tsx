@@ -15,7 +15,8 @@ import {
     FileSpreadsheet,
     XCircle,
     Loader2,
-    RotateCcw
+    RotateCcw,
+    Plus
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -50,7 +51,6 @@ import { cn } from '@/lib/utils'
 import * as XLSX from 'xlsx'
 import { fetchBranches, bulkDeleteBranches } from '@/app/actions/branches'
 
-import { AddBranchDialog } from '@/components/branches/add-branch-dialog'
 import { BranchDetailsSheet } from '@/components/branches/branch-details-sheet'
 import { ImportBranchesDialog } from '@/components/branches/import-branches-dialog'
 
@@ -168,14 +168,17 @@ export default function BranchesPage() {
             <BranchDetailsSheet
                 branch={selectedBranch}
                 open={isDetailsOpen}
-                onOpenChange={setIsDetailsOpen}
+                onOpenChange={(open) => {
+                    setIsDetailsOpen(open)
+                    if (!open) setSelectedBranch(null)
+                }}
                 onSuccess={refetch}
             />
 
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 px-1">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                    <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-2 uppercase">
                         <Building2 className="w-8 h-8 text-red-600" />
                         Chi nhánh
                     </h1>
@@ -212,7 +215,16 @@ export default function BranchesPage() {
                         Xuất Excel
                     </Button>
 
-                    <AddBranchDialog onSuccess={refetch} />
+                    <Button
+                        onClick={() => {
+                            setSelectedBranch(null)
+                            setIsDetailsOpen(true)
+                        }}
+                        className="bg-red-600 hover:bg-red-700 text-white rounded-2xl px-6 h-12 font-semibold transition-all shadow-lg shadow-red-200 dark:shadow-none"
+                    >
+                        <Plus className="w-5 h-5 mr-2" />
+                        Thêm chi nhánh
+                    </Button>
                 </div>
             </div>
 
@@ -352,7 +364,7 @@ export default function BranchesPage() {
                                                         {branch.name}
                                                     </span>
                                                     {branch.short_name && (
-                                                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                                                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
                                                             {branch.short_name}
                                                         </span>
                                                     )}
@@ -381,7 +393,7 @@ export default function BranchesPage() {
                                         <TableCell>
                                             <div className="flex justify-center">
                                                 <span className={cn(
-                                                    "px-3 py-1 rounded-full text-[10px] font-bold tracking-wider transition-all shadow-sm",
+                                                    "px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider transition-all shadow-sm",
                                                     branch.status === 'Active'
                                                         ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20"
                                                         : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
@@ -398,7 +410,7 @@ export default function BranchesPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-52 rounded-2xl border-slate-100 dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-900 p-2">
-                                                    <DropdownMenuLabel className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tùy chọn</DropdownMenuLabel>
+                                                    <DropdownMenuLabel className="px-3 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Tùy chọn</DropdownMenuLabel>
                                                     <DropdownMenuItem
                                                         className="cursor-pointer gap-3 px-3 py-2.5 rounded-xl focus:bg-slate-50 dark:focus:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-xs"
                                                     >
@@ -423,7 +435,7 @@ export default function BranchesPage() {
 
                 <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-800/20 flex items-center justify-between">
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg shadow-sm border border-slate-50 dark:border-slate-800">
-                        Hiển thị <span className="font-bold text-slate-900 dark:text-white px-1">{filteredBranches?.length || 0}</span> trên tổng số {branches?.length || 0} chi nhánh
+                        Hiển thị <span className="font-semibold text-slate-900 dark:text-white px-1">{filteredBranches?.length || 0}</span> trên tổng số {branches?.length || 0} chi nhánh
                     </p>
                     <div className="flex gap-2">
                         <Button variant="outline" size="sm" className="rounded-lg h-9 px-4 font-semibold text-xs border-slate-200 dark:border-slate-800 text-slate-400 bg-white dark:bg-slate-900 disabled:opacity-20 transition-all" disabled>

@@ -17,7 +17,8 @@ import {
     TrendingUp,
     Clock,
     AlertCircle,
-    RotateCcw
+    RotateCcw,
+    Plus
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -43,6 +44,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from '@/components/ui/tabs'
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useQuery } from '@tanstack/react-query'
@@ -53,7 +60,6 @@ import * as XLSX from 'xlsx'
 import { fetchMemberships, bulkDeleteMemberships } from '@/app/actions/memberships'
 import { fetchBranches } from '@/app/actions/branches'
 
-import { AddMembershipDialog } from '@/components/memberships/add-membership-dialog'
 import { MembershipDetailsSheet } from '@/components/memberships/membership-details-sheet'
 import { ImportMembershipsDialog } from '@/components/memberships/import-memberships-dialog'
 
@@ -200,18 +206,21 @@ export default function PackagesPage() {
             <MembershipDetailsSheet
                 pkg={selectedPkg}
                 open={isDetailsOpen}
-                onOpenChange={setIsDetailsOpen}
+                onOpenChange={(open) => {
+                    setIsDetailsOpen(open)
+                    if (!open) setSelectedPkg(null)
+                }}
                 onSuccess={refetch}
             />
 
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 px-1">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                    <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-2 uppercase">
                         <Package className="w-8 h-8 text-red-600" />
                         Gói tập
                     </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Danh mục các gói dịch vụ Eva's Fit.</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium tracking-tight">Danh mục các gói dịch vụ Eva's Fit.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <AnimatePresence>
@@ -244,12 +253,44 @@ export default function PackagesPage() {
                         Xuất Excel
                     </Button>
 
-                    <AddMembershipDialog onSuccess={refetch} />
+                    <Button
+                        onClick={() => {
+                            setSelectedPkg(null)
+                            setIsDetailsOpen(true)
+                        }}
+                        className="bg-slate-950 dark:bg-red-600 hover:bg-black dark:hover:bg-red-700 text-white rounded-2xl px-6 h-12 font-semibold transition-all shadow-xl active:scale-95"
+                    >
+                        <Plus className="w-5 h-5 mr-2" />
+                        Thêm gói tập
+                    </Button>
                 </div>
             </div>
 
-            <Card className="border-none shadow-sm rounded-xl overflow-visible bg-white dark:bg-slate-900 transition-all duration-300 py-0">
-                <div className="py-1 px-1 sm:px-1.5 border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-800/20 rounded-xl">
+            <div className="flex flex-col gap-4">
+                <Tabs value={filterBranch} onValueChange={setFilterBranch} className="w-full">
+                    <div className="flex items-center justify-between gap-4 overflow-x-auto pb-2 scrollbar-none">
+                        <TabsList className="bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 h-12 inline-flex min-w-max">
+                            <TabsTrigger 
+                                value="all" 
+                                className="rounded-xl px-6 font-semibold text-[13px] data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all h-full"
+                            >
+                                Tất cả gói tập
+                            </TabsTrigger>
+                            {branches?.map((branch: any) => (
+                                <TabsTrigger 
+                                    key={branch.id} 
+                                    value={branch.id}
+                                    className="rounded-xl px-6 font-semibold text-[13px] data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all h-full"
+                                >
+                                    {branch.short_name || branch.name}
+                                </TabsTrigger>
+                            ))}
+                        </TabsList>
+                    </div>
+                </Tabs>
+
+                <Card className="border-none shadow-sm rounded-xl overflow-visible bg-white dark:bg-slate-900 transition-all duration-300 py-0">
+                    <div className="py-1 px-1 sm:px-1.5 border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-800/20 rounded-xl">
                     <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2">
                         {/* Search & Toggle Row */}
                         <div className="flex items-center gap-2 flex-1">
@@ -287,23 +328,11 @@ export default function PackagesPage() {
                                     className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2"
                                 >
                                     <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
-                                        <Select value={filterBranch} onValueChange={setFilterBranch}>
-                                            <SelectTrigger className="w-full lg:w-[150px] rounded-lg border-none h-9 bg-white dark:bg-slate-800 text-xs font-medium focus:ring-1 focus:ring-red-500 shadow-none">
-                                                <SelectValue placeholder="Chi nhánh" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                                <SelectItem value="all">Tất cả chi nhánh</SelectItem>
-                                                {branches?.map((branch: any) => (
-                                                    <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-
                                         <Select value={filterType} onValueChange={setFilterType}>
-                                            <SelectTrigger className="w-full lg:w-[150px] rounded-lg border-none h-9 bg-white dark:bg-slate-800 text-xs font-medium focus:ring-1 focus:ring-red-500 shadow-none">
+                                            <SelectTrigger className="w-full lg:w-[150px] rounded-lg border-none h-9 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-1 focus:ring-red-500 shadow-none">
                                                 <SelectValue placeholder="Hình thức" />
                                             </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800 font-inter">
                                                 <SelectItem value="all">Tất cả hình thức</SelectItem>
                                                 <SelectItem value="Trực tiếp">Trực tiếp</SelectItem>
                                                 <SelectItem value="Online">Online</SelectItem>
@@ -317,7 +346,7 @@ export default function PackagesPage() {
                                             className="h-9 px-3 rounded-lg text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 dark:hover:border-red-900/30 transition-all shrink-0 col-span-2 lg:col-span-1 justify-center lg:w-auto"
                                         >
                                             <RotateCcw className="w-4 h-4 mr-2 lg:mr-0" />
-                                            <span className="lg:hidden text-sm font-medium">Làm mới bộ lọc</span>
+                                            <span className="lg:hidden text-sm font-semibold">Làm mới bộ lọc</span>
                                         </Button>
                                     </div>
                                 </motion.div>
@@ -424,11 +453,11 @@ export default function PackagesPage() {
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex flex-col items-end">
-                                                <span className="text-[15px] font-bold text-slate-900 dark:text-white">
+                                                <span className="text-[15px] font-semibold text-slate-900 dark:text-white">
                                                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pkg.unit_price)}
                                                 </span>
                                                 {pkg.discounted_price && (
-                                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
                                                         Ưu đãi: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pkg.discounted_price)}
                                                     </span>
                                                 )}
@@ -441,8 +470,8 @@ export default function PackagesPage() {
                                                         <MoreHorizontal className="h-5 w-5" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-52 rounded-2xl border-slate-100 dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-900 p-2">
-                                                    <DropdownMenuLabel className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tùy chọn</DropdownMenuLabel>
+                                                <DropdownMenuContent align="end" className="w-52 rounded-2xl border-slate-100 dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-900 p-2 font-inter">
+                                                    <DropdownMenuLabel className="px-3 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Tùy chọn</DropdownMenuLabel>
                                                     <DropdownMenuItem
                                                         className="cursor-pointer gap-3 px-3 py-2.5 rounded-xl focus:bg-slate-50 dark:focus:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-xs"
                                                     >
@@ -479,6 +508,7 @@ export default function PackagesPage() {
                     </div>
                 </div>
             </Card>
+            </div>
         </div>
     )
 }

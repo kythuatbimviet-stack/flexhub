@@ -42,19 +42,30 @@ export function ImportBranchesDialog({ onSuccess }: { onSuccess: () => void }) {
     const downloadTemplate = () => {
         const template = [
             {
+                id: 'CN01',
                 name: 'Eva\'s Fit Thanh Xuân',
-                short_name: 'LF TX',
+                short_name: 'EF TX',
+                brand_code: 'EF',
                 address: 'Số 123 Nguyễn Trãi, Thanh Xuân, Hà Nội',
+                center_address: 'Số 123 Nguyễn Trãi, Thanh Xuân, Hà Nội',
                 phone: '024.1234.5678',
+                center_phone: '024.1234.5678',
                 representative: 'Nguyễn Văn A',
-                banking_info: 'Vietcombank - 1234567890 - Nguyen Van A',
-                status: 'Active'
+                legal_representative: 'Nguyễn Văn A',
+                representative_phone: '0901234567',
+                bank_name: 'Vietcombank',
+                bank_code: '970436',
+                account_number: '1234567890',
+                account_holder: 'NGUYEN VAN A',
+                logo_url: 'https://example.com/logo.png',
+                signature_center: 'https://example.com/sig.png',
+                url_guimail: 'https://script.google.com/macros/s/.../exec'
             }
         ]
         const worksheet = XLSX.utils.json_to_sheet(template)
         const workbook = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Template')
-        XLSX.writeFile(workbook, 'LadyFit_Branches_Template.xlsx')
+        XLSX.writeFile(workbook, 'EvaFit_Branches_Template.xlsx')
     }
 
     const handleImport = async () => {
@@ -70,13 +81,24 @@ export function ImportBranchesDialog({ onSuccess }: { onSuccess: () => void }) {
                 const json = XLSX.utils.sheet_to_json(worksheet) as any[]
 
                 const branchesToCreate = json.map(b => ({
+                    id: b.id?.toString(),
                     name: b.name?.toString(),
                     short_name: b.short_name?.toString(),
+                    brand_code: b.brand_code?.toString(),
                     address: b.address?.toString(),
+                    center_address: b.center_address?.toString(),
                     phone: b.phone?.toString(),
+                    center_phone: b.center_phone?.toString(),
                     representative: b.representative?.toString(),
-                    banking_info: b.banking_info?.toString(),
-                    status: b.status?.toString() || 'Active'
+                    legal_representative: b.legal_representative?.toString(),
+                    representative_phone: b.representative_phone?.toString(),
+                    bank_name: b.bank_name?.toString(),
+                    bank_code: b.bank_code?.toString(),
+                    account_number: b.account_number ? parseInt(b.account_number.toString()) : null,
+                    account_holder: b.account_holder?.toString(),
+                    logo_url: b.logo_url?.toString(),
+                    signature_center: b.signature_center?.toString(),
+                    url_guimail: b.url_guimail?.toString()
                 }))
 
                 const result = await bulkCreateBranches(branchesToCreate)
@@ -109,7 +131,7 @@ export function ImportBranchesDialog({ onSuccess }: { onSuccess: () => void }) {
             <DialogContent className="max-w-xl rounded-3xl border-none shadow-2xl bg-white dark:bg-slate-950 p-0 overflow-hidden font-inter">
                 <div className="p-8 border-b border-slate-100 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-900/50">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-semibold text-slate-900 dark:text-white flex items-center gap-3">
+                        <DialogTitle className="text-2xl font-semibold text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-tight">
                             <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600">
                                 <FileUp className="w-5 h-5" />
                             </div>
@@ -144,7 +166,7 @@ export function ImportBranchesDialog({ onSuccess }: { onSuccess: () => void }) {
 
                     {previewData.length > 0 && (
                         <div className="space-y-3">
-                            <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pl-1">Xem trước dữ liệu (5 dòng đầu)</h4>
+                            <h4 className="text-[11px] font-medium text-slate-400 uppercase tracking-widest pl-1">Xem trước dữ liệu (5 dòng đầu)</h4>
                             <div className="border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
                                 <table className="w-full text-xs text-left">
                                     <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b border-slate-100 dark:border-slate-800">
@@ -189,7 +211,7 @@ export function ImportBranchesDialog({ onSuccess }: { onSuccess: () => void }) {
                         <Button
                             onClick={handleImport}
                             disabled={!file || loading}
-                            className="rounded-xl h-11 px-8 bg-slate-950 dark:bg-red-600 text-white hover:bg-black dark:hover:bg-red-700 font-bold text-xs shadow-xl active:scale-95 transition-all"
+                            className="rounded-xl h-11 px-8 bg-slate-950 dark:bg-red-600 text-white hover:bg-black dark:hover:bg-red-700 font-semibold text-xs shadow-xl active:scale-95 transition-all"
                         >
                             {loading ? (
                                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Đang xử lý...</>
