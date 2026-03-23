@@ -64,6 +64,7 @@ import { fetchBranches } from '@/app/actions/branches'
 import { fetchUsers } from '@/app/actions/users'
 import { toast } from 'sonner'
 import { updateContract, deleteContract } from '@/app/actions/contracts'
+import { addDays, format } from 'date-fns'
 import { updateClient } from '@/app/actions/clients'
 import { uploadSignature } from '@/app/actions/storage'
 import { SignatureField } from '@/components/ui/signature-field'
@@ -265,6 +266,28 @@ export function ContractDetailsSheet({
         const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
         return days > 0 ? `${days} ngày` : 'Hết hạn'
     }, [formData.end_date])
+
+    // Auto-calculate end_date based on start_date and total_sessions (1 session = 2.5 days)
+    React.useEffect(() => {
+        if (!isEditing || !formData.start_date || !formData.total_sessions) return
+
+        try {
+            const startDate = new Date(formData.start_date)
+            const sessions = parseInt(formData.total_sessions.toString())
+            if (!isNaN(startDate.getTime()) && !isNaN(sessions)) {
+                // Calculation: 1 session = 2.5 days (e.g., 36 sessions = 90 days)
+                const days = Math.floor(sessions * 2.5)
+                const newEndDate = addDays(startDate, days)
+                const formattedEndDate = format(newEndDate, 'yyyy-MM-dd')
+                
+                if (formattedEndDate !== formData.end_date) {
+                    setFormData((prev: any) => ({ ...prev, end_date: formattedEndDate }))
+                }
+            }
+        } catch (e) {
+            console.error('Error calculating end_date:', e)
+        }
+    }, [formData.start_date, formData.total_sessions, isEditing, formData.end_date])
 
     const sharedRowProps = React.useMemo(() => ({ isEditing, formData, onChange: handleInputChange }), [isEditing, formData, handleInputChange])
 

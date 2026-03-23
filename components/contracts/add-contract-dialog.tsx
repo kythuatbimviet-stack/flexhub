@@ -64,7 +64,7 @@ import {
 } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
-import { createContract, generateContractId } from '@/app/actions/contracts'
+import { createContract, generateContractId, checkContractIdExists } from '@/app/actions/contracts'
 import { fetchClients } from '@/app/actions/clients'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchMemberships } from '@/app/actions/memberships'
@@ -84,6 +84,7 @@ const contractFormSchema = z.object({
     contract_name: z.string().optional(),
     start_date: z.string().min(1, { message: 'Vui lòng chọn ngày bắt đầu' }),
     end_date: z.string().optional(),
+    membership_id: z.string().min(1, { message: 'Vui lòng chọn gói tập' }),
     package_name: z.string().min(1, { message: 'Vui lòng chọn gói tập' }),
     package_price: z.string().optional(),
     total_amount: z.string().min(1, { message: 'Vui lòng nhập giá hợp đồng' }),
@@ -170,6 +171,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             contract_name: '',
             start_date: new Date().toISOString().split('T')[0],
             end_date: '',
+            membership_id: '',
             package_name: '',
             package_price: '',
             total_amount: '',
@@ -445,6 +447,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
         if (pkg) {
             selectedPackageRef.current = pkg
             setSelectedPackageId(packageId)
+            form.setValue('membership_id', packageId)
             form.setValue('package_name', pkg.package_name)
             const unitPrice = pkg.discounted_price || pkg.unit_price
             const qty = parseInt(form.getValues('quantity') || '1')
@@ -464,6 +467,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
 
     // Auto-calculate prices
     const watchQuantity = form.watch('quantity')
+    const watchStartDate = form.watch('start_date')
 
     React.useEffect(() => {
         if (selectedPackageRef.current) {
@@ -473,14 +477,14 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             const pkgPrice = unitPrice * qty
             form.setValue('package_price', pkgPrice.toString())
 
-            // Re-calculate end date based on qty
-            if (form.getValues('start_date') && pkg.duration_days) {
-                const startDate = new Date(form.getValues('start_date'))
+            // Re-calculate end date based on qty and start_date
+            if (watchStartDate && pkg.duration_days) {
+                const startDate = new Date(watchStartDate)
                 const endDate = addDays(startDate, parseInt(pkg.duration_days) * qty)
                 form.setValue('end_date', endDate.toISOString().split('T')[0])
             }
         }
-    }, [watchQuantity, form])
+    }, [watchQuantity, watchStartDate, form])
 
     React.useEffect(() => {
         const pkgPrice = parseFloat(form.getValues('package_price') || '0')
@@ -502,6 +506,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
     React.useEffect(() => {
         if (!open) return
         if (prevBranchRef.current && prevBranchRef.current !== watchBranchId) {
+            form.setValue('membership_id', '')
             form.setValue('package_name', '')
             form.setValue('package_price', '')
             form.setValue('total_amount', '')
@@ -512,7 +517,28 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
         prevBranchRef.current = watchBranchId
     }, [watchBranchId, open, form])
 
-    // ID generation is now handled on the server to prevent race conditions
+    // ID generation is now handled on the server by default, but we fetch a suggestion for the user
+    React.useEffect(() => {
+        if (open && watchBranchId) {
+            const fetchSuggestedId = async () => {
+                setGeneratingId(true)
+                try {
+                    const res = await generateContractId(watchBranchId)
+                    if (res.success && res.data) {
+                        // Only set if the field is currently empty to avoid overwriting user edits
+                        if (!form.getValues('id')) {
+                            form.setValue('id', res.data)
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching suggested ID:', error)
+                } finally {
+                    setGeneratingId(false)
+                }
+            }
+            fetchSuggestedId()
+        }
+    }, [open, watchBranchId, form])
 
     async function onSubmit(values: z.infer<typeof contractFormSchema>) {
         setLoading(true)
@@ -520,6 +546,16 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             const formData = {
                 ...values,
                 status: 'Chờ ký HĐ', // Default status for new contracts
+            }
+
+            // Check if ID already exists
+            const checkRes = await checkContractIdExists(values.id)
+            if (checkRes.success && checkRes.exists) {
+                const proceed = window.confirm(`Số hợp đồng "${values.id}" đã tồn tại. Bạn có chắc chắn muốn tiếp tục với số này? (Lưu ý: Có thể gây lỗi trùng lặp khi lưu)`)
+                if (!proceed) {
+                    setLoading(false)
+                    return
+                }
             }
 
             const result = await createContract(formData)
@@ -938,23 +974,36 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                 Gói dịch vụ
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormItem>
-                                    <FormLabel className="text-[10px] text-gray-600 dark:text-gray-300 font-medium tracking-tight">Chọn Gói tập (Sẵn có)</FormLabel>
-                                    <Select onValueChange={(e: string) => onPackageChange(e)} value={selectedPackageId}>
-                                        <FormControl>
-                                            <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11 overflow-hidden">
-                                                <SelectValue placeholder={watchBranchId ? (filteredPackages.length > 0 ? 'Chọn gói tập...' : 'Không có gói tập cho chi nhánh này') : 'Chọn khách hàng trước...'} className="truncate" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800" position="popper" sideOffset={4}>
-                                            {filteredPackages.map((pkg: any) => (
-                                                <SelectItem key={`pkg-${pkg.id}`} value={pkg.id}>
-                                                    {pkg.package_name} ({pkg.duration_days} ngày)
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </FormItem>
+                                <FormField
+                                    control={form.control}
+                                    name="membership_id"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-300 font-medium tracking-tight">Chọn Gói tập (Sẵn có) <span className="text-red-600">*</span></FormLabel>
+                                            <Select 
+                                                onValueChange={(val) => {
+                                                    field.onChange(val)
+                                                    onPackageChange(val)
+                                                }} 
+                                                value={field.value}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger className="w-full min-w-0 rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11 overflow-hidden">
+                                                        <SelectValue placeholder={watchBranchId ? (filteredPackages.length > 0 ? 'Chọn gói tập...' : 'Không có gói tập cho chi nhánh này') : 'Chọn khách hàng trước...'} className="truncate" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800" position="popper" sideOffset={4}>
+                                                    {filteredPackages.map((pkg: any) => (
+                                                        <SelectItem key={`pkg-${pkg.id}`} value={pkg.id}>
+                                                            {pkg.package_name} ({pkg.duration_days} ngày)
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                                 <FormField
                                     control={form.control}
                                     name="package_name"
@@ -1203,12 +1252,18 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                         <FormItem>
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-300 font-medium tracking-tight">Số Hợp đồng</FormLabel>
                                             <FormControl>
-                                                <Input
-                                                    readOnly
-                                                    placeholder="Sẽ được tạo tự động"
-                                                    {...field}
-                                                    className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 h-11 font-bold font-mono text-sm text-gray-900 dark:text-white"
-                                                />
+                                                <div className="relative">
+                                                    <Input
+                                                        placeholder="Nhập số hợp đồng..."
+                                                        {...field}
+                                                        className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white h-11 font-bold font-mono text-sm text-gray-900 dark:text-white"
+                                                    />
+                                                    {generatingId && (
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
