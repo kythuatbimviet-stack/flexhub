@@ -5,7 +5,7 @@ import {
     Search, Filter, MoreHorizontal, Edit2, Trash2, Mail, Phone,
     FileDown, Trash, Loader2, Activity, Dumbbell, RotateCcw,
     ChevronRight, ChevronLeft, TrendingUp, Users, Target, UserStar, Check,
-    Building2, FilePlus2, ArrowUpDown, ChevronUp, ChevronDown
+    Building2, FilePlus2, ArrowUpDown, ChevronUp, ChevronDown, Plus
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -21,7 +21,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 import { cn } from '@/lib/utils'
-import { AddClientDialog } from '@/components/clients/add-client-dialog'
 import { fetchClientConfigs } from '@/app/actions/config-params'
 import { ClientDetailsSheet } from '@/components/clients/client-details-sheet'
 import { ImportExcelClientDialog } from '@/components/clients/import-excel-client-dialog'
@@ -285,7 +284,12 @@ export default function ClientsPage() {
                             <FileDown className="w-4.5 h-4.5 mr-2" />
                             <span className="hidden sm:inline">Xuất Excel</span>
                         </Button>
-                        <AddClientDialog onSuccess={refetch} />
+                        <Button onClick={() => { setSelectedClient(null); setIsDetailsOpen(true); }} 
+                            className="bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 h-11 transition-colors shadow-sm font-medium dark:shadow-red-900/20 active:scale-95">
+                            <Plus className="w-4 h-4 mr-2" />
+                            <span className="hidden sm:inline">Thêm Khách hàng</span>
+                            <span className="sm:hidden">Thêm mới</span>
+                        </Button>
                     </div>
                 </div>
             </div>
