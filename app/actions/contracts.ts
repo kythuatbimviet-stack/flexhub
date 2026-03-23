@@ -87,8 +87,8 @@ export async function fetchContracts() {
             .from('contracts')
             .select(`
                 *,
-                clients (member_name, phone),
-                branches (name)
+                clients (member_name, phone, avatar_url, dob, status, source, signature_url, height, weight, medical_history),
+                branches (name, account_number, account_holder, bank_name, bank_code, representative, address, center_phone, center_address)
             `)
             .order('created_at', { ascending: false })
 

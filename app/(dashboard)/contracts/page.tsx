@@ -50,7 +50,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { fetchContracts, bulkDeleteContracts } from '@/app/actions/contracts'
 
-import { AddContractDialog } from '@/components/contracts/add-contract-dialog'
 import { ContractDetailsSheet } from '@/components/contracts/contract-details-sheet'
 import { ImportExcelContractDialog } from '@/components/contracts/import-excel-contract-dialog'
 import { fetchBranches } from '@/app/actions/branches'
@@ -332,7 +331,16 @@ export default function ContractsPage() {
                                 <span className="text-sm">HĐ Đến hạn</span>
                             </Link>
                         </Button>
-                        <AddContractDialog onSuccess={refetch} />
+                        <Button 
+                            onClick={() => {
+                                setSelectedContract(null)
+                                setIsDetailsOpen(true)
+                            }}
+                            className="rounded-xl h-11 px-6 font-bold text-[13px] bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-100 dark:shadow-red-900/20 transition-all font-inter active:scale-95"
+                        >
+                            <FileText className="w-4 h-4 mr-2" />
+                            Tạo Hợp đồng
+                        </Button>
                     </div>
                 </div>
             </div>

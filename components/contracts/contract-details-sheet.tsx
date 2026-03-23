@@ -21,6 +21,7 @@ import {
     Package,
     Dumbbell,
     Edit2,
+    Edit3,
     Save,
     Trash2,
     X,
@@ -40,8 +41,18 @@ import {
     Search,
     ShieldCheck,
     Activity,
-    AlertCircle
+    AlertCircle,
+    MoreHorizontal,
+    Users,
+    ChevronDown,
 } from 'lucide-react'
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
 import {
     Select,
     SelectContent,
@@ -60,16 +71,18 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from '@/components/ui/badge'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchUsers } from '@/app/actions/users'
 import { toast } from 'sonner'
-import { updateContract, deleteContract } from '@/app/actions/contracts'
+import { updateContract, deleteContract, createContract, generateContractId, checkContractIdExists } from '@/app/actions/contracts'
 import { addDays, format } from 'date-fns'
-import { updateClient } from '@/app/actions/clients'
+import { updateClient, fetchClients } from '@/app/actions/clients'
 import { uploadSignature } from '@/app/actions/storage'
 import { SignatureField } from '@/components/ui/signature-field'
 import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
-import { cn } from '@/lib/utils'
+import { fetchMemberships } from '@/app/actions/memberships'
+import { cn, numberToVietnameseWords, getVietQRUrl } from '@/lib/utils'
 import { createClient } from '@/lib/supabase'
 import { FinalizeContractDialog } from './finalize-contract-dialog'
 import { usePermissions } from '@/hooks/use-permissions'
@@ -78,17 +91,17 @@ import { canAccessRecord } from '@/lib/permissions'
 // ─── Component con nằm NGOÀI component cha để tránh re-mount khi state thay đổi ───
 const ContractCardSection = ({ title, icon: Icon, children }: any) => (
     <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-        <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
-                <Icon className="w-4 h-4" />
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-50 dark:border-slate-800/50">
+            <div className="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-950/30 flex items-center justify-center text-red-600 dark:text-red-400 shrink-0">
+                {Icon && <Icon className="w-4 h-4" />}
             </div>
-            <h3 className="text-[12px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">{title}</h3>
+            <h3 className="text-sm font-medium text-slate-900 dark:text-white tracking-tight">{title}</h3>
         </div>
         {children}
     </div>
 )
 
-const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEditing, formData, onChange }: any) => {
+const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEditing, formData, onChange, children }: any) => {
     const isCurrency = ['package_price', 'discounted_price', 'total_amount'].includes(name)
     
     // Format the value for display in the input while editing
@@ -111,21 +124,28 @@ const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEd
     }
 
     return (
-        <div className="space-y-1.5 w-full">
-            <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-                {Icon && <Icon className="w-3 h-3" />}
-                {label} {isEditing && ['package_name', 'payment_method', 'quantity', 'total_amount', 'status', 'id_number', 'email'].includes(name) && <span className="text-red-500">*</span>}
+        <div className="space-y-1.5 w-full text-left">
+            <Label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                {Icon && <Icon className="w-3 h-3 text-red-500/70" />}
+                {label} {isEditing && ['package_name', 'payment_method', 'quantity', 'total_amount', 'status', 'id_number', 'email', 'client_id', 'membership_id'].includes(name) && <span className="text-red-500">*</span>}
             </Label>
             {isEditing ? (
-                <Input
-                    name={name}
-                    type={isCurrency ? 'text' : type}
-                    value={getEditValue()}
-                    onChange={handleInternalChange}
-                    className="w-full rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-300"
-                />
+                children ? (
+                    children
+                ) : (
+                    <Input
+                        name={name}
+                        type={isCurrency ? 'text' : type}
+                        value={getEditValue()}
+                        onChange={handleInternalChange}
+                        className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 text-sm focus:ring-2 focus:ring-red-500/20 outline-none transition-all placeholder:text-slate-300"
+                    />
+                )
             ) : (
-                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-100 min-h-[20px] w-full break-words">
+                <p className={cn(
+                    "text-[15px] font-medium min-h-[20px] w-full break-words",
+                    name === 'id' ? "text-red-600 dark:text-red-500" : "text-slate-900 dark:text-slate-100"
+                )}>
                     {type === 'number' && value ? (['quantity', 'total_sessions', 'package_duration'].includes(name) ? Number(value).toLocaleString('vi-VN') : Number(value).toLocaleString('vi-VN') + ' ₫') : (value || '-')}
                 </p>
             )}
@@ -139,20 +159,26 @@ interface ContractDetailsSheetProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess: () => void
+    initialClientId?: string
+    initialClient?: any
 }
 
 export function ContractDetailsSheet({
     contract,
     open,
     onOpenChange,
-    onSuccess
+    onSuccess,
+    initialClientId,
+    initialClient
 }: ContractDetailsSheetProps) {
     const isMobile = useIsMobile()
+    const isCreateMode = !contract
     const [isEditing, setIsEditing] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
     const [formData, setFormData] = React.useState<any>({})
     const { permissions, user: currentUser, isLoading: permsLoading } = usePermissions()
     const avatarInputRef = React.useRef<HTMLInputElement>(null)
+    const [generatingId, setGeneratingId] = React.useState(false)
 
     const hasAccess = React.useMemo(() => {
         if (!currentUser || !contract) return false
@@ -167,6 +193,13 @@ export function ContractDetailsSheet({
     const [ptOpen, setPtOpen] = React.useState(false)
     const [showFinalizeDialog, setShowFinalizeDialog] = React.useState(false)
     const [generatingPdf, setGeneratingPdf] = React.useState(false)
+    const [clients, setClients] = React.useState<any[]>([])
+    const [clientSearchTerm, setClientSearchTerm] = React.useState('')
+    const [clientOpen, setClientOpen] = React.useState(false)
+    const [packages, setPackages] = React.useState<any[]>([])
+    const [packageSearchTerm, setPackageSearchTerm] = React.useState('')
+    const [packageOpen, setPackageOpen] = React.useState(false)
+    const [selectedPackageId, setSelectedPackageId] = React.useState<string>('')
 
     const defaultStatus = React.useMemo(() => {
         return statuses.find(s => s.is_default)?.nam || statuses[0]?.nam || 'Chờ ký HĐ'
@@ -175,16 +208,20 @@ export function ContractDetailsSheet({
     React.useEffect(() => {
         if (open) {
             const loadData = async () => {
-                const [branchesRes, statusRes, trainerTypeRes, usersRes] = await Promise.all([
+                const [branchesRes, statusRes, trainerTypeRes, usersRes, clientsRes, membershipsRes] = await Promise.all([
                     fetchBranches(),
                     fetchConfigParams('config_contract_status'),
                     fetchConfigParams('config_contract_trainer_type'),
-                    fetchUsers()
+                    fetchUsers(),
+                    fetchClients(),
+                    fetchMemberships()
                 ])
                 if (branchesRes.success) setBranches(branchesRes.data || [])
                 if (statusRes.success) setStatuses(statusRes.data || [])
                 if (trainerTypeRes.success) setTrainerTypes(trainerTypeRes.data || [])
                 if (usersRes.success) setUsers(usersRes.data || [])
+                if (clientsRes.success) setClients(clientsRes.data || [])
+                if (membershipsRes.success) setPackages(membershipsRes.data || [])
             }
             loadData()
         }
@@ -192,7 +229,6 @@ export function ContractDetailsSheet({
 
     React.useEffect(() => {
         if (contract) {
-            // Include client's avatar and core info in the form data
             setFormData({
                 ...contract,
                 avatar_url: contract.clients?.avatar_url || '',
@@ -201,10 +237,85 @@ export function ContractDetailsSheet({
                 medical_condition: contract.medical_condition || contract.medical_history || '',
                 initial_height: contract.initial_height?.toString() || '',
                 initial_weight: contract.initial_weight?.toString() || '',
+                account_number: contract.account_number || contract.branches?.account_number || '',
+                account_holder: contract.account_holder || contract.branches?.account_holder || '',
+                bank_name: contract.bank_name || contract.branches?.bank_name || '',
+                bank_code: contract.bank_code || contract.branches?.bank_code || '',
             })
             setIsEditing(false)
+        } else if (open && isCreateMode) {
+            setIsEditing(true)
+            const initialData: any = {
+                status: defaultStatus,
+                start_date: format(new Date(), 'yyyy-MM-dd'),
+                contract_type: 'Hội viên',
+                quantity: '1',
+                payment_method: 'Tiền mặt',
+                package_type: 'offline',
+            }
+
+            // Handle pre-filled client
+            const targetClient = initialClient || (initialClientId ? clients.find(c => c.id === initialClientId) : null)
+            if (targetClient) {
+                initialData.client_id = targetClient.id
+                initialData.member_name = targetClient.member_name
+                initialData.phone = targetClient.phone || ''
+                initialData.email = targetClient.email || ''
+                initialData.member_address = targetClient.member_address || targetClient.address || ''
+                initialData.trainer_name = targetClient.pt_name || ''
+                initialData.dob = targetClient.dob ? targetClient.dob.split('T')[0] : ''
+                initialData.avatar_url = targetClient.avatar_url || ''
+                initialData.assigned_pt = targetClient.assigned_pt || ''
+                initialData.branch_id = targetClient.branch_id || ''
+                initialData.initial_height = targetClient.height?.toString() || ''
+                initialData.initial_weight = targetClient.weight?.toString() || ''
+                initialData.medical_condition = targetClient.medical_history || ''
+                initialData.signature_url = targetClient.signature_url || ''
+            }
+
+            // If we have a branch, generate ID
+            const branchId = initialData.branch_id || branches[0]?.id
+            if (branchId) {
+                initialData.branch_id = branchId
+                const branch = branches.find((b: any) => b.id === branchId)
+                if (branch) {
+                    initialData.facility_name = branch.name || ''
+                    initialData.address = branch.address || ''
+                    initialData.center_phone = branch.center_phone || branch.phone || ''
+                    initialData.center_address = branch.center_address || branch.address || ''
+                    initialData.center_representative = branch.representative || ''
+                    initialData.signature_center = branch.representative || ''
+                    initialData.account_number = branch.account_number?.toString() || ''
+                    initialData.account_holder = branch.account_holder || ''
+                    initialData.bank_name = branch.bank_name || ''
+                }
+                const fetchId = async () => {
+                    setGeneratingId(true)
+                    const res = await generateContractId(branchId)
+                    if (res.success) setFormData((prev: any) => ({ ...prev, id: res.data }))
+                    setGeneratingId(false)
+                }
+                fetchId()
+            }
+
+            setFormData(initialData)
         }
-    }, [contract])
+    }, [contract, open, isCreateMode, initialClient, initialClientId, clients, branches, defaultStatus])
+
+    const filteredClients = React.useMemo(() => {
+        if (!clientSearchTerm) return clients
+        const term = clientSearchTerm.toLowerCase()
+        return clients.filter((client: any) =>
+            client.member_name?.toLowerCase().includes(term) ||
+            client.phone?.toLowerCase().includes(term) ||
+            client.email?.toLowerCase().includes(term)
+        )
+    }, [clients, clientSearchTerm])
+
+    const filteredPackages = React.useMemo(() => {
+        if (!formData.branch_id) return []
+        return packages.filter((pkg: any) => pkg.branch_id === formData.branch_id)
+    }, [packages, formData.branch_id])
 
     // Listen for Realtime updates to the PDF URL
     React.useEffect(() => {
@@ -237,9 +348,112 @@ export function ContractDetailsSheet({
         }
     }, [open, contract?.id])
 
+    const handleClientChange = (clientId: string) => {
+        const client = clients.find(c => c.id === clientId)
+        if (client) {
+            setFormData((prev: any) => {
+                const newData = {
+                    ...prev,
+                    client_id: client.id,
+                    member_name: client.member_name,
+                    phone: client.phone || '',
+                    email: client.email || '',
+                    member_address: client.member_address || client.address || '',
+                    trainer_name: client.pt_name || '',
+                    dob: client.dob ? client.dob.split('T')[0] : '',
+                    avatar_url: client.avatar_url || '',
+                    assigned_pt: client.assigned_pt || '',
+                    branch_id: client.branch_id || prev.branch_id,
+                    initial_height: client.height?.toString() || '',
+                    initial_weight: client.weight?.toString() || '',
+                    medical_condition: client.medical_history || '',
+                    signature_url: client.signature_url || '',
+                    source: client.source || '',
+                }
+                if (client.branch_id && client.branch_id !== prev.branch_id) {
+                    handleBranchChange(client.branch_id)
+                }
+                return newData
+            })
+        }
+    }
+
+    const handleBranchChange = async (branchId: string) => {
+        setGeneratingId(true)
+        const res = await generateContractId(branchId)
+        if (res.success) {
+            const branch = branches.find((b: any) => b.id === branchId)
+            setFormData((prev: any) => ({ 
+                ...prev, 
+                branch_id: branchId, 
+                id: res.data,
+                facility_name: branch?.name || '',
+                address: branch?.address || '',
+                center_phone: branch?.center_phone || branch?.phone || '',
+                center_address: branch?.center_address || branch?.address || '',
+                center_representative: branch?.representative || '',
+                signature_center: branch?.representative || '',
+                account_number: branch?.account_number?.toString() || '',
+                account_holder: branch?.account_holder || '',
+                bank_name: branch?.bank_name || '',
+                bank_code: branch?.bank_code || '',
+                membership_id: '',
+                package_name: '',
+                package_price: '0',
+                total_amount: '0',
+                package_duration: '',
+                end_date: ''
+            }))
+        }
+        setGeneratingId(false)
+    }
+
+    const handlePackageChange = (packageId: string) => {
+        const pkg = packages.find(p => p.id === packageId)
+        if (pkg) {
+            const unitPrice = pkg.discounted_price || pkg.unit_price || 0
+            const qty = parseInt(formData.quantity || '1')
+            const pkgPrice = unitPrice * qty
+            const startDate = new Date(formData.start_date || new Date())
+            const duration = parseInt(pkg.duration_days || '0')
+            const endDate = addDays(startDate, duration * qty)
+
+            setFormData((prev: any) => ({
+                ...prev,
+                membership_id: packageId,
+                package_name: pkg.package_name,
+                package_price: pkgPrice.toString(),
+                total_amount: pkgPrice.toString(),
+                package_duration: pkg.duration_days?.toString() || '',
+                end_date: format(endDate, 'yyyy-MM-dd')
+            }))
+        }
+    }
+
     const handleInputChange = (eOrName: React.ChangeEvent<HTMLInputElement> | string, value?: string) => {
         if (typeof eOrName === 'string') {
-            setFormData((prev: any) => ({ ...prev, [eOrName]: value }))
+            setFormData((prev: any) => {
+                const newData = { ...prev, [eOrName]: value }
+                
+                // Trigger recalculations if quantity or start_date changes
+                if (eOrName === 'quantity' || eOrName === 'start_date') {
+                    const pkg = packages.find(p => p.id === prev.membership_id)
+                    if (pkg) {
+                        const unitPrice = pkg.discounted_price || pkg.unit_price || 0
+                        const qty = parseInt(newData.quantity || '1')
+                        const pkgPrice = unitPrice * qty
+                        const startDate = new Date(newData.start_date || new Date())
+                        const duration = parseInt(pkg.duration_days || '0')
+                        const endDate = addDays(startDate, duration * qty)
+                        
+                        newData.package_price = pkgPrice.toString()
+                        newData.total_amount = pkgPrice.toString()
+                        newData.end_date = format(endDate, 'yyyy-MM-dd')
+                    }
+                }
+                
+                return newData
+            })
         } else {
             const { name, value } = eOrName.target
             setFormData((prev: any) => ({ ...prev, [name]: value }))
@@ -267,40 +481,103 @@ export function ContractDetailsSheet({
         return days > 0 ? `${days} ngày` : 'Hết hạn'
     }, [formData.end_date])
 
-    // Auto-calculate end_date based on start_date and total_sessions (1 session = 2.5 days)
+    // Auto-calculate end_date logic
     React.useEffect(() => {
-        if (!isEditing || !formData.start_date || !formData.total_sessions) return
+        if (!isEditing || !formData.start_date) return
 
-        try {
-            const startDate = new Date(formData.start_date)
-            const sessions = parseInt(formData.total_sessions.toString())
-            if (!isNaN(startDate.getTime()) && !isNaN(sessions)) {
-                // Calculation: 1 session = 2.5 days (e.g., 36 sessions = 90 days)
-                const days = Math.floor(sessions * 2.5)
-                const newEndDate = addDays(startDate, days)
-                const formattedEndDate = format(newEndDate, 'yyyy-MM-dd')
-                
-                if (formattedEndDate !== formData.end_date) {
-                    setFormData((prev: any) => ({ ...prev, end_date: formattedEndDate }))
+        // If it's a membership package, end_date is usually set by handlePackageChange or quantity change
+        // However, if manual total_sessions is entered (for PT contracts), we use the 1 session = 2.5 days rule
+        if (formData.total_sessions && !formData.membership_id) {
+            try {
+                const startDate = new Date(formData.start_date)
+                const sessions = parseInt(formData.total_sessions.toString())
+                if (!isNaN(startDate.getTime()) && !isNaN(sessions)) {
+                    const days = Math.floor(sessions * 2.5)
+                    const newEndDate = addDays(startDate, days)
+                    const formattedEndDate = format(newEndDate, 'yyyy-MM-dd')
+                    
+                    if (formattedEndDate !== formData.end_date) {
+                        setFormData((prev: any) => ({ ...prev, end_date: formattedEndDate }))
+                    }
                 }
+            } catch (e) {
+                console.error('Error calculating end_date:', e)
             }
-        } catch (e) {
-            console.error('Error calculating end_date:', e)
         }
-    }, [formData.start_date, formData.total_sessions, isEditing, formData.end_date])
+    }, [formData.start_date, formData.total_sessions, isEditing, formData.end_date, formData.membership_id])
+
+    // Auto-fill PT phone number
+    React.useEffect(() => {
+        if (!isEditing || !formData.assigned_pt || users.length === 0) {
+            if (isEditing && !formData.assigned_pt && formData.staff_phone !== '') {
+                setFormData((prev: any) => ({ ...prev, staff_phone: '' }))
+            }
+            return
+        }
+        
+        const ptUser = users.find((u: any) => u.email === formData.assigned_pt)
+        const phone = ptUser?.phone || ''
+        if (formData.staff_phone !== phone || formData.trainer_phone !== phone) {
+            setFormData((prev: any) => ({ 
+                ...prev, 
+                staff_phone: phone,
+                trainer_phone: phone 
+            }))
+        }
+    }, [formData.assigned_pt, users, isEditing, formData.staff_phone, formData.trainer_phone])
+
+    // Auto-generate QR Payment URL
+    React.useEffect(() => {
+        if (!formData.account_number || !formData.total_amount || formData.payment_method !== 'Chuyển khoản') {
+            if (formData.qr_payment_url) setFormData((prev: any) => ({ ...prev, qr_payment_url: '' }))
+            return
+        }
+        
+        const description = `${(formData.member_name || '').toUpperCase()} TTHD ${(formData.id || '').toUpperCase()}`
+        
+        const qrUrl = getVietQRUrl(
+            formData.bank_code || formData.bank_name || '',
+            formData.account_number,
+            Number(formData.total_amount || 0),
+            formData.account_holder || '',
+            description
+        )
+        
+        if (formData.qr_payment_url !== qrUrl) {
+            setFormData((prev: any) => ({ ...prev, qr_payment_url: qrUrl }))
+        }
+    }, [formData.bank_code, formData.bank_name, formData.account_number, formData.total_amount, formData.account_holder, formData.id, formData.member_name, formData.payment_method, formData.qr_payment_url])
+
+    // Auto-calculate discount
+    React.useEffect(() => {
+        if (!isEditing) return
+        const pkgPrice = parseFloat(formData.package_price || '0')
+        const total = parseFloat(formData.total_amount || '0')
+        const discount = total - pkgPrice
+        if (formData.discounted_price !== discount.toString()) {
+            setFormData((prev: any) => ({ ...prev, discounted_price: discount.toString() }))
+        }
+    }, [formData.total_amount, formData.package_price, isEditing, formData.discounted_price])
+
+    // Number to words conversion
+    const package_price_text = React.useMemo(() => numberToVietnameseWords(Number(formData.package_price || 0)) + ' đồng chẵn', [formData.package_price])
+    const discounted_price_text = React.useMemo(() => numberToVietnameseWords(Number(formData.discounted_price || 0)) + ' đồng chẵn', [formData.discounted_price])
+    const total_amount_text = React.useMemo(() => numberToVietnameseWords(Number(formData.total_amount || 0)) + ' đồng chẵn', [formData.total_amount])
 
     const sharedRowProps = React.useMemo(() => ({ isEditing, formData, onChange: handleInputChange }), [isEditing, formData, handleInputChange])
 
-    if (!contract) return null
-
     const handleSave = async () => {
+        if (!formData.id) {
+            toast.error('Vui lòng nhập số hợp đồng')
+            return
+        }
         setLoading(true)
         try {
             let finalFormData = { ...formData }
 
             // 1. Upload avata if changed (and it's a base64 string)
             if (formData.avatar_url && formData.avatar_url.startsWith('data:image')) {
-                const fileName = `avatar_${contract.client_id}_${Date.now()}.png`
+                const fileName = `avatar_${formData.client_id || 'new'}_${Date.now()}.png`
                 const uploadResult = await uploadSignature(formData.avatar_url, fileName)
                 
                 if (uploadResult.success) {
@@ -311,52 +588,116 @@ export function ContractDetailsSheet({
             }
 
             // Sync client profile info
-            const clientUpdates: any = {
-                avatar_url: finalFormData.avatar_url,
-                member_name: formData.member_name,
-                phone: formData.phone,
-                email: formData.email,
-                address: formData.member_address,
-                dob: formData.dob,
-                status: formData.client_status
+            const clientId = isCreateMode ? formData.client_id : contract?.client_id
+            if (clientId) {
+                const clientUpdates: any = {
+                    avatar_url: finalFormData.avatar_url,
+                    member_name: formData.member_name,
+                    phone: formData.phone,
+                    email: formData.email,
+                    address: formData.member_address,
+                    dob: formData.dob,
+                    status: formData.client_status
+                }
+                await updateClient(clientId, clientUpdates)
             }
-            await updateClient(contract.client_id, clientUpdates)
 
             // 2. Chữ ký khách hàng
             if (formData.signature_url && formData.signature_url.startsWith('data:image')) {
-                const fileName = `client_sig_${contract.id}_${Date.now()}.png`
+                const fileName = `client_sig_${formData.id || 'new'}_${Date.now()}.png`
                 const uploadResult = await uploadSignature(formData.signature_url, fileName)
                 
                 if (uploadResult.success) {
                     finalFormData.signature_url = uploadResult.url
                 } else {
                     toast.error('Không thể upload chữ ký khách hàng: ' + uploadResult.error)
+                    setLoading(false)
                     return
                 }
             }
 
-            // 3. FILTER OUT non-existent columns in contracts table
-            // Based on the user's warning and the schema provided
-            const { 
-                avatar_url, 
-                client_status, // This is for 'clients' table, delete it
-                clients, 
-                branches, 
-                memberships,
-                daysRemaining, // computed
-                ...contractDataOnly 
-            } = finalFormData
+            if (isCreateMode) {
+                // Validation for creation
+                if (!formData.client_id) {
+                    toast.error('Vui lòng chọn khách hàng')
+                    setLoading(false)
+                    return
+                }
+                if (!formData.membership_id) {
+                    toast.error('Vui lòng chọn gói tập')
+                    setLoading(false)
+                    return
+                }
 
-            const result = await updateContract(contract.id, contractDataOnly)
-            if (result.success) {
-                toast.success('Đã cập nhật hợp đồng')
-                setIsEditing(false)
-                onSuccess()
+                // Check if ID exists
+                const checkRes = await checkContractIdExists(formData.id)
+                if (checkRes.success && checkRes.exists) {
+                    const proceed = window.confirm(`Số hợp đồng "${formData.id}" đã tồn tại. Bạn có chắc chắn muốn tiếp tục?`)
+                    if (!proceed) {
+                        setLoading(false)
+                        return
+                    }
+                }
+
+                // Prepare data for creation - Filter out UI-only or non-contract columns
+                const { 
+                    avatar_url, 
+                    client_status,
+                    clients, 
+                    branches, 
+                    memberships,
+                    daysRemaining,
+                    package_price_text,
+                    discounted_price_text,
+                    total_amount_text,
+                    ...contractDataOnly 
+                } = finalFormData
+
+                const result = await createContract({
+                    ...contractDataOnly,
+                    package_price: Number(contractDataOnly.package_price || 0),
+                    total_amount: Number(contractDataOnly.total_amount || 0),
+                    discounted_price: Number(contractDataOnly.discounted_price || 0),
+                    initial_height: Number(contractDataOnly.initial_height || 0),
+                    initial_weight: Number(contractDataOnly.initial_weight || 0),
+                    total_sessions: contractDataOnly.total_sessions ? Number(contractDataOnly.total_sessions) : undefined
+                })
+
+                if (result.success) {
+                    toast.success('Hợp đồng đã được tạo thành công!')
+                    setIsEditing(false)
+                    onSuccess()
+                    onOpenChange(false)
+                } else {
+                    toast.error('Lỗi khi tạo hợp đồng: ' + result.error)
+                }
             } else {
-                toast.error('Lỗi khi cập nhật: ' + result.error)
+                // 3. FILTER OUT non-existent columns in contracts table
+                const { 
+                    avatar_url, 
+                    client_status,
+                    clients, 
+                    branches, 
+                    memberships,
+                    daysRemaining,
+                    package_price_text,
+                    discounted_price_text,
+                    total_amount_text,
+                    ...contractDataOnly 
+                } = finalFormData
+
+                const result = await updateContract(contract.id, contractDataOnly)
+                if (result.success) {
+                    toast.success('Đã cập nhật hợp đồng')
+                    setIsEditing(false)
+                    onSuccess()
+                } else {
+                    toast.error('Lỗi khi cập nhật: ' + result.error)
+                }
             }
-        } catch (error) {
-            toast.error('Đã xảy ra lỗi không xác định')
+        } catch (error: any) {
+            console.error('Save error:', error)
+            toast.error('Đã xảy ra lỗi hệ thống: ' + (error.message || 'Lỗi không xác định'))
         } finally {
             setLoading(false)
         }
@@ -408,80 +749,99 @@ export function ContractDetailsSheet({
             >
                 <SheetHeader className="sr-only">
                     <SheetTitle>
-                        {isEditing ? 'Chỉnh sửa Hợp đồng' : `Hợp đồng: ${contract.member_name}`}
+                        {isCreateMode ? 'Tạo Hợp đồng mới' : (isEditing ? 'Chỉnh sửa Hợp đồng' : `Hợp đồng: ${formData.member_name}`)}
                     </SheetTitle>
                     <SheetDescription>
-                        Chi tiết thông tin hợp đồng #{contract.id}
+                        {isCreateMode ? 'Nhập thông tin để tạo hợp đồng mới' : `Chi tiết thông tin hợp đồng #${formData.id}`}
                     </SheetDescription>
                 </SheetHeader>
 
                 {/* Sticky Header */}
-                <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div 
-                            className={cn(
-                                "w-10 h-10 rounded-full flex items-center justify-center overflow-visible transition-all relative group",
-                                isEditing ? "ring-2 ring-blue-500 cursor-pointer hover:ring-blue-600" : "bg-blue-100 dark:bg-blue-900/30 shadow-sm"
-                            )}
-                            onClick={() => isEditing && avatarInputRef.current?.click()}
-                        >
-                            <Avatar className="w-full h-full rounded-full overflow-hidden">
-                                <AvatarImage src={formData.avatar_url || ''} className="object-cover" />
-                                <AvatarFallback className="bg-blue-100 text-blue-600 dark:bg-blue-900/40">
-                                    <UserCircle className="w-6 h-6" />
-                                </AvatarFallback>
-                            </Avatar>
-                            {isEditing && (
-                                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm border border-white dark:border-slate-900">
-                                    <Camera className="w-2.5 h-2.5" />
-                                </div>
-                            )}
-                        </div>
-                        <input
-                            type="file"
-                            ref={avatarInputRef}
-                            className="hidden"
-                            accept="image/*"
-                            onChange={handleAvatarChange}
-                        />
-                        <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                                {isEditing ? 'Chỉnh sửa Hợp đồng' : `Hợp đồng: ${contract.member_name}`}
-                            </span>
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400">ID: {contract.id}</span>
+                <div className="sticky top-0 z-30 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-4 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-4">
+                        <div className="flex flex-col text-left">
+                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white leading-none mb-1.5">
+                                {isCreateMode ? 'Tạo Hợp đồng mới' : (formData.member_name || 'Chi tiết Hợp đồng')}
+                            </h2>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-red-600 dark:text-red-500">
+                                    {isCreateMode ? (generatingId ? 'Đang tạo số HĐ...' : (formData.id || 'Chưa có số HĐ')) : `#${formData.id}`}
+                                </span>
+                                {!isCreateMode && (
+                                    <>
+                                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                                        <span className="text-xs font-medium text-slate-500">
+                                            {daysRemaining}
+                                        </span>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                        {!isEditing && hasAccess && (
+
+                    <div className="flex items-center gap-2">
+                        {isEditing ? (
                             <>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handleDelete}
-                                    className="sm:hidden rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
-                                    disabled={loading}
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => isCreateMode ? onOpenChange(false) : setIsEditing(false)}
+                                    className="h-9 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium"
                                 >
-                                    <Trash2 className="w-5 h-5" />
+                                    Hủy
                                 </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setIsEditing(true)}
-                                    className="sm:hidden rounded-full text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                                <Button 
+                                    size="sm" 
+                                    onClick={handleSave}
                                     disabled={loading}
+                                    className="h-9 rounded-xl bg-red-600 hover:bg-red-700 text-white px-5 shadow-sm transition-all active:scale-95 font-medium"
                                 >
-                                    <Edit2 className="w-5 h-5" />
+                                    {loading && <Loader2 className="w-3 h-3 mr-2 animate-spin" />}
+                                    {isCreateMode ? 'Tạo hợp đồng' : 'Lưu thay đổi'}
                                 </Button>
                             </>
+                        ) : (
+                            <div className="flex items-center gap-1">
+                                {!isCreateMode && (
+                                    <>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setIsEditing(true)}
+                                            className="h-9 w-9 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                        >
+                                            <Edit3 className="w-4 h-4" />
+                                        </Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                                                    <MoreHorizontal className="w-4 h-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-56 rounded-2xl border-slate-100 dark:border-slate-800 shadow-xl p-1.5 ">
+                                                <DropdownMenuItem onClick={handleGenerateDocPDF} disabled={generatingPdf} className="gap-2.5 py-2.5 rounded-xl focus:bg-slate-50 dark:focus:bg-slate-900 cursor-pointer">
+                                                    <FileText className="w-4 h-4 text-blue-500" /> 
+                                                    <span className="font-medium text-sm">{generatingPdf ? 'Đang chuẩn bị...' : 'Tải File Word (GDoc)'}</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator className="my-1 bg-slate-100 dark:bg-slate-800" />
+                                                <DropdownMenuItem onClick={handleDelete} className="gap-2.5 py-2.5 rounded-xl text-red-600 focus:text-red-700 focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer">
+                                                    <Trash2 className="w-4 h-4" />
+                                                    <span className="font-medium text-sm">Xóa hợp đồng</span>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </>
+                                )}
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => onOpenChange(false)}
+                                    className="h-9 w-9 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                >
+                                    <X className="w-5 h-5" />
+                                </Button>
+                            </div>
                         )}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onOpenChange(false)}
-                            className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-                        >
-                            <X className="w-5 h-5 text-slate-400" />
-                        </Button>
                     </div>
                 </div>
 
@@ -517,10 +877,10 @@ export function ContractDetailsSheet({
                             </div>
                             <div className="flex-1 min-w-0 pt-1">
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">
-                                    {contract.package_name}
+                                    {formData.package_name || (isCreateMode ? 'Chọn gói tập' : '')}
                                 </h2>
-                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 truncate italic">
-                                    {contract.member_name}
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                                    {formData.member_name || (isCreateMode ? 'Hội viên mới' : '')}
                                 </p>
                                 <div className="flex flex-wrap items-center gap-2 mt-3">
                                     <div className={cn(
@@ -536,23 +896,23 @@ export function ContractDetailsSheet({
                                         )} />
                                         {formData.status || defaultStatus}
                                     </div>
-                                    {contract.clients?.status && (
+                                    {formData.client_status && (
                                         <div className={cn(
                                             "flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border",
                                             {
-                                                "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30": contract.clients.status === 'Đã khảo sát',
-                                                "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900": contract.clients.status === 'Đang tập thử',
-                                                "bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-950/20 dark:border-purple-900/30": contract.clients.status === 'Đang tư vấn',
-                                                "bg-red-50 text-red-600 border-red-100 dark:bg-red-950/20 dark:border-red-900/30": contract.clients.status === 'Tư vấn không tham gia',
-                                                "bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-950/20 dark:border-orange-900/30": contract.clients.status === 'Không tham gia',
-                                                "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30": ['Chốt đăng ký', 'CHỐT ĐĂNG KÝ', 'CHỐT ĐĂNG KÍ'].includes(contract.clients.status),
+                                                "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30": formData.client_status === 'Đã khảo sát',
+                                                "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900": formData.client_status === 'Đang tập thử',
+                                                "bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-950/20 dark:border-purple-900/30": formData.client_status === 'Đang tư vấn',
+                                                "bg-red-50 text-red-600 border-red-100 dark:bg-red-950/20 dark:border-red-900/30": formData.client_status === 'Tư vấn không tham gia',
+                                                "bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-950/20 dark:border-orange-900/30": formData.client_status === 'Không tham gia',
+                                                "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30": ['Chốt đăng ký', 'CHỐT ĐĂNG KÝ', 'CHỐT ĐĂNG KÍ'].includes(formData.client_status),
                                             }
                                         )}>
-                                            {contract.clients.status}
+                                            {formData.client_status}
                                         </div>
                                     )}
                                     <div className="px-3 py-1 rounded-full text-[10px] font-medium tracking-tight bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30">
-                                        {branches?.find((b: any) => b.id === formData.branch_id)?.name || contract.branches?.name || 'Chi nhánh'}
+                                        {branches?.find((b: any) => b.id === formData.branch_id)?.name || formData.branches?.name || 'Chi nhánh'}
                                     </div>
                                 </div>
                             </div>
@@ -577,14 +937,14 @@ export function ContractDetailsSheet({
                         {!isEditing && (
                             <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between gap-3">
                                 <div className="flex-1 flex flex-col items-center">
-                                    <span className="text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-widest leading-none mb-1">Tổng tiền</span>
+                                    <span className="text-[10px] font-medium text-slate-900 dark:text-slate-400 tracking-widest leading-none mb-1">Tổng tiền</span>
                                     <span className="text-lg font-bold text-blue-600">
                                         {formData.total_amount ? Number(formData.total_amount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
                                     </span>
                                 </div>
                                 <div className="w-px h-8 bg-slate-100 dark:bg-slate-800" />
                                 <div className="flex-1 flex flex-col items-center text-center">
-                                    <span className="text-[10px] font-bold text-slate-900 dark:text-slate-400 uppercase tracking-widest leading-none mb-1">Kết thúc</span>
+                                    <span className="text-[10px] font-medium text-slate-900 dark:text-slate-400 tracking-widest leading-none mb-1">Kết thúc</span>
                                     <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                                         {formData.end_date ? new Date(formData.end_date).toLocaleDateString('vi-VN') : '-'}
                                     </span>
@@ -596,20 +956,67 @@ export function ContractDetailsSheet({
                     {/* Section: Thông tin khách hàng */}
                     <ContractCardSection title="Thông tin khách hàng" icon={User}>
                         <div className="space-y-5">
-                            <ContractDetailRow label="Hội viên" value={formData.member_name} name="member_name" icon={User} {...sharedRowProps} />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                <ContractDetailRow label="Số điện thoại" value={formData.phone} name="phone" icon={Phone} {...sharedRowProps} />
-                                <ContractDetailRow label="Email" value={formData.email} name="email" icon={Mail} {...sharedRowProps} />
-                            </div>
+                            <ContractDetailRow label="Chọn Khách hàng" value={formData.member_name} name="client_id" icon={Users} {...sharedRowProps}>
+                                <Popover modal={true} open={clientOpen} onOpenChange={setClientOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className="w-full justify-between rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 px-3 font-normal text-slate-900 dark:text-white"
+                                        >
+                                            <span className="truncate">
+                                                {formData.member_name || "Tìm khách hàng..."}
+                                            </span>
+                                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-slate-100 dark:border-slate-800">
+                                        <div className="p-2 border-b border-slate-50 dark:border-slate-800">
+                                            <Input
+                                                placeholder="Tên, SĐT, Email..."
+                                                value={clientSearchTerm}
+                                                onChange={(e) => setClientSearchTerm(e.target.value)}
+                                                className="h-9 border-none bg-slate-50 dark:bg-slate-900 rounded-lg focus-visible:ring-0"
+                                            />
+                                        </div>
+                                        <ScrollArea className="h-[250px]">
+                                            <div className="p-1">
+                                                {filteredClients.map((client: any) => (
+                                                    <button
+                                                        key={client.id}
+                                                        type="button"
+                                                        className={cn(
+                                                            "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors",
+                                                            formData.client_id === client.id && "bg-red-50 dark:bg-red-950/20 text-red-600"
+                                                        )}
+                                                        onClick={() => {
+                                                            handleClientChange(client.id)
+                                                            setClientOpen(false)
+                                                        }}
+                                                    >
+                                                        <div className="flex flex-col items-start min-w-0">
+                                                            <span className="font-medium truncate w-full">{client.member_name}</span>
+                                                            <span className="text-[10px] text-slate-400 truncate w-full">{client.phone} | {client.id}</span>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </ScrollArea>
+                                    </PopoverContent>
+                                </Popover>
+                            </ContractDetailRow>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Căn cước công dân" value={formData.id_number} name="id_number" icon={FileText} {...sharedRowProps} />
                                 <ContractDetailRow label="Ngày sinh" value={formData.dob} name="dob" type="date" icon={Calendar} {...sharedRowProps} />
                             </div>
-                            <ContractDetailRow label="Địa chỉ" value={formData.member_address} name="member_address" icon={MapPin} {...sharedRowProps} />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <ContractDetailRow label="Địa chỉ" value={formData.member_address} name="member_address" icon={MapPin} {...sharedRowProps} />
+                                <ContractDetailRow label="Nguồn khách" value={formData.source} name="source" icon={Users} {...sharedRowProps} />
+                            </div>
                             
                             <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800/50">
-                                <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Đại diện pháp luật (Bên B)</h4>
-                                <div className="space-y-5">
+                                <h4 className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mb-4 tracking-tight">Đại diện pháp luật (Bên B)</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                     <ContractDetailRow label="Người đại diện" value={formData.legal_representative} name="legal_representative" icon={UserCircle} {...sharedRowProps} />
                                     <ContractDetailRow label="Số điện thoại" value={formData.representative_phone} name="representative_phone" icon={Phone} {...sharedRowProps} />
                                 </div>
@@ -631,135 +1038,156 @@ export function ContractDetailsSheet({
                     {/* Section: Chi tiết hợp đồng */}
                     <ContractCardSection title="Chi tiết hợp đồng" icon={Package}>
                         <div className="space-y-5">
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <ContractDetailRow label="Gói tập" value={formData.package_name} name="package_name" icon={Package} {...sharedRowProps} />
-                                <ContractDetailRow label="Số lượng" value={formData.quantity} name="quantity" type="number" icon={Hash} {...sharedRowProps} />
-                                <ContractDetailRow label="Tổng số buổi" value={formData.total_sessions} name="total_sessions" type="number" icon={Hash} {...sharedRowProps} />
+                            <div className="grid grid-cols-1 sm:grid-cols-1 gap-5">
+                                <ContractDetailRow label="Chọn Gói tập" value={formData.package_name} name="membership_id" icon={Package} {...sharedRowProps}>
+                                    <Popover modal={true} open={packageOpen} onOpenChange={setPackageOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className="w-full justify-between rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 px-3 font-normal text-slate-900 dark:text-white"
+                                            >
+                                                <span className="truncate">
+                                                    {formData.package_name || "Tìm gói tập..."}
+                                                </span>
+                                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-slate-100 dark:border-slate-800 shadow-xl">
+                                            <div className="p-2 border-b border-slate-50 dark:border-slate-800">
+                                                <Input
+                                                    placeholder="Tên gói, giá..."
+                                                    value={packageSearchTerm}
+                                                    onChange={(e) => setPackageSearchTerm(e.target.value)}
+                                                    className="h-9 border-none bg-slate-50 dark:bg-slate-900 rounded-lg focus-visible:ring-0"
+                                                />
+                                            </div>
+                                            <ScrollArea className="h-[250px]">
+                                                <div className="p-1">
+                                                    {filteredPackages.map((pkg: any) => (
+                                                        <button
+                                                            key={pkg.id}
+                                                            type="button"
+                                                            className={cn(
+                                                                "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors",
+                                                                formData.membership_id === pkg.id && "bg-red-50 dark:bg-red-950/20 text-red-600"
+                                                            )}
+                                                            onClick={() => {
+                                                                handlePackageChange(pkg.id)
+                                                                setPackageOpen(false)
+                                                            }}
+                                                        >
+                                                            <div className="flex flex-col items-start min-w-0">
+                                                                 <span className="font-semibold truncate w-full">{pkg.package_name}</span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[11px] text-red-600 font-medium">{Number(pkg.unit_price).toLocaleString('vi-VN')} ₫</span>
+                                                                    <span className="text-[10px] text-slate-400">| {pkg.package_duration} {pkg.duration_unit}</span>
+                                                                </div>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </ScrollArea>
+                                        </PopoverContent>
+                                    </Popover>
+                                </ContractDetailRow>
+                                <ContractDetailRow label="Thời hạn gói" value={formData.package_duration} name="package_duration" icon={Clock} {...sharedRowProps} />
                             </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <ContractDetailRow label="Số lượng" value={formData.quantity} name="quantity" type="number" icon={Hash} {...sharedRowProps} />
+                                <ContractDetailRow label="Phân loại gói" value={formData.package_type} name="package_type" icon={Package} {...sharedRowProps}>
+                                    <Select
+                                        value={formData.package_type}
+                                        onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, package_type: val }))}
+                                    >
+                                        <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 text-sm">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                            <SelectItem value="offline">Offline (Tại trung tâm)</SelectItem>
+                                            <SelectItem value="online">Online</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </ContractDetailRow>
+                            </div>
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Ngày bắt đầu" value={formData.start_date} name="start_date" type="date" icon={Calendar} {...sharedRowProps} />
                                 <ContractDetailRow label="Ngày kết thúc" value={formData.end_date} name="end_date" type="date" icon={Calendar} {...sharedRowProps} />
                             </div>
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                                        <Clock className="w-3 h-3" />
-                                        Số ngày còn lại
-                                    </Label>
-                                    <p className="text-[15px] font-medium text-blue-600 dark:text-blue-400">
-                                        {daysRemaining}
-                                    </p>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                                        <Dumbbell className="w-3 h-3" />
-                                        Huấn luyện viên
-                                    </Label>
-                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
-                                        {formData.trainer_name || '-'}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                                        <Package className="w-3 h-3" />
-                                        Phân loại gói
-                                    </Label>
-                                    {isEditing ? (
-                                        <Select
-                                            value={formData.package_type}
-                                            onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, package_type: val }))}
-                                        >
-                                            <SelectTrigger className="w-full rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm">
-                                                <SelectValue placeholder="Chọn phân loại" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="offline">Offline (Tại trung tâm)</SelectItem>
-                                                <SelectItem value="online">Online</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
-                                            {formData.package_type === 'online' ? 'Online' : 'Offline'}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                                        <UserCheck className="w-3 h-3" />
-                                        Hình thức tập
-                                    </Label>
-                                    {isEditing ? (
-                                        <Select
-                                            value={formData.trainer_type}
-                                            onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, trainer_type: val }))}
-                                        >
-                                            <SelectTrigger className="w-full rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm">
-                                                <SelectValue placeholder="Chọn hình thức" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {trainerTypes.map(type => (
-                                                    <SelectItem key={type.id} value={type.nam}>{type.nam}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
-                                            {formData.trainer_type || '-'}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                                        <Building2 className="w-3 h-3" />
-                                        Chi nhánh
-                                    </Label>
-                                    {isEditing ? (
-                                        <Select
-                                            value={formData.branch_id}
-                                            onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, branch_id: val }))}
-                                        >
-                                            <SelectTrigger className="w-full rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm">
-                                                <SelectValue placeholder="Chọn chi nhánh" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {branches.map(b => (
-                                                    <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
-                                            {branches?.find((b: any) => b.id === formData.branch_id)?.name || contract.branches?.name || '-'}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                                        <Clock className="w-3 h-3" />
-                                        Trạng thái
-                                    </Label>
-                                    {isEditing ? (
-                                        <Select
-                                            value={formData.status}
-                                            onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, status: val }))}
-                                        >
-                                            <SelectTrigger className="w-full rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 text-sm">
-                                                <SelectValue placeholder="Chọn trạng thái" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {statuses.map(status => (
-                                                    <SelectItem key={status.id} value={status.nam}>{status.nam}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">{formData.status || defaultStatus}</p>
-                                    )}
-                                </div>
+                                <ContractDetailRow label="Huấn luyện viên" value={formData.trainer_name} name="assigned_pt" icon={Dumbbell} {...sharedRowProps}>
+                                    <Popover modal={true} open={ptOpen} onOpenChange={setPtOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className="w-full justify-between rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 px-3 font-normal text-slate-900 dark:text-white"
+                                            >
+                                                <span className="truncate">
+                                                    {formData.trainer_name || "Chọn PT..."}
+                                                </span>
+                                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-slate-100 dark:border-slate-800">
+                                            <div className="p-2 border-b border-slate-50 dark:border-slate-800">
+                                                <Input 
+                                                    placeholder="Tìm nhân viên..." 
+                                                    value={ptSearchTerm}
+                                                    onChange={(e) => setPtSearchTerm(e.target.value)}
+                                                    className="h-9 border-none bg-slate-50 dark:bg-slate-900 rounded-lg focus-visible:ring-0" 
+                                                />
+                                            </div>
+                                            <ScrollArea className="h-[200px]">
+                                                <div className="p-1">
+                                                    {users.filter(u => u.name?.toLowerCase().includes(ptSearchTerm.toLowerCase())).map((user: any) => (
+                                                        <button
+                                                            key={user.id}
+                                                            type="button"
+                                                            className={cn(
+                                                                "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-900",
+                                                                formData.assigned_pt === user.email && "bg-red-50 dark:bg-red-950/20 text-red-600"
+                                                            )}
+                                                            onClick={() => {
+                                                                setFormData((prev: any) => ({
+                                                                    ...prev,
+                                                                    assigned_pt: user.email,
+                                                                    trainer_name: user.name,
+                                                                    staff_phone: user.phone || ''
+                                                                }))
+                                                                setPtOpen(false)
+                                                            }}
+                                                        >
+                                                            <div className="flex flex-col items-start min-w-0">
+                                                                <span className="font-medium truncate w-full">{user.name}</span>
+                                                                <span className="text-[10px] text-slate-400 truncate w-full">{user.email}</span>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </ScrollArea>
+                                        </PopoverContent>
+                                    </Popover>
+                                </ContractDetailRow>
+                                <ContractDetailRow label="Chi nhánh" value={branches?.find((b: any) => b.id === formData.branch_id)?.name} name="branch_id" icon={Building2} {...sharedRowProps}>
+                                    <Select
+                                        value={formData.branch_id}
+                                        onValueChange={handleBranchChange}
+                                    >
+                                        <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 text-sm">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                            {branches.map(b => (
+                                                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </ContractDetailRow>
+                                <ContractDetailRow label="SĐT PT/Nhân sự" value={formData.trainer_phone} name="trainer_phone" icon={Phone} {...sharedRowProps} />
                             </div>
                         </div>
                     </ContractCardSection>
@@ -767,28 +1195,66 @@ export function ContractDetailsSheet({
                     {/* Section: Thanh toán */}
                     <ContractCardSection title="Thanh toán" icon={CreditCard}>
                         <div className="space-y-5">
-                            <ContractDetailRow label="Hình thức" value={formData.payment_method} name="payment_method" icon={CreditCard} {...sharedRowProps} />
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <ContractDetailRow label="Hình thức" value={formData.payment_method} name="payment_method" icon={CreditCard} {...sharedRowProps}>
+                                <Select
+                                    value={formData.payment_method}
+                                    onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, payment_method: val }))}
+                                >
+                                    <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 text-sm">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                        <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
+                                        <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </ContractDetailRow>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Giá gói (niêm yết)" value={formData.package_price} name="package_price" type="number" icon={CreditCard} {...sharedRowProps} />
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider">Bằng chữ</Label>
-                                    <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.package_price_text || '-'}</p>
+                                    <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-tight">Bằng chữ</Label>
+                                    <p className="text-[13px] text-slate-500 dark:text-slate-400 min-h-[20px] italic">{package_price_text || '-'}</p>
                                 </div>
                             </div>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Giá trợ giá" value={formData.discounted_price} name="discounted_price" type="number" icon={CreditCard} {...sharedRowProps} />
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider">Bằng chữ</Label>
-                                    <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.discounted_price_text || '-'}</p>
+                                    <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-tight">Bằng chữ</Label>
+                                    <p className="text-[13px] text-slate-500 dark:text-slate-400 min-h-[20px] italic">{discounted_price_text || '-'}</p>
                                 </div>
                             </div>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Tổng giá trị HĐ" value={formData.total_amount} name="total_amount" type="number" icon={CreditCard} {...sharedRowProps} />
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider">Bằng chữ</Label>
-                                    <p className="text-[13px] text-slate-500 dark:text-slate-400 italic min-h-[20px]">{formData.total_amount_text || '-'}</p>
+                                    <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-tight">Bằng chữ</Label>
+                                    <p className="text-[13px] text-slate-500 dark:text-slate-400 min-h-[20px] italic">{total_amount_text || '-'}</p>
                                 </div>
                             </div>
+                            <ContractDetailRow label="Ghi chú thanh toán" value={formData.payment_notes} name="payment_notes" icon={FileText} {...sharedRowProps} />
+                            
+                            {formData.payment_method === 'Chuyển khoản' && (
+                                <div className="mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                                    <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-tight mb-3 block uppercase">Mã QR Thanh toán (VietQR)</Label>
+                                    <div className="flex flex-col items-center gap-3">
+                                        {formData.qr_payment_url ? (
+                                            <>
+                                                <img 
+                                                    src={formData.qr_payment_url} 
+                                                    alt="VietQR Payment" 
+                                                    className="w-48 h-48 rounded-xl shadow-lg bg-white p-2"
+                                                />
+                                                <p className="text-[10px] text-slate-400 text-center max-w-[200px]">
+                                                    Quét mã để thanh toán tự động với đầy đủ số tiền và nội dung
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <p className="text-xs text-slate-400 italic py-8">
+                                                {!formData.account_number ? "Chưa có số tài khoản chi nhánh" : "Đang tạo mã thanh toán..."}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </ContractCardSection>
 
@@ -796,7 +1262,7 @@ export function ContractDetailsSheet({
                     <ContractCardSection title="Nhân sự & Trung tâm" icon={ShieldCheck}>
                         <div className="space-y-5">
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-tight flex items-center gap-2">
                                     <UserCheck className="w-3 h-3" />
                                     Huấn luyện viên phụ trách (PT)
                                 </Label>
@@ -806,7 +1272,7 @@ export function ContractDetailsSheet({
                                             <Button
                                                 variant="outline"
                                                 role="combobox"
-                                                className="w-full justify-between rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-11 px-3 font-normal"
+                                                className="w-full justify-between rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 px-3 font-normal text-slate-900 dark:text-white"
                                             >
                                                 <span className="truncate">
                                                     {formData.assigned_pt ? (users.find(u => u.email === formData.assigned_pt)?.name || formData.trainer_name) : (formData.trainer_name || "Chọn PT...")}
@@ -814,13 +1280,13 @@ export function ContractDetailsSheet({
                                                 <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-[300px] p-0 rounded-xl" align="start">
-                                            <div className="p-2 border-b">
+                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-slate-100 dark:border-slate-800">
+                                            <div className="p-2 border-b border-slate-50 dark:border-slate-800">
                                                 <Input 
                                                     placeholder="Tìm nhân viên..." 
                                                     value={ptSearchTerm}
                                                     onChange={(e) => setPtSearchTerm(e.target.value)}
-                                                    className="h-9 border-none focus-visible:ring-0" 
+                                                    className="h-9 border-none bg-slate-50 dark:bg-slate-900 rounded-lg focus-visible:ring-0" 
                                                 />
                                             </div>
                                             <ScrollArea className="h-[200px]">
@@ -829,7 +1295,10 @@ export function ContractDetailsSheet({
                                                         <button
                                                             key={user.id}
                                                             type="button"
-                                                            className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                            className={cn(
+                                                                "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-900",
+                                                                formData.assigned_pt === user.email && "bg-red-50 dark:bg-red-950/20 text-red-600"
+                                                            )}
                                                             onClick={() => {
                                                                 setFormData((prev: any) => ({
                                                                     ...prev,
@@ -867,7 +1336,7 @@ export function ContractDetailsSheet({
                     <ContractCardSection title="Chữ ký khách hàng" icon={Cloud}>
                         <div className="space-y-4">
                             <div className="space-y-1.5">
-                                <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-tight flex items-center gap-2">
                                     <Cloud className="w-3 h-3" />
                                     Chữ ký khách hàng
                                 </Label>
@@ -887,7 +1356,7 @@ export function ContractDetailsSheet({
                                             />
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-slate-400 italic">Chưa có chữ ký</p>
+                                        <p className="text-sm text-slate-400">Chưa có chữ ký</p>
                                     )
                                 )}
                             </div>
@@ -899,7 +1368,7 @@ export function ContractDetailsSheet({
                         <div className="space-y-5">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                    <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-wider flex items-center gap-2">
                                         <Mail className="w-3 h-3" />
                                         Gửi Email
                                     </Label>
@@ -914,7 +1383,7 @@ export function ContractDetailsSheet({
                                     </p>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-semibold text-slate-900 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                    <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-wider flex items-center gap-2">
                                         <MessageSquare className="w-3 h-3" />
                                         Gửi Zalo
                                     </Label>
@@ -948,11 +1417,14 @@ export function ContractDetailsSheet({
                         {isEditing ? (
                             <Button
                                 onClick={handleSave}
-                                className="rounded-xl h-11 px-8 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
+                                className={cn(
+                                    "rounded-xl h-11 px-8 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg transition-all font-inter active:scale-95",
+                                    isCreateMode ? "bg-red-600 hover:bg-red-700 shadow-red-100 dark:shadow-red-900/20" : "shadow-blue-100 dark:shadow-blue-900/20"
+                                )}
                                 disabled={loading}
                             >
                                 <Save className="w-4 h-4 mr-2" />
-                                {loading ? 'Đang lưu...' : 'Lưu lại'}
+                                {loading ? 'Đang lưu...' : isCreateMode ? 'Tạo Hợp đồng' : 'Lưu lại'}
                             </Button>
                         ) : (
                             <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -966,11 +1438,10 @@ export function ContractDetailsSheet({
                                         Chốt Ký HĐ
                                     </Button>
                                 )}
-                                {/* Other export actions might be allowed for everyone who can see the record */}
                                 <Button
                                     onClick={handleGenerateDocPDF}
                                     variant="outline"
-                                    disabled={generatingPdf || !hasAccess} // maybe prevent regen if no access
+                                    disabled={generatingPdf || !hasAccess}
                                     className="rounded-xl h-11 px-6 font-bold text-[13px] border-blue-100 text-blue-700 hover:bg-blue-50 dark:border-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-950/40 transition-all font-inter border-2"
                                     title="Tạo file PDF từ mẫu Google Doc và lưu vào Drive"
                                 >
@@ -983,7 +1454,7 @@ export function ContractDetailsSheet({
                                 </Button>
                                 {formData.contract_file_url && formData.contract_file_url !== 'create_contract' && (
                                     <Button
-                                        onClick={() => window.open(`/contracts/preview-gdoc/${encodeURIComponent(contract.id)}`, '_blank')}
+                                        onClick={() => window.open(`/contracts/preview-gdoc/${encodeURIComponent(formData.id)}`, '_blank')}
                                         variant="ghost"
                                         className="rounded-xl h-11 px-4 font-bold text-[13px] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all font-inter"
                                         title="Xem bản xem trước PDF (Print Preview)"
@@ -991,7 +1462,7 @@ export function ContractDetailsSheet({
                                         <ExternalLink className="w-4 h-4" />
                                     </Button>
                                 )}
-                                {contract.status === 'Chờ ký HĐ' && hasAccess && (
+                                {formData.status === 'Chờ ký HĐ' && !isCreateMode && hasAccess && (
                                     <Button
                                         variant="outline"
                                         size="icon"
@@ -1018,7 +1489,7 @@ export function ContractDetailsSheet({
                 </div>
 
                 <FinalizeContractDialog
-                    contract={contract}
+                    contract={contract || formData}
                     open={showFinalizeDialog}
                     onOpenChange={setShowFinalizeDialog}
                     onSuccess={() => {

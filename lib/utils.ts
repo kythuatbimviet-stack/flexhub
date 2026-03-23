@@ -61,3 +61,44 @@ export function formatCurrency(amount: number) {
     currency: 'VND',
   }).format(amount)
 }
+
+export function getVietQRUrl(bankCode: string, accountNo: string, amount: number, accountName: string, description: string) {
+    const bankMap: { [key: string]: string } = {
+        'Vietcombank': 'VCB',
+        'VCB': 'VCB',
+        'Vietinbank': 'ICB',
+        'ICB': 'ICB',
+        'BIDV': 'BIDV',
+        'Agribank': 'VBA',
+        'Techcombank': 'TCB',
+        'MBBank': '970422',
+        'MB': '970422',
+        'MB Bank': '970422',
+        'TPBank': 'TPB',
+        'VPBank': 'VPB',
+        'ACB': 'ACB',
+        'HDBank': 'HDB',
+        'Sacombank': 'STB',
+        'SCB': 'SCB',
+        'MSB': 'MSB',
+        'VIB': 'VIB',
+        'SHB': 'SHB'
+    }
+    
+    // Normalize bank code: map if found, then remove all spaces
+    const bankId = (bankMap[bankCode] || bankCode || '').toString().replace(/\s/g, '')
+    const cleanAccount = (accountNo || '').toString().replace(/\D/g, '')
+    const encodedName = encodeURIComponent(accountName || '')
+    
+    // Sanitize description: remove accents and keep only alphanumeric, spaces, and hyphens
+    const sanitizedDesc = (description || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D')
+        .replace(/[^a-zA-Z0-9 -]/g, '')
+    
+    const encodedDesc = encodeURIComponent(sanitizedDesc)
+    
+    return `https://img.vietqr.io/image/${bankId}-${cleanAccount}-compact.png?amount=${amount}&addInfo=${encodedDesc}&accountName=${encodedName}`
+}

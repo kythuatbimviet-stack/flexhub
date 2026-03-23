@@ -27,7 +27,7 @@ import { ImportExcelClientDialog } from '@/components/clients/import-excel-clien
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { fetchClients, bulkDeleteClients } from '@/app/actions/clients'
 import { fetchBranches } from '@/app/actions/branches'
-import { AddContractDialog } from '@/components/contracts/add-contract-dialog'
+import { ContractDetailsSheet } from '@/components/contracts/contract-details-sheet'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
 import { useRouter } from 'next/navigation'
 import {
@@ -49,6 +49,8 @@ export default function ClientsPage() {
     const [selectedRows, setSelectedRows] = React.useState<string[]>([])
     const [selectedClient, setSelectedClient] = React.useState<any | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
+    const [isContractCreateOpen, setIsContractCreateOpen] = React.useState(false)
+    const [contractInitialClient, setContractInitialClient] = React.useState<any>(null)
 
     // Filter states
     const [statusFilter, setStatusFilter] = React.useState('all')
@@ -512,7 +514,7 @@ export default function ClientsPage() {
                                                         {client.member_name}
                                                         {client.status === 'Đang tập' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
                                                     </span>
-                                                    <span className="text-[10px] text-gray-400 font-medium">{client.id}</span>
+                                                    <span className="text-[10px] text-red-600 dark:text-red-500 font-medium tracking-tight">#{client.id}</span>
                                                 </div>
                                             </div>
                                         </TableCell>
@@ -558,14 +560,19 @@ export default function ClientsPage() {
                                                     className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500" title="Chỉnh sửa">
                                                     <Edit2 className="h-3.5 w-3.5" />
                                                 </Button>
-                                                <AddContractDialog onSuccess={refetch} initialClientId={client.id} initialClient={client}
-                                                    triggerOverride={
-                                                        <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}
-                                                            className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500" title="Thêm hợp đồng">
-                                                            <FilePlus2 className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                    }
-                                                />
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setContractInitialClient(client)
+                                                        setIsContractCreateOpen(true)
+                                                    }}
+                                                    className="w-8 h-8 rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500" 
+                                                    title="Thêm hợp đồng"
+                                                >
+                                                    <FilePlus2 className="h-3.5 w-3.5" />
+                                                </Button>
                                                 <AddWeightDialog onSuccess={refetch} clients={pagedClients} initialClientId={client.id}
                                                     triggerOverride={
                                                         <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}
@@ -617,6 +624,14 @@ export default function ClientsPage() {
             </Card>
 
             <ClientDetailsSheet client={selectedClient} open={isDetailsOpen} onOpenChange={setIsDetailsOpen} onSuccess={refetch} />
+            <ContractDetailsSheet
+                contract={null}
+                open={isContractCreateOpen}
+                onOpenChange={setIsContractCreateOpen}
+                onSuccess={refetch}
+                initialClientId={contractInitialClient?.id}
+                initialClient={contractInitialClient}
+            />
         </div>
     )
 }

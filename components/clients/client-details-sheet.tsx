@@ -70,7 +70,7 @@ import {
 } from '@/components/ui/select'
 import { useQuery } from '@tanstack/react-query'
 import { fetchBranches } from '@/app/actions/branches'
-import { AddContractDialog } from '@/components/contracts/add-contract-dialog'
+import { ContractDetailsSheet } from '@/components/contracts/contract-details-sheet'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
 import { fetchZaloUsers } from '@/app/actions/zalo-users'
 import { fetchUsers } from '@/app/actions/users'
@@ -189,6 +189,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
     const [loading, setLoading] = React.useState(false)
     const [formData, setFormData] = React.useState<any>(null)
     const [generatingId, setGeneratingId] = React.useState(false)
+    const [isContractCreateOpen, setIsContractCreateOpen] = React.useState(false)
     const avatarInputRef = React.useRef<HTMLInputElement>(null)
     const { permissions, user: currentUser, isLoading: permsLoading } = usePermissions()
 
@@ -455,8 +456,16 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                             <SheetTitle className="text-lg font-semibold text-slate-900 dark:text-white leading-tight">
                                 {isCreateMode ? 'Thông tin khách hàng mới' : (client?.member_name || 'Chi tiết khách hàng')}
                             </SheetTitle>
-                            <SheetDescription className="text-xs text-slate-600 dark:text-slate-300 mt-1">
-                                {isCreateMode ? 'Hoàn tất thông tin bên dưới (* là bắt buộc)' : `ID: ${client?.id} | ${client?.email || 'Chưa cập nhật email'}`}
+                            <SheetDescription className="text-xs mt-1">
+                                {isCreateMode ? (
+                                    <span className="text-slate-500 dark:text-slate-400">Hoàn tất thông tin bên dưới (* là bắt buộc)</span>
+                                ) : (
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="text-red-600 dark:text-red-500 font-medium">#{client?.id}</span>
+                                        <span className="text-slate-300 dark:text-slate-700">|</span>
+                                        <span className="text-slate-500 dark:text-slate-400">{client?.email || 'Chưa cập nhật email'}</span>
+                                    </div>
+                                )}
                             </SheetDescription>
                         </div>
                     </div>
@@ -616,20 +625,14 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
 
                     {!isEditing && hasAccess && (
                         <div className="grid grid-cols-2 gap-3">
-                            <AddContractDialog
-                                initialClientId={client.id}
-                                onSuccess={onSuccess}
-                                isQuickAction={false}
-                                triggerOverride={
-                                    <Button
-                                        variant="outline"
-                                        className="h-14 rounded-2xl gap-3 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-blue-50 hover:text-blue-600 transition-all font-medium text-[13px] shadow-sm border-2"
-                                    >
-                                        <PlusCircle className="w-4 h-4 text-blue-500" />
-                                        Hợp đồng mới
-                                    </Button>
-                                }
-                            />
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsContractCreateOpen(true)}
+                                className="h-14 rounded-2xl gap-3 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-blue-50 hover:text-blue-600 transition-all font-medium text-[13px] shadow-sm border-2"
+                            >
+                                <PlusCircle className="w-4 h-4 text-blue-500" />
+                                Hợp đồng mới
+                            </Button>
                             <AddWeightDialog
                                 clients={[client]}
                                 initialClientId={client.id}
@@ -995,6 +998,14 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                     </div>
                 </div>
             </SheetContent>
+            <ContractDetailsSheet
+                contract={null}
+                open={isContractCreateOpen}
+                onOpenChange={setIsContractCreateOpen}
+                onSuccess={onSuccess}
+                initialClientId={client?.id}
+                initialClient={client}
+            />
         </Sheet>
     )
 }
