@@ -194,11 +194,27 @@ export async function bulkDeleteClients(ids: string[]) {
         const adminClient = await createAdminClient()
 
         // 1. Delete associated data first to avoid foreign key violations
-        // Note: We use customer_id for revenue table as configured in the system
-        await adminClient.from('revenue').delete().in('customer_id', ids)
+        // Note: Delete debt_installments first as they may point to revenue or debts
+        const { data: debts } = await adminClient.from('debts').select('id').in('client_id', ids)
+        const debtIds = debts?.map(d => d.id) || []
+        
+        if (debtIds.length > 0) {
+            await adminClient.from('debt_installments').delete().in('debt_id', debtIds)
+        }
+
+        // Clear revenue references in debt_installments before deleting revenue
+        const { data: revenues } = await adminClient.from('revenue').select('id').in('customer_id', ids)
+        const revenueIds = revenues?.map(r => r.id) || []
+        
+        if (revenueIds.length > 0) {
+            await adminClient.from('debt_installments').update({ revenue_id: null }).in('revenue_id', revenueIds)
+            await adminClient.from('revenue').delete().in('id', revenueIds)
+        }
         
         // Delete debts associated with these clients
-        await adminClient.from('debts').delete().in('client_id', ids)
+        if (debtIds.length > 0) {
+            await adminClient.from('debts').delete().in('id', debtIds)
+        }
         
         // Delete contracts associated with these clients
         await adminClient.from('contracts').delete().in('client_id', ids)

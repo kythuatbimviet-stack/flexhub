@@ -479,7 +479,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                 side="right"
                 resizable={!isMobile}
                 showCloseButton={false}
-                className="w-full border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
+                className="w-full border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter overflow-hidden gap-0"
             >
                 <SheetHeader className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-6 py-5 flex flex-col items-start gap-4 shrink-0">
                     <div className="flex items-center gap-4">
@@ -624,7 +624,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                             </div>
                         )}
 
-                        <ScrollArea className="flex-1">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
                             <div className="px-4 sm:px-5 py-5 space-y-4">
                                 <TabsContent value="info" className="space-y-4 m-0 border-none p-0 outline-none">
                                     {/* Top Profile Card */}
@@ -1216,7 +1216,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                     )}
                                 </TabsContent>
                             </div>
-                        </ScrollArea>
+                        </div>
                     </Tabs>
                 </div>
 

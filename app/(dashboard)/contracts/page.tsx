@@ -215,7 +215,7 @@ export default function ContractsPage() {
     }
 
     const handleDelete = async (id: string) => {
-        if (confirm('Bạn có chắc chắn muốn xóa hợp đồng này?')) {
+        if (confirm('Xóa hợp đồng này sẽ xóa phần công nợ liên quan đến hợp đồng đó, Bạn có muốn tiếp tục không?')) {
             const result = await bulkDeleteContracts([id])
             if (!result.success) toast.error('Lỗi khi xóa: ' + result.error)
             else { toast.success('Đã xóa hợp đồng thành công'); refetch() }
@@ -224,7 +224,7 @@ export default function ContractsPage() {
 
     const handleBulkDelete = async () => {
         if (selectedRows.length === 0) return
-        if (confirm(`Bạn có chắc chắn muốn xóa ${selectedRows.length} hợp đồng đã chọn?`)) {
+        if (confirm(`Xóa các hợp đồng này sẽ xóa phần công nợ liên quan, Bạn có muốn tiếp tục xóa ${selectedRows.length} hợp đồng đã chọn?`)) {
             const result = await bulkDeleteContracts(selectedRows)
             if (!result.success) toast.error('Lỗi khi xóa hàng loạt: ' + result.error)
             else { toast.success(`Đã xóa thành công ${selectedRows.length} hợp đồng`); setSelectedRows([]); refetch() }

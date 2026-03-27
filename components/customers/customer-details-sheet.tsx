@@ -114,7 +114,7 @@ export function CustomerDetailsSheet({ customer, open, onOpenChange, onSuccess }
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-md border-none shadow-2xl p-0 flex flex-col h-full bg-white">
+            <SheetContent className="sm:max-w-md border-none shadow-2xl p-0 flex flex-col h-full bg-white overflow-hidden gap-0">
                 <div className="p-6 bg-gradient-to-br from-blue-50/50 to-white border-b border-gray-100">
                     <SheetHeader className="space-y-1">
                         <div className="flex items-center justify-between">

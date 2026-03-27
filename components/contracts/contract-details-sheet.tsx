@@ -750,7 +750,7 @@ export function ContractDetailsSheet({
     }
 
     const handleDelete = async () => {
-        if (confirm('Bạn có chắc chắn muốn xóa hợp đồng này?')) {
+        if (confirm('Xóa hợp đồng này sẽ xóa phần công nợ liên quan đến hợp đồng đó, Bạn có muốn tiếp tục không?')) {
             setLoading(true)
             try {
                 const result = await deleteContract(contract.id)
@@ -791,7 +791,7 @@ export function ContractDetailsSheet({
                 side="right"
                 resizable={!isMobile}
                 showCloseButton={false}
-                className="w-full border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
+                className="w-full border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter overflow-hidden gap-0"
             >
                 <SheetHeader className="sr-only">
                     <SheetTitle>

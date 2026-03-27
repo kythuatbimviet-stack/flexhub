@@ -354,16 +354,64 @@ export async function deleteContract(id: string) {
         const accessInfo = await getAccessFilter()
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
 
+        // 1. Get debt IDs to delete installments
+        const { data: debts } = await supabase
+            .from('debts')
+            .select('id')
+            .eq('contract_id', id)
+        const debtIds = debts?.map(d => d.id) || []
+
+        if (debtIds.length > 0) {
+            // Delete installments associated with these debts
+            await supabase
+                .from('debt_installments')
+                .delete()
+                .in('debt_id', debtIds)
+        }
+
+        // 2. Clear revenue references in debt_installments
+        const { data: revenues } = await supabase
+            .from('revenue')
+            .select('id')
+            .eq('contract_id', id)
+        const revenueIds = revenues?.map(r => r.id) || []
+
+        if (revenueIds.length > 0) {
+            await supabase
+                .from('debt_installments')
+                .update({ revenue_id: null })
+                .in('revenue_id', revenueIds)
+
+            // Delete revenue
+            await supabase
+                .from('revenue')
+                .delete()
+                .in('id', revenueIds)
+        }
+
+        // 3. Delete debts
+        if (debtIds.length > 0) {
+            await supabase
+                .from('debts')
+                .delete()
+                .in('id', debtIds)
+        }
+
+        // 4. Finally delete the contract
         const { error } = await supabase
             .from('contracts')
             .delete()
             .eq('id', id)
 
         if (error) throw error
+
         revalidatePath('/contracts')
+        revalidatePath('/debts')
+        revalidatePath('/financial/revenue')
         revalidatePath('/')
         return { success: true }
     } catch (error: any) {
+        console.error('Delete Contract Error:', error)
         return { success: false, error: error.message }
     }
 }
@@ -375,16 +423,62 @@ export async function bulkDeleteContracts(ids: string[]) {
         const accessInfo = await getAccessFilter()
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
 
+        // 1. Get debt IDs
+        const { data: debts } = await supabase
+            .from('debts')
+            .select('id')
+            .in('contract_id', ids)
+        const debtIds = debts?.map(d => d.id) || []
+
+        if (debtIds.length > 0) {
+            await supabase
+                .from('debt_installments')
+                .delete()
+                .in('debt_id', debtIds)
+        }
+
+        // 2. Handle revenues
+        const { data: revenues } = await supabase
+            .from('revenue')
+            .select('id')
+            .in('contract_id', ids)
+        const revenueIds = revenues?.map(r => r.id) || []
+
+        if (revenueIds.length > 0) {
+            await supabase
+                .from('debt_installments')
+                .update({ revenue_id: null })
+                .in('revenue_id', revenueIds)
+
+            await supabase
+                .from('revenue')
+                .delete()
+                .in('id', revenueIds)
+        }
+
+        // 3. Delete debts
+        if (debtIds.length > 0) {
+            await supabase
+                .from('debts')
+                .delete()
+                .in('id', debtIds)
+        }
+
+        // 4. Delete contracts
         const { error } = await supabase
             .from('contracts')
             .delete()
             .in('id', ids)
 
         if (error) throw error
+
         revalidatePath('/contracts')
+        revalidatePath('/debts')
+        revalidatePath('/financial/revenue')
         revalidatePath('/')
         return { success: true }
     } catch (error: any) {
+        console.error('Bulk Delete Contracts Error:', error)
         return { success: false, error: error.message }
     }
 }
