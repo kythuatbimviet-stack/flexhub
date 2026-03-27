@@ -23,7 +23,8 @@ import {
     Tag,
     StickyNote,
     CreditCard,
-    ChevronDown
+    ChevronDown,
+    Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { fetchExpense, updateExpense, deleteExpense, fetchExpenseTypes } from '@/app/actions/financial'
@@ -44,6 +45,51 @@ interface ExpenseDetailsSheetProps {
     onOpenChange: (open: boolean) => void
     onSuccess: () => void
 }
+
+const CardSection = ({ title, icon: Icon, children }: any) => (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden mb-5">
+        <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
+                <Icon className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+            </div>
+            <h3 className="text-[12px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-widest">{title}</h3>
+        </div>
+        <div className="p-5 space-y-5">
+            {children}
+        </div>
+    </div>
+)
+
+const DetailRow = ({ label, value, name, type = "text", icon: Icon, isEditing, formData, onChange }: any) => (
+    <div className="space-y-1.5 font-inter">
+        <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+            {Icon && <Icon className="w-3 h-3" />}
+            {label}
+        </Label>
+        {isEditing ? (
+            type === 'textarea' ? (
+                <Textarea
+                    name={name}
+                    value={formData[name] || ''}
+                    onChange={onChange}
+                    className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[100px] text-sm focus:ring-2 focus:ring-rose-500 shadow-sm resize-none"
+                />
+            ) : (
+                <Input
+                    name={name}
+                    type={type}
+                    value={formData[name] ?? ''}
+                    onChange={onChange}
+                    className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-rose-500 shadow-sm"
+                />
+            )
+        ) : (
+            <div className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                {value || <span className="text-slate-300 italic font-normal text-sm">Chưa cập nhật</span>}
+            </div>
+        )}
+    </div>
+)
 
 export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: ExpenseDetailsSheetProps) {
     const [isEditing, setIsEditing] = React.useState(false)
@@ -123,51 +169,6 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
         setFormData((prev: any) => ({ ...prev, [name]: finalValue }))
     }
 
-    const CardSection = ({ title, icon: Icon, children }: any) => (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden mb-5">
-            <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
-                    <Icon className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-                </div>
-                <h3 className="text-[12px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-widest">{title}</h3>
-            </div>
-            <div className="p-5 space-y-5">
-                {children}
-            </div>
-        </div>
-    )
-
-    const DetailRow = ({ label, value, name, type = "text", icon: Icon }: any) => (
-        <div className="space-y-1.5 font-inter">
-            <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                {Icon && <Icon className="w-3 h-3" />}
-                {label}
-            </Label>
-            {isEditing ? (
-                type === 'textarea' ? (
-                    <Textarea
-                        name={name}
-                        value={formData[name] || ''}
-                        onChange={handleChange}
-                        className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[100px] text-sm focus:ring-2 focus:ring-rose-500 shadow-sm resize-none"
-                    />
-                ) : (
-                    <Input
-                        name={name}
-                        type={type}
-                        value={formData[name] ?? ''}
-                        onChange={handleChange}
-                        className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-rose-500 shadow-sm"
-                    />
-                )
-            ) : (
-                <div className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
-                    {value || <span className="text-slate-300 italic font-normal text-sm">Chưa cập nhật</span>}
-                </div>
-            )}
-        </div>
-    )
-
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
@@ -175,53 +176,64 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                 showCloseButton={false}
                 className="w-full sm:max-w-[480px] border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter"
             >
+                <SheetHeader className="sr-only">
+                    <SheetTitle>Chi tiết khoản chi</SheetTitle>
+                    <SheetDescription>Thông tin chi tiết về giao dịch tài chính #{expense.id.split('-')[0]}</SheetDescription>
+                </SheetHeader>
+
                 {/* Sticky Header */}
-                <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 shrink-0">
-                    <SheetHeader className="flex flex-row items-center justify-between space-y-0">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600">
-                                <Banknote className="w-5 h-5" />
-                            </div>
-                            <div className="flex flex-col text-left">
-                                <SheetTitle className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                                    Chi tiết khoản chi
-                                </SheetTitle>
-                                <SheetDescription className="text-[11px] text-slate-500 dark:text-slate-400">ID: {expense.id.split('-')[0]}</SheetDescription>
-                            </div>
+                <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-5 py-3 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600">
+                            <Banknote className="w-5 h-5" />
                         </div>
-                        <div className="flex items-center gap-1">
-                            {!isEditing && (
-                                <>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={handleDelete}
-                                        className="sm:hidden rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
-                                        disabled={loading}
-                                    >
-                                        <Trash2 className="w-5 h-5" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => setIsEditing(true)}
-                                        className="sm:hidden rounded-full text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20"
-                                        disabled={loading}
-                                    >
-                                        <Edit2 className="w-5 h-5" />
-                                    </Button>
-                                </>
-                            )}
+                        <div className="flex flex-col">
+                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">Chi tiết khoản chi</span>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">ID: {expense.id.split('-')[0]}</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        {isEditing ? (
                             <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onOpenChange(false)}
-                                className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                                size="sm"
+                                onClick={handleSave}
+                                disabled={loading}
+                                className="h-8 rounded-lg bg-rose-600 hover:bg-rose-700 text-white px-3 shadow-sm transition-all active:scale-95 font-medium text-xs mr-1"
                             >
-                                <X className="w-5 h-5 text-slate-400" />
+                                {loading && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                                Lưu
                             </Button>
-                        </div>
-                    </SheetHeader>
+                        ) : (
+                            <>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleDelete}
+                                    className="sm:hidden rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                    disabled={loading}
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setIsEditing(true)}
+                                    className="sm:hidden rounded-full text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                                    disabled={loading}
+                                >
+                                    <Edit2 className="w-5 h-5" />
+                                </Button>
+                            </>
+                        )}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onOpenChange(false)}
+                            className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                        >
+                            <X className="w-5 h-5 text-slate-400" />
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4">
@@ -246,7 +258,7 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
 
                     <CardSection title="Thông tin giao dịch" icon={Tag}>
                         <div className="grid grid-cols-2 gap-5">
-                            <DetailRow label="Số tiền" value={new Intl.NumberFormat('vi-VN').format(formData.amount) + ' đ'} name="amount" type="number" icon={Banknote} />
+                            <DetailRow label="Số tiền" value={new Intl.NumberFormat('vi-VN').format(formData.amount) + ' đ'} name="amount" type="number" icon={Banknote} isEditing={isEditing} formData={formData} onChange={handleChange} />
 
                             <div className="space-y-1.5 font-inter">
                                 <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
@@ -262,27 +274,19 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                                             <SelectValue placeholder="Chọn danh mục" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-xl">
-                                            {isCategoriesLoading ? (
-                                                <SelectItem value="loading" disabled>Đang tải...</SelectItem>
-                                            ) : categoriesError ? (
-                                                <SelectItem value="error" disabled>Lỗi: {(categoriesError as Error).message}</SelectItem>
-                                            ) : !categories || categories.length === 0 ? (
-                                                <SelectItem value="none" disabled>Trống: Hãy kiểm tra RLS policy</SelectItem>
-                                            ) : (
-                                                categories.map((cat: any) => (
-                                                    <SelectItem key={cat.id} value={String(cat.nam)}>{cat.nam}</SelectItem>
-                                                ))
-                                            )}
+                                            {categories?.map((cat: any) => (
+                                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 ) : (
                                     <div className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
-                                        {formData.category_id || 'Phổ thông'}
+                                        {formData.financial_categories?.name || 'Phổ thông'}
                                     </div>
                                 )}
                             </div>
 
-                            <DetailRow label="Ngày ghi nhận" value={formData.recorded_at ? new Date(formData.recorded_at).toLocaleDateString('vi-VN') : '-'} name="recorded_at" type="date" icon={Calendar} />
+                            <DetailRow label="Ngày ghi nhận" value={formData.recorded_at ? new Date(formData.recorded_at).toLocaleDateString('vi-VN') : '-'} name="recorded_at" type="date" icon={Calendar} isEditing={isEditing} formData={formData} onChange={handleChange} />
 
                             <div className="space-y-1.5 font-inter">
                                 <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
@@ -312,36 +316,38 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                         </div>
                     </CardSection>
 
-                    <CardSection title="Phân bổ Chi nhánh" icon={Building2}>
-                        <div className="space-y-1.5 font-inter">
-                            <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                <Building2 className="w-3 h-3" />
-                                Chi nhánh
-                            </Label>
-                            {isEditing ? (
-                                <Select
-                                    onValueChange={(val) => setFormData((p: any) => ({ ...p, branch_id: val }))}
-                                    value={formData.branch_id}
-                                >
-                                    <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm">
-                                        <SelectValue placeholder="Chọn chi nhánh" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl">
-                                        {branches?.map((branch: any) => (
-                                            <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            ) : (
-                                <div className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
-                                    {formData.branches?.name || 'Toàn hệ thống'}
-                                </div>
-                            )}
+                    <CardSection title="Đối tượng & Chi nhánh" icon={Building2}>
+                        <div className="space-y-5">
+                            <div className="space-y-1.5 font-inter">
+                                <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                    <Building2 className="w-3 h-3" />
+                                    Chi nhánh
+                                </Label>
+                                {isEditing ? (
+                                    <Select
+                                        onValueChange={(val) => setFormData((p: any) => ({ ...p, branch_id: val }))}
+                                        value={formData.branch_id}
+                                    >
+                                        <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm">
+                                            <SelectValue placeholder="Chọn chi nhánh" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl">
+                                            {branches?.map((branch: any) => (
+                                                <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <div className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                                        {formData.branches?.name || 'Toàn hệ thống'}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </CardSection>
 
                     <CardSection title="Ghi chú & Diễn giải" icon={StickyNote}>
-                        <DetailRow label="Nội dung" value={formData.description} name="description" type="textarea" />
+                        <DetailRow label="Nội dung" value={formData.description} name="description" type="textarea" isEditing={isEditing} formData={formData} onChange={handleChange} />
                     </CardSection>
                 </div>
 

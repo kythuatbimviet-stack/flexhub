@@ -24,7 +24,8 @@ import {
     Tag,
     StickyNote,
     CreditCard,
-    ChevronDown
+    ChevronDown,
+    Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateRevenue, deleteRevenue } from '@/app/actions/financial'
@@ -46,6 +47,51 @@ interface RevenueDetailsSheetProps {
     onSuccess: () => void
 }
 
+const CardSection = ({ title, icon: Icon, children }: any) => (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden mb-5">
+        <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                <Icon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h3 className="text-[12px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">{title}</h3>
+        </div>
+        <div className="p-5 space-y-5">
+            {children}
+        </div>
+    </div>
+)
+
+const DetailRow = ({ label, value, name, type = "text", icon: Icon, isEditing, formData, onChange }: any) => (
+    <div className="space-y-1.5 font-inter">
+        <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+            {Icon && <Icon className="w-3 h-3" />}
+            {label}
+        </Label>
+        {isEditing ? (
+            type === 'textarea' ? (
+                <Textarea
+                    name={name}
+                    value={formData[name] || ''}
+                    onChange={onChange}
+                    className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[100px] text-sm focus:ring-2 focus:ring-emerald-500 shadow-sm resize-none"
+                />
+            ) : (
+                <Input
+                    name={name}
+                    type={type}
+                    value={formData[name] ?? ''}
+                    onChange={onChange}
+                    className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-emerald-500 shadow-sm"
+                />
+            )
+        ) : (
+            <div className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                {value || <span className="text-slate-300 italic font-normal text-sm">Chưa cập nhật</span>}
+            </div>
+        )}
+    </div>
+)
+
 export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: RevenueDetailsSheetProps) {
     const [isEditing, setIsEditing] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
@@ -66,7 +112,6 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
             return result.data
         },
     })
-
 
     if (!revenue) return null
 
@@ -116,51 +161,6 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
         setFormData((prev: any) => ({ ...prev, [name]: finalValue }))
     }
 
-    const CardSection = ({ title, icon: Icon, children }: any) => (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden mb-5">
-            <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
-                    <Icon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <h3 className="text-[12px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">{title}</h3>
-            </div>
-            <div className="p-5 space-y-5">
-                {children}
-            </div>
-        </div>
-    )
-
-    const DetailRow = ({ label, value, name, type = "text", icon: Icon }: any) => (
-        <div className="space-y-1.5 font-inter">
-            <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                {Icon && <Icon className="w-3 h-3" />}
-                {label}
-            </Label>
-            {isEditing ? (
-                type === 'textarea' ? (
-                    <Textarea
-                        name={name}
-                        value={formData[name] || ''}
-                        onChange={handleChange}
-                        className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[100px] text-sm focus:ring-2 focus:ring-emerald-500 shadow-sm resize-none"
-                    />
-                ) : (
-                    <Input
-                        name={name}
-                        type={type}
-                        value={formData[name] ?? ''}
-                        onChange={handleChange}
-                        className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-emerald-500 shadow-sm"
-                    />
-                )
-            ) : (
-                <div className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
-                    {value || <span className="text-slate-300 italic font-normal text-sm">Chưa cập nhật</span>}
-                </div>
-            )}
-        </div>
-    )
-
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
@@ -185,7 +185,17 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
                         </div>
                     </div>
                     <div className="flex items-center gap-1">
-                        {!isEditing && (
+                        {isEditing ? (
+                            <Button
+                                size="sm"
+                                onClick={handleSave}
+                                disabled={loading}
+                                className="h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3 shadow-sm transition-all active:scale-95 font-medium text-xs mr-1"
+                            >
+                                {loading && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                                Lưu
+                            </Button>
+                        ) : (
                             <>
                                 <Button
                                     variant="ghost"
@@ -240,7 +250,7 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
 
                     <CardSection title="Thông tin giao dịch" icon={Tag}>
                         <div className="grid grid-cols-2 gap-5">
-                            <DetailRow label="Số tiền" value={new Intl.NumberFormat('vi-VN').format(formData.amount) + ' đ'} name="amount" type="number" icon={DollarSign} />
+                            <DetailRow label="Số tiền" value={new Intl.NumberFormat('vi-VN').format(formData.amount) + ' đ'} name="amount" type="number" icon={DollarSign} isEditing={isEditing} formData={formData} onChange={handleChange} />
 
                             <div className="space-y-1.5 font-inter">
                                 <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
@@ -268,7 +278,7 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
                                 )}
                             </div>
 
-                            <DetailRow label="Ngày ghi nhận" value={formData.recorded_at ? new Date(formData.recorded_at).toLocaleDateString('vi-VN') : '-'} name="recorded_at" type="date" icon={Calendar} />
+                            <DetailRow label="Ngày ghi nhận" value={formData.recorded_at ? new Date(formData.recorded_at).toLocaleDateString('vi-VN') : '-'} name="recorded_at" type="date" icon={Calendar} isEditing={isEditing} formData={formData} onChange={handleChange} />
 
                             <div className="space-y-1.5 font-inter">
                                 <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
@@ -300,7 +310,7 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
 
                     <CardSection title="Đối tượng & Chi nhánh" icon={Building2}>
                         <div className="space-y-5">
-                            <DetailRow label="Khách hàng" value={formData.clients?.member_name || 'Khách vãng lai'} name="customer_id" icon={User} />
+                            <DetailRow label="Khách hàng" value={formData.clients?.member_name || 'Khách vãng lai'} name="customer_id" icon={User} isEditing={isEditing} formData={formData} onChange={handleChange} />
 
                             <div className="space-y-1.5 font-inter">
                                 <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
@@ -331,7 +341,7 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
                     </CardSection>
 
                     <CardSection title="Ghi chú & Diễn giải" icon={StickyNote}>
-                        <DetailRow label="Nội dung" value={formData.description} name="description" type="textarea" />
+                        <DetailRow label="Nội dung" value={formData.description} name="description" type="textarea" isEditing={isEditing} formData={formData} onChange={handleChange} />
                     </CardSection>
                 </div>
 

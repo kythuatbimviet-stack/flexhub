@@ -25,7 +25,7 @@ import { fetchClientConfigs } from '@/app/actions/config-params'
 import { ClientDetailsSheet } from '@/components/clients/client-details-sheet'
 import { ImportExcelClientDialog } from '@/components/clients/import-excel-client-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { fetchClientsPage, bulkDeleteClients } from '@/app/actions/clients'
+import { fetchClients, bulkDeleteClients } from '@/app/actions/clients'
 import { fetchBranches } from '@/app/actions/branches'
 import { ContractDetailsSheet } from '@/components/contracts/contract-details-sheet'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
@@ -76,6 +76,16 @@ export default function ClientsPage() {
     })
     const clientStatuses = React.useMemo(() => configResult?.data?.statuses || [], [configResult])
 
+    const { data: allClients = [], isLoading } = useQuery<any[]>({
+        queryKey: ['clients-all'],
+        queryFn: async () => {
+            const res = await fetchClients()
+            return res.success ? (res.data ?? []) : []
+        },
+        staleTime: THIRTY_MINUTES,
+        select: (data) => Array.isArray(data) ? data : [],
+    })
+
     const { data: branches = [] } = useQuery<any[]>({
         queryKey: ['branches'],
         queryFn: async () => {
@@ -85,65 +95,71 @@ export default function ClientsPage() {
         staleTime: Infinity,
     })
 
-    // ── Server-side paginated data ────────────────────────────────────────────
-    const clientsQuery = useQuery({
-        queryKey: [
-            'clients-page',
-            page, pageSize, debouncedSearch, statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter
-        ],
-        queryFn: async () => {
-            const res = await fetchClientsPage({
-                page,
-                pageSize,
-                search: debouncedSearch,
-                status: statusFilter !== 'all' ? statusFilter : '',
-                branch: branchFilter !== 'all' ? branchFilter : '',
-                pt: ptFilter !== 'all' ? ptFilter : '',
-                source: sourceFilter !== 'all' ? sourceFilter : '',
-                regType: regTypeFilter !== 'all' ? regTypeFilter : '',
-            })
-            if (!res.success) throw new Error(res.error)
-            return res
-        },
-        staleTime: THIRTY_MINUTES,
-        placeholderData: (prev) => prev, // keep old data while fetching new page (no layout shift)
-    })
+    // ── Client-side filtering ─────────────────────────────────────────────────
+    const filteredClients = React.useMemo(() => {
+        return allClients.filter((c: any) => {
+            if (debouncedSearch) {
+                const q = debouncedSearch.toLowerCase()
+                if (!c.member_name?.toLowerCase().includes(q) &&
+                    !c.phone?.includes(q) &&
+                    !c.email?.toLowerCase().includes(q) &&
+                    !c.id?.toLowerCase().includes(q)) return false
+            }
+            if (statusFilter !== 'all' && c.status !== statusFilter) return false
+            if (branchFilter !== 'all' && c.branch_id !== branchFilter) return false
+            if (ptFilter !== 'all' && !(c.pt_name?.toLowerCase().includes(ptFilter.toLowerCase()))) return false
+            if (regTypeFilter !== 'all' && c.registration_type !== regTypeFilter) return false
+            if (sourceFilter !== 'all' && c.source !== sourceFilter) return false
+            return true
+        }).sort((a: any, b: any) => {
+            if (!sortConfig) return 0
+            const { key, direction } = sortConfig
+            
+            let valA = a[key]
+            let valB = b[key]
 
-    const statusCounts: Record<string, number> = clientsQuery.data?.statusCounts ?? {}
-    const { data, isLoading, refetch: originalRefetch } = clientsQuery
-    const pagedClients = React.useMemo(() => data?.data || [], [data])
-    const totalCount = data?.count || 0
-    const totalPages = Math.ceil(totalCount / pageSize)
+            // Special handling for branch name lookup if sorting by branch
+            if (key === 'branch_name') {
+                valA = branches.find((br: any) => br.id === a.branch_id)?.name || ''
+                valB = branches.find((br: any) => br.id === b.branch_id)?.name || ''
+            }
 
-    const refetch = () => {
-        originalRefetch()
-        queryClient.invalidateQueries({ queryKey: ['clients-page'] })
-        queryClient.invalidateQueries({ queryKey: ['contracts-all'] })
-        queryClient.invalidateQueries({ queryKey: ['revenue'] })
-        queryClient.invalidateQueries({ queryKey: ['debts-all'] })
-        queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
-    }
+            if (valA === valB) return 0
+            if (valA === null || valA === undefined) return 1
+            if (valB === null || valB === undefined) return -1
 
-    // For Export Excel — fetch all records once (no filter) when user clicks export
-    const { data: allClientsForExport = [] } = useQuery<any[]>({
-        queryKey: ['clients-all-export'],
-        queryFn: async () => {
-            const res = await fetchClientsPage({ pageSize: -1 })
-            return res.success ? (res.data ?? []) : []
-        },
-        staleTime: THIRTY_MINUTES,
-        enabled: false, // only fetch when exportToExcel triggers refetch
-    })
+            const comparison = valA < valB ? -1 : 1
+            return direction === 'asc' ? comparison : -comparison
+        })
+    }, [allClients, debouncedSearch, statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter, sortConfig, branches])
 
-    // ── Filter option lists - derived from current page (server handles actual filtering) ──
+    // ── Pagination (client-side) ──────────────────────────────────────────────
+    const totalCount = filteredClients.length
+    const totalPages = pageSize === -1 ? 1 : Math.ceil(totalCount / pageSize)
+    const pagedClients = React.useMemo(() => {
+        if (pageSize === -1) return filteredClients
+        const from = (page - 1) * pageSize
+        return filteredClients.slice(from, from + pageSize)
+    }, [filteredClients, page, pageSize])
+
+    // ── Filter options — full dataset, not current page ───────────────────────
     const ptOptions = React.useMemo(() =>
-        Array.from(new Set(pagedClients.map((c: any) => c.pt_name).filter(Boolean))), [pagedClients])
+        Array.from(new Set(allClients.map((c: any) => c.pt_name).filter(Boolean))), [allClients])
     const regTypeOptions = React.useMemo(() =>
-        Array.from(new Set(pagedClients.map((c: any) => c.registration_type).filter(Boolean))), [pagedClients])
+        Array.from(new Set(allClients.map((c: any) => c.registration_type).filter(Boolean))), [allClients])
     const sourceOptions = React.useMemo(() =>
-        Array.from(new Set(pagedClients.map((c: any) => c.source).filter(Boolean))), [pagedClients])
+        Array.from(new Set(allClients.map((c: any) => c.source).filter(Boolean))), [allClients])
 
-    const stats = statusCounts
+    // ── Status counts from full dataset ────────────────────────────────────────
+    const stats = React.useMemo(() => {
+        const counts: Record<string, number> = { total: allClients.length }
+        clientStatuses.forEach((s: any) => {
+            counts[s.nam] = allClients.filter((c: any) => c.status === s.nam).length
+        })
+        return counts
+    }, [allClients, clientStatuses])
+
+    const refetch = () => queryClient.invalidateQueries({ queryKey: ['clients-all'] })
 
     const clearFilters = () => {
         setSearchTerm(''); setStatusFilter('all'); setBranchFilter('all')
@@ -177,32 +193,23 @@ export default function ClientsPage() {
     }
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Bạn xóa khách hàng thì toàn bộ hợp đồng, công nợ, doanh thu liên quan đến khách hàng này sẽ bị xóa? Bạn có muốn tiếp tục không?')) return
+        if (!confirm('Bạn có chắc chắn muốn xóa hồ sơ khách hàng này?')) return
         const result = await bulkDeleteClients([id])
-        if (!result.success) {
-            toast.error('Lỗi khi xóa: ' + result.error)
-        } else {
-            toast.success('Đã xóa hồ sơ khách hàng thành công')
-            refetch()
-        }
+        if (!result.success) toast.error('Lỗi khi xóa: ' + result.error)
+        else { toast.success('Đã xóa hồ sơ khách hàng thành công'); refetch() }
     }
 
     const handleBulkDelete = async () => {
         if (!selectedRows.length) return
-        if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedRows.length} hồ sơ đã chọn? Toàn bộ hợp đồng, công nợ, doanh thu liên quan sẽ bị xóa. Bạn có muốn tiếp tục không?`)) return
+        if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedRows.length} hồ sơ đã chọn?`)) return
         const result = await bulkDeleteClients(selectedRows)
-        if (!result.success) {
-            toast.error('Lỗi khi xóa hàng loạt: ' + result.error)
-        } else {
-            toast.success(`Đã xóa thành công ${selectedRows.length} hồ sơ`)
-            setSelectedRows([])
-            refetch()
-        }
+        if (!result.success) toast.error('Lỗi khi xóa hàng loạt: ' + result.error)
+        else { toast.success(`Đã xóa thành công ${selectedRows.length} hồ sơ`); setSelectedRows([]); refetch() }
     }
 
     const exportToExcel = () => {
-        const dataToExport = pagedClients.length > 0
-            ? pagedClients.map((c: any) => ({
+        const dataToExport = filteredClients.length > 0
+            ? filteredClients.map((c: any) => ({
                 'Mã KH': c.id,
                 'Tên hội viên': c.member_name,
                 'Số điện thoại': c.phone,
@@ -218,7 +225,7 @@ export default function ClientsPage() {
                 'Tên PT phụ trách': c.pt_name,
                 'PT được gán (Email)': c.assigned_pt,
                 'Mã chi nhánh': c.branch_id,
-                'Tên chi nhánh': c.branch_name || c.branch_id || 'Hệ thống',
+                'Tên chi nhánh': branches.find((b: any) => b.id === c.branch_id)?.name || 'Hệ thống',
                 'Nguồn khách': c.source,
                 'Người giới thiệu': c.referrer,
                 'Loại đăng ký': c.registration_type,

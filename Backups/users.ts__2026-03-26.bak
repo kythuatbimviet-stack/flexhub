@@ -2,7 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
-import { isAdmin, getAccessControl, UserProfile } from '@/lib/permissions'
+import { isAdmin, UserProfile } from '@/lib/permissions'
 
 async function checkAdmin() {
     const supabase = await createClient()
@@ -22,20 +22,7 @@ async function checkAdmin() {
 export async function fetchUsers() {
     const supabase = await createClient()
     try {
-        // [SEC] Require authentication and apply branch-level access control
-        const { data: { user: authUser } } = await supabase.auth.getUser()
-        if (!authUser?.email) return { success: false, error: 'Unauthorized' }
-
-        const { data: profile } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', authUser.email)
-            .maybeSingle()
-
-        if (!profile) return { success: false, error: 'Unauthorized' }
-        const access = getAccessControl(profile as UserProfile)
-
-        let query = supabase
+        const { data, error } = await supabase
             .from('users')
             .select(`
                 *,
@@ -43,12 +30,6 @@ export async function fetchUsers() {
             `)
             .order('created_at', { ascending: false })
 
-        // Non-admin/CEO/manager users only see their own branch
-        if (!access.canViewAllBranches && profile.branch_id) {
-            query = query.eq('branch_id', profile.branch_id)
-        }
-
-        const { data, error } = await query
         if (error) throw error
         return { success: true, data }
     } catch (error: any) {
@@ -164,10 +145,6 @@ export async function fetchCurrentUserProfile() {
 export async function fetchUserByEmail(email: string) {
     const supabase = await createClient()
     try {
-        // [SEC] Require authentication before looking up any user by email
-        const { data: { user: authUser } } = await supabase.auth.getUser()
-        if (!authUser?.email) return { success: false, error: 'Unauthorized' }
-
         const { data, error } = await supabase
             .from('users')
             .select('*')

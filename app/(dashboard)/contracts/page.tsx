@@ -20,7 +20,10 @@ import {
     ChevronLeft,
     ChevronRight,
     User,
-    CalendarClock
+    CalendarClock,
+    ArrowUpDown,
+    ChevronUp,
+    ChevronDown
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -81,6 +84,22 @@ export default function ContractsPage() {
     const [branchFilter, setBranchFilter] = React.useState('all')
     const [ptFilter, setPtFilter] = React.useState('all')
     const [contractTypeFilter, setContractTypeFilter] = React.useState('all')
+    const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'created_at', direction: 'desc' })
+
+    const handleSort = (key: string) => {
+        let direction: 'asc' | 'desc' = 'asc'
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc'
+        }
+        setSortConfig({ key, direction })
+    }
+
+    const SortIcon = ({ columnKey }: { columnKey: string }) => {
+        if (!sortConfig || sortConfig.key !== columnKey) return <ArrowUpDown className="ml-1 w-3 h-3 opacity-30" />
+        return sortConfig.direction === 'asc' 
+            ? <ChevronUp className="ml-1 w-3 h-3 text-red-500" /> 
+            : <ChevronDown className="ml-1 w-3 h-3 text-red-500" />
+    }
 
     // Debounce search
     React.useEffect(() => {
@@ -118,7 +137,7 @@ export default function ContractsPage() {
 
     // ── Client-side filtering ─────────────────────────────────────────────────
     const filteredContracts = React.useMemo(() => {
-        return (contracts ?? []).filter((c: any) => {
+        let result = (contracts ?? []).filter((c: any) => {
             if (debouncedSearch) {
                 const q = debouncedSearch.toLowerCase()
                 if (
@@ -133,7 +152,19 @@ export default function ContractsPage() {
             if (contractTypeFilter !== 'all' && c.contract_type !== contractTypeFilter) return false
             return true
         })
-    }, [contracts, debouncedSearch, statusFilter, branchFilter, ptFilter, contractTypeFilter])
+
+        if (sortConfig) {
+            result = [...result].sort((a: any, b: any) => {
+                const aValue = a[sortConfig.key] || ''
+                const bValue = b[sortConfig.key] || ''
+                if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1
+                if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1
+                return 0
+            })
+        }
+
+        return result
+    }, [contracts, debouncedSearch, statusFilter, branchFilter, ptFilter, contractTypeFilter, sortConfig])
 
     // ── Pagination (client-side) ──────────────────────────────────────────────
     const totalCount = filteredContracts.length
@@ -321,7 +352,7 @@ export default function ContractsPage() {
                     <div className="flex gap-2">
                         <ImportExcelContractDialog onSuccess={refetch} />
                         <Button variant="ghost" onClick={exportToExcel}
-                            className="rounded-xl border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-100 h-11 w-11 p-0 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
+                            className="rounded-xl border border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400 h-11 w-11 p-0 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all font-medium">
                             <FileDown className="w-5 h-5" />
                         </Button>
                         <Button variant="ghost" asChild
@@ -527,12 +558,37 @@ export default function ContractsPage() {
                                         className="rounded-lg border-gray-300 dark:border-gray-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                                     />
                                 </TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Hợp đồng & Hội viên</TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Dịch vụ & Gói tập</TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Giá trị & Thanh toán</TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Chi nhánh và PT</TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Ngày hợp đồng</TableHead>
-                                <TableHead className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Tùy chọn</TableHead>
+                                <TableHead onClick={() => handleSort('member_name')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
+                                    <div className="flex items-center">
+                                        Hợp đồng & Hội viên 
+                                        <SortIcon columnKey="member_name" />
+                                    </div>
+                                </TableHead>
+                                <TableHead onClick={() => handleSort('package_name')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
+                                    <div className="flex items-center">
+                                        Dịch vụ & Gói tập 
+                                        <SortIcon columnKey="package_name" />
+                                    </div>
+                                </TableHead>
+                                <TableHead onClick={() => handleSort('total_amount')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
+                                    <div className="flex items-center">
+                                        Giá trị & Thanh toán 
+                                        <SortIcon columnKey="total_amount" />
+                                    </div>
+                                </TableHead>
+                                <TableHead onClick={() => handleSort('branch_id')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
+                                    <div className="flex items-center">
+                                        Chi nhánh và PT 
+                                        <SortIcon columnKey="branch_id" />
+                                    </div>
+                                </TableHead>
+                                <TableHead onClick={() => handleSort('start_date')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
+                                    <div className="flex items-center">
+                                        Ngày hợp đồng 
+                                        <SortIcon columnKey="start_date" />
+                                    </div>
+                                </TableHead>
+                                <TableHead className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider">Tùy chọn</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

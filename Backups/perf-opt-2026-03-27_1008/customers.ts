@@ -1,20 +1,10 @@
 'use server'
 
-import { createAdminClient, createClient as createSupabaseClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
-
-async function getAuthUser() {
-    const supabase = await createSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    return user
-}
 
 export async function fetchCustomers() {
     try {
-        // [SEC] Auth check before fetching customers
-        const authUser = await getAuthUser()
-        if (!authUser) return { success: false, error: 'Unauthorized' }
-
         const adminClient = await createAdminClient()
         const { data, error } = await adminClient
             .from('customers')

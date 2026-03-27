@@ -140,7 +140,7 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" className="rounded-xl border border-gray-100 dark:border-gray-800 text-gray-500 hover:text-gray-900 transition-all font-medium h-11 px-4">
+                <Button variant="ghost" className="rounded-xl border border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all font-medium h-11 px-4">
                     <FileUp className="w-4 h-4 mr-2" />
                     Nhập Excel
                 </Button>

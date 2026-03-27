@@ -3,10 +3,8 @@
 import { createAdminClient, createClient as createSupabaseClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { getAccessControl, UserProfile } from '@/lib/permissions'
-import { cache } from 'react'
 
-// Dedup: cache() ensures only 1 DB call per request even if multiple actions use this
-const getAccessFilter = cache(async () => {
+async function getAccessFilter() {
     const supabase = await createSupabaseClient()
     const { data: { user: authUser } } = await supabase.auth.getUser()
     if (!authUser?.email) return null
@@ -19,7 +17,7 @@ const getAccessFilter = cache(async () => {
 
     if (!profile) return null
     return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
-})
+}
 
 export async function fetchClients() {
     try {
@@ -113,19 +111,21 @@ export async function fetchClientsPage({
         dataQuery = applyBaseFilters(dataQuery)
         if (status) dataQuery = dataQuery.eq('status', status)
 
-        // 2. Fetch status config + main data in PARALLEL (was serial before – config blocked data)
-        const [mainResult, statusConfigResult] = await Promise.all([
-            dataQuery,
-            adminClient.from('config_client_status').select('nam')
-        ])
-        const statusNames = statusConfigResult.data?.map((s: any) => s.nam) || []
+        // 2. Prepare Status Count Queries
+        const { data: statusConfigs } = await adminClient.from('config_client_status').select('nam')
+        const statusNames = statusConfigs?.map(s => s.nam) || []
 
-        // 3. Count per status in PARALLEL (only after we know status names)
-        const totalCountPromise = applyBaseFilters(adminClient.from('clients').select('*', { count: 'exact', head: true }))
-        const countPromises = statusNames.map((s: string) => {
+        const countPromises = statusNames.map(s => {
             return applyBaseFilters(adminClient.from('clients').select('*', { count: 'exact', head: true })).eq('status', s)
         })
-        const countResults = await Promise.all([totalCountPromise, ...countPromises])
+        const totalCountPromise = applyBaseFilters(adminClient.from('clients').select('*', { count: 'exact', head: true }))
+
+        // 3. EXECUTE ALL IN PARALLEL
+        const [mainResult, ...countResults] = await Promise.all([
+            dataQuery,
+            ...countPromises,
+            totalCountPromise
+        ])
 
         const { data, error, count } = mainResult
 
@@ -134,13 +134,13 @@ export async function fetchClientsPage({
             return { success: false, error: error.message }
         }
 
-        // Process status counts — countResults[0] = total, [1..N] = per-status
+        // Process status counts
         const statusCounts: Record<string, number> = {}
-        const totalOverallCount = countResults[0].count || 0
-        statusCounts['total'] = totalOverallCount
-        statusNames.forEach((s: string, i: number) => {
-            statusCounts[s] = countResults[i + 1].count || 0
+        statusNames.forEach((s, i) => {
+            statusCounts[s] = countResults[i].count || 0
         })
+        const totalOverallCount = countResults[statusNames.length].count || 0
+        statusCounts['total'] = totalOverallCount
 
         return {
             success: true,
@@ -192,18 +192,6 @@ export async function bulkDeleteClients(ids: string[]) {
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
 
         const adminClient = await createAdminClient()
-
-        // 1. Delete associated data first to avoid foreign key violations
-        // Note: We use customer_id for revenue table as configured in the system
-        await adminClient.from('revenue').delete().in('customer_id', ids)
-        
-        // Delete debts associated with these clients
-        await adminClient.from('debts').delete().in('client_id', ids)
-        
-        // Delete contracts associated with these clients
-        await adminClient.from('contracts').delete().in('client_id', ids)
-
-        // 2. Finally delete the clients
         const { data, error } = await adminClient
             .from('clients')
             .delete()
@@ -211,7 +199,7 @@ export async function bulkDeleteClients(ids: string[]) {
 
         if (error) {
             console.error('Bulk Delete Clients Error:', error)
-            return { success: false, error: 'Lỗi khi xóa khách hàng: ' + error.message }
+            return { success: false, error: error.message }
         }
 
         revalidatePath('/clients')

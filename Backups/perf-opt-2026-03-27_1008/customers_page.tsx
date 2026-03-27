@@ -35,6 +35,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
+import { createClient } from '@/lib/supabase'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
@@ -47,17 +48,11 @@ import { ImportExcelDialog } from '@/components/customers/import-excel-dialog'
 import { CustomerDetailsSheet } from '@/components/customers/customer-details-sheet'
 
 export default function CustomersPage() {
+    const supabase = createClient()
     const [searchTerm, setSearchTerm] = React.useState('')
-    const [debouncedSearch, setDebouncedSearch] = React.useState('')
     const [selectedRows, setSelectedRows] = React.useState<string[]>([])
     const [selectedCustomer, setSelectedCustomer] = React.useState<any | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
-
-    // Debounce search input — prevents filtering on every keystroke
-    React.useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(searchTerm), 300)
-        return () => clearTimeout(t)
-    }, [searchTerm])
 
     const { data: customers, isLoading, refetch } = useQuery({
         queryKey: ['customers'],
@@ -66,7 +61,6 @@ export default function CustomersPage() {
             if (!result.success) throw new Error(result.error)
             return result.data
         },
-        staleTime: 30 * 60 * 1000, // 30 minutes — avoid refetching on every navigation
     })
 
     const handleRowClick = (customer: any, e: React.MouseEvent) => {
@@ -149,9 +143,9 @@ export default function CustomersPage() {
     }
 
     const filteredCustomers = customers?.filter(customer =>
-        customer.name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        customer.email?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        customer.id?.toLowerCase().includes(debouncedSearch.toLowerCase())
+        customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.id?.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
     const toggleRow = (id: string) => {

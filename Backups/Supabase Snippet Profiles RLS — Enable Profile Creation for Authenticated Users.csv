@@ -1,0 +1,37 @@
+schemaname,tablename,policyname,permissive,roles,cmd,qual,with_check
+public,branches,Authenticated users can manage branches,PERMISSIVE,{authenticated},ALL,true,true
+public,branches,Authenticated users can view branches,PERMISSIVE,{authenticated},SELECT,true,null
+public,branches,Enable all access for authenticated,PERMISSIVE,{authenticated},ALL,true,true
+public,clients,Enable all access for authenticated,PERMISSIVE,{authenticated},ALL,true,true
+public,config_finance_expense_type,Allow manage for authenticated,PERMISSIVE,{authenticated},ALL,true,true
+public,config_finance_expense_type,Allow read for anyone,PERMISSIVE,"{anon,authenticated}",SELECT,true,null
+public,contract_placeholders,Allow anon read active,PERMISSIVE,{anon},SELECT,(is_active = true),null
+public,contract_placeholders,Allow authenticated delete,PERMISSIVE,{authenticated},DELETE,true,null
+public,contract_placeholders,Allow authenticated insert,PERMISSIVE,{authenticated},INSERT,null,true
+public,contract_placeholders,Allow authenticated read,PERMISSIVE,{authenticated},SELECT,true,null
+public,contract_placeholders,Allow authenticated update,PERMISSIVE,{authenticated},UPDATE,true,true
+public,contracts,Authenticated users can manage contracts,PERMISSIVE,{authenticated},ALL,true,true
+public,contracts,Authenticated users can view contracts,PERMISSIVE,{authenticated},SELECT,true,null
+public,contracts,Enable all access for authenticated,PERMISSIVE,{authenticated},ALL,true,true
+public,datasetup,Enable all for authenticated users,PERMISSIVE,{authenticated},ALL,true,true
+public,debt_installments,Allow authenticated users to manage installments,PERMISSIVE,{authenticated},ALL,true,true
+public,debts,Allow anon read debts,PERMISSIVE,{anon},SELECT,true,null
+public,debts,Allow authenticated manage debts,PERMISSIVE,{authenticated},ALL,true,true
+public,debts,Allow authenticated users to manage debts,PERMISSIVE,{authenticated},ALL,true,true
+public,expense,Allow all access for authenticated users on expense,PERMISSIVE,{authenticated},ALL,true,true
+public,expense,Allow read for anon,PERMISSIVE,{anon},SELECT,true,null
+public,expense,Allow read for anon (for debugging),PERMISSIVE,{anon},SELECT,true,null
+public,financial_categories,Allow authenticated users to manage financial_categories,PERMISSIVE,{authenticated},ALL,true,null
+public,memberships,Enable all access for authenticated,PERMISSIVE,{authenticated},ALL,true,true
+public,profiles,profiles_insert_own,PERMISSIVE,{authenticated},INSERT,null,(auth.uid() = id)
+public,profiles,profiles_select_all,PERMISSIVE,{public},SELECT,true,null
+public,profiles,profiles_update_own,PERMISSIVE,{authenticated},UPDATE,(auth.uid() = id),(auth.uid() = id)
+public,revenue,Allow anon read revenue,PERMISSIVE,{anon},SELECT,true,null
+public,revenue,Allow authenticated manage revenue,PERMISSIVE,{authenticated},ALL,true,true
+public,revenue,Allow authenticated users to manage revenue,PERMISSIVE,{authenticated},ALL,true,true
+public,users,Enable all access for authenticated,PERMISSIVE,{authenticated},ALL,true,true
+public,weight_tracking,Enable all access for authenticated users,PERMISSIVE,{authenticated},ALL,true,true
+public,zalo_users,Allow authenticated users to delete zalo_users,PERMISSIVE,{authenticated},DELETE,true,null
+public,zalo_users,Allow authenticated users to insert zalo_users,PERMISSIVE,{authenticated},INSERT,null,true
+public,zalo_users,Allow authenticated users to select zalo_users,PERMISSIVE,{authenticated},SELECT,true,null
+public,zalo_users,Allow authenticated users to update zalo_users,PERMISSIVE,{authenticated},UPDATE,true,true

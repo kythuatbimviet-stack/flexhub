@@ -9,6 +9,7 @@ import {
     SheetTitle,
     SheetDescription,
 } from '@/components/ui/sheet'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -45,12 +46,18 @@ import {
     Calendar,
     Quote,
     TrendingUp,
+    TrendingDown,
     History,
     CreditCard,
     Instagram,
     Facebook,
     Users,
-    Camera
+    Camera,
+    Package,
+    Scale,
+    BadgeCheck,
+    ChevronRight,
+    Loader2,
 } from 'lucide-react'
 import {
     Avatar,
@@ -74,7 +81,8 @@ import { ContractDetailsSheet } from '@/components/contracts/contract-details-sh
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
 import { fetchZaloUsers } from '@/app/actions/zalo-users'
 import { fetchUsers } from '@/app/actions/users'
-import { fetchLatestContractByClientId } from '@/app/actions/contracts'
+import { fetchLatestContractByClientId, fetchContractsByClientId } from '@/app/actions/contracts'
+import { fetchWeightChartData } from '@/app/actions/weight-tracking'
 import {
     Popover,
     PopoverContent,
@@ -190,6 +198,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
     const [formData, setFormData] = React.useState<any>(null)
     const [generatingId, setGeneratingId] = React.useState(false)
     const [isContractCreateOpen, setIsContractCreateOpen] = React.useState(false)
+    const [selectedContract, setSelectedContract] = React.useState<any>(null)
     const avatarInputRef = React.useRef<HTMLInputElement>(null)
     const { permissions, user: currentUser, isLoading: permsLoading } = usePermissions()
 
@@ -325,7 +334,34 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
         enabled: !!client?.id,
     })
 
-    if (!formData) return null
+    const [activeTab, setActiveTab] = React.useState('info')
+
+    // Reset tab when opening a different client
+    React.useEffect(() => {
+        if (open) setActiveTab('info')
+    }, [client?.id, open])
+
+    const { data: allContracts = [], isLoading: contractsLoading } = useQuery<any[]>({
+        queryKey: ['client-contracts', client?.id],
+        queryFn: async () => {
+            const res = await fetchContractsByClientId(client!.id)
+            return res.data || []
+        },
+        enabled: !!client?.id && !isCreateMode,
+        staleTime: 5 * 60 * 1000,
+    })
+
+    const { data: weightData = [], isLoading: weightLoading } = useQuery<any[]>({
+        queryKey: ['client-weight', client?.id],
+        queryFn: async () => {
+            const res = await fetchWeightChartData(client!.id)
+            return res.data || []
+        },
+        enabled: !!client?.id && !isCreateMode,
+        staleTime: 5 * 60 * 1000,
+    })
+
+
 
     const handleSave = async () => {
         setLoading(true)
@@ -365,7 +401,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
     }
 
     const handleDelete = async () => {
-        if (confirm('Bạn có chắc chắn muốn xóa khách hàng này?')) {
+        if (confirm('Bạn xóa khách hàng thì toàn bộ hợp đồng, công nợ, doanh thu liên quan đến khách hàng này sẽ bị xóa? Bạn có muốn tiếp tục không?')) {
             setLoading(true)
             try {
                 const result = await bulkDeleteClients([client.id])
@@ -435,6 +471,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
         onChange: handleChange,
         onSelectChange: (name: string, val: string) => setFormData((prev: any) => ({ ...prev, [name]: val }))
     }
+    if (!formData) return null
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -447,7 +484,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                 <SheetHeader className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-6 py-5 flex flex-col items-start gap-4 shrink-0">
                     <div className="flex items-center gap-4">
                         <Avatar className="w-11 h-11 border-2 border-white dark:border-slate-800 shadow-sm rounded-xl">
-                            <AvatarImage src={formData.avatar_url} alt={formData.member_name} className="object-cover" />
+                            <AvatarImage src={formData?.avatar_url} alt={formData?.member_name} className="object-cover" />
                             <AvatarFallback className="bg-blue-100 text-blue-600 dark:bg-blue-900/30">
                                 <UserCircle className="w-7 h-7" />
                             </AvatarFallback>
@@ -460,11 +497,11 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                 {isCreateMode ? (
                                     <span className="text-slate-500 dark:text-slate-400">Hoàn tất thông tin bên dưới (* là bắt buộc)</span>
                                 ) : (
-                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="flex items-center gap-1.5 flex-wrap">
                                         <span className="text-red-600 dark:text-red-500 font-medium">#{client?.id}</span>
                                         <span className="text-slate-300 dark:text-slate-700">|</span>
                                         <span className="text-slate-500 dark:text-slate-400">{client?.email || 'Chưa cập nhật email'}</span>
-                                    </div>
+                                    </span>
                                 )}
                             </SheetDescription>
                         </div>
@@ -540,6 +577,18 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                             </>
                         )}
 
+                        {isEditing && (
+                            <Button
+                                size="sm"
+                                onClick={handleSave}
+                                disabled={loading}
+                                className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all active:scale-95 font-bold text-xs mr-1"
+                            >
+                                {loading && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />}
+                                Lưu
+                            </Button>
+                        )}
+
                         <div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
 
                         <Button
@@ -554,17 +603,40 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                 </SheetHeader>
 
 
-                <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4">
-                    {/* Top Profile Card */}
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-                        <div className="flex items-start gap-5">
-                            <div className="relative group/avatar shrink-0">
-                                <Avatar className="w-20 h-20 rounded-2xl border-4 border-white dark:border-slate-800 shadow-lg shadow-blue-200 dark:shadow-blue-900/20">
-                                    <AvatarImage src={formData.avatar_url} alt={formData.member_name} className="object-cover rounded-2xl" />
-                                    <AvatarFallback className="bg-blue-600 text-white rounded-2xl">
-                                        <UserCircle className="w-12 h-12" />
-                                    </AvatarFallback>
-                                </Avatar>
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
+                        {!isCreateMode && (
+                            <div className="px-6 py-2 bg-white/50 dark:bg-gray-950/50 backdrop-blur-sm border-b border-slate-100 dark:border-slate-800 shrink-0">
+                                <TabsList className="grid w-full grid-cols-3 bg-slate-100/50 dark:bg-slate-900/50 p-1 rounded-xl h-10">
+                                    <TabsTrigger value="info" className="rounded-lg text-xs font-medium py-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400">
+                                        <User className="w-3.5 h-3.5 mr-1.5" />
+                                        Thông tin
+                                    </TabsTrigger>
+                                    <TabsTrigger value="contracts" className="rounded-lg text-xs font-medium py-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400">
+                                        <Package className="w-3.5 h-3.5 mr-1.5" />
+                                        Hợp đồng {allContracts.length > 0 && <span className="ml-1 text-red-600 font-bold">({allContracts.length})</span>}
+                                    </TabsTrigger>
+                                    <TabsTrigger value="progress" className="rounded-lg text-xs font-medium py-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400">
+                                        <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
+                                        Tiến trình {weightData.length > 0 && <span className="ml-1 text-red-600 font-bold">({weightData.length})</span>}
+                                    </TabsTrigger>
+                                </TabsList>
+                            </div>
+                        )}
+
+                        <ScrollArea className="flex-1">
+                            <div className="px-4 sm:px-5 py-5 space-y-4">
+                                <TabsContent value="info" className="space-y-4 m-0 border-none p-0 outline-none">
+                                    {/* Top Profile Card */}
+                                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                                        <div className="flex items-start gap-5">
+                                            <div className="relative group/avatar shrink-0">
+                                                <Avatar className="w-20 h-20 rounded-2xl border-4 border-white dark:border-slate-800 shadow-lg shadow-blue-200 dark:shadow-blue-900/20">
+                                                    <AvatarImage src={formData.avatar_url} alt={formData.member_name} className="object-cover rounded-2xl" />
+                                                    <AvatarFallback className="bg-blue-600 text-white rounded-2xl">
+                                                        <UserCircle className="w-12 h-12" />
+                                                    </AvatarFallback>
+                                                </Avatar>
                                 {isEditing && (
                                     <>
                                         <input
@@ -623,7 +695,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                         )}
                     </div>
 
-                    {!isEditing && hasAccess && (
+                    {!isEditing && !isCreateMode && hasAccess && (
                         <div className="grid grid-cols-2 gap-3">
                             <Button
                                 variant="outline"
@@ -951,6 +1023,201 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                             </div>
                         </ClientCardSection>
                     )}
+                                </TabsContent>
+
+                                <TabsContent value="contracts" className="space-y-4 m-0 border-none p-0 outline-none">
+                                    <div className="flex items-center justify-between mb-2 px-1">
+                                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                                            <Package className="w-4 h-4 text-blue-500" />
+                                            Danh sách hợp đồng <span className="text-red-600 font-bold">({allContracts.length})</span>
+                                        </h3>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            onClick={() => setIsContractCreateOpen(true)}
+                                            className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 gap-1.5 text-xs font-semibold px-2"
+                                        >
+                                            <PlusCircle className="w-3.5 h-3.5" />
+                                            Tạo mới
+                                        </Button>
+                                    </div>
+
+                                    {contractsLoading ? (
+                                        <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-400">
+                                            <Loader2 className="w-6 h-6 animate-spin" />
+                                            <span className="text-xs">Đang tải danh sách...</span>
+                                        </div>
+                                    ) : allContracts.length === 0 ? (
+                                        <div className="py-16 flex flex-col items-center justify-center gap-3 text-slate-400 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
+                                            <Package className="w-8 h-8 opacity-20" />
+                                            <span className="text-xs italic">Chưa có hợp đồng nào.</span>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {allContracts.map((contract) => (
+                                                <div 
+                                                    key={contract.id}
+                                                    onClick={() => setSelectedContract(contract)}
+                                                    className="group bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4 border-l-blue-500"
+                                                >
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <div className="space-y-0.5">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs font-bold text-red-600 dark:text-red-500">#{contract.id}</span>
+                                                                <div className={cn(
+                                                                    "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight",
+                                                                    contract.status === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400" :
+                                                                    contract.status === 'Hết hạn' ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400" :
+                                                                    "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                                                                )}>
+                                                                    {contract.status}
+                                                                </div>
+                                                            </div>
+                                                            <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
+                                                                {contract.package_name || 'Gói tập mặc định'}
+                                                            </h4>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className="text-sm font-bold text-slate-900 dark:text-white">
+                                                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(contract.total_amount || 0)}
+                                                            </div>
+                                                            <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                                                                {contract.payment_method}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-3 gap-y-2 mt-4 pt-4 border-t border-slate-50 dark:border-slate-800/50">
+                                                        <div className="space-y-0.5" title="Thời hạn hợp đồng">
+                                                            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Thời hạn</span>
+                                                            <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                                                <Calendar className="w-3 h-3 text-slate-400" />
+                                                                {contract.start_date ? new Date(contract.start_date).toLocaleDateString('vi-VN') : '---'}
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-0.5 text-center">
+                                                            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Số buổi</span>
+                                                            <div className="text-xs font-bold text-red-600 dark:text-red-400">
+                                                                {contract.total_sessions || '--'}
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-0.5 text-right">
+                                                            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">HLV/PT</span>
+                                                            <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                                                {contract.trainer_name || '---'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </TabsContent>
+
+                                <TabsContent value="progress" className="space-y-4 m-0 border-none p-0 outline-none">
+                                     <div className="flex items-center justify-between mb-2 px-1">
+                                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                                            <TrendingUp className="w-4 h-4 text-emerald-500" />
+                                            Tiến trình luyện tập
+                                        </h3>
+                                        <AddWeightDialog
+                                            clients={[client]}
+                                            initialClientId={client?.id}
+                                            onSuccess={onSuccess}
+                                            triggerOverride={
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm" 
+                                                    className="h-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 gap-1.5 text-xs font-semibold px-2"
+                                                >
+                                                    <PlusCircle className="w-3.5 h-3.5" />
+                                                    Ghi nhận
+                                                </Button>
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cân nặng hiện tại</span>
+                                                <Scale className="w-3.5 h-3.5 text-emerald-500" />
+                                            </div>
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-2xl font-bold text-slate-900 dark:text-white">{formData.weight || '--'}</span>
+                                                <span className="text-xs font-bold text-slate-400">kg</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mục tiêu</span>
+                                                <Target className="w-3.5 h-3.5 text-blue-500" />
+                                            </div>
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-2xl font-bold text-slate-900 dark:text-white">{formData.target_weight || '--'}</span>
+                                                <span className="text-xs font-bold text-slate-400">kg</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {weightLoading ? (
+                                        <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-400">
+                                            <Loader2 className="w-6 h-6 animate-spin" />
+                                            <span className="text-xs">Đang tải dữ liệu...</span>
+                                        </div>
+                                    ) : weightData.length === 0 ? (
+                                        <div className="py-16 flex flex-col items-center justify-center gap-3 text-slate-400 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
+                                            <Activity className="w-8 h-8 opacity-20" />
+                                            <span className="text-xs italic">Chưa có dữ liệu theo dõi.</span>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                                                <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800/50 bg-slate-50/30 dark:bg-slate-800/30 flex items-center justify-between">
+                                                    <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Lịch sử ghi nhận</h4>
+                                                    <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/10 px-2 py-0.5 rounded-full">{weightData.length} bản ghi</span>
+                                                </div>
+                                                <div className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                                                    {weightData.slice().reverse().map((record, idx) => {
+                                                        const prevRecord = weightData[weightData.length - 1 - idx - 1];
+                                                        const diff = prevRecord ? record.weight - prevRecord.weight : 0;
+                                                        
+                                                        return (
+                                                            <div key={idx} className="px-5 py-4 flex items-center justify-between group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-500">
+                                                                        {new Date(record.measurement_date).getDate()}
+                                                                        <span className="text-[8px] ml-0.5">/{new Date(record.measurement_date).getMonth() + 1}</span>
+                                                                    </div>
+                                                                    <div className="space-y-0.5">
+                                                                        <div className="text-sm font-bold text-slate-900 dark:text-white">
+                                                                            {record.weight} <span className="text-[10px] text-slate-400 font-medium lowercase">kg</span>
+                                                                        </div>
+                                                                        <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                                                                            {new Date(record.measurement_date).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                {diff !== 0 && (
+                                                                    <div className={cn(
+                                                                        "flex items-center gap-1 font-bold text-xs",
+                                                                        diff > 0 ? "text-red-500" : "text-emerald-500"
+                                                                    )}>
+                                                                        {diff > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                                                        {Math.abs(diff).toFixed(1)}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </TabsContent>
+                            </div>
+                        </ScrollArea>
+                    </Tabs>
                 </div>
 
                 {/* Sticky Footer */}
@@ -999,9 +1266,14 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                 </div>
             </SheetContent>
             <ContractDetailsSheet
-                contract={null}
-                open={isContractCreateOpen}
-                onOpenChange={setIsContractCreateOpen}
+                contract={selectedContract}
+                open={isContractCreateOpen || !!selectedContract}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsContractCreateOpen(false)
+                        setSelectedContract(null)
+                    }
+                }}
                 onSuccess={onSuccess}
                 initialClientId={client?.id}
                 initialClient={client}

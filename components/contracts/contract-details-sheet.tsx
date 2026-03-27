@@ -75,7 +75,7 @@ import { Badge } from '@/components/ui/badge'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchUsers } from '@/app/actions/users'
 import { toast } from 'sonner'
-import { updateContract, deleteContract, createContract, generateContractId, checkContractIdExists } from '@/app/actions/contracts'
+import { updateContract, deleteContract, createContract, generateContractId, checkContractIdExists, fetchContractById } from '@/app/actions/contracts'
 import { addDays, format } from 'date-fns'
 import { updateClient, fetchClients } from '@/app/actions/clients'
 import { uploadSignature } from '@/app/actions/storage'
@@ -228,20 +228,54 @@ export function ContractDetailsSheet({
     }, [open])
 
     React.useEffect(() => {
-        if (contract) {
-            setFormData({
-                ...contract,
-                avatar_url: contract.clients?.avatar_url || '',
-                dob: contract.dob || contract.clients?.dob || '',
-                client_status: contract.clients?.status || '',
-                medical_condition: contract.medical_condition || contract.medical_history || '',
-                initial_height: contract.initial_height?.toString() || '',
-                initial_weight: contract.initial_weight?.toString() || '',
-                account_number: contract.account_number || contract.branches?.account_number || '',
-                account_holder: contract.account_holder || contract.branches?.account_holder || '',
-                bank_name: contract.bank_name || contract.branches?.bank_name || '',
-                bank_code: contract.bank_code || contract.branches?.bank_code || '',
-            })
+        if (contract?.id && open) {
+            // Check if the contract object already has the necessary joined data (clients and branches)
+            // If it does, we can skip the fetch and show it instantly
+            const hasFullData = contract.clients && contract.branches;
+
+            const initializeWithData = (data: any) => {
+                setFormData({
+                    ...data,
+                    avatar_url: data.clients?.avatar_url || '',
+                    dob: data.dob || data.clients?.dob || '',
+                    client_status: data.clients?.status || '',
+                    medical_condition: data.medical_condition || data.medical_history || '',
+                    initial_height: data.initial_height?.toString() || '',
+                    initial_weight: data.initial_weight?.toString() || '',
+                    account_number: data.account_number || data.branches?.account_number || '',
+                    account_holder: data.account_holder || data.branches?.account_holder || '',
+                    bank_name: data.bank_name || data.branches?.bank_name || '',
+                    bank_code: data.bank_code || data.branches?.bank_code || '',
+                    total_sessions: data.total_sessions?.toString() || '',
+                })
+            }
+
+            if (hasFullData) {
+                initializeWithData(contract)
+                setIsEditing(false)
+                setLoading(false) // No need to fetch
+                return
+            }
+
+            const getFullContract = async () => {
+                setLoading(true)
+                try {
+                    const res = await fetchContractById(contract.id)
+                    if (res.success && res.data) {
+                        initializeWithData(res.data)
+                    } else {
+                        // Fallback to passed contract if fetch fails
+                        setFormData({ ...contract })
+                        toast.error('Không thể nạp toàn bộ thông tin hợp đồng')
+                    }
+                } catch (error) {
+                    console.error('Error fetching full contract:', error)
+                    setFormData({ ...contract })
+                } finally {
+                    setLoading(false)
+                }
+            }
+            getFullContract()
             setIsEditing(false)
         } else if (open && isCreateMode) {
             setIsEditing(true)
@@ -288,6 +322,7 @@ export function ContractDetailsSheet({
                     initialData.account_number = branch.account_number?.toString() || ''
                     initialData.account_holder = branch.account_holder || ''
                     initialData.bank_name = branch.bank_name || ''
+                    initialData.bank_code = branch.bank_code || ''
                 }
                 const fetchId = async () => {
                     setGeneratingId(true)
@@ -314,8 +349,15 @@ export function ContractDetailsSheet({
 
     const filteredPackages = React.useMemo(() => {
         if (!formData.branch_id) return []
-        return packages.filter((pkg: any) => pkg.branch_id === formData.branch_id)
-    }, [packages, formData.branch_id])
+        const byBranch = packages.filter((pkg: any) => pkg.branch_id === formData.branch_id)
+        if (!packageSearchTerm) return byBranch
+        const term = packageSearchTerm.toLowerCase()
+        return byBranch.filter((pkg: any) =>
+            pkg.package_name?.toLowerCase().includes(term) ||
+            pkg.unit_price?.toString().includes(term) ||
+            pkg.package_duration?.toString().includes(term)
+        )
+    }, [packages, formData.branch_id, packageSearchTerm])
 
     // Listen for Realtime updates to the PDF URL
     React.useEffect(() => {
@@ -425,6 +467,7 @@ export function ContractDetailsSheet({
                 package_price: pkgPrice.toString(),
                 total_amount: pkgPrice.toString(),
                 package_duration: pkg.duration_days?.toString() || '',
+                total_sessions: pkg.total_sessions?.toString() || '',
                 end_date: format(endDate, 'yyyy-MM-dd')
             }))
         }
@@ -528,7 +571,8 @@ export function ContractDetailsSheet({
 
     // Auto-generate QR Payment URL
     React.useEffect(() => {
-        if (!formData.account_number || !formData.total_amount || formData.payment_method !== 'Chuyển khoản') {
+        // QR generates whenever account_number + total_amount exist (not just when payment_method = Chuyển khoản)
+        if (!formData.account_number || !formData.total_amount) {
             if (formData.qr_payment_url) setFormData((prev: any) => ({ ...prev, qr_payment_url: '' }))
             return
         }
@@ -650,6 +694,7 @@ export function ContractDetailsSheet({
                     package_price_text,
                     discounted_price_text,
                     total_amount_text,
+                    bank_code, // not a column in contracts table
                     ...contractDataOnly 
                 } = finalFormData
 
@@ -683,6 +728,7 @@ export function ContractDetailsSheet({
                     package_price_text,
                     discounted_price_text,
                     total_amount_text,
+                    bank_code, // not a column in contracts table
                     ...contractDataOnly 
                 } = finalFormData
 
@@ -779,28 +825,20 @@ export function ContractDetailsSheet({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        {isEditing ? (
-                            <>
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => isCreateMode ? onOpenChange(false) : setIsEditing(false)}
-                                    className="h-9 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium"
-                                >
-                                    Hủy
-                                </Button>
-                                <Button 
-                                    size="sm" 
-                                    onClick={handleSave}
-                                    disabled={loading}
-                                    className="h-9 rounded-xl bg-red-600 hover:bg-red-700 text-white px-5 shadow-sm transition-all active:scale-95 font-medium"
-                                >
-                                    {loading && <Loader2 className="w-3 h-3 mr-2 animate-spin" />}
-                                    {isCreateMode ? 'Tạo hợp đồng' : 'Lưu thay đổi'}
-                                </Button>
-                            </>
-                        ) : (
+                    <div className="flex items-center gap-1">
+                        {isEditing && (
+                            <Button 
+                                size="sm" 
+                                onClick={handleSave}
+                                disabled={loading}
+                                className="h-9 rounded-xl bg-red-600 hover:bg-red-700 text-white px-5 shadow-sm transition-all active:scale-95 font-medium mr-1"
+                            >
+                                {loading && <Loader2 className="w-3 h-3 mr-2 animate-spin" />}
+                                {isCreateMode ? 'Tạo hợp đồng' : 'Lưu'}
+                            </Button>
+                        )}
+
+                        {!isEditing && (
                             <div className="flex items-center gap-1">
                                 {!isCreateMode && (
                                     <>
@@ -832,20 +870,27 @@ export function ContractDetailsSheet({
                                         </DropdownMenu>
                                     </>
                                 )}
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => onOpenChange(false)}
-                                    className="h-9 w-9 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                                >
-                                    <X className="w-5 h-5" />
-                                </Button>
                             </div>
                         )}
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onOpenChange(false)}
+                            className="h-9 w-9 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        >
+                            <X className="w-5 h-5" />
+                        </Button>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4">
+                <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4 relative">
+                    {loading && !isEditing && (
+                        <div className="absolute inset-0 z-50 bg-white/60 dark:bg-gray-950/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3">
+                            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                            <span className="text-xs font-medium text-slate-500">Đang nạp dữ liệu hợp đồng...</span>
+                        </div>
+                    )}
                     {/* Top Status Card */}
                     <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
                         <div className="flex items-start gap-5">
@@ -1092,6 +1137,7 @@ export function ContractDetailsSheet({
                                     </Popover>
                                 </ContractDetailRow>
                                 <ContractDetailRow label="Thời hạn gói" value={formData.package_duration} name="package_duration" icon={Clock} {...sharedRowProps} />
+                                <ContractDetailRow label="Số buổi tập" value={formData.total_sessions} name="total_sessions" type="number" icon={Hash} {...sharedRowProps} />
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -1232,7 +1278,7 @@ export function ContractDetailsSheet({
                             </div>
                             <ContractDetailRow label="Ghi chú thanh toán" value={formData.payment_notes} name="payment_notes" icon={FileText} {...sharedRowProps} />
                             
-                            {formData.payment_method === 'Chuyển khoản' && (
+                            {formData.account_number && (
                                 <div className="mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
                                     <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-tight mb-3 block uppercase">Mã QR Thanh toán (VietQR)</Label>
                                     <div className="flex flex-col items-center gap-3">

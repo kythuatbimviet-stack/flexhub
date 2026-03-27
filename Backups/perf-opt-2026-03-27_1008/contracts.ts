@@ -4,10 +4,8 @@ import { createClient, createAdminClient, createClient as createSupabaseClient }
 import { revalidatePath } from 'next/cache'
 import { numberToVietnameseWords } from '@/lib/utils'
 import { getAccessControl, UserProfile } from '@/lib/permissions'
-import { cache } from 'react'
 
-// Dedup: cache() ensures only 1 DB call per request even if multiple actions use this
-const getAccessFilter = cache(async () => {
+async function getAccessFilter() {
     const supabase = await createSupabaseClient()
     const { data: { user: authUser } } = await supabase.auth.getUser()
     if (!authUser?.email) return null
@@ -20,7 +18,7 @@ const getAccessFilter = cache(async () => {
 
     if (!profile) return null
     return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
-})
+}
 
 // [SEC] Validate webhook URL to prevent SSRF — allow only HTTPS to non-private addresses
 function isValidWebhookUrl(url: string): boolean {
@@ -659,22 +657,5 @@ export async function fetchLatestContractByClientId(clientId: string) {
     } catch (error: any) {
         console.error('Fetch Latest Contract Error:', error)
         return { success: false, error: error.message }
-    }
-}
-
-export async function fetchContractsByClientId(clientId: string) {
-    try {
-        const supabase = await createAdminClient()
-        const { data, error } = await supabase
-            .from('contracts')
-            .select('*, clients(*), branches(*)')
-            .eq('client_id', clientId)
-            .order('created_at', { ascending: false })
-
-        if (error) throw error
-        return { success: true, data: data || [] }
-    } catch (error: any) {
-        console.error('Fetch Contracts By Client Error:', error)
-        return { success: false, error: error.message, data: [] }
     }
 }
