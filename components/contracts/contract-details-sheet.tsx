@@ -80,7 +80,7 @@ import { addDays, format } from 'date-fns'
 import { updateClient, fetchClients } from '@/app/actions/clients'
 import { uploadSignature } from '@/app/actions/storage'
 import { SignatureField } from '@/components/ui/signature-field'
-import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
+import { fetchConfigParams, ConfigItem, fetchContractConfigs } from '@/app/actions/config-params'
 import { fetchMemberships } from '@/app/actions/memberships'
 import { cn, numberToVietnameseWords, getVietQRUrl } from '@/lib/utils'
 import { createClient } from '@/lib/supabase'
@@ -103,7 +103,7 @@ const ContractCardSection = ({ title, icon: Icon, children }: any) => (
 
 const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEditing, formData, onChange, children }: any) => {
     const isCurrency = ['package_price', 'discounted_price', 'total_amount'].includes(name)
-    
+
     // Format the value for display in the input while editing
     const getEditValue = () => {
         const val = formData[name] ?? ''
@@ -187,6 +187,9 @@ export function ContractDetailsSheet({
     }, [currentUser, contract])
     const [branches, setBranches] = React.useState<any[]>([])
     const [statuses, setStatuses] = React.useState<ConfigItem[]>([])
+    const [contractSources, setContractSources] = React.useState<ConfigItem[]>([])
+    const [sourceSearchTerm, setSourceSearchTerm] = React.useState('')
+    const [sourceOpen, setSourceOpen] = React.useState(false)
     const [trainerTypes, setTrainerTypes] = React.useState<ConfigItem[]>([])
     const [users, setUsers] = React.useState<any[]>([])
     const [ptSearchTerm, setPtSearchTerm] = React.useState('')
@@ -208,16 +211,19 @@ export function ContractDetailsSheet({
     React.useEffect(() => {
         if (open) {
             const loadData = async () => {
-                const [branchesRes, statusRes, trainerTypeRes, usersRes, clientsRes, membershipsRes] = await Promise.all([
+                const [branchesRes, contractConfigsRes, trainerTypeRes, usersRes, clientsRes, membershipsRes] = await Promise.all([
                     fetchBranches(),
-                    fetchConfigParams('config_contract_status'),
+                    fetchContractConfigs(),
                     fetchConfigParams('config_contract_trainer_type'),
                     fetchUsers(),
                     fetchClients(),
                     fetchMemberships()
                 ])
                 if (branchesRes.success) setBranches(branchesRes.data || [])
-                if (statusRes.success) setStatuses(statusRes.data || [])
+                if (contractConfigsRes.success) {
+                    setStatuses(contractConfigsRes.data?.statuses || [])
+                    setContractSources(contractConfigsRes.data?.sources || [])
+                }
                 if (trainerTypeRes.success) setTrainerTypes(trainerTypeRes.data || [])
                 if (usersRes.success) setUsers(usersRes.data || [])
                 if (clientsRes.success) setClients(clientsRes.data || [])
@@ -285,7 +291,7 @@ export function ContractDetailsSheet({
                 contract_type: 'Hội viên',
                 quantity: '1',
                 payment_method: 'Tiền mặt',
-                package_type: 'offline',
+                package_type: 'Offline',
             }
 
             // Handle pre-filled client
@@ -349,15 +355,20 @@ export function ContractDetailsSheet({
 
     const filteredPackages = React.useMemo(() => {
         if (!formData.branch_id) return []
-        const byBranch = packages.filter((pkg: any) => pkg.branch_id === formData.branch_id)
-        if (!packageSearchTerm) return byBranch
+        let filtered = packages.filter((pkg: any) => pkg.branch_id === formData.branch_id)
+        if (formData.package_type) {
+            filtered = filtered.filter((pkg: any) =>
+                pkg.package_type?.toLowerCase() === formData.package_type.toLowerCase()
+            )
+        }
+        if (!packageSearchTerm) return filtered
         const term = packageSearchTerm.toLowerCase()
-        return byBranch.filter((pkg: any) =>
+        return filtered.filter((pkg: any) =>
             pkg.package_name?.toLowerCase().includes(term) ||
             pkg.unit_price?.toString().includes(term) ||
             pkg.package_duration?.toString().includes(term)
         )
-    }, [packages, formData.branch_id, packageSearchTerm])
+    }, [packages, formData.branch_id, formData.package_type, packageSearchTerm])
 
     // Listen for Realtime updates to the PDF URL
     React.useEffect(() => {
@@ -425,9 +436,9 @@ export function ContractDetailsSheet({
         const res = await generateContractId(branchId)
         if (res.success) {
             const branch = branches.find((b: any) => b.id === branchId)
-            setFormData((prev: any) => ({ 
-                ...prev, 
-                branch_id: branchId, 
+            setFormData((prev: any) => ({
+                ...prev,
+                branch_id: branchId,
                 id: res.data,
                 facility_name: branch?.name || '',
                 address: branch?.address || '',
@@ -467,40 +478,42 @@ export function ContractDetailsSheet({
                 package_price: pkgPrice.toString(),
                 total_amount: pkgPrice.toString(),
                 package_duration: pkg.duration_days?.toString() || '',
-                total_sessions: pkg.total_sessions?.toString() || '',
+                total_sessions: (qty * duration).toString(),
                 end_date: format(endDate, 'yyyy-MM-dd')
             }))
         }
     }
 
     const handleInputChange = (eOrName: React.ChangeEvent<HTMLInputElement> | string, value?: string) => {
-        if (typeof eOrName === 'string') {
-            setFormData((prev: any) => {
-                const newData = { ...prev, [eOrName]: value }
+        const name = typeof eOrName === 'string' ? eOrName : eOrName.target.name
+        const val = typeof eOrName === 'string' ? value : eOrName.target.value
+
+        setFormData((prev: any) => {
+            const newData = { ...prev, [name]: val }
+
+            // Trigger recalculations if quantity, start_date or package_duration changes
+            if (name === 'quantity' || name === 'start_date' || name === 'package_duration') {
+                const qty = parseInt(newData.quantity || '1')
+                const duration = parseInt(newData.package_duration || '0')
+                const pkg = packages.find(p => p.id === prev.membership_id)
                 
-                // Trigger recalculations if quantity or start_date changes
-                if (eOrName === 'quantity' || eOrName === 'start_date') {
-                    const pkg = packages.find(p => p.id === prev.membership_id)
-                    if (pkg) {
-                        const unitPrice = pkg.discounted_price || pkg.unit_price || 0
-                        const qty = parseInt(newData.quantity || '1')
-                        const pkgPrice = unitPrice * qty
-                        const startDate = new Date(newData.start_date || new Date())
-                        const duration = parseInt(pkg.duration_days || '0')
-                        const endDate = addDays(startDate, duration * qty)
-                        
-                        newData.package_price = pkgPrice.toString()
-                        newData.total_amount = pkgPrice.toString()
-                        newData.end_date = format(endDate, 'yyyy-MM-dd')
-                    }
+                if (pkg) {
+                    const unitPrice = pkg.discounted_price || pkg.unit_price || 0
+                    const pkgPrice = unitPrice * qty
+                    newData.package_price = pkgPrice.toString()
+                    newData.total_amount = pkgPrice.toString()
                 }
-                
-                return newData
-            })
-        } else {
-            const { name, value } = eOrName.target
-            setFormData((prev: any) => ({ ...prev, [name]: value }))
-        }
+
+                const startDate = new Date(newData.start_date || new Date())
+                if (!isNaN(startDate.getTime())) {
+                    const endDate = addDays(startDate, duration * qty)
+                    newData.end_date = format(endDate, 'yyyy-MM-dd')
+                    newData.total_sessions = (qty * duration).toString()
+                }
+            }
+
+            return newData
+        })
     }
 
     const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -538,7 +551,7 @@ export function ContractDetailsSheet({
                     const days = Math.floor(sessions * 2.5)
                     const newEndDate = addDays(startDate, days)
                     const formattedEndDate = format(newEndDate, 'yyyy-MM-dd')
-                    
+
                     if (formattedEndDate !== formData.end_date) {
                         setFormData((prev: any) => ({ ...prev, end_date: formattedEndDate }))
                     }
@@ -557,14 +570,14 @@ export function ContractDetailsSheet({
             }
             return
         }
-        
+
         const ptUser = users.find((u: any) => u.email === formData.assigned_pt)
         const phone = ptUser?.phone || ''
         if (formData.staff_phone !== phone || formData.trainer_phone !== phone) {
-            setFormData((prev: any) => ({ 
-                ...prev, 
+            setFormData((prev: any) => ({
+                ...prev,
                 staff_phone: phone,
-                trainer_phone: phone 
+                trainer_phone: phone
             }))
         }
     }, [formData.assigned_pt, users, isEditing, formData.staff_phone, formData.trainer_phone])
@@ -576,9 +589,9 @@ export function ContractDetailsSheet({
             if (formData.qr_payment_url) setFormData((prev: any) => ({ ...prev, qr_payment_url: '' }))
             return
         }
-        
+
         const description = `${(formData.member_name || '').toUpperCase()} TTHD ${(formData.id || '').toUpperCase()}`
-        
+
         const qrUrl = getVietQRUrl(
             formData.bank_code || formData.bank_name || '',
             formData.account_number,
@@ -586,7 +599,7 @@ export function ContractDetailsSheet({
             formData.account_holder || '',
             description
         )
-        
+
         if (formData.qr_payment_url !== qrUrl) {
             setFormData((prev: any) => ({ ...prev, qr_payment_url: qrUrl }))
         }
@@ -623,7 +636,7 @@ export function ContractDetailsSheet({
             if (formData.avatar_url && formData.avatar_url.startsWith('data:image')) {
                 const fileName = `avatar_${formData.client_id || 'new'}_${Date.now()}.png`
                 const uploadResult = await uploadSignature(formData.avatar_url, fileName)
-                
+
                 if (uploadResult.success) {
                     finalFormData.avatar_url = uploadResult.url
                 } else {
@@ -650,7 +663,7 @@ export function ContractDetailsSheet({
             if (formData.signature_url && formData.signature_url.startsWith('data:image')) {
                 const fileName = `client_sig_${formData.id || 'new'}_${Date.now()}.png`
                 const uploadResult = await uploadSignature(formData.signature_url, fileName)
-                
+
                 if (uploadResult.success) {
                     finalFormData.signature_url = uploadResult.url
                 } else {
@@ -684,18 +697,18 @@ export function ContractDetailsSheet({
                 }
 
                 // Prepare data for creation - Filter out UI-only or non-contract columns
-                const { 
-                    avatar_url, 
+                const {
+                    avatar_url,
                     client_status,
-                    clients, 
-                    branches, 
+                    clients,
+                    branches,
                     memberships,
                     daysRemaining,
                     package_price_text,
                     discounted_price_text,
                     total_amount_text,
                     bank_code, // not a column in contracts table
-                    ...contractDataOnly 
+                    ...contractDataOnly
                 } = finalFormData
 
                 const result = await createContract({
@@ -718,18 +731,18 @@ export function ContractDetailsSheet({
                 }
             } else {
                 // 3. FILTER OUT non-existent columns in contracts table
-                const { 
-                    avatar_url, 
+                const {
+                    avatar_url,
                     client_status,
-                    clients, 
-                    branches, 
+                    clients,
+                    branches,
                     memberships,
                     daysRemaining,
                     package_price_text,
                     discounted_price_text,
                     total_amount_text,
                     bank_code, // not a column in contracts table
-                    ...contractDataOnly 
+                    ...contractDataOnly
                 } = finalFormData
 
                 const result = await updateContract(contract.id, contractDataOnly)
@@ -771,7 +784,7 @@ export function ContractDetailsSheet({
 
     const handleGenerateDocPDF = async () => {
         if (!contract?.id) return
-        
+
         // Trigger generation status
         try {
             await updateContract(contract.id, {
@@ -827,8 +840,8 @@ export function ContractDetailsSheet({
 
                     <div className="flex items-center gap-1">
                         {isEditing && (
-                            <Button 
-                                size="sm" 
+                            <Button
+                                size="sm"
                                 onClick={handleSave}
                                 disabled={loading}
                                 className="h-9 rounded-xl bg-red-600 hover:bg-red-700 text-white px-5 shadow-sm transition-all active:scale-95 font-medium mr-1"
@@ -858,7 +871,7 @@ export function ContractDetailsSheet({
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-56 rounded-2xl border-slate-100 dark:border-slate-800 shadow-xl p-1.5 ">
                                                 <DropdownMenuItem onClick={handleGenerateDocPDF} disabled={generatingPdf} className="gap-2.5 py-2.5 rounded-xl focus:bg-slate-50 dark:focus:bg-slate-900 cursor-pointer">
-                                                    <FileText className="w-4 h-4 text-blue-500" /> 
+                                                    <FileText className="w-4 h-4 text-blue-500" />
                                                     <span className="font-medium text-sm">{generatingPdf ? 'Đang chuẩn bị...' : 'Tải File Word (GDoc)'}</span>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator className="my-1 bg-slate-100 dark:bg-slate-800" />
@@ -894,7 +907,7 @@ export function ContractDetailsSheet({
                     {/* Top Status Card */}
                     <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
                         <div className="flex items-start gap-5">
-                            <div 
+                            <div
                                 className={cn(
                                     "w-20 h-20 rounded-2xl flex items-center justify-center overflow-visible shrink-0 shadow-lg relative transition-all bg-white dark:bg-slate-800",
                                     isEditing ? "ring-4 ring-blue-500/20 shadow-blue-100 dark:shadow-none" : "shadow-blue-200 dark:shadow-blue-900/20"
@@ -1056,9 +1069,59 @@ export function ContractDetailsSheet({
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Địa chỉ" value={formData.member_address} name="member_address" icon={MapPin} {...sharedRowProps} />
-                                <ContractDetailRow label="Nguồn khách" value={formData.source} name="source" icon={Users} {...sharedRowProps} />
+                                <ContractDetailRow label="Nguồn khách" value={formData.source} name="source" icon={Users} {...sharedRowProps}>
+                                    <Popover modal={true} open={sourceOpen} onOpenChange={setSourceOpen}>
+                                        <PopoverTrigger asChild>
+                                            <div className="relative w-full">
+                                                <Input
+                                                    value={formData.source || ""}
+                                                    onChange={(e) => handleInputChange('source', e.target.value)}
+                                                    placeholder="Chọn hoặc nhập nguồn..."
+                                                    className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 px-3 pr-10 font-normal text-slate-900 dark:text-white"
+                                                    onFocus={() => setSourceOpen(true)}
+                                                />
+                                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 cursor-pointer" onClick={() => setSourceOpen(!sourceOpen)} />
+                                            </div>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-slate-100 dark:border-slate-800" align="start">
+                                            <div className="p-2 border-b border-slate-50 dark:border-slate-800">
+                                                <Input
+                                                    placeholder="Tìm nguồn..."
+                                                    value={sourceSearchTerm}
+                                                    onChange={(e) => setSourceSearchTerm(e.target.value)}
+                                                    className="h-9 border-none bg-slate-50 dark:bg-slate-900 rounded-lg focus-visible:ring-0"
+                                                />
+                                            </div>
+                                            <ScrollArea className="h-[200px]">
+                                                <div className="p-1">
+                                                    {contractSources.filter(s => s.nam?.toLowerCase().includes(sourceSearchTerm.toLowerCase())).map((source) => (
+                                                        <button
+                                                            key={source.id}
+                                                            type="button"
+                                                            className={cn(
+                                                                "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-900",
+                                                                formData.source === source.nam && "bg-red-50 dark:bg-red-950/20 text-red-600"
+                                                            )}
+                                                            onClick={() => {
+                                                                handleInputChange('source', source.nam)
+                                                                setSourceOpen(false)
+                                                            }}
+                                                        >
+                                                            <span className="font-medium truncate w-full">{source.nam}</span>
+                                                        </button>
+                                                    ))}
+                                                    {contractSources.filter(s => s.nam?.toLowerCase().includes(sourceSearchTerm.toLowerCase())).length === 0 && sourceSearchTerm && (
+                                                        <div className="px-2 py-1.5 text-xs text-slate-500 italic">
+                                                            Sử dụng nguồn mới: "{sourceSearchTerm}"
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </ScrollArea>
+                                        </PopoverContent>
+                                    </Popover>
+                                </ContractDetailRow>
                             </div>
-                            
+
                             <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800/50">
                                 <h4 className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mb-4 tracking-tight">Đại diện pháp luật (Bên B)</h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -1083,7 +1146,28 @@ export function ContractDetailsSheet({
                     {/* Section: Chi tiết hợp đồng */}
                     <ContractCardSection title="Chi tiết hợp đồng" icon={Package}>
                         <div className="space-y-5">
-                            <div className="grid grid-cols-1 sm:grid-cols-1 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <ContractDetailRow label="Phân loại gói" value={formData.package_type} name="package_type" icon={Package} {...sharedRowProps}>
+                                    <Select
+                                        value={formData.package_type}
+                                        onValueChange={(val: string) => {
+                                            setFormData((prev: any) => ({
+                                                ...prev,
+                                                package_type: val,
+                                                membership_id: '', // Reset package when classification changes
+                                                package_name: ''
+                                            }))
+                                        }}
+                                    >
+                                        <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 text-sm">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                            <SelectItem value="Offline">Offline (Tại trung tâm)</SelectItem>
+                                            <SelectItem value="Online">Online</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </ContractDetailRow>
                                 <ContractDetailRow label="Chọn Gói tập" value={formData.package_name} name="membership_id" icon={Package} {...sharedRowProps}>
                                     <Popover modal={true} open={packageOpen} onOpenChange={setPackageOpen}>
                                         <PopoverTrigger asChild>
@@ -1123,7 +1207,7 @@ export function ContractDetailsSheet({
                                                             }}
                                                         >
                                                             <div className="flex flex-col items-start min-w-0">
-                                                                 <span className="font-semibold truncate w-full">{pkg.package_name}</span>
+                                                                <span className="font-semibold truncate w-full">{pkg.package_name}</span>
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="text-[11px] text-red-600 font-medium">{Number(pkg.unit_price).toLocaleString('vi-VN')} ₫</span>
                                                                     <span className="text-[10px] text-slate-400">| {pkg.package_duration} {pkg.duration_unit}</span>
@@ -1136,35 +1220,47 @@ export function ContractDetailsSheet({
                                         </PopoverContent>
                                     </Popover>
                                 </ContractDetailRow>
-                                <ContractDetailRow label="Thời hạn gói" value={formData.package_duration} name="package_duration" icon={Clock} {...sharedRowProps} />
-                                <ContractDetailRow label="Số buổi tập" value={formData.total_sessions} name="total_sessions" type="number" icon={Hash} {...sharedRowProps} />
                             </div>
+
+                            <ContractDetailRow label="Thời hạn gói tập" value={formData.package_duration} name="package_duration" icon={Clock} {...sharedRowProps} />
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Số lượng" value={formData.quantity} name="quantity" type="number" icon={Hash} {...sharedRowProps} />
-                                <ContractDetailRow label="Phân loại gói" value={formData.package_type} name="package_type" icon={Package} {...sharedRowProps}>
-                                    <Select
-                                        value={formData.package_type}
-                                        onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, package_type: val }))}
-                                    >
-                                        <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 text-sm">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                            <SelectItem value="offline">Offline (Tại trung tâm)</SelectItem>
-                                            <SelectItem value="online">Online</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </ContractDetailRow>
+                                <ContractDetailRow label="Số buổi tập" value={formData.total_sessions} name="total_sessions" type="number" icon={Hash} {...sharedRowProps} />
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Ngày bắt đầu" value={formData.start_date} name="start_date" type="date" icon={Calendar} {...sharedRowProps} />
                                 <ContractDetailRow label="Ngày kết thúc" value={formData.end_date} name="end_date" type="date" icon={Calendar} {...sharedRowProps} />
                             </div>
+                        </div>
+                    </ContractCardSection>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                <ContractDetailRow label="Huấn luyện viên" value={formData.trainer_name} name="assigned_pt" icon={Dumbbell} {...sharedRowProps}>
+                    {/* Section: Nhân sự & Trung tâm */}
+                    <ContractCardSection title="Nhân sự & Trung tâm" icon={ShieldCheck}>
+                        <div className="space-y-5">
+                            <ContractDetailRow label="Chi nhánh" value={branches?.find((b: any) => b.id === formData.branch_id)?.name} name="branch_id" icon={Building2} {...sharedRowProps}>
+                                <Select
+                                    value={formData.branch_id}
+                                    onValueChange={handleBranchChange}
+                                >
+                                    <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 text-sm">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                        {branches.map(b => (
+                                            <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </ContractDetailRow>
+
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-tight flex items-center gap-2">
+                                    <UserCheck className="w-3 h-3" />
+                                    Huấn luyện viên phụ trách (PT)
+                                </Label>
+                                {isEditing ? (
                                     <Popover modal={true} open={ptOpen} onOpenChange={setPtOpen}>
                                         <PopoverTrigger asChild>
                                             <Button
@@ -1173,18 +1269,18 @@ export function ContractDetailsSheet({
                                                 className="w-full justify-between rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 px-3 font-normal text-slate-900 dark:text-white"
                                             >
                                                 <span className="truncate">
-                                                    {formData.trainer_name || "Chọn PT..."}
+                                                    {formData.assigned_pt ? (users.find(u => u.email === formData.assigned_pt)?.name || formData.trainer_name) : (formData.trainer_name || "Chọn PT...")}
                                                 </span>
-                                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-slate-100 dark:border-slate-800">
                                             <div className="p-2 border-b border-slate-50 dark:border-slate-800">
-                                                <Input 
-                                                    placeholder="Tìm nhân viên..." 
+                                                <Input
+                                                    placeholder="Tìm nhân viên..."
                                                     value={ptSearchTerm}
                                                     onChange={(e) => setPtSearchTerm(e.target.value)}
-                                                    className="h-9 border-none bg-slate-50 dark:bg-slate-900 rounded-lg focus-visible:ring-0" 
+                                                    className="h-9 border-none bg-slate-50 dark:bg-slate-900 rounded-lg focus-visible:ring-0"
                                                 />
                                             </div>
                                             <ScrollArea className="h-[200px]">
@@ -1202,7 +1298,8 @@ export function ContractDetailsSheet({
                                                                     ...prev,
                                                                     assigned_pt: user.email,
                                                                     trainer_name: user.name,
-                                                                    staff_phone: user.phone || ''
+                                                                    staff_phone: user.phone || '',
+                                                                    trainer_phone: user.phone || '' // Sync both
                                                                 }))
                                                                 setPtOpen(false)
                                                             }}
@@ -1217,23 +1314,16 @@ export function ContractDetailsSheet({
                                             </ScrollArea>
                                         </PopoverContent>
                                     </Popover>
-                                </ContractDetailRow>
-                                <ContractDetailRow label="Chi nhánh" value={branches?.find((b: any) => b.id === formData.branch_id)?.name} name="branch_id" icon={Building2} {...sharedRowProps}>
-                                    <Select
-                                        value={formData.branch_id}
-                                        onValueChange={handleBranchChange}
-                                    >
-                                        <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 text-sm">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                            {branches.map(b => (
-                                                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </ContractDetailRow>
+                                ) : (
+                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                                        {users.find(u => u.email === formData.assigned_pt)?.name || formData.trainer_name || '-'}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="SĐT PT/Nhân sự" value={formData.trainer_phone} name="trainer_phone" icon={Phone} {...sharedRowProps} />
+                                <ContractDetailRow label="Đại diện trung tâm" value={formData.center_representative} name="center_representative" icon={UserCheck} {...sharedRowProps} />
                             </div>
                         </div>
                     </ContractCardSection>
@@ -1277,16 +1367,16 @@ export function ContractDetailsSheet({
                                 </div>
                             </div>
                             <ContractDetailRow label="Ghi chú thanh toán" value={formData.payment_notes} name="payment_notes" icon={FileText} {...sharedRowProps} />
-                            
+
                             {formData.account_number && (
                                 <div className="mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
                                     <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-tight mb-3 block uppercase">Mã QR Thanh toán (VietQR)</Label>
                                     <div className="flex flex-col items-center gap-3">
                                         {formData.qr_payment_url ? (
                                             <>
-                                                <img 
-                                                    src={formData.qr_payment_url} 
-                                                    alt="VietQR Payment" 
+                                                <img
+                                                    src={formData.qr_payment_url}
+                                                    alt="VietQR Payment"
                                                     className="w-48 h-48 rounded-xl shadow-lg bg-white p-2"
                                                 />
                                                 <p className="text-[10px] text-slate-400 text-center max-w-[200px]">
@@ -1304,79 +1394,7 @@ export function ContractDetailsSheet({
                         </div>
                     </ContractCardSection>
 
-                    {/* Section: Nhân sự & Trung tâm */}
-                    <ContractCardSection title="Nhân sự & Trung tâm" icon={ShieldCheck}>
-                        <div className="space-y-5">
-                            <div className="space-y-1.5">
-                                <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-tight flex items-center gap-2">
-                                    <UserCheck className="w-3 h-3" />
-                                    Huấn luyện viên phụ trách (PT)
-                                </Label>
-                                {isEditing ? (
-                                    <Popover modal={true} open={ptOpen} onOpenChange={setPtOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                className="w-full justify-between rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 px-3 font-normal text-slate-900 dark:text-white"
-                                            >
-                                                <span className="truncate">
-                                                    {formData.assigned_pt ? (users.find(u => u.email === formData.assigned_pt)?.name || formData.trainer_name) : (formData.trainer_name || "Chọn PT...")}
-                                                </span>
-                                                <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-slate-100 dark:border-slate-800">
-                                            <div className="p-2 border-b border-slate-50 dark:border-slate-800">
-                                                <Input 
-                                                    placeholder="Tìm nhân viên..." 
-                                                    value={ptSearchTerm}
-                                                    onChange={(e) => setPtSearchTerm(e.target.value)}
-                                                    className="h-9 border-none bg-slate-50 dark:bg-slate-900 rounded-lg focus-visible:ring-0" 
-                                                />
-                                            </div>
-                                            <ScrollArea className="h-[200px]">
-                                                <div className="p-1">
-                                                    {users.filter(u => u.name?.toLowerCase().includes(ptSearchTerm.toLowerCase())).map((user: any) => (
-                                                        <button
-                                                            key={user.id}
-                                                            type="button"
-                                                            className={cn(
-                                                                "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-900",
-                                                                formData.assigned_pt === user.email && "bg-red-50 dark:bg-red-950/20 text-red-600"
-                                                            )}
-                                                            onClick={() => {
-                                                                setFormData((prev: any) => ({
-                                                                    ...prev,
-                                                                    assigned_pt: user.email,
-                                                                    trainer_name: user.name,
-                                                                    staff_phone: user.phone || ''
-                                                                }))
-                                                                setPtOpen(false)
-                                                            }}
-                                                        >
-                                                            <div className="flex flex-col items-start min-w-0">
-                                                                <span className="font-medium truncate w-full">{user.name}</span>
-                                                                <span className="text-[10px] text-slate-400 truncate w-full">{user.email}</span>
-                                                            </div>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </ScrollArea>
-                                        </PopoverContent>
-                                    </Popover>
-                                ) : (
-                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
-                                        {users.find(u => u.email === formData.assigned_pt)?.name || formData.trainer_name || '-'}
-                                    </p>
-                                )}
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                <ContractDetailRow label="SĐT Nhân sự" value={formData.staff_phone} name="staff_phone" icon={Phone} {...sharedRowProps} />
-                                <ContractDetailRow label="Đại diện trung tâm" value={formData.center_representative} name="center_representative" icon={UserCheck} {...sharedRowProps} />
-                            </div>
-                        </div>
-                    </ContractCardSection>
+
 
                     {/* Section: Chữ ký khách hàng */}
                     <ContractCardSection title="Chữ ký khách hàng" icon={Cloud}>
@@ -1394,9 +1412,9 @@ export function ContractDetailsSheet({
                                 ) : (
                                     formData.signature_url ? (
                                         <div className="flex flex-col items-center justify-center p-4 min-h-[120px] bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-                                            <img 
-                                                src={formData.signature_url} 
-                                                alt="Chữ ký khách hàng" 
+                                            <img
+                                                src={formData.signature_url}
+                                                alt="Chữ ký khách hàng"
                                                 className="max-h-32 object-contain"
                                                 onError={(e: any) => e.target.style.display = 'none'}
                                             />

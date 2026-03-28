@@ -171,17 +171,19 @@ export async function fetchContractConfigs() {
     try {
         const supabase = await createAdminClient()
 
-        const { data, error } = await supabase
-            .from('config_contract_status')
-            .select('*')
-            .order('value', { ascending: true })
+        const [statusRes, sourceRes] = await Promise.all([
+            supabase.from('config_contract_status').select('*').order('value', { ascending: true }),
+            supabase.from('config_contract_source').select('*').order('value', { ascending: true })
+        ])
 
-        if (error) throw error
+        if (statusRes.error) throw statusRes.error
+        if (sourceRes.error) throw sourceRes.error
 
         return {
             success: true,
             data: {
-                statuses: data as ConfigItem[]
+                statuses: statusRes.data as ConfigItem[],
+                sources: sourceRes.data as ConfigItem[] || []
             }
         }
     } catch (error: any) {
