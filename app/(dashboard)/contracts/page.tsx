@@ -64,9 +64,133 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import { format } from 'date-fns'
 import * as XLSX from 'xlsx'
 
 const THIRTY_MINUTES = 30 * 60 * 1000
+
+const MemberSummaryPopover = ({ contract, onShowDetails }: { contract: any, onShowDetails: () => void }) => {
+    const age = React.useMemo(() => {
+        if (!contract.dob) return null
+        try {
+            const birthDate = new Date(contract.dob)
+            if (isNaN(birthDate.getTime())) return null
+            const today = new Date()
+            let age = today.getFullYear() - birthDate.getFullYear()
+            const m = today.getMonth() - birthDate.getMonth()
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--
+            }
+            return age
+        } catch (e) {
+            return null
+        }
+    }, [contract.dob])
+
+    const weightLoss = React.useMemo(() => {
+        const initial_w = parseFloat(contract.initial_weight || '0')
+        const target_w = parseFloat(contract.target_weight || '0')
+        if (!isNaN(initial_w) && !isNaN(target_w) && initial_w > 0) {
+            return initial_w - target_w
+        }
+        return null
+    }, [contract.initial_weight, contract.target_weight])
+
+    const formattedDob = React.useMemo(() => {
+        if (!contract.dob) return '--'
+        try {
+            const d = new Date(contract.dob)
+            if (isNaN(d.getTime())) return '--'
+            return format(d, 'dd/MM/yyyy')
+        } catch (e) {
+            return '--'
+        }
+    }, [contract.dob])
+
+    return (
+        <PopoverContent 
+            className="w-[320px] p-0 border-none shadow-2xl rounded-[24px] overflow-hidden bg-white dark:bg-gray-950 font-inter" 
+            onClick={(e) => e.stopPropagation()}
+        >
+            <div className="p-6 space-y-6">
+                {/* Header: Avatar, Name & Phone */}
+                <div className="flex items-center gap-4">
+                    <Avatar className="w-16 h-16 border-2 border-slate-50 dark:border-slate-800 shadow-sm rounded-2xl">
+                        <AvatarImage src={contract.avatar_url} className="object-cover" />
+                        <AvatarFallback className="bg-slate-100 text-slate-400">
+                            <User className="w-8 h-8" />
+                        </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col gap-0.5">
+                        <h4 className="text-[17px] font-bold text-slate-900 dark:text-white leading-tight">
+                            {contract.member_name}
+                        </h4>
+                        <span className="text-[14px] font-semibold text-rose-500 tracking-tight">
+                            {contract.phone}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Info List */}
+                <div className="space-y-3.5">
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-slate-500 font-medium">Ngày sinh</span>
+                        <span className="text-slate-900 dark:text-slate-200 font-semibold uppercase">
+                            {formattedDob} 
+                            {age !== null ? ` (${age} tuổi)` : ''}
+                        </span>
+                    </div>
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-slate-500 font-medium">Chiều cao (cm)</span>
+                        <span className="text-slate-900 dark:text-slate-200 font-semibold">{contract.initial_height || '--'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-slate-500 font-medium">Cân nặng ban đầu (kg)</span>
+                        <span className="text-slate-900 dark:text-slate-200 font-semibold">{contract.initial_weight || '--'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-slate-500 font-medium font-inter">Cân nặng dự kiến giảm (kg)</span>
+                        <span className="text-slate-900 dark:text-slate-200 font-semibold">
+                            {weightLoss !== null && weightLoss > 0 ? weightLoss : '--'}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="h-px bg-slate-100 dark:bg-slate-800 w-full" />
+
+                <div className="space-y-3.5">
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-slate-500 font-medium">Facebook cá nhân</span>
+                        <span className="text-slate-900 dark:text-slate-200 font-semibold">--</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-slate-500 font-medium">Email</span>
+                        <span className="text-blue-600 dark:text-blue-400 font-semibold hover:underline cursor-pointer truncate max-w-[180px]">
+                            {contract.email || '--'}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Footer Action */}
+                <Button 
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        onShowDetails()
+                    }}
+                    className="w-full h-12 rounded-xl bg-[#FD5771] hover:bg-[#e04d64] text-white font-bold text-[14px] transition-all active:scale-[0.98] shadow-lg shadow-red-100 dark:shadow-red-950/20"
+                >
+                    Xem chi tiết
+                </Button>
+            </div>
+        </PopoverContent>
+    )
+}
 
 export default function ContractsPage() {
     const queryClient = useQueryClient()
@@ -634,13 +758,37 @@ export default function ContractsPage() {
                                                     <Checkbox checked={selectedRows.includes(contract.id)}
                                                         onCheckedChange={() => toggleRow(contract.id)} className="rounded-lg" />
                                                 </TableCell>
-                                                <TableCell className="py-2">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-normal text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
-                                                            {contract.member_name}
-                                                            <BadgeCheck className="w-3.5 h-3.5 text-blue-500 fill-blue-50" />
-                                                        </span>
-                                                        <span className="text-[10px] text-gray-400 dark:text-gray-300 font-medium">{contract.id}</span>
+                                                <TableCell className="py-2.5">
+                                                    <div className="flex items-start justify-between group">
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <span className="text-[11px] font-bold text-rose-500 uppercase tracking-wider">
+                                                                {contract.id}
+                                                            </span>
+                                                            <span className="text-[14px] font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                                                                {contract.member_name}
+                                                            </span>
+                                                            <span className="text-[12px] font-medium text-gray-400 dark:text-gray-300">
+                                                                {contract.phone}
+                                                            </span>
+                                                        </div>
+
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <button 
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-500"
+                                                                >
+                                                                    <ChevronDown className="w-4 h-4" />
+                                                                </button>
+                                                            </PopoverTrigger>
+                                                            <MemberSummaryPopover 
+                                                                contract={contract} 
+                                                                onShowDetails={() => {
+                                                                    setSelectedContract(contract); 
+                                                                    setIsDetailsOpen(true)
+                                                                }} 
+                                                            />
+                                                        </Popover>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>

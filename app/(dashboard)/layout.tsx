@@ -136,28 +136,26 @@ export default function DashboardLayout({
                                             Quản trị khách hàng Phòng Gym Chuyên nghiệp
                                         </span>
                                     </div>
-
-                                    <Link
-                                        href="/app-store"
-                                        className={cn(
-                                            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border border-transparent",
-                                            isAppStore
-                                                ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 border-blue-100 dark:border-blue-900/50"
-                                                : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-200 dark:hover:border-gray-700"
-                                        )}
-                                    >
-                                        <svg className="w-4 h-4 transition-transform group-hover:rotate-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
-                                        </svg>
-                                        <span>Kho Ứng dụng</span>
-                                    </Link>
                                 </div>
 
                                 <div className="flex items-center gap-2 sm:gap-4">
                                     <div className="flex items-center gap-1">
-                                        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-full hidden sm:flex">
-                                            <Search className="w-5 h-5" />
-                                        </Button>
+                                        <Link href="/app-store">
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className={cn(
+                                                    "rounded-full transition-all duration-200",
+                                                    isAppStore 
+                                                        ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" 
+                                                        : "text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                                                )}
+                                            >
+                                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+                                                </svg>
+                                            </Button>
+                                        </Link>
 
                                         <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-full relative">
                                             <Bell className="w-5 h-5" />
