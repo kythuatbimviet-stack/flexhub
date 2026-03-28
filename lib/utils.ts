@@ -102,3 +102,58 @@ export function getVietQRUrl(bankCode: string, accountNo: string, amount: number
     
     return `https://img.vietqr.io/image/${bankId}-${cleanAccount}-compact.png?amount=${amount}&addInfo=${encodedDesc}&accountName=${encodedName}`
 }
+export function formatExcelDate(value: any): string | null {
+    if (!value) return null;
+
+    // Case 1: Already a valid YYYY-MM-DD string
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return value;
+    }
+
+    // Case 2: Javascript Date object
+    if (value instanceof Date) {
+        try {
+            return value.toISOString().split('T')[0];
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Case 3: Excel serial date (number)
+    const serial = Number(value);
+    if (!isNaN(serial) && serial > 1 && serial < 100000) { // Safety range for common human dates
+        try {
+            // Excel dates are number of days since Dec 30, 1899.
+            // 25569 is the number of days between 1899-12-30 and 1970-01-01.
+            const date = new Date(Math.round((serial - 25569) * 86400 * 1000));
+            if (!isNaN(date.getTime())) {
+                return date.toISOString().split('T')[0];
+            }
+        } catch (e) {
+            // fallback
+        }
+    }
+
+    // Case 4: Other string formats (DD/MM/YYYY, DD-MM-YYYY etc)
+    if (typeof value === 'string') {
+        const parts = value.split(/[/\-.]/);
+        if (parts.length === 3) {
+            // Assume DD/MM/YYYY -> YYYY-MM-DD
+            if (parts[2].length === 4) {
+                const day = parts[0].padStart(2, '0');
+                const month = parts[1].padStart(2, '0');
+                const year = parts[2];
+                return `${year}-${month}-${day}`;
+            }
+            // Assume YYYY/MM/DD -> YYYY-MM-DD
+            if (parts[0].length === 4) {
+                const year = parts[0];
+                const month = parts[1].padStart(2, '0');
+                const day = parts[2].padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+        }
+    }
+
+    return null;
+}
