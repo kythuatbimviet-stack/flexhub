@@ -243,11 +243,11 @@ export default function CustomersPage() {
                                         className="rounded-md border-gray-300 dark:border-gray-600"
                                     />
                                 </TableHead>
-                                <TableHead className="font-bold text-gray-900 dark:text-gray-100 py-4 text-sm">Khách hàng</TableHead>
-                                <TableHead className="font-bold text-gray-900 dark:text-gray-100 text-sm">Địa chỉ & Liên hệ</TableHead>
-                                <TableHead className="font-bold text-gray-900 dark:text-gray-100 text-sm">Phân loại</TableHead>
-                                <TableHead className="font-bold text-gray-900 dark:text-gray-100 text-sm">Mã số thuế</TableHead>
-                                <TableHead className="font-bold text-gray-900 dark:text-gray-100 text-right pr-6 text-sm">Thao tác</TableHead>
+                                <TableHead className="font-black text-black dark:text-gray-100 py-4 text-sm">Khách hàng</TableHead>
+                                <TableHead className="font-black text-black dark:text-gray-100 text-sm">Địa chỉ & Liên hệ</TableHead>
+                                <TableHead className="font-black text-black dark:text-gray-100 text-sm">Phân loại</TableHead>
+                                <TableHead className="font-black text-black dark:text-gray-100 text-sm">Mã số thuế</TableHead>
+                                <TableHead className="font-black text-black dark:text-gray-100 text-right pr-6 text-sm">Thao tác</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -286,7 +286,7 @@ export default function CustomersPage() {
                                                 className="rounded-md border-gray-300 dark:border-gray-600"
                                             />
                                         </TableCell>
-                                        <TableCell className="font-medium text-gray-900 dark:text-gray-100 py-5">
+                                        <TableCell className="font-bold text-black dark:text-gray-100 py-5">
                                             <div className="flex flex-col gap-0.5">
                                                 <div className="flex items-center gap-2">
                                                     {customer.name}
@@ -297,14 +297,14 @@ export default function CustomersPage() {
                                                 <span className="text-[10px] text-gray-400 dark:text-gray-500 font-normal uppercase tracking-widest">{customer.id}</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-gray-500 dark:text-gray-400 text-sm">
+                                        <TableCell className="text-slate-700 dark:text-gray-400 text-sm font-medium">
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex items-center gap-2">
-                                                    <Mail className="w-3.5 h-3.5" />
+                                                    <Mail className="w-3.5 h-3.5 text-slate-400" />
                                                     <span className="truncate max-w-[200px]">{customer.email || 'N/A'}</span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <Phone className="w-3.5 h-3.5" />
+                                                    <Phone className="w-3.5 h-3.5 text-slate-400" />
                                                     <span>{customer.phone || 'N/A'}</span>
                                                 </div>
                                             </div>
@@ -314,7 +314,7 @@ export default function CustomersPage() {
                                                 Customer
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-gray-600 dark:text-gray-400 font-mono text-xs">
+                                        <TableCell className="text-black dark:text-gray-400 font-mono text-xs font-bold">
                                             {customer.tax_code || '-'}
                                         </TableCell>
                                         <TableCell className="text-right pr-6">

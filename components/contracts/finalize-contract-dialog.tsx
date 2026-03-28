@@ -17,9 +17,12 @@ import {
     Loader2,
     Activity,
     Clock,
-    Wallet
+    Wallet,
+    Dumbbell
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, getVietQRUrl } from '@/lib/utils'
+import { Label } from '@/components/ui/label'
+import { addDays, format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -101,6 +104,42 @@ export function FinalizeContractDialog({
         }
     }, [open, contract, form])
 
+    // Auto-calculate end_date when start_date changes
+    const watchStartDate = form.watch('start_date')
+    React.useEffect(() => {
+        if (!watchStartDate || !contract) return
+
+        try {
+            const startDate = new Date(watchStartDate)
+            if (isNaN(startDate.getTime())) return
+
+            let durationDays = 0
+            if (contract.membership_id && contract.package_duration) {
+                durationDays = Number(contract.package_duration) * Number(contract.quantity || 1)
+            } else if (contract.total_sessions) {
+                durationDays = Math.floor(Number(contract.total_sessions) * 2.5)
+            } else {
+                // FALLBACK: Calculate from original dates
+                const origStart = new Date(contract.start_date)
+                const origEnd = new Date(contract.end_date)
+                if (!isNaN(origStart.getTime()) && !isNaN(origEnd.getTime())) {
+                    durationDays = Math.round((origEnd.getTime() - origStart.getTime()) / (1000 * 60 * 60 * 24))
+                }
+            }
+
+            if (durationDays > 0) {
+                const newEndDate = addDays(startDate, durationDays)
+                const formattedEndDate = format(newEndDate, 'yyyy-MM-dd')
+                const currentEndDate = form.getValues('end_date')
+                if (formattedEndDate !== currentEndDate) {
+                    form.setValue('end_date', formattedEndDate)
+                }
+            }
+        } catch (e) {
+            console.error('Error auto-calculating end_date:', e)
+        }
+    }, [watchStartDate, contract, form])
+
     const watchTotalAmount = contract?.total_amount || 0
     const watchPaidUpfront = form.watch('paid_upfront')
 
@@ -108,6 +147,24 @@ export function FinalizeContractDialog({
     const paidUpfrontNum = Number(watchPaidUpfront?.toString().replace(/\./g, '') || 0)
     const remainingBalance = totalAmountNum - paidUpfrontNum
     const hasDebt = remainingBalance > 0
+
+    // Generate QR Payment URL if Transfer method selected
+    const watchPaymentMethod = form.watch('payment_method')
+    const qrPaymentUrl = React.useMemo(() => {
+        if (watchPaymentMethod !== 'Chuyển khoản' || !contract?.account_number) return null
+
+        // Priority amount to pay now
+        const amount = paidUpfrontNum > 0 ? paidUpfrontNum : totalAmountNum
+        const description = `${(contract.member_name || '').toUpperCase()} TTHD ${(contract.id || '').toUpperCase()}`
+
+        return getVietQRUrl(
+            contract.bank_code || contract.bank_name || '',
+            contract.account_number,
+            amount,
+            contract.account_holder || '',
+            description
+        )
+    }, [watchPaymentMethod, contract, paidUpfrontNum, totalAmountNum])
 
     const onSubmit = async (values: z.infer<typeof finalizeFormSchema>) => {
         setLoading(true)
@@ -197,13 +254,13 @@ export function FinalizeContractDialog({
                                 <Clock className="w-4 h-4" />
                                 Thời gian hiệu lực
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-2 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
                                     name="signing_date"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Ngày ký HĐ</FormLabel>
+                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight uppercase">Ngày ký HĐ</FormLabel>
                                             <FormControl>
                                                 <Input type="date" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11" />
                                             </FormControl>
@@ -211,12 +268,24 @@ export function FinalizeContractDialog({
                                         </FormItem>
                                     )}
                                 />
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight uppercase pb-1.5">Số buổi tập</p>
+                                    <div className="flex items-center gap-2 h-11 bg-slate-50 dark:bg-slate-900 rounded-xl px-4 border border-gray-100 dark:border-gray-800">
+                                        <Dumbbell className="w-4 h-4 text-red-500" />
+                                        <p className="text-base font-bold text-gray-900 dark:text-white leading-none">
+                                            {contract?.total_sessions || 0} <span className="text-xs font-normal text-gray-400 normal-case ml-1">buổi tập</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
                                     name="start_date"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Ngày bắt đầu tập</FormLabel>
+                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight uppercase">Ngày bắt đầu tập</FormLabel>
                                             <FormControl>
                                                 <Input type="date" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11" />
                                             </FormControl>
@@ -229,7 +298,7 @@ export function FinalizeContractDialog({
                                     name="end_date"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Ngày kết thúc tập</FormLabel>
+                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight uppercase">Ngày kết thúc tập</FormLabel>
                                             <FormControl>
                                                 <Input type="date" {...field} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 h-11" />
                                             </FormControl>
@@ -249,8 +318,8 @@ export function FinalizeContractDialog({
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-1 pt-2">
-                                    <p className="text-[10px] text-gray-500 font-medium tracking-tight">Tổng giá trị hợp đồng</p>
-                                    <p className="text-2xl font-medium text-gray-950 dark:text-white leading-none">
+                                    <p className="text-[10px] text-gray-500 font-medium tracking-tight uppercase underline decoration-gray-200 underline-offset-4 mb-1">Giá trị hợp đồng</p>
+                                    <p className="text-2xl font-bold text-gray-950 dark:text-white leading-none tracking-tight">
                                         {totalAmountNum.toLocaleString('vi-VN')} <span className="text-sm font-normal text-gray-400">VNĐ</span>
                                     </p>
                                 </div>
@@ -302,6 +371,34 @@ export function FinalizeContractDialog({
                                 />
                             </div>
 
+                            {/* QR Payment Section */}
+                            {qrPaymentUrl && (
+                                <div className="mt-4 p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-tight mb-4 block uppercase flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        Mã QR Thanh toán (VietQR)
+                                    </Label>
+                                    <div className="flex flex-col items-center gap-4">
+                                        <div className="relative group">
+                                            <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl opacity-20 blur group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                                            <img
+                                                src={qrPaymentUrl}
+                                                alt="VietQR Payment"
+                                                className="relative w-48 h-48 rounded-xl shadow-xl bg-white p-2 border border-slate-100"
+                                            />
+                                        </div>
+                                        <div className="text-center space-y-1">
+                                            <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                                                QUÉT MÃ ĐỂ THANH TOÁN {(paidUpfrontNum > 0 ? paidUpfrontNum : totalAmountNum).toLocaleString('vi-VN')} ₫
+                                            </p>
+                                            <p className="text-[10px] text-slate-400 max-w-[220px] leading-relaxed italic">
+                                                Tự động điền số tài khoản, số tiền và nội dung thanh toán.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Plan if balance exists */}
                             {hasDebt ? (
                                 <div className="p-6 rounded-2xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 space-y-6">
@@ -311,8 +408,12 @@ export function FinalizeContractDialog({
                                             <p className="text-xl font-medium text-red-600 leading-none">{remainingBalance.toLocaleString('vi-VN')} VNĐ</p>
                                         </div>
                                         <div className="text-right space-y-1">
-                                            <p className="text-[10px] text-gray-500 font-medium tracking-tight">Gói tập</p>
-                                            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{contract?.package_name}</p>
+                                            <p className="text-[10px] text-gray-500 font-medium tracking-tight uppercase">Gói tập & Số buổi</p>
+                                            <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{contract?.package_name}</p>
+                                            <p className="text-xs font-medium text-red-600 flex items-center justify-end gap-1">
+                                                <Dumbbell className="w-3 h-3" />
+                                                {contract?.total_sessions} buổi tập
+                                            </p>
                                         </div>
                                     </div>
 

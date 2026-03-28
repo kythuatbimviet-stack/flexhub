@@ -443,20 +443,20 @@ export default function ClientsPage() {
                                         className="rounded-lg border-gray-300 dark:border-gray-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                                     />
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('member_name')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-gray-600 transition-colors">
+                                <TableHead onClick={() => handleSort('member_name')} className="text-[11px] font-black text-black dark:text-blue-300 h-9 cursor-pointer hover:text-gray-600 transition-colors">
                                     <div className="flex items-center">Hội viên <SortIcon columnKey="member_name" /></div>
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('phone')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 hidden md:table-cell cursor-pointer hover:text-gray-600 transition-colors">
+                                <TableHead onClick={() => handleSort('phone')} className="text-[11px] font-black text-black dark:text-blue-300 h-9 hidden md:table-cell cursor-pointer hover:text-gray-600 transition-colors">
                                     <div className="flex items-center">Liên hệ <SortIcon columnKey="phone" /></div>
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('branch_name')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 hidden sm:table-cell cursor-pointer hover:text-gray-600 transition-colors">
+                                <TableHead onClick={() => handleSort('branch_name')} className="text-[11px] font-black text-black dark:text-blue-300 h-9 hidden sm:table-cell cursor-pointer hover:text-gray-600 transition-colors">
                                     <div className="flex items-center">PT & Chi nhánh <SortIcon columnKey="branch_name" /></div>
                                 </TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 hidden lg:table-cell">Chỉ số & Mục tiêu</TableHead>
-                                <TableHead onClick={() => handleSort('status')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-gray-600 transition-colors">
+                                <TableHead className="text-[11px] font-black text-black dark:text-blue-300 h-9 hidden lg:table-cell">Chỉ số & Mục tiêu</TableHead>
+                                <TableHead onClick={() => handleSort('status')} className="text-[11px] font-black text-black dark:text-blue-300 h-9 cursor-pointer hover:text-gray-600 transition-colors">
                                     <div className="flex items-center">Trạng thái <SortIcon columnKey="status" /></div>
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('created_at')} className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-gray-600 transition-colors">
+                                <TableHead onClick={() => handleSort('created_at')} className="text-right pr-8 text-[11px] font-black text-black dark:text-blue-300 h-9 cursor-pointer hover:text-gray-600 transition-colors">
                                     <div className="flex items-center justify-end">Tùy chọn <SortIcon columnKey="created_at" /></div>
                                 </TableHead>
                             </TableRow>
@@ -503,33 +503,33 @@ export default function ClientsPage() {
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-normal text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
+                                                    <span className="text-sm font-bold text-black dark:text-gray-100 flex items-center gap-1.5">
                                                         {client.member_name}
                                                         {client.status === 'Đang tập' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
                                                     </span>
-                                                    <span className="text-[10px] text-red-600 dark:text-red-500 font-medium tracking-tight">#{client.id}</span>
+                                                    <span className="text-[10px] text-red-600 dark:text-red-500 font-bold tracking-tight">#{client.id}</span>
                                                 </div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="hidden md:table-cell">
-                                            <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
-                                                <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-gray-400" />{client.phone || '-'}</div>
-                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]"><Mail className="w-3 h-3" />{client.email || 'N/A'}</div>
+                                            <div className="flex flex-col text-sm text-slate-800 dark:text-gray-300">
+                                                <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-slate-500" />{client.phone || '-'}</div>
+                                                <div className="flex items-center gap-1.5 text-slate-500 dark:text-gray-400 text-[11px] font-medium"><Mail className="w-3 h-3" />{client.email || 'N/A'}</div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="hidden sm:table-cell">
-                                            <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
-                                                <div className="flex items-center gap-1.5"><Dumbbell className="w-3 h-3 text-red-500/20" />{client.pt_name || 'Chưa gán PT'}</div>
-                                                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]"><Building2 className="w-3 h-3" />{branches.find((b: any) => b.id === client.branch_id)?.name || 'Hệ thống'}</div>
+                                            <div className="flex flex-col text-sm text-slate-800 dark:text-gray-300">
+                                                <div className="flex items-center gap-1.5"><Dumbbell className="w-3 h-3 text-red-500" />{client.pt_name || 'Chưa gán PT'}</div>
+                                                <div className="flex items-center gap-1.5 text-slate-500 dark:text-gray-400 text-[11px] font-medium"><Building2 className="w-3 h-3" />{branches.find((b: any) => b.id === client.branch_id)?.name || 'Hệ thống'}</div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="hidden lg:table-cell">
-                                            <div className="flex flex-col text-[11px] text-gray-600 dark:text-gray-300 leading-normal">
+                                            <div className="flex flex-col text-[11px] text-slate-800 dark:text-gray-300 leading-normal font-medium">
                                                 <div className="flex items-center gap-1.5">
-                                                    <Activity className="w-3 h-3 text-red-500/20" />
+                                                    <Activity className="w-3 h-3 text-red-500" />
                                                     {client.height ? `${client.height}cm` : '-'} | {client.weight ? `${client.weight}kg` : '-'} → {client.target_weight ? `${client.target_weight}kg` : '-'}
                                                 </div>
-                                                <div className="flex items-center gap-1.5 text-gray-400 line-clamp-1 max-w-[150px]">
+                                                <div className="flex items-center gap-1.5 text-slate-500 dark:text-gray-400 line-clamp-1 max-w-[150px]">
                                                     <Target className="w-3 h-3" />
                                                     {client.medical_history || 'Không có tiền sử bệnh lý'}
                                                 </div>

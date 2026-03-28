@@ -296,6 +296,7 @@ export async function finalizeContract(id: string, finalizeData: any) {
                     branch_id: contractData.branch_id,
                     note: `Tự động tạo khi chốt ký HĐ ${contractData.id}`
                 }])
+                .select()
                 .maybeSingle()
 
             if (debtError) throw debtError
