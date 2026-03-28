@@ -126,7 +126,7 @@ export async function payInstallment(installmentId: string, revenueData: any) {
                 .single()
 
             if (debt) {
-                const newPaidAmount = Number(debt.paid_amount) + Number(installment.amount)
+                const newPaidAmount = Number(debt.paid_amount) + Number(revenueData.amount)
                 const newRemaining = Number(debt.total_amount) - newPaidAmount
                 const newStatus = newRemaining <= 0 ? 'Đã thanh toán' : 'Thanh toán một phần'
 
@@ -144,6 +144,55 @@ export async function payInstallment(installmentId: string, revenueData: any) {
         revalidatePath('/debts')
         revalidatePath('/revenue')
         return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function updateDebtInstallment(id: string, data: any) {
+    const supabase = await createClient()
+    try {
+        const { error } = await supabase
+            .from('debt_installments')
+            .update(data)
+            .eq('id', id)
+
+        if (error) throw error
+        revalidatePath('/debts')
+        return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function deleteDebtInstallment(id: string) {
+    const supabase = await createClient()
+    try {
+        const { error } = await supabase
+            .from('debt_installments')
+            .delete()
+            .eq('id', id)
+
+        if (error) throw error
+        revalidatePath('/debts')
+        return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+export async function createDebtInstallment(debtId: string, installment: any) {
+    const supabase = await createClient()
+    try {
+        const { data, error } = await supabase
+            .from('debt_installments')
+            .insert([{ ...installment, debt_id: debtId }])
+            .select()
+            .single()
+
+        if (error) throw error
+        revalidatePath('/debts')
+        return { success: true, data }
     } catch (error: any) {
         return { success: false, error: error.message }
     }
