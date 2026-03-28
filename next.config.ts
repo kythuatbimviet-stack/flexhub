@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Enable standalone mode for Docker
+  output: 'standalone',
   // Tách TypeScript check ra khỏi build để tránh OOM.
   // Chạy `npm run type-check` riêng để kiểm tra lỗi type.
   typescript: {

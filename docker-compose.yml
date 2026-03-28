@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  gymerp-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gymerp-web:latest
+    container_name: gymerp-web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      # Add other environment variables here as needed
+    env_file:
+      - .env.production

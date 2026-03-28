@@ -7,6 +7,8 @@ import { fetchClients } from '@/app/actions/clients'
 import { fetchContracts } from '@/app/actions/contracts'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchZaloUsers } from '@/app/actions/zalo-users'
+import { fetchRevenue, fetchExpense } from '@/app/actions/financial'
+import { fetchDebts } from '@/app/actions/debts'
 
 export interface AppDataProgressProps {
     onProgress?: (percent: number, message: string) => void
@@ -31,7 +33,7 @@ export function AppDataInitializer({ onProgress, onComplete }: AppDataProgressPr
 
     const prefetchAll = React.useCallback(async () => {
         let completed = 0
-        const total = 5
+        const total = 8
 
         const trackProgress = (message: string) => {
             completed++
@@ -43,11 +45,14 @@ export function AppDataInitializer({ onProgress, onComplete }: AppDataProgressPr
         }
 
         const tasks = [
-            { key: ['all-configs'], fn: fetchAllConfigs, msg: 'Cấu hình hệ thống', stale: Infinity },
-            { key: ['branches'], fn: fetchBranches, msg: 'Danh sách chi nhánh', stale: Infinity },
             { key: ['clients-all'], fn: fetchClients, msg: 'Dữ liệu khách hàng', stale: THIRTY_MINUTES },
             { key: ['contracts-all'], fn: fetchContracts, msg: 'Dữ liệu hợp đồng', stale: THIRTY_MINUTES },
+            { key: ['revenue'], fn: fetchRevenue, msg: 'Dữ liệu thu', stale: THIRTY_MINUTES },
+            { key: ['expense'], fn: fetchExpense, msg: 'Dữ liệu chi', stale: THIRTY_MINUTES },
+            { key: ['debts'], fn: fetchDebts, msg: 'Dữ liệu công nợ', stale: THIRTY_MINUTES },
             { key: ['zalo-users-all'], fn: fetchZaloUsers, msg: 'Dữ liệu Zalo', stale: THIRTY_MINUTES },
+            { key: ['all-configs'], fn: fetchAllConfigs, msg: 'Cấu hình hệ thống', stale: Infinity },
+            { key: ['branches'], fn: fetchBranches, msg: 'Danh sách chi nhánh', stale: Infinity },
         ]
 
         try {
@@ -92,6 +97,9 @@ export function AppDataInitializer({ onProgress, onComplete }: AppDataProgressPr
             // Invalidate business data only (configs stay Infinity)
             queryClient.invalidateQueries({ queryKey: ['clients-all'] })
             queryClient.invalidateQueries({ queryKey: ['contracts-all'] })
+            queryClient.invalidateQueries({ queryKey: ['revenue'] })
+            queryClient.invalidateQueries({ queryKey: ['expense'] })
+            queryClient.invalidateQueries({ queryKey: ['debts'] })
             queryClient.invalidateQueries({ queryKey: ['zalo-users-all'] })
         }, THIRTY_MINUTES)
         return () => clearInterval(interval)
