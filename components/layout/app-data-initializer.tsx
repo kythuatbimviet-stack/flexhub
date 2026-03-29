@@ -15,93 +15,79 @@ export interface AppDataProgressProps {
     onComplete?: () => void
 }
 
-const THIRTY_MINUTES = 30 * 60 * 1000
+const FIVE_MINUTES = 5 * 60 * 1000
+const TEN_MINUTES = 10 * 60 * 1000
 
 /**
- * AppDataInitializer — Renders nothing, but prefetches all critical data into the
- * React Query cache immediately after login.
+ * AppDataInitializer — Renders nothing. Prefetches all critical data into
+ * the React Query cache silently after login.
  *
- * Data is only fetched if:
- *   1. It is not already present in the cache (cold start or first load), OR
- *   2. The cache has expired (older than 30 min for business data, Infinity for configs)
- *
- * Background auto-sync runs every 30 minutes silently.
+ * ✅ No longer blocks the UI — layout renders immediately.
+ * ✅ Data is served from IndexedDB cache on subsequent visits (near-instant).
+ * ✅ staleTime: 5 min for business data — auto-refetches when stale.
+ * ✅ Background auto-sync every 10 minutes.
  */
-export function AppDataInitializer({ onProgress, onComplete }: AppDataProgressProps) {
+export function AppDataInitializer({ onProgress, onComplete }: AppDataProgressProps = {}) {
     const queryClient = useQueryClient()
     const hasPrefetched = React.useRef(false)
 
     const prefetchAll = React.useCallback(async () => {
-        let completed = 0
-        const total = 8
-
-        const trackProgress = (message: string) => {
-            completed++
-            const percent = Math.round((completed / total) * 100)
-            onProgress?.(percent, message)
-            if (completed === total) {
-                onComplete?.()
-            }
-        }
-
         const tasks = [
-            { key: ['clients-all'], fn: fetchClients, msg: 'Dữ liệu khách hàng', stale: THIRTY_MINUTES },
-            { key: ['contracts-all'], fn: fetchContracts, msg: 'Dữ liệu hợp đồng', stale: THIRTY_MINUTES },
-            { key: ['revenue'], fn: fetchRevenue, msg: 'Dữ liệu thu', stale: THIRTY_MINUTES },
-            { key: ['expense'], fn: fetchExpense, msg: 'Dữ liệu chi', stale: THIRTY_MINUTES },
-            { key: ['debts'], fn: fetchDebts, msg: 'Dữ liệu công nợ', stale: THIRTY_MINUTES },
-            { key: ['zalo-users-all'], fn: fetchZaloUsers, msg: 'Dữ liệu Zalo', stale: THIRTY_MINUTES },
-            { key: ['all-configs'], fn: fetchAllConfigs, msg: 'Cấu hình hệ thống', stale: Infinity },
-            { key: ['branches'], fn: fetchBranches, msg: 'Danh sách chi nhánh', stale: Infinity },
+            { key: ['clients-all'],    fn: fetchClients,    msg: 'Khách hàng',    stale: FIVE_MINUTES },
+            { key: ['contracts-all'],  fn: fetchContracts,  msg: 'Hợp đồng',      stale: FIVE_MINUTES },
+            { key: ['revenue'],        fn: fetchRevenue,    msg: 'Khoản thu',      stale: FIVE_MINUTES },
+            { key: ['expense'],        fn: fetchExpense,    msg: 'Khoản chi',      stale: FIVE_MINUTES },
+            { key: ['debts'],          fn: fetchDebts,      msg: 'Công nợ',        stale: FIVE_MINUTES },
+            { key: ['zalo-users-all'], fn: fetchZaloUsers,  msg: 'Zalo',           stale: FIVE_MINUTES },
+            { key: ['all-configs'],    fn: fetchAllConfigs, msg: 'Cấu hình',       stale: Infinity },
+            { key: ['branches'],       fn: fetchBranches,   msg: 'Chi nhánh',      stale: Infinity },
         ]
 
-        try {
-            // Start all prefetches in parallel for maximum speed
-            await Promise.allSettled(tasks.map(t => 
-                queryClient.prefetchQuery({
-                    queryKey: t.key,
-                    queryFn: async () => {
-                        try {
-                            const res = await t.fn()
-                            trackProgress(`Đã tải xong ${t.msg.toLowerCase()}`)
-                            return res.success ? (res.data ?? []) : []
-                        } catch (e) {
-                            console.error(`Prefetch error for ${t.msg}:`, e)
-                            trackProgress(`Bỏ qua ${t.msg.toLowerCase()} (có lỗi)`)
-                            return []
-                        }
-                    },
-                    staleTime: t.stale,
-                })
-            ))
-        } catch (error) {
-            console.error('Critical error during prefetch:', error)
-        } finally {
-            // Safety: Ensure we always finish initialization even if some tasks failed to report progress
-            if (completed < total) {
-                onComplete?.()
-            }
-        }
+        const total = tasks.length
+        let completed = 0
+
+        await Promise.allSettled(tasks.map(t =>
+            queryClient.prefetchQuery({
+                queryKey: t.key,
+                queryFn: async () => {
+                    try {
+                        const res = await t.fn()
+                        return res.success ? (res.data ?? []) : []
+                    } catch (e) {
+                        console.warn(`[AppDataInitializer] Prefetch failed for ${t.msg}:`, e)
+                        return []
+                    } finally {
+                        completed++
+                        const percent = Math.round((completed / total) * 100)
+                        onProgress?.(percent, `Đã tải ${t.msg.toLowerCase()}`)
+                        if (completed === total) onComplete?.()
+                    }
+                },
+                staleTime: t.stale,
+            })
+        ))
+
+        // Safety net: ensure onComplete fires even if some tasks errored silently
+        if (completed < total) onComplete?.()
     }, [queryClient, onProgress, onComplete])
 
-    // Initial load on mount
+    // One-shot prefetch on mount
     React.useEffect(() => {
         if (hasPrefetched.current) return
         hasPrefetched.current = true
         prefetchAll()
     }, [prefetchAll])
 
-    // Background auto-sync every 30 minutes (silent — no loading indicators shown)
+    // Background auto-sync every 10 minutes (silent — no loading indicators shown)
     React.useEffect(() => {
         const interval = setInterval(() => {
-            // Invalidate business data only (configs stay Infinity)
             queryClient.invalidateQueries({ queryKey: ['clients-all'] })
             queryClient.invalidateQueries({ queryKey: ['contracts-all'] })
             queryClient.invalidateQueries({ queryKey: ['revenue'] })
             queryClient.invalidateQueries({ queryKey: ['expense'] })
             queryClient.invalidateQueries({ queryKey: ['debts'] })
             queryClient.invalidateQueries({ queryKey: ['zalo-users-all'] })
-        }, THIRTY_MINUTES)
+        }, TEN_MINUTES)
         return () => clearInterval(interval)
     }, [queryClient])
 

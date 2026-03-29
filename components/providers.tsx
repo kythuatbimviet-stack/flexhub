@@ -17,22 +17,22 @@ const idbPersister = createAsyncStoragePersister({
     key: 'gymcrm-cache-v1',
 })
 
-// Config tables: Infinity. Business data: 30 mins.
-// Individual queries can override via their own staleTime.
-const BUSINESS_DATA_KEYS = ['clients-all', 'contracts-all']
+const FIVE_MINUTES = 5 * 60 * 1000
 
 function makeQueryClient() {
     return new QueryClient({
         defaultOptions: {
             queries: {
-                // Default: Infinity for ref/config data
-                staleTime: Infinity,
-                // Keep unused data in cache for 24h
+                // Business data: 5 min stale. Individual queries can override.
+                staleTime: FIVE_MINUTES,
+                // Keep unused data in cache for 24h (survives navigation)
                 gcTime: 24 * 60 * 60 * 1000,
                 // Don't retry hard failures aggressively
                 retry: 1,
-                // Don't refetch when window refocuses (manual control only)
-                refetchOnWindowFocus: false,
+                // Auto-refresh when user switches back to this tab
+                refetchOnWindowFocus: true,
+                // Auto-refresh when network reconnects (e.g. phone hotspot)
+                refetchOnReconnect: true,
             },
         },
     })
@@ -47,7 +47,6 @@ function getQueryClient() {
     }
     if (!browserQueryClient) {
         browserQueryClient = makeQueryClient()
-        // Business data uses 30 min staleTime — set after init
     }
     return browserQueryClient
 }
@@ -61,7 +60,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             persistOptions={{
                 persister: idbPersister,
                 maxAge: 24 * 60 * 60 * 1000, // 24h max cache age
-                buster: 'v2', // bumped to clear stale cache from previous format
+                buster: 'v3', // bumped — staleTime & refetch policy changed
             }}
         >
             <NextThemesProvider

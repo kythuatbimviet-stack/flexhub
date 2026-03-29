@@ -30,7 +30,7 @@ import { fetchClientConfigs } from '@/app/actions/config-params'
 import { ClientDetailsSheet } from '@/components/clients/client-details-sheet'
 import { ImportExcelClientDialog } from '@/components/clients/import-excel-client-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { fetchClientsPage, bulkDeleteClients, fetchClientFilterOptions } from '@/app/actions/clients'
+import { fetchClients, bulkDeleteClients, fetchClientFilterOptions } from '@/app/actions/clients'
 import { fetchBranches } from '@/app/actions/branches'
 import { ContractDetailsSheet } from '@/components/contracts/contract-details-sheet'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
@@ -42,8 +42,8 @@ import {
 } from '@/components/ui/avatar'
 import { usePermissions } from '@/hooks/use-permissions'
 
-const ONE_MINUTE = 60000
 const ONE_HOUR = 3600000
+const FIVE_MINUTES = 5 * 60 * 1000
 
 export default function ClientsPage() {
     const queryClient = useQueryClient()
@@ -71,13 +71,14 @@ export default function ClientsPage() {
 
     // Debounce search
     React.useEffect(() => {
-        const t = setTimeout(() => { setDebouncedSearch(searchTerm); setPage(1) }, 400)
+        const t = setTimeout(() => { setDebouncedSearch(searchTerm); setPage(1) }, 300)
         return () => clearTimeout(t)
     }, [searchTerm])
     React.useEffect(() => { setPage(1) }, [statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter, pageSize])
 
     const { permissions, user: currentUser, isLoading: isLoadingPermissions } = usePermissions()
 
+    // ── Config queries (long-lived cache) ────────────────────────────────────
     const { data: configResult } = useQuery({
         queryKey: ['client-configs'],
         queryFn: fetchClientConfigs,
@@ -98,6 +99,19 @@ export default function ClientsPage() {
         queryKey: ['client-filter-options'],
         queryFn: fetchClientFilterOptions,
         staleTime: ONE_HOUR,
+    })
+
+    // ── Global cache — single fetch for ALL clients (Option B: client-side filter) ──
+    // This query is prefetched by AppDataInitializer on login, so it's instant on first nav
+    const { data: allClients = [], isLoading } = useQuery<any[]>({
+        queryKey: ['clients-all'],
+        queryFn: async () => {
+            const res = await fetchClients()
+            return res.success ? (res.data ?? []) : []
+        },
+        staleTime: FIVE_MINUTES,
+        refetchOnWindowFocus: true,     // Auto-refresh when switching back to tab
+        refetchOnReconnect: true,       // Auto-refresh when network reconnects
     })
 
     const allowedBranches = React.useMemo(() => {
@@ -122,67 +136,95 @@ export default function ClientsPage() {
         }
     }, [permissions, isLoadingPermissions, filterOptionsResult, ptFilter])
 
-    // ── Server-side paginated data ────────────────────────────────────────────
-    const clientsQuery = useQuery({
-        queryKey: [
-            'clients-page',
-            page, pageSize, debouncedSearch, statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter,
-            sortConfig.key, sortConfig.direction
-        ],
-        queryFn: async () => {
-            const res = await fetchClientsPage({
-                page,
-                pageSize,
-                search: debouncedSearch,
-                status: statusFilter !== 'all' ? statusFilter : '',
-                branch: branchFilter !== 'all' ? branchFilter : '',
-                pt: ptFilter !== 'all' ? ptFilter : '',
-                source: sourceFilter !== 'all' ? sourceFilter : '',
-                regType: regTypeFilter !== 'all' ? regTypeFilter : '',
-                sortKey: sortConfig.key,
-                sortOrder: sortConfig.direction,
-            })
-            if (!res.success) throw new Error(res.error)
-            return res
-        },
-        staleTime: ONE_MINUTE,
-        placeholderData: (prev) => prev, // keep old data while fetching new page (no layout shift)
-    })
+    // ── Client-side filtering & sorting ──────────────────────────────────────
+    const filteredClients = React.useMemo(() => {
+        let result = [...allClients]
 
-    const statusCounts: Record<string, number> = clientsQuery.data?.statusCounts ?? {}
-    const { data, isLoading, refetch: originalRefetch } = clientsQuery
-    const pagedClients = React.useMemo(() => data?.data || [], [data])
-    const totalCount = data?.count || 0
-    const totalPages = Math.ceil(totalCount / pageSize)
+        // Search
+        if (debouncedSearch) {
+            const q = debouncedSearch.toLowerCase()
+            result = result.filter(c =>
+                c.member_name?.toLowerCase().includes(q) ||
+                c.phone?.toLowerCase().includes(q) ||
+                c.email?.toLowerCase().includes(q) ||
+                c.id?.toLowerCase().includes(q)
+            )
+        }
+        // Status
+        if (statusFilter !== 'all') result = result.filter(c => c.status === statusFilter)
+        // Branch
+        if (branchFilter !== 'all') result = result.filter(c => c.branch_id === branchFilter)
+        // PT
+        if (ptFilter !== 'all') result = result.filter(c =>
+            c.pt_name?.toLowerCase().includes(ptFilter.toLowerCase()) ||
+            c.assigned_pt?.toLowerCase().includes(ptFilter.toLowerCase())
+        )
+        // Source
+        if (sourceFilter !== 'all') result = result.filter(c => c.source === sourceFilter)
+        // Registration type
+        if (regTypeFilter !== 'all') result = result.filter(c => c.registration_type === regTypeFilter)
 
-    const refetch = () => {
-        originalRefetch()
-        queryClient.invalidateQueries({ queryKey: ['clients-page'] })
+        // Sort
+        result.sort((a, b) => {
+            let aVal = a[sortConfig.key] ?? ''
+            let bVal = b[sortConfig.key] ?? ''
+            if (typeof aVal === 'string') aVal = aVal.toLowerCase()
+            if (typeof bVal === 'string') bVal = bVal.toLowerCase()
+            if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1
+            if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1
+            return 0
+        })
+
+        return result
+    }, [allClients, debouncedSearch, statusFilter, branchFilter, ptFilter, sourceFilter, regTypeFilter, sortConfig])
+
+    // ── Status counts (from filtered base — no status filter applied) ─────────
+    const statusCounts = React.useMemo(() => {
+        const base = allClients.filter(c => {
+            const q = debouncedSearch.toLowerCase()
+            const matchSearch = !debouncedSearch ||
+                c.member_name?.toLowerCase().includes(q) ||
+                c.phone?.toLowerCase().includes(q) ||
+                c.email?.toLowerCase().includes(q) ||
+                c.id?.toLowerCase().includes(q)
+            const matchBranch = branchFilter === 'all' || c.branch_id === branchFilter
+            const matchPt = ptFilter === 'all' || c.pt_name?.toLowerCase().includes(ptFilter.toLowerCase()) || c.assigned_pt?.toLowerCase().includes(ptFilter.toLowerCase())
+            const matchSource = sourceFilter === 'all' || c.source === sourceFilter
+            const matchRegType = regTypeFilter === 'all' || c.registration_type === regTypeFilter
+            return matchSearch && matchBranch && matchPt && matchSource && matchRegType
+        })
+        const counts: Record<string, number> = { total: base.length }
+        clientStatuses.forEach((s: any) => {
+            counts[s.nam] = base.filter(c => c.status === s.nam).length
+        })
+        return counts
+    }, [allClients, debouncedSearch, branchFilter, ptFilter, sourceFilter, regTypeFilter, clientStatuses])
+
+    // ── Pagination (client-side) ──────────────────────────────────────────────
+    const totalCount = filteredClients.length
+    const totalPages = pageSize === -1 ? 1 : Math.ceil(totalCount / pageSize)
+    const pagedClients = React.useMemo(() => {
+        if (pageSize === -1) return filteredClients
+        const from = (page - 1) * pageSize
+        return filteredClients.slice(from, from + pageSize)
+    }, [filteredClients, page, pageSize])
+
+    // ── Invalidate and refetch clients-all ───────────────────────────────────
+    const refetch = React.useCallback(() => {
+        queryClient.invalidateQueries({ queryKey: ['clients-all'] })
         queryClient.invalidateQueries({ queryKey: ['contracts-all'] })
         queryClient.invalidateQueries({ queryKey: ['revenue'] })
-        queryClient.invalidateQueries({ queryKey: ['debts-all'] })
+        queryClient.invalidateQueries({ queryKey: ['debts'] })
         queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
         queryClient.invalidateQueries({ queryKey: ['client-contracts'] })
         queryClient.invalidateQueries({ queryKey: ['latest-contract'] })
-    }
-
-    // For Export Excel — fetch all records once (no filter) when user clicks export
-    const { data: allClientsForExport = [] } = useQuery<any[]>({
-        queryKey: ['clients-all-export'],
-        queryFn: async () => {
-            const res = await fetchClientsPage({ pageSize: -1 })
-            return res.success ? (res.data ?? []) : []
-        },
-        staleTime: ONE_HOUR,
-        enabled: false, // only fetch when exportToExcel triggers refetch
-    })
+    }, [queryClient])
 
     const handleSort = (key: string) => {
-        let direction: 'asc' | 'desc' = 'asc'
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc'
-        }
-        setSortConfig({ key, direction })
+        setSortConfig(prev => ({
+            key,
+            direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+        }))
         setPage(1)
     }
 
@@ -193,17 +235,15 @@ export default function ClientsPage() {
             : <ChevronDown className="ml-1 w-3 h-3 text-red-500" />
     }
 
-    // ── Filter option lists - FROM SERVER ──
+    // ── Filter option lists ───────────────────────────────────────────────────
     const ptOptions = React.useMemo(() => filterOptionsResult?.data?.pts || [], [filterOptionsResult])
     const regTypeOptions = React.useMemo(() => configResult?.data?.registrationTypes?.map((t: any) => t.nam) || [], [configResult])
     const sourceOptions = React.useMemo(() => configResult?.data?.sources?.map((s: any) => s.nam) || [], [configResult])
 
-    const stats = statusCounts
-
     const clearFilters = () => {
         setSearchTerm(''); setStatusFilter('all'); setBranchFilter('all')
         setPtFilter('all'); setRegTypeFilter('all'); setSourceFilter('all'); setPage(1)
-        setSortConfig({ key: 'created_at', direction: 'desc' })
+        setSortConfig({ key: 'updated_at', direction: 'desc' })
         toast.info('Đã xóa tất cả bộ lọc')
     }
 
@@ -317,8 +357,8 @@ export default function ClientsPage() {
     }
 
     const exportToExcel = () => {
-        const dataToExport = pagedClients.length > 0
-            ? pagedClients.map((c: any) => ({
+        const dataToExport = allClients.length > 0
+            ? allClients.map((c: any) => ({
                 'Mã KH': c.id,
                 'Tên hội viên': c.member_name,
                 'Số điện thoại': c.phone,
@@ -410,12 +450,12 @@ export default function ClientsPage() {
                 <TabsList className="bg-transparent h-auto p-0 flex flex-nowrap overflow-x-auto no-scrollbar gap-1 px-1 mb-1 w-full justify-start">
                     <TabsTrigger value="all" className={cn("flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm border-none text-gray-600 hover:text-gray-700 data-[state=active]:text-red-600")}>
                         Tất cả
-                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600">{stats.total}</span>
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600">{statusCounts.total}</span>
                     </TabsTrigger>
                     {clientStatuses.map((s: any) => (
                         <TabsTrigger key={s.id} value={s.nam} className={cn("flex shrink-0 items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm border-none text-gray-500 hover:text-gray-700 data-[state=active]:text-red-600")}>
                             {s.nam}
-                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-600">{stats[s.nam] || 0}</span>
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-600">{statusCounts[s.nam] || 0}</span>
                         </TabsTrigger>
                     ))}
                 </TabsList>
@@ -563,29 +603,17 @@ export default function ClientsPage() {
                                     />
                                 </TableHead>
                                 <TableHead onClick={() => handleSort('member_name')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider pl-6 cursor-pointer hover:text-red-600 transition-colors group">
-                                    <div className="flex items-center">
-                                        Hội viên
-                                        <SortIcon columnKey="member_name" />
-                                    </div>
+                                    <div className="flex items-center">Hội viên<SortIcon columnKey="member_name" /></div>
                                 </TableHead>
                                 <TableHead onClick={() => handleSort('phone')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden md:table-cell cursor-pointer hover:text-red-600 transition-colors group">
-                                    <div className="flex items-center">
-                                        Liên hệ
-                                        <SortIcon columnKey="phone" />
-                                    </div>
+                                    <div className="flex items-center">Liên hệ<SortIcon columnKey="phone" /></div>
                                 </TableHead>
                                 <TableHead onClick={() => handleSort('branch_name')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden sm:table-cell cursor-pointer hover:text-red-600 transition-colors group">
-                                    <div className="flex items-center">
-                                        PT & Chi nhánh
-                                        <SortIcon columnKey="branch_name" />
-                                    </div>
+                                    <div className="flex items-center">PT & Chi nhánh<SortIcon columnKey="branch_name" /></div>
                                 </TableHead>
                                 <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden lg:table-cell">Chỉ số & Mục tiêu</TableHead>
                                 <TableHead onClick={() => handleSort('status')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider cursor-pointer hover:text-red-600 transition-colors group">
-                                    <div className="flex items-center">
-                                        Trạng thái
-                                        <SortIcon columnKey="status" />
-                                    </div>
+                                    <div className="flex items-center">Trạng thái<SortIcon columnKey="status" /></div>
                                 </TableHead>
                                 <TableHead className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider">
                                     Tùy chọn
@@ -612,7 +640,9 @@ export default function ClientsPage() {
                                             <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-3xl flex items-center justify-center">
                                                 <Users className="w-8 h-8 text-gray-200 dark:text-gray-700" />
                                             </div>
-                                            <p className="text-gray-400 text-sm font-medium">Thêm hội viên đầu tiên</p>
+                                            <p className="text-gray-400 text-sm font-medium">
+                                                {allClients.length === 0 ? 'Thêm hội viên đầu tiên' : 'Không tìm thấy kết quả phù hợp'}
+                                            </p>
                                         </div>
                                     </TableCell>
                                 </TableRow>
