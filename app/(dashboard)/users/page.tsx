@@ -79,6 +79,16 @@ export default function UsersPage() {
         },
     })
 
+    // Sync selected user with updated data from refetch
+    React.useEffect(() => {
+        if (selectedUser && users) {
+            const updatedUser = users.find((u: any) => u.id === selectedUser.id)
+            if (updatedUser) {
+                setSelectedUser(updatedUser)
+            }
+        }
+    }, [users, selectedUser?.id])
+
     const { data: branches } = useQuery({
         queryKey: ['branches'],
         queryFn: async () => {
@@ -208,6 +218,7 @@ export default function UsersPage() {
                 open={isDetailsOpen}
                 onOpenChange={setIsDetailsOpen}
                 onSuccess={refetch}
+                branches={branches || []}
             />
 
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 px-1">
@@ -309,13 +320,25 @@ export default function UsersPage() {
                                         </Select>
 
                                         <Select value={filterDepartment} onValueChange={setFilterDepartment}>
-                                            <SelectTrigger className="w-full lg:w-[150px] rounded-lg border-none h-9 bg-white dark:bg-slate-800 text-xs font-medium focus:ring-1 focus:ring-red-500 shadow-none">
+                                            <SelectTrigger className="w-full lg:w-[130px] rounded-lg border-none h-9 bg-white dark:bg-slate-800 text-xs font-medium focus:ring-1 focus:ring-red-500 shadow-none">
                                                 <SelectValue placeholder="Phòng ban" />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                                <SelectItem value="all">Tất cả phòng ban</SelectItem>
+                                                <SelectItem value="all">Phòng ban</SelectItem>
                                                 {departments.map(d => (
                                                     <SelectItem key={d} value={d}>{d}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+
+                                        <Select value={filterPosition} onValueChange={setFilterPosition}>
+                                            <SelectTrigger className="w-full lg:w-[130px] rounded-lg border-none h-9 bg-white dark:bg-slate-800 text-xs font-medium focus:ring-1 focus:ring-red-500 shadow-none">
+                                                <SelectValue placeholder="Chức vụ" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                                <SelectItem value="all">Chức vụ</SelectItem>
+                                                {positions.map(p => (
+                                                    <SelectItem key={p} value={p}>{p}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>

@@ -60,9 +60,26 @@ export async function createUser(user: any) {
     if (!(await checkAdmin())) return { success: false, error: 'Chỉ Admin mới có quyền tạo người dùng' }
     const supabase = await createClient()
     try {
+        const validColumns = [
+            'email', 'name', 'phone', 'branch_id', 'branch_name', 
+            'position', 'department', 'permissions', 'direct_manager', 
+            'avatar_url', 'status', 'managed_branches'
+        ]
+        
+        const sanitizedUser = Object.keys(user)
+            .filter(key => validColumns.includes(key))
+            .reduce((obj: any, key) => {
+                if (key === 'managed_branches' && Array.isArray(user[key])) {
+                    obj[key] = JSON.stringify(user[key])
+                } else {
+                    obj[key] = user[key]
+                }
+                return obj
+            }, {})
+
         const { data, error } = await supabase
             .from('users')
-            .insert([user])
+            .insert([sanitizedUser])
             .select()
 
         if (error) throw error
@@ -77,9 +94,26 @@ export async function updateUser(id: string, updates: any) {
     if (!(await checkAdmin())) return { success: false, error: 'Chỉ Admin mới có quyền cập nhật người dùng' }
     const supabase = await createClient()
     try {
+        const validColumns = [
+            'email', 'name', 'phone', 'branch_id', 'branch_name', 
+            'position', 'department', 'permissions', 'direct_manager', 
+            'avatar_url', 'status', 'managed_branches'
+        ]
+        
+        const sanitizedUpdates = Object.keys(updates)
+            .filter(key => validColumns.includes(key))
+            .reduce((obj: any, key) => {
+                if (key === 'managed_branches' && Array.isArray(updates[key])) {
+                    obj[key] = JSON.stringify(updates[key])
+                } else {
+                    obj[key] = updates[key]
+                }
+                return obj
+            }, {})
+
         const { data, error } = await supabase
             .from('users')
-            .update(updates)
+            .update(sanitizedUpdates)
             .eq('id', id)
             .select()
 

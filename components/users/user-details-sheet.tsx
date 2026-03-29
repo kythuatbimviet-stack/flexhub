@@ -25,6 +25,7 @@ import {
     BadgeCheck,
     Clock,
     UserCircle,
+    XCircle,
     Calendar
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -39,6 +40,7 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { fetchBranches } from '@/app/actions/branches'
+import { Checkbox } from '@/components/ui/checkbox'
 
 // ─── Component con nằm NGOÀI component cha để tránh re-mount khi state thay đổi ───
 const CardSection = ({ title, icon: Icon, children }: any) => (
@@ -103,13 +105,15 @@ interface UserDetailsSheetProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess: () => void
+    branches?: any[]
 }
 
 export function UserDetailsSheet({
     user,
     open,
     onOpenChange,
-    onSuccess
+    onSuccess,
+    branches: branchesProp = []
 }: UserDetailsSheetProps) {
     const isMobile = useIsMobile()
     const [isEditing, setIsEditing] = React.useState(false)
@@ -119,7 +123,7 @@ export function UserDetailsSheet({
     const [branches, setBranches] = React.useState<any[]>([])
 
     React.useEffect(() => {
-        if (open) {
+        if (open && branchesProp.length === 0) {
             const loadData = async () => {
                 const res = await fetchBranches()
                 if (res.success) {
@@ -127,12 +131,32 @@ export function UserDetailsSheet({
                 }
             }
             loadData()
+        } else if (open && branchesProp.length > 0) {
+            setBranches(branchesProp)
         }
-    }, [open])
+    }, [open, branchesProp])
 
     React.useEffect(() => {
         if (user) {
-            setFormData(user)
+            // Parse managed_branches if it's a string (Postgres text representation of JSON)
+            let managedBranches = user.managed_branches
+            if (typeof managedBranches === 'string' && managedBranches.length > 3) {
+                try {
+                    managedBranches = JSON.parse(managedBranches)
+                } catch (e) {
+                    // Try to handle Postgres array format {} if it's not JSON
+                    if (managedBranches.startsWith('{') && managedBranches.endsWith('}')) {
+                        managedBranches = managedBranches.slice(1, -1).split(',').map((s: string) => s.trim().replace(/"/g, ''))
+                    } else {
+                        managedBranches = []
+                    }
+                }
+            }
+
+            setFormData({
+                ...user,
+                managed_branches: Array.isArray(managedBranches) ? managedBranches : []
+            })
             setIsEditing(false)
         }
     }, [user])
@@ -191,6 +215,16 @@ export function UserDetailsSheet({
                 newData.branch_name = branch ? branch.name : null
             }
             return newData
+        })
+    }
+
+    const toggleManagedBranch = (branchId: string) => {
+        setFormData((prev: any) => {
+            const current = Array.isArray(prev.managed_branches) ? prev.managed_branches : []
+            const next = current.includes(branchId)
+                ? current.filter((id: string) => id !== branchId)
+                : [...current, branchId]
+            return { ...prev, managed_branches: next }
         })
     }
 
@@ -309,34 +343,34 @@ export function UserDetailsSheet({
                     <CardSection title="Vị trí công tác" icon={Briefcase}>
                         <div className="space-y-5">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                <UserDetailRow 
-                                    label="Chi nhánh" 
-                                    value={formData.branch_name || user.branches?.name || '-'} 
-                                    name="branch_id" 
-                                    icon={Building2} 
+                                <UserDetailRow
+                                    label="Chi nhánh"
+                                    value={formData.branch_name || user.branches?.name || '-'}
+                                    name="branch_id"
+                                    icon={Building2}
                                     type="select"
                                     options={branches.map((b: any) => ({ label: b.name, value: b.id }))}
-                                    {...sharedRowProps} 
+                                    {...sharedRowProps}
                                 />
-                                <UserDetailRow 
-                                    label="Phòng ban" 
-                                    value={formData.department} 
-                                    name="department" 
-                                    icon={Briefcase} 
+                                <UserDetailRow
+                                    label="Phòng ban"
+                                    value={formData.department}
+                                    name="department"
+                                    icon={Briefcase}
                                     type="select"
                                     options={[
                                         { label: 'PT', value: 'PT' },
                                         { label: 'Quản lý', value: 'Quản lý' }
                                     ]}
-                                    {...sharedRowProps} 
+                                    {...sharedRowProps}
                                 />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                <UserDetailRow 
-                                    label="Chức vụ" 
-                                    value={formData.position} 
-                                    name="position" 
-                                    icon={BadgeCheck} 
+                                <UserDetailRow
+                                    label="Chức vụ"
+                                    value={formData.position}
+                                    name="position"
+                                    icon={BadgeCheck}
                                     type="select"
                                     options={[
                                         { label: 'Nhân viên', value: 'Nhân viên' },
@@ -344,23 +378,70 @@ export function UserDetailsSheet({
                                         { label: 'Quản lý', value: 'Quản lý' },
                                         { label: 'CEO', value: 'CEO' }
                                     ]}
-                                    {...sharedRowProps} 
+                                    {...sharedRowProps}
                                 />
-                                <UserDetailRow 
-                                    label="Vai trò" 
-                                    value={formData.permissions} 
-                                    name="permissions" 
-                                    icon={Shield} 
+                                <UserDetailRow
+                                    label="Vai trò"
+                                    value={formData.permissions}
+                                    name="permissions"
+                                    icon={Shield}
                                     type="select"
                                     options={[
                                         { label: 'Admin', value: 'Admin' },
                                         { label: 'User', value: 'User' }
                                     ]}
-                                    {...sharedRowProps} 
+                                    {...sharedRowProps}
                                 />
                             </div>
                         </div>
                     </CardSection>
+
+                    {/* Section: Chi nhánh quản lý (Chỉ hiện khi là Quản lý) */}
+                    {formData.position === 'Quản lý' && (
+                        <CardSection title="Chi nhánh quản lý" icon={Shield}>
+                            <div className="space-y-4">
+                                <p className="text-[11px] text-slate-500 mb-2 italic">
+                                    {isEditing
+                                        ? "Chọn danh sách các chi nhánh nhân sự này sẽ tham gia quản lý."
+                                        : "Danh sách hồ sơ chi nhánh được phân quyền quản lý."}
+                                </p>
+                                {isEditing ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {branches.map((branch: any) => (
+                                            <div key={branch.id} className="flex items-center space-x-2 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 transition-all hover:bg-white dark:hover:bg-slate-900">
+                                                <Checkbox
+                                                    id={`managed-${branch.id}`}
+                                                    checked={Array.isArray(formData.managed_branches) && formData.managed_branches.includes(branch.id)}
+                                                    onCheckedChange={() => toggleManagedBranch(branch.id)}
+                                                />
+                                                <Label
+                                                    htmlFor={`managed-${branch.id}`}
+                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                                >
+                                                    {branch.name}
+                                                </Label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    Array.isArray(formData.managed_branches) && formData.managed_branches.length > 0 ? (
+                                        <div className="flex flex-wrap gap-2">
+                                            {formData.managed_branches.map((branchId: string) => {
+                                                const branch = branches.find((b: any) => b.id.toString().trim() === branchId.toString().trim())
+                                                return (
+                                                    <div key={branchId} className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30 text-[12px] font-bold">
+                                                        {branch ? branch.name : (branchId === 'all' ? 'Tất cả chi nhánh' : branchId)}
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-slate-400">Chưa phân quyền chi nhánh nào</p>
+                                    )
+                                )}
+                            </div>
+                        </CardSection>
+                    )}
 
                     {/* Section: Hệ thống */}
                     <CardSection title="Thông tin hệ thống" icon={Clock}>
@@ -373,17 +454,17 @@ export function UserDetailsSheet({
                                 {...sharedRowProps}
                                 isEditing={false}
                             />
-                            <UserDetailRow 
-                                label="Trạng thái" 
-                                value={formData.status} 
-                                name="status" 
-                                icon={BadgeCheck} 
+                            <UserDetailRow
+                                label="Trạng thái"
+                                value={formData.status}
+                                name="status"
+                                icon={BadgeCheck}
                                 type="select"
                                 options={[
                                     { label: 'Đang hoạt động', value: 'Activated' },
                                     { label: 'Tạm ngưng', value: 'In Activated' }
                                 ]}
-                                {...sharedRowProps} 
+                                {...sharedRowProps}
                             />
                         </div>
                     </CardSection>
