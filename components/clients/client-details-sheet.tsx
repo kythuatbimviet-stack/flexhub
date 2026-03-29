@@ -513,7 +513,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                             </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
-                            <SheetTitle className="text-lg font-semibold text-slate-900 dark:text-white leading-tight">
+                            <SheetTitle className="text-lg font-semibold text-slate-900 dark:text-white leading-tight uppercase tracking-tight">
                                 {isCreateMode ? 'Thông tin khách hàng mới' : (client?.member_name || 'Chi tiết khách hàng')}
                             </SheetTitle>
                             <SheetDescription className="text-xs mt-1">
@@ -521,7 +521,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                     <span className="text-slate-500 dark:text-slate-400">Hoàn tất thông tin bên dưới (* là bắt buộc)</span>
                                 ) : (
                                     <span className="flex items-center gap-1.5 flex-wrap">
-                                        <span className="text-red-600 dark:text-red-500 font-medium">#{client?.id}</span>
+                                        <span className="text-red-600 dark:text-red-500 font-bold tracking-tight">{client?.id}</span>
                                         <span className="text-slate-300 dark:text-slate-700">|</span>
                                         <span className="text-slate-500 dark:text-slate-400">{client?.email || 'Chưa cập nhật email'}</span>
                                     </span>
@@ -680,7 +680,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                 )}
                             </div>
                             <div className="flex-1 min-w-0 pt-1">
-                                <h2 className="text-xl font-semibold text-slate-900 dark:text-white truncate">
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate uppercase tracking-tight">
                                     {isCreateMode ? (formData.member_name || 'Tên khách hàng') : client?.member_name}
                                 </h2>
                                 <p className="text-sm text-cyan-600 dark:text-cyan-400 mt-0.5 truncate">

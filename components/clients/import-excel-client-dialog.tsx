@@ -55,7 +55,7 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
         const errors: Record<number, string[]> = {}
         const formatted = data.map((row: any, index: number) => {
             const rowErrors: string[] = []
-            
+
             // Required: Member Name
             const name = row['Tên hội viên'] || row['member_name']
             if (!name) rowErrors.push('Thiếu tên hội viên')
@@ -67,13 +67,17 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                 rowErrors.push(`Ngày sinh không hợp lệ: "${rawDob}"`)
             }
 
+            // Mã khách hàng (ID) - Required from user data
+            const clientId = row['Mã KH'] || row['id'] || row['Mã khách hàng']
+            if (!clientId) rowErrors.push('Thiếu mã khách hàng (cột Mã KH hoặc Mã khách hàng)')
+
             if (rowErrors.length > 0) {
                 errors[index] = rowErrors
             }
 
             return {
                 _originalIndex: index,
-                id: row['Mã KH'] || row['id'] || `EF-NEW-${Math.random().toString(36).substr(2, 4).toUpperCase()}`,
+                id: clientId || '',
                 member_name: name || '',
                 phone: row['Số điện thoại'] || row['phone'] || '',
                 email: row['Email'] || row['email'] || '',
@@ -155,7 +159,7 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
         try {
             // CRITICAL: Remove UI-only fields like _originalIndex before sending to database
             const dataToInsert = parsedData.map(({ _originalIndex, ...rest }) => rest)
-            
+
             const result = await importClients(dataToInsert)
             if (!result.success) throw new Error(result.error)
 
@@ -294,9 +298,9 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                         <div className="p-6 border-b bg-gray-50/50 dark:bg-gray-900/50">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-4">
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
                                         onClick={() => setStep('upload')}
                                         className="rounded-full hover:bg-white dark:hover:bg-gray-800"
                                     >
@@ -346,12 +350,13 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                                         <Table>
                                             <TableHeader className="bg-gray-50/80 dark:bg-gray-800/80 sticky top-0 z-10 backdrop-blur-sm">
                                                 <TableRow>
-                                                    <TableHead className="w-[60px] text-center font-bold">STT</TableHead>
-                                                    <TableHead className="min-w-[150px] font-bold">Họ tên</TableHead>
-                                                    <TableHead className="min-w-[120px] font-bold">Số điện thoại</TableHead>
-                                                    <TableHead className="min-w-[120px] font-bold">Ngày sinh</TableHead>
-                                                    <TableHead className="min-w-[150px] font-bold">Chi nhánh</TableHead>
-                                                    <TableHead className="min-w-[200px] font-bold">Trạng thái / Chi tiết lỗi</TableHead>
+                                                    <TableHead className="w-[60px] text-center font-bold text-gray-400 uppercase text-[10px]">STT</TableHead>
+                                                    <TableHead className="min-w-[150px] font-bold text-red-600 uppercase text-[10px]">Mã KH</TableHead>
+                                                    <TableHead className="min-w-[150px] font-bold text-gray-900 dark:text-gray-100 uppercase text-[10px]">Họ tên</TableHead>
+                                                    <TableHead className="min-w-[120px] font-bold text-gray-900 dark:text-gray-100 uppercase text-[10px]">Số điện thoại</TableHead>
+                                                    <TableHead className="min-w-[120px] font-bold text-gray-900 dark:text-gray-100 uppercase text-[10px]">Ngày sinh</TableHead>
+                                                    <TableHead className="min-w-[150px] font-bold text-gray-900 dark:text-gray-100 uppercase text-[10px]">Chi nhánh</TableHead>
+                                                    <TableHead className="min-w-[200px] font-bold text-gray-900 dark:text-gray-100 uppercase text-[10px]">Trạng thái / Lỗi</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -360,8 +365,9 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                                                     const errors = validationErrors[idx]
                                                     return (
                                                         <TableRow key={idx} className={cn("transition-colors", errors ? "bg-red-50/30 dark:bg-red-950/10 hover:bg-red-50/50" : "hover:bg-gray-50/50")}>
-                                                            <TableCell className="text-center font-medium text-gray-400">{idx + 1}</TableCell>
-                                                            <TableCell className="font-bold">{client.member_name || <span className="text-red-400 opacity-50 italic">Chưa nhập</span>}</TableCell>
+                                                            <TableCell className="text-center font-medium text-gray-400 text-[11px]">{idx + 1}</TableCell>
+                                                            <TableCell className="font-bold text-red-600 dark:text-red-500 font-mono text-[11px] bg-red-50/20">{client.id || '-'}</TableCell>
+                                                            <TableCell className="font-bold uppercase text-[11px] tracking-tight">{client.member_name || <span className="text-red-400 opacity-50 italic">Chưa nhập</span>}</TableCell>
                                                             <TableCell className="text-gray-600 dark:text-gray-400">{client.phone || '-'}</TableCell>
                                                             <TableCell className="text-gray-600 dark:text-gray-400">{client.date_of_birth || <span className="text-gray-300 italic">N/A</span>}</TableCell>
                                                             <TableCell className="text-gray-600 dark:text-gray-400">{client.branch_name || '-'}</TableCell>
@@ -402,7 +408,7 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                         <div className="p-6 border-t flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50">
                             <div className="flex flex-col">
                                 <p className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                                    {errorCount > 0 
+                                    {errorCount > 0
                                         ? `Cần xử lý ${errorCount} lỗi trước khi có thể nhập dữ liệu.`
                                         : `Dữ liệu đã sẵn sàng để nhập (${validCount} khách hàng).`
                                     }
@@ -415,8 +421,8 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                                 <Button variant="outline" onClick={() => setStep('upload')} className="rounded-xl px-6 h-11 font-bold">
                                     Hủy bỏ
                                 </Button>
-                                <Button 
-                                    onClick={handleConfirmImport} 
+                                <Button
+                                    onClick={handleConfirmImport}
                                     disabled={isUploading || errorCount > 0 || parsedData.length === 0}
                                     className="rounded-xl px-8 h-11 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200 dark:shadow-none min-w-[160px]"
                                 >

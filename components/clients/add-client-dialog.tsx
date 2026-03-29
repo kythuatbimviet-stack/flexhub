@@ -292,7 +292,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                     <span className="sm:hidden">Thêm mới</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border-none shadow-2xl">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border-none shadow-2xl font-inter">
                 <DialogHeader>
                     <DialogTitle className="text-xl font-medium text-gray-900 dark:text-white border-b dark:border-gray-800 pb-4 mb-2">
                         Thông tin Khách hàng mới

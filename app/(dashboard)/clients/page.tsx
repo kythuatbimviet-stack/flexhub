@@ -503,11 +503,11 @@ export default function ClientsPage() {
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-black dark:text-gray-100 flex items-center gap-1.5">
+                                                    <span className="text-sm font-medium text-black dark:text-gray-100 flex items-center gap-1.5 uppercase font-inter tracking-tight">
                                                         {client.member_name}
                                                         {client.status === 'Đang tập' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
                                                     </span>
-                                                    <span className="text-[10px] text-red-600 dark:text-red-500 font-bold tracking-tight">#{client.id}</span>
+                                                    <span className="text-[10px] text-red-600 dark:text-red-500 font-bold tracking-tight">{client.id}</span>
                                                 </div>
                                             </div>
                                         </TableCell>
