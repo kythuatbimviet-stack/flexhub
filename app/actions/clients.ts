@@ -248,15 +248,29 @@ export async function updateClient(id: string, updates: any) {
         const accessInfo = await getAccessFilter()
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
 
-        // Sanitize updates to remove any legacy fields
-        if (updates && typeof updates === 'object') {
-            delete (updates as any).avata_url
-        }
+        // CHỈ định nghĩa các trường được phép cập nhật để bảo vệ tuyệt đối Ngày tạo (created_at)
+        const safeUpdates: any = {}
+        const allowedFields = [
+            'member_name', 'phone', 'email', 'address', 'dob', 'age', 'gender',
+            'height', 'weight', 'target_weight', 'goal', 'status', 'pt_name',
+            'assigned_pt', 'branch_id', 'branch_name', 'source', 'referrer',
+            'registration_type', 'medical_history', 'training_time', 'notes',
+            'customer_cycle', 'zalo_id', 'facebook_id', 'action_log', 'signature_url'
+        ]
+
+        allowedFields.forEach(field => {
+            if (updates[field] !== undefined) {
+                safeUpdates[field] = updates[field]
+            }
+        })
+
+        // Luôn cập nhật thời gian sửa đổi, KHÔNG chạm vào created_at
+        safeUpdates.updated_at = new Date().toISOString()
 
         const adminClient = await createAdminClient()
         const { data, error } = await adminClient
             .from('clients')
-            .update(updates)
+            .update(safeUpdates)
             .eq('id', id)
 
         if (error) {

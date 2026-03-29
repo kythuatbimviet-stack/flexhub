@@ -786,14 +786,23 @@ export function ContractDetailsSheet({
     const handleGenerateDocPDF = async () => {
         if (!contract?.id) return
 
-        // Trigger generation status
         try {
-            await updateContract(contract.id, {
-                contract_file_url: 'create_contract'
-            })
-            // Open new preview page in a new tab (dashboard route)
+            setGeneratingPdf(true)
+            const supabase = createClient()
+            // Gửi lệnh cập nhật ngầm
+            await supabase
+                .from('contracts')
+                .update({ contract_file_url: 'create_contract' })
+                .eq('id', contract.id)
+
+            // Mở trang xem trước trong tab mới
             window.open(`/contracts/preview-gdoc/${contract.id}`, '_blank')
+            
+            // Đóng bảng chi tiết và reset trạng thái ngay lập tức
+            setGeneratingPdf(false)
+            onOpenChange(false)
         } catch (error: any) {
+            setGeneratingPdf(false)
             toast.error('Lỗi hệ thống: ' + error.message)
         }
     }

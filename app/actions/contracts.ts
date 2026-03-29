@@ -117,6 +117,11 @@ function computeAmountTextFields(data: any): any {
     delete enriched.clients
     delete enriched.branches
     delete enriched.memberships
+    delete enriched.created_at
+    delete enriched.updated_at
+
+    // Luôn ghi nhận thời gian chỉnh sửa mới nhất
+    enriched.updated_at = new Date().toISOString()
 
     return enriched
 }

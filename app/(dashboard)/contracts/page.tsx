@@ -23,7 +23,9 @@ import {
     CalendarClock,
     ArrowUpDown,
     ChevronUp,
-    ChevronDown
+    ChevronDown,
+    LayoutGrid,
+    ExternalLink
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -208,7 +210,114 @@ export default function ContractsPage() {
     const [branchFilter, setBranchFilter] = React.useState('all')
     const [ptFilter, setPtFilter] = React.useState('all')
     const [contractTypeFilter, setContractTypeFilter] = React.useState('all')
-    const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'created_at', direction: 'desc' })
+    const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'updated_at', direction: 'desc' })
+    const [isSortOpen, setIsSortOpen] = React.useState(false)
+
+    const SortPopover = () => {
+        const [localSort, setLocalSort] = React.useState(sortConfig || { key: 'updated_at', direction: 'desc' })
+
+        const fields = [
+            { label: 'Ngày cập nhật', value: 'updated_at' },
+            { label: 'Ngày ký', value: 'start_date' },
+            { label: 'Ngày tạo', value: 'created_at' },
+            { label: 'Tên hội viên', value: 'member_name' },
+            { label: 'Tổng tiền', value: 'total_amount' },
+            { label: 'Trạng thái', value: 'status' },
+        ]
+
+        return (
+            <Popover open={isSortOpen} onOpenChange={setIsSortOpen}>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" className={cn(
+                        "h-9 px-3 rounded-xl border border-gray-100 dark:border-gray-800 text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all gap-2",
+                        isSortOpen && "bg-red-50 text-red-600 border-red-200"
+                    )}>
+                        <LayoutGrid className="w-4 h-4" />
+                        <span className="text-xs font-semibold hidden sm:inline">Sắp xếp</span>
+                        <ChevronDown className={cn("w-3 h-3 transition-transform", isSortOpen && "rotate-180")} />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-0 border-none shadow-2xl rounded-[24px] overflow-hidden bg-white dark:bg-gray-950" align="end">
+                    <div className="p-5 space-y-5">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[15px] font-bold text-slate-900 dark:text-white">Bộ lọc sắp xếp</h4>
+                            <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center">
+                                <ArrowUpDown className="w-4 h-4 text-red-500" />
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tiêu chí ưu tiên</label>
+                                <div className="grid grid-cols-1 gap-1.5">
+                                    {fields.map((f) => (
+                                        <button
+                                            key={f.value}
+                                            onClick={() => setLocalSort({ ...localSort, key: f.value })}
+                                            className={cn(
+                                                "flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium transition-all border",
+                                                localSort.key === f.value 
+                                                    ? "bg-red-50 border-red-100 text-red-600" 
+                                                    : "bg-slate-50 border-transparent text-slate-500 hover:bg-slate-100"
+                                            )}
+                                        >
+                                            {f.label}
+                                            {localSort.key === f.value && <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-sm" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Thứ tự hiển thị</label>
+                                <div className="flex p-1 bg-slate-50 dark:bg-slate-900 rounded-xl gap-1">
+                                    <button
+                                        onClick={() => setLocalSort({ ...localSort, direction: 'asc' })}
+                                        className={cn(
+                                            "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[12px] font-bold transition-all",
+                                            localSort.direction === 'asc' ? "bg-white shadow-sm text-red-600" : "text-slate-400 hover:text-slate-600"
+                                        )}
+                                    >
+                                        <ChevronUp className="w-3.5 h-3.5" />
+                                        Tăng dần
+                                    </button>
+                                    <button
+                                        onClick={() => setLocalSort({ ...localSort, direction: 'desc' })}
+                                        className={cn(
+                                            "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[12px] font-bold transition-all",
+                                            localSort.direction === 'desc' ? "bg-white shadow-sm text-red-600" : "text-slate-400 hover:text-slate-600"
+                                        )}
+                                    >
+                                        <ChevronDown className="w-3.5 h-3.5" />
+                                        Giảm dần
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                className="flex-1 h-11 rounded-xl text-[13px] font-bold text-slate-500 border-slate-200"
+                                onClick={() => setIsSortOpen(false)}
+                            >
+                                Đóng
+                            </Button>
+                            <Button
+                                className="flex-2 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[13px] font-bold shadow-lg shadow-red-100"
+                                onClick={() => {
+                                    setSortConfig(localSort)
+                                    setIsSortOpen(false)
+                                }}
+                            >
+                                Áp dụng
+                            </Button>
+                        </div>
+                    </div>
+                </PopoverContent>
+            </Popover>
+        )
+    }
 
     const handleSort = (key: string) => {
         let direction: 'asc' | 'desc' = 'asc'
@@ -554,6 +663,7 @@ export default function ContractsPage() {
                                     className="w-full pl-10 h-9 rounded-lg border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-sm outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                                 />
                             </div>
+                            <SortPopover />
                             <Button variant="outline" size="icon"
                                 onClick={() => setShowMobileFilters(!showMobileFilters)}
                                 className={cn("lg:hidden h-9 w-9 rounded-lg border-gray-200 dark:border-gray-800",
@@ -712,6 +822,12 @@ export default function ContractsPage() {
                                         <SortIcon columnKey="start_date" />
                                     </div>
                                 </TableHead>
+                                <TableHead onClick={() => handleSort('status')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
+                                    <div className="flex items-center">
+                                        Trạng thái
+                                        <SortIcon columnKey="status" />
+                                    </div>
+                                </TableHead>
                                 <TableHead className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider">Tùy chọn</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -841,8 +957,31 @@ export default function ContractsPage() {
                                                         </div>
                                                     </div>
                                                 </TableCell>
+                                                <TableCell>
+                                                    <div className={cn(
+                                                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap",
+                                                        contract.status === 'Chờ ký HĐ' ? "bg-amber-50 text-amber-600 border-amber-100" :
+                                                        contract.status === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                                                        "bg-gray-50 text-gray-600 border-gray-100"
+                                                    )}>
+                                                        <div className={cn("w-1 h-1 rounded-full", 
+                                                            contract.status === 'Chờ ký HĐ' ? "bg-amber-500" :
+                                                            contract.status === 'Đã ký HĐ' ? "bg-emerald-500" :
+                                                            "bg-gray-400"
+                                                        )} />
+                                                        {contract.status}
+                                                    </div>
+                                                </TableCell>
                                                 <TableCell className="text-right pr-8">
                                                     <div className="flex items-center justify-end gap-1">
+                                                        {contract.contract_file_url && contract.contract_file_url !== 'create_contract' && contract.contract_file_url.startsWith('http') && (
+                                                            <Button variant="ghost" size="icon"
+                                                                onClick={(e) => { e.stopPropagation(); window.open(contract.contract_file_url, '_blank') }}
+                                                                title="Mở link hợp đồng"
+                                                                className="w-8 h-8 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 text-blue-600">
+                                                                <ExternalLink className="h-3.5 w-3.5" />
+                                                            </Button>
+                                                        )}
                                                         <Button variant="ghost" size="icon"
                                                             onClick={(e) => { e.stopPropagation(); setSelectedContract(contract); setIsDetailsOpen(true) }}
                                                             className="w-8 h-8 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600">

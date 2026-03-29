@@ -65,7 +65,7 @@ export default function ClientsPage() {
     const [regTypeFilter, setRegTypeFilter] = React.useState('all')
     const [sourceFilter, setSourceFilter] = React.useState('all')
     const [showMobileFilters, setShowMobileFilters] = React.useState(false)
-    const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' })
+    const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'updated_at', direction: 'desc' })
     const [isSortOpen, setIsSortOpen] = React.useState(false)
 
     // Debounce search
@@ -132,6 +132,8 @@ export default function ClientsPage() {
         queryClient.invalidateQueries({ queryKey: ['revenue'] })
         queryClient.invalidateQueries({ queryKey: ['debts-all'] })
         queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
+        queryClient.invalidateQueries({ queryKey: ['client-contracts'] })
+        queryClient.invalidateQueries({ queryKey: ['latest-contract'] })
     }
 
     // For Export Excel — fetch all records once (no filter) when user clicks export
@@ -144,6 +146,22 @@ export default function ClientsPage() {
         staleTime: ONE_HOUR,
         enabled: false, // only fetch when exportToExcel triggers refetch
     })
+
+    const handleSort = (key: string) => {
+        let direction: 'asc' | 'desc' = 'asc'
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc'
+        }
+        setSortConfig({ key, direction })
+        setPage(1)
+    }
+
+    const SortIcon = ({ columnKey }: { columnKey: string }) => {
+        if (!sortConfig || sortConfig.key !== columnKey) return <ArrowUpDown className="ml-1 w-3 h-3 opacity-30" />
+        return sortConfig.direction === 'asc' 
+            ? <ChevronUp className="ml-1 w-3 h-3 text-red-500" /> 
+            : <ChevronDown className="ml-1 w-3 h-3 text-red-500" />
+    }
 
     // ── Filter option lists - derived from current page (server handles actual filtering) ──
     const ptOptions = React.useMemo(() =>
@@ -166,12 +184,12 @@ export default function ClientsPage() {
         const [localSort, setLocalSort] = React.useState(sortConfig)
 
         const fields = [
+            { label: 'Ngày cập nhật', value: 'updated_at' },
             { label: 'Ngày tạo', value: 'created_at' },
             { label: 'Tên hội viên', value: 'member_name' },
             { label: 'Mã khách hàng', value: 'id' },
             { label: 'Số điện thoại', value: 'phone' },
             { label: 'Trạng thái', value: 'status' },
-            { label: 'Hợp đồng mới nhất', value: 'updated_at' },
         ]
 
         return (
@@ -515,20 +533,32 @@ export default function ClientsPage() {
                                         className="rounded-lg border-gray-300 dark:border-gray-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                                     />
                                 </TableHead>
-                                <TableHead className="text-[11px] font-black text-black dark:text-blue-300 h-9">
-                                    Hội viên
+                                <TableHead onClick={() => handleSort('member_name')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider pl-6 cursor-pointer hover:text-red-600 transition-colors group">
+                                    <div className="flex items-center">
+                                        Hội viên
+                                        <SortIcon columnKey="member_name" />
+                                    </div>
                                 </TableHead>
-                                <TableHead className="text-[11px] font-black text-black dark:text-blue-300 h-9 hidden md:table-cell">
-                                    Liên hệ
+                                <TableHead onClick={() => handleSort('phone')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden md:table-cell cursor-pointer hover:text-red-600 transition-colors group">
+                                    <div className="flex items-center">
+                                        Liên hệ
+                                        <SortIcon columnKey="phone" />
+                                    </div>
                                 </TableHead>
-                                <TableHead className="text-[11px] font-black text-black dark:text-blue-300 h-9 hidden sm:table-cell">
-                                    PT & Chi nhánh
+                                <TableHead onClick={() => handleSort('branch_name')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden sm:table-cell cursor-pointer hover:text-red-600 transition-colors group">
+                                    <div className="flex items-center">
+                                        PT & Chi nhánh
+                                        <SortIcon columnKey="branch_name" />
+                                    </div>
                                 </TableHead>
-                                <TableHead className="text-[11px] font-black text-black dark:text-blue-300 h-9 hidden lg:table-cell">Chỉ số & Mục tiêu</TableHead>
-                                <TableHead className="text-[11px] font-black text-black dark:text-blue-300 h-9">
-                                    Trạng thái
+                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden lg:table-cell">Chỉ số & Mục tiêu</TableHead>
+                                <TableHead onClick={() => handleSort('status')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider cursor-pointer hover:text-red-600 transition-colors group">
+                                    <div className="flex items-center">
+                                        Trạng thái
+                                        <SortIcon columnKey="status" />
+                                    </div>
                                 </TableHead>
-                                <TableHead className="text-right pr-8 text-[11px] font-black text-black dark:text-blue-300 h-9">
+                                <TableHead className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider">
                                     Tùy chọn
                                 </TableHead>
                             </TableRow>
