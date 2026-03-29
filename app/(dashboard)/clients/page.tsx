@@ -30,7 +30,7 @@ import { fetchClientConfigs } from '@/app/actions/config-params'
 import { ClientDetailsSheet } from '@/components/clients/client-details-sheet'
 import { ImportExcelClientDialog } from '@/components/clients/import-excel-client-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { fetchClientsPage, bulkDeleteClients } from '@/app/actions/clients'
+import { fetchClientsPage, bulkDeleteClients, fetchClientFilterOptions } from '@/app/actions/clients'
 import { fetchBranches } from '@/app/actions/branches'
 import { ContractDetailsSheet } from '@/components/contracts/contract-details-sheet'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
@@ -94,10 +94,16 @@ export default function ClientsPage() {
         staleTime: ONE_HOUR,
     })
 
+    const { data: filterOptionsResult } = useQuery({
+        queryKey: ['client-filter-options'],
+        queryFn: fetchClientFilterOptions,
+        staleTime: ONE_HOUR,
+    })
+
     const allowedBranches = React.useMemo(() => {
         if (permissions.canViewAllBranches) return branches
         if (permissions.allowedBranchIds) {
-            return branches.filter(b => permissions.allowedBranchIds?.includes(b.id))
+            return branches.filter((b: any) => permissions.allowedBranchIds?.includes(b.id))
         }
         return []
     }, [branches, permissions])
@@ -108,6 +114,13 @@ export default function ClientsPage() {
             setBranchFilter(allowedBranches[0].id)
         }
     }, [allowedBranches, permissions, isLoadingPermissions, branchFilter])
+
+    // Set initial PT filter if staff
+    React.useEffect(() => {
+        if (!isLoadingPermissions && permissions.isStaffOnly && filterOptionsResult?.data?.userName && ptFilter === 'all') {
+            setPtFilter(filterOptionsResult.data.userName)
+        }
+    }, [permissions, isLoadingPermissions, filterOptionsResult, ptFilter])
 
     // ── Server-side paginated data ────────────────────────────────────────────
     const clientsQuery = useQuery({
@@ -180,13 +193,10 @@ export default function ClientsPage() {
             : <ChevronDown className="ml-1 w-3 h-3 text-red-500" />
     }
 
-    // ── Filter option lists - derived from current page (server handles actual filtering) ──
-    const ptOptions = React.useMemo(() =>
-        Array.from(new Set(pagedClients.map((c: any) => c.pt_name).filter(Boolean))), [pagedClients])
-    const regTypeOptions = React.useMemo(() =>
-        Array.from(new Set(pagedClients.map((c: any) => c.registration_type).filter(Boolean))), [pagedClients])
-    const sourceOptions = React.useMemo(() =>
-        Array.from(new Set(pagedClients.map((c: any) => c.source).filter(Boolean))), [pagedClients])
+    // ── Filter option lists - FROM SERVER ──
+    const ptOptions = React.useMemo(() => filterOptionsResult?.data?.pts || [], [filterOptionsResult])
+    const regTypeOptions = React.useMemo(() => configResult?.data?.registrationTypes?.map((t: any) => t.nam) || [], [configResult])
+    const sourceOptions = React.useMemo(() => configResult?.data?.sources?.map((s: any) => s.nam) || [], [configResult])
 
     const stats = statusCounts
 
@@ -367,7 +377,7 @@ export default function ClientsPage() {
                 </div>
                 <div className="flex items-center gap-3">
                     <AnimatePresence>
-                        {selectedRows.length > 0 && (
+                        {selectedRows.length > 0 && !permissions.isStaffOnly && (
                             <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}>
                                 <Button variant="ghost" onClick={handleBulkDelete}
                                     className="text-red-600 hover:text-red-700 hover:bg-red-50 font-medium px-4 h-11 rounded-xl border border-red-100 dark:border-red-900/30">
@@ -447,7 +457,7 @@ export default function ClientsPage() {
                                                 {allowedBranches.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
-                                        <Select value={ptFilter} onValueChange={setPtFilter}>
+                                        <Select value={ptFilter} onValueChange={setPtFilter} disabled={permissions.isStaffOnly}>
                                             <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3">
                                                 <SelectValue placeholder="PT" />
                                             </SelectTrigger>

@@ -49,20 +49,24 @@ export function DataSyncStatus() {
         try {
             // 1. Determine which queries to refresh based on current page
             // Logic: we only refresh what's relevant to the current tab
-            const paths = pathname.split('/')
-            const currentRoute = paths[paths.length - 1] || 'dashboard'
+            const paths = pathname.split('/').filter(Boolean)
+            const currentRoute = paths[0] || 'dashboard'
 
-            let targetKeys: string[][] = []
+            let targetKeys: any[][] = []
             let targetLabel = 'toàn bộ dữ liệu'
 
             switch (currentRoute) {
                 case 'clients':
-                    targetKeys = [['clients-all'], ['clients-page']]
+                    targetKeys = [['clients-all'], ['clients-page'], ['client-weight'], ['client-contracts']]
                     targetLabel = 'dữ liệu Khách hàng'
                     break
                 case 'contracts':
-                    targetKeys = [['contracts-all']]
+                    targetKeys = [['contracts-all'], ['contract-configs']]
                     targetLabel = 'dữ liệu Hợp đồng'
+                    break
+                case 'weight-tracking':
+                    targetKeys = [['weight-records'], ['client-weight']]
+                    targetLabel = 'dữ liệu Tiến trình'
                     break
                 case 'revenue':
                     targetKeys = [['revenue']]
@@ -80,6 +84,22 @@ export function DataSyncStatus() {
                     targetKeys = [['zalo-users-all']]
                     targetLabel = 'dữ liệu Zalo'
                     break
+                case 'branches':
+                    targetKeys = [['branches']]
+                    targetLabel = 'dữ liệu Chi nhánh'
+                    break
+                case 'users':
+                    targetKeys = [['users'], ['branches']]
+                    targetLabel = 'dữ liệu Nhân sự'
+                    break
+                case 'packages':
+                    targetKeys = [['memberships'], ['branches']]
+                    targetLabel = 'dữ liệu Gói tập'
+                    break
+                case 'config-params':
+                    targetKeys = [['contract-configs'], ['client-configs']]
+                    targetLabel = 'dữ liệu Tham số'
+                    break
                 case 'dashboard':
                 case '':
                     targetKeys = [['dashboard-metrics'], ['revenue'], ['expense'], ['contracts-all']]
@@ -88,7 +108,7 @@ export function DataSyncStatus() {
                 default:
                     // For other pages, just refresh the core business caches
                     targetKeys = [['clients-all'], ['contracts-all'], ['revenue'], ['expense'], ['debts']]
-                    targetLabel = 'nghiệp vụ cơ bản'
+                    targetLabel = 'dữ liệu nghiệp vụ'
             }
 
             // 2. Invalidate and refetch ONLY the targets
@@ -103,12 +123,12 @@ export function DataSyncStatus() {
 
             const durationSeconds = ((performance.now() - startTime) / 1000).toFixed(2)
             setLastSync(new Date())
-            toast.success(`Đã hoàn tất đồng bộ (${durationSeconds}s)`, {
+            toast.success(`Đã cập nhật ${targetLabel} (${durationSeconds}s)`, {
                 duration: 2500
             })
         } catch (error) {
             console.error('Refresh error:', error)
-            toast.error('Lỗi khi đồng bộ dữ liệu')
+            toast.error('Lỗi khi cập nhật dữ liệu')
         } finally {
             setIsRefreshing(false)
             setTimeout(() => setSpinning(false), 800)
@@ -154,7 +174,7 @@ export function DataSyncStatus() {
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="text-xs">
-                        Làm mới dữ liệu (Ưu tiên khách hàng & tài chính)
+                        Làm mới dữ liệu
                     </TooltipContent>
                 </Tooltip>
             </div>

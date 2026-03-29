@@ -275,6 +275,9 @@ export async function finalizeContract(id: string, finalizeData: any) {
     try {
         const { contractUpdates, debtPlan } = finalizeData
 
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) throw new Error('Unauthorized')
+
         // RBAC Check
         const { data: existing, error: fetchErr } = await supabase
             .from('contracts')
@@ -284,7 +287,8 @@ export async function finalizeContract(id: string, finalizeData: any) {
         
         if (fetchErr || !existing) throw new Error('Không tìm thấy hợp đồng')
         const canAccess = accessInfo.access.canViewAllBranches || 
-                         (accessInfo.access.allowedBranchIds && accessInfo.access.allowedBranchIds.includes(existing.branch_id))
+                         (accessInfo.access.allowedBranchIds && accessInfo.access.allowedBranchIds.includes(existing.branch_id)) ||
+                         (existing.created_by_email === accessInfo.user.email)
         if (!canAccess) throw new Error('Bạn không có quyền chốt hợp đồng này')
 
         // 1. Cập nhật hợp đồng (Trạng thái, ngày ký, ngày bắt đầu/kết thúc)
@@ -796,13 +800,28 @@ export async function fetchLatestContractByClientId(clientId: string) {
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
 
         const supabase = await createAdminClient()
-        const { data, error } = await supabase
+        let query = supabase
             .from('contracts')
             .select('*')
             .eq('client_id', clientId)
             .order('created_at', { ascending: false })
             .limit(1)
-            .maybeSingle()
+
+        // Apply RBAC filters
+        if (!accessInfo.access.canViewAllBranches) {
+            const allowedIds = accessInfo.access.allowedBranchIds || []
+            if (accessInfo.access.isStaffOnly) {
+                const email = accessInfo.user.email
+                const name = accessInfo.user.name
+                query = query.or(`created_by_email.eq.${email},assigned_pt.eq.${email},trainer_name.ilike.%${name}%`)
+            } else {
+                if (allowedIds.length > 0) {
+                    query = query.in('branch_id', allowedIds)
+                }
+            }
+        }
+
+        const { data, error } = await query.maybeSingle()
 
         if (error) {
             if (error.code === 'PGRST116') return { success: true, data: null }
@@ -817,12 +836,34 @@ export async function fetchLatestContractByClientId(clientId: string) {
 
 export async function fetchContractsByClientId(clientId: string) {
     try {
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
         const supabase = await createAdminClient()
-        const { data, error } = await supabase
+        let query = supabase
             .from('contracts')
             .select('*, clients(*), branches(*)')
             .eq('client_id', clientId)
             .order('created_at', { ascending: false })
+
+        // Apply RBAC filters
+        if (!accessInfo.access.canViewAllBranches) {
+            const allowedIds = accessInfo.access.allowedBranchIds || []
+            
+            if (accessInfo.access.isStaffOnly) {
+                // Staff: Must be assigned to this client or created the contract
+                const email = accessInfo.user.email
+                const name = accessInfo.user.name
+                query = query.or(`created_by_email.eq.${email},assigned_pt.eq.${email},trainer_name.ilike.%${name}%`)
+            } else {
+                // Manager/BM: strictly in allowed branches
+                if (allowedIds.length > 0) {
+                    query = query.in('branch_id', allowedIds)
+                }
+            }
+        }
+
+        const { data, error } = await query
 
         if (error) throw error
         return { success: true, data: data || [] }

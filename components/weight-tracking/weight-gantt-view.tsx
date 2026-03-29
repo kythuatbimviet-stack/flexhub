@@ -18,7 +18,8 @@ import {
     User,
     Building2,
     Package,
-    RotateCcw
+    RotateCcw,
+    Flag
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -29,6 +30,12 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "../ui/popover"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
     Select,
     SelectContent,
@@ -477,6 +484,11 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                             const contract = client.latestContract
                             const isSelected = selectedClientId === client.id
                             const clientRecords = localRecords.filter(r => r.client_id === client.id)
+                            const plannedDates = new Set(
+                                clientRecords
+                                    .map(r => r.next_measurement_date ? r.next_measurement_date.split('T')[0] : null)
+                                    .filter(Boolean)
+                            )
 
                             return (
                                 <div key={client.id} className="flex group transition-colors duration-200">
@@ -568,17 +580,28 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                         {showTarget && (
                                             <div className="h-8 flex">
                                                 {days.map((day, i) => {
+                                                    const record = clientRecords.find(r => isSameDay(new Date(r.measurement_date), day))
+                                                    const isCellSelected = isSelected && selectedDate && isSameDay(selectedDate, day)
                                                     const isFriday = day.getDay() === 5
+                                                    
+                                                    // Show record target weight if it exists, otherwise baseline on start date
+                                                    const displayTarget = record?.target_weight || (isSameDay(day, parseISO(startDate)) ? client.latestContract?.target_weight : null)
+                                                    
                                                     return (
                                                         <div
                                                             key={i}
                                                             className={cn(
-                                                                "w-[50px] shrink-0 border-r border-slate-100 dark:border-slate-800/50 flex items-center justify-center bg-blue-50/10 dark:bg-blue-400/5",
-                                                                isFriday && "bg-amber-200/20 dark:bg-amber-900/30"
+                                                                "w-[50px] shrink-0 border-r border-slate-100 dark:border-slate-800/50 flex items-center justify-center cursor-pointer transition-all duration-200",
+                                                                isCellSelected ? "bg-blue-500/20 ring-2 ring-blue-500 ring-inset z-10" : "bg-blue-50/10 dark:bg-blue-400/5 hover:bg-blue-50/50 dark:hover:bg-blue-900/10",
+                                                                isFriday && !isCellSelected && "bg-amber-200/20 dark:bg-amber-900/30"
                                                             )}
+                                                            onClick={() => handleCellClick(client.id, day)}
+                                                            onDoubleClick={() => handleOpenEdit(client.id, day)}
                                                         >
-                                                            {isSameDay(day, parseISO(startDate)) && client.latestContract?.target_weight && (
-                                                                <span className="text-[10px] font-bold text-blue-500 dark:text-blue-400">{client.latestContract.target_weight}</span>
+                                                            {displayTarget && (
+                                                                <span className={cn("text-[10px] font-bold", isCellSelected ? "text-blue-700 dark:text-blue-300" : "text-blue-500 dark:text-blue-400")}>
+                                                                    {displayTarget}
+                                                                </span>
                                                             )}
                                                         </div>
                                                     )
@@ -603,7 +626,26 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                             onDoubleClick={() => handleOpenEdit(client.id, day)}
                                                         >
                                                             <span className={cn("text-[11px] font-semibold", isCellSelected ? "text-emerald-700 dark:text-emerald-300" : "text-emerald-600 dark:text-emerald-400")}>
-                                                                {record?.weight || '-'}
+                                                                {record?.weight ? record.weight : (
+                                                                    plannedDates.has(format(day, 'yyyy-MM-dd')) ? (
+                                                                        <TooltipProvider>
+                                                                            <Tooltip>
+                                                                                <TooltipTrigger asChild>
+                                                                                    <motion.div
+                                                                                        initial={{ scale: 0.5, opacity: 0 }}
+                                                                                        animate={{ scale: 1, opacity: 1 }}
+                                                                                        className="text-amber-500 cursor-help"
+                                                                                    >
+                                                                                        <Flag className="w-3.5 h-3.5 fill-amber-500" />
+                                                                                    </motion.div>
+                                                                                </TooltipTrigger>
+                                                                                <TooltipContent className="bg-slate-900 text-white border-slate-800 rounded-xl px-3 py-1.5 text-[11px] font-bold">
+                                                                                    Kế hoạch đo tiếp theo
+                                                                                </TooltipContent>
+                                                                            </Tooltip>
+                                                                        </TooltipProvider>
+                                                                    ) : '-'
+                                                                )}
                                                             </span>
                                                         </div>
                                                     )

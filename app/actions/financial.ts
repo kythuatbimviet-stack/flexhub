@@ -71,10 +71,19 @@ export async function fetchRevenue() {
 export async function createRevenue(data: any) {
     const supabase = await createClient()
     try {
-        const { data: userData } = await supabase.auth.getUser()
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        // RBAC Check for branch
+        if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
+            if (!accessInfo.access.allowedBranchIds.includes(data.branch_id)) {
+                throw new Error('Bạn không có quyền tạo khoản thu cho chi nhánh này')
+            }
+        }
+
         const { data: result, error } = await supabase
             .from('revenue')
-            .insert([{ ...data, recorded_by: userData.user?.id }])
+            .insert([{ ...data, recorded_by: accessInfo.user.id }])
             .select()
             .single()
 
@@ -165,6 +174,18 @@ export async function updateRevenue(id: string, updates: any) {
 export async function deleteRevenue(id: string) {
     const supabase = await createClient()
     try {
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        // RBAC Check
+        const { data: existing } = await supabase.from('revenue').select('branch_id').eq('id', id).maybeSingle()
+        if (!existing) throw new Error('Không tìm thấy khoản thu')
+        if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
+            if (!accessInfo.access.allowedBranchIds.includes(existing.branch_id)) {
+                throw new Error('Bạn không có quyền xóa khoản thu này')
+            }
+        }
+
         const { error } = await supabase.from('revenue').delete().eq('id', id)
         if (error) throw error
         revalidatePath('/revenue')
@@ -229,10 +250,19 @@ export async function fetchExpense() {
 export async function createExpense(data: any) {
     const supabase = await createClient()
     try {
-        const { data: userData } = await supabase.auth.getUser()
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        // RBAC Check
+        if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
+            if (!accessInfo.access.allowedBranchIds.includes(data.branch_id)) {
+                throw new Error('Bạn không có quyền tạo khoản chi cho chi nhánh này')
+            }
+        }
+
         const { data: result, error } = await supabase
             .from('expense')
-            .insert([{ ...data, recorded_by: userData.user?.id }])
+            .insert([{ ...data, recorded_by: accessInfo.user.id }])
             .select()
 
         if (error) throw error

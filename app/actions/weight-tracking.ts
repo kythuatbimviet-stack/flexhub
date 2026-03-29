@@ -2,11 +2,11 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
+import { format, parseISO } from 'date-fns'
 
 export async function fetchWeightRecords() {
     try {
         const supabase = await createClient()
-        // Try simple select first to see if data flows at all
         const { data, error } = await supabase
             .from('weight_tracking')
             .select('*')
@@ -17,8 +17,6 @@ export async function fetchWeightRecords() {
             return { success: false, error: `${error.code}: ${error.message} - ${error.details}` }
         }
 
-        // If simple select works, try to fetch joined data manually or in next step
-        // For now, let's see if we get ANY data
         return { success: true, data }
     } catch (error: any) {
         console.error('Unexpected Fetch Error:', error)
@@ -29,9 +27,29 @@ export async function fetchWeightRecords() {
 export async function createWeightRecord(record: any) {
     try {
         const adminClient = await createAdminClient()
+        const supabase = await createClient()
+        
+        // Get current user for audit
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        const mDate = parseISO(record.measurement_date)
+        
+        // Ensure ID, timestamps and schema-matching fields are handled
+        const finalRecord = {
+            ...record,
+            id: record.id || crypto.randomUUID(),
+            month: format(mDate, 'MM/yyyy'),
+            day: record.measurement_date, // day column matches measurement_date format
+            created_by: user?.id || null,
+            created_at: record.created_at || new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        }
+
         const { data, error } = await adminClient
             .from('weight_tracking')
-            .insert(record)
+            .insert(finalRecord)
+            .select()
+            .single()
 
         if (error) {
             console.error('Create Weight Record Error:', error)
@@ -49,9 +67,19 @@ export async function createWeightRecord(record: any) {
 export async function updateWeightRecord(id: string, updates: any) {
     try {
         const adminClient = await createAdminClient()
+        
+        // If measurement_date is being updated, recalculate month and day
+        let finalUpdates = { ...updates, updated_at: new Date().toISOString() }
+        
+        if (updates.measurement_date) {
+            const mDate = parseISO(updates.measurement_date)
+            finalUpdates.month = format(mDate, 'MM/yyyy')
+            finalUpdates.day = updates.measurement_date
+        }
+
         const { data, error } = await adminClient
             .from('weight_tracking')
-            .update(updates)
+            .update(finalUpdates)
             .eq('id', id)
 
         if (error) {
@@ -168,6 +196,29 @@ export async function upsertWeightRecord(clientId: string, date: string, field: 
         return { success: true }
     } catch (error: any) {
         console.error('Upsert Weight Record Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+export async function fetchLatestWeightRecordByClientId(clientId: string) {
+    try {
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('weight_tracking')
+            .select('*')
+            .eq('client_id', clientId)
+            .order('measurement_date', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+        if (error) {
+            console.error('Fetch Latest Weight Record Error:', error)
+            return { success: false, error: error.message }
+        }
+
+        return { success: true, data }
+    } catch (error: any) {
+        console.error('Unexpected Fetch Error:', error)
         return { success: false, error: error.message }
     }
 }

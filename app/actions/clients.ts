@@ -407,3 +407,48 @@ export async function generateClientId(clientBranchId?: string | null) {
         return { success: false, error: error.message }
     }
 }
+
+/**
+ * Fetch filter options (PTs list) based on user permissions
+ */
+export async function fetchClientFilterOptions() {
+    try {
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        const adminClient = await createAdminClient()
+
+        // 1. Fetch PTs/Staff based on RBAC
+        // We fetch anyone who could be assigned as a PT
+        let ptQuery = adminClient
+            .from('users')
+            .select('name, email, position')
+            .eq('status', 'Hoạt động')
+
+        // Apply Branch restrictions
+        if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
+            ptQuery = ptQuery.in('branch_id', accessInfo.access.allowedBranchIds)
+        }
+
+        const { data: userData, error: userError } = await ptQuery
+        if (userError) throw userError
+
+        // Filter by common PT-related positions or just return all active users in allowed branches
+        const pts = userData
+            ?.filter(u => ['Huấn luyện viên', 'Nhân viên', 'PT', 'Quản lý chi nhánh', 'Quản lý'].includes(u.position as string))
+            .map(u => u.name) || []
+
+        return {
+            success: true,
+            data: {
+                pts: Array.from(new Set(pts)).sort(),
+                isStaffOnly: accessInfo.access.isStaffOnly,
+                userEmail: accessInfo.user.email,
+                userName: accessInfo.user.name
+            }
+        }
+    } catch (error: any) {
+        console.error('Fetch Filter Options Error:', error)
+        return { success: false, error: error.message }
+    }
+}

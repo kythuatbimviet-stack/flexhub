@@ -43,6 +43,7 @@ import { vi } from 'date-fns/locale'
 import { fetchWeightRecords, deleteWeightRecord, deleteBulkWeightRecords } from '@/app/actions/weight-tracking'
 import { fetchClients } from '@/app/actions/clients'
 import { fetchContracts } from '@/app/actions/contracts'
+import { fetchUsers } from '@/app/actions/users'
 import { WeightChart } from '@/components/weight-tracking/weight-chart'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
 import { WeightDetailsSheet } from '@/components/weight-tracking/weight-details-sheet'
@@ -94,9 +95,15 @@ export default function WeightTrackingPage() {
         queryFn: () => fetchContracts()
     })
 
+    const { data: usersResult } = useQuery({
+        queryKey: ['users-simple'],
+        queryFn: () => fetchUsers()
+    })
+
     const records: any[] = (recordsResult?.success && recordsResult.data) ? recordsResult.data : []
     const clients: any[] = (clientsResult?.success && clientsResult.data) ? clientsResult.data : []
     const contracts: any[] = (contractsResult?.success && contractsResult.data) ? contractsResult.data : []
+    const users: any[] = (usersResult?.success && usersResult.data) ? usersResult.data : []
 
     const branchOptions = React.useMemo(() => {
         const branches = new Set(contracts.map(c => c.facility_name).filter(Boolean))
@@ -269,9 +276,11 @@ export default function WeightTrackingPage() {
         const dataToExport = filteredRecords.map((r: any) => ({
             'Khách hàng': r.clients?.member_name || clients.find(c => c.id === r.client_id)?.member_name || 'N/A',
             'Ngày đo': format(new Date(r.measurement_date), 'dd/MM/yyyy'),
-            'Cân nặng (kg)': r.weight,
-            'Số đo': r.measurements || '',
-            'Ngày đo tiếp theo': r.next_measurement_date ? format(new Date(r.next_measurement_date), 'dd/MM/yyyy') : ''
+            'Cân nặng thực tế (kg)': r.weight,
+            'Cân nặng mục tiêu (kg)': r.target_weight || '',
+            'Chiều cao (cm)': r.height || '',
+            'Ghi chú': r.measurements || '',
+            'Ngày hẹn tiếp theo': r.next_measurement_date ? format(new Date(r.next_measurement_date), 'dd/MM/yyyy') : ''
         }))
 
         const ws = XLSX.utils.json_to_sheet(dataToExport)
@@ -299,15 +308,16 @@ export default function WeightTrackingPage() {
                 record={selectedRecord}
                 onSuccess={refetchAll}
                 clients={clients}
+                users={users}
             />
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-1">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                    <h1 className="text-3xl font-bold text-black dark:text-white flex items-center gap-2 tracking-tight">
                         <Activity className="w-8 h-8 text-[#FD5771]" />
                         Tiến trình thay đổi
                     </h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Theo dõi và quản lý cân nặng của khách hàng theo thời gian.</p>
+                    <p className="text-[13px] text-slate-600 dark:text-slate-400 font-medium">Theo dõi và quản lý chỉ số cơ thể của khách hàng theo thời gian.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     {selectedRecordIds.size > 0 && (
@@ -593,10 +603,12 @@ export default function WeightTrackingPage() {
                                                                         <TableHeader className="bg-transparent">
                                                                             <TableRow className="border-none hover:bg-transparent">
                                                                                 <TableHead className="w-10 h-8 p-0 text-center"></TableHead>
-                                                                                <TableHead className="h-8 text-[10px] uppercase tracking-wider text-gray-400 pl-4">Ngày đo</TableHead>
-                                                                                <TableHead className="h-8 text-[10px] uppercase tracking-wider text-gray-400">Cân nặng</TableHead>
-                                                                                <TableHead className="h-8 text-[10px] uppercase tracking-wider text-gray-400">Hẹn tiếp theo</TableHead>
-                                                                                <TableHead className="h-8 text-[10px] uppercase tracking-wider text-gray-400 text-right pr-8">Thao tác</TableHead>
+                                                                                <TableHead className="h-8 text-[10px] font-bold uppercase tracking-wider text-slate-400 pl-4">Ngày đo</TableHead>
+                                                                                <TableHead className="h-8 text-[10px] font-bold uppercase tracking-wider text-slate-400">Thực tế</TableHead>
+                                                                                <TableHead className="h-8 text-[10px] font-bold uppercase tracking-wider text-slate-400">Cần đạt</TableHead>
+                                                                                <TableHead className="h-8 text-[10px] font-bold uppercase tracking-wider text-slate-400">Chiều cao</TableHead>
+                                                                                <TableHead className="h-8 text-[10px] font-bold uppercase tracking-wider text-slate-400">Hẹn tiếp theo</TableHead>
+                                                                                <TableHead className="h-8 text-[10px] font-bold uppercase tracking-wider text-slate-400 text-right pr-8">Thao tác</TableHead>
                                                                             </TableRow>
                                                                         </TableHeader>
                                                                         <TableBody>
@@ -618,13 +630,19 @@ export default function WeightTrackingPage() {
                                                                                             onCheckedChange={() => toggleSelectRecord(record.id)}
                                                                                         />
                                                                                     </TableCell>
-                                                                                    <TableCell className="py-2 pl-4 text-xs font-medium text-gray-600 dark:text-gray-300">
+                                                                                    <TableCell className="py-2 pl-4 text-xs font-medium text-slate-900 dark:text-slate-200">
                                                                                         {format(new Date(record.measurement_date), 'dd/MM/yyyy')}
                                                                                     </TableCell>
-                                                                                    <TableCell className="py-2 text-xs font-bold text-gray-900 dark:text-gray-100">
+                                                                                    <TableCell className="py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                                                                                         {record.weight} kg
                                                                                     </TableCell>
-                                                                                    <TableCell className="py-2 text-xs text-gray-500 dark:text-gray-400">
+                                                                                    <TableCell className="py-2 text-xs font-bold text-blue-600 dark:text-blue-400">
+                                                                                        {record.target_weight || '-'} kg
+                                                                                    </TableCell>
+                                                                                    <TableCell className="py-2 text-xs font-bold text-purple-600 dark:text-purple-400">
+                                                                                        {record.height || '-'} cm
+                                                                                    </TableCell>
+                                                                                    <TableCell className="py-2 text-xs font-medium text-slate-500 dark:text-slate-400">
                                                                                         {record.next_measurement_date ? format(new Date(record.next_measurement_date), 'dd/MM/yyyy') : '-'}
                                                                                     </TableCell>
                                                                                     <TableCell className="py-2 text-right pr-8">
