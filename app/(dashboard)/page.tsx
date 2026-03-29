@@ -15,7 +15,6 @@ import {
     Building2,
     Package,
     Settings,
-    Tags,
     LayoutDashboard,
     ChevronRight,
     ArrowRight
@@ -69,6 +68,40 @@ const featureGroups = [
     }
 ]
 
+function DashboardSkeleton() {
+    return (
+        <div className="space-y-12 font-inter pb-20 animate-pulse">
+            {/* Hero skeleton */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-400/20 to-red-500/10 dark:from-red-900/30 dark:to-red-800/20 p-8 md:p-10">
+                <div className="space-y-4 max-w-xl">
+                    <div className="h-9 w-56 rounded-xl bg-gray-200 dark:bg-gray-700" />
+                    <div className="h-5 w-80 rounded-lg bg-gray-100 dark:bg-gray-800" />
+                    <div className="h-5 w-64 rounded-lg bg-gray-100 dark:bg-gray-800" />
+                    <div className="h-10 w-44 rounded-2xl bg-gray-200 dark:bg-gray-700 mt-2" />
+                </div>
+            </div>
+            {/* Cards skeleton — 2 groups */}
+            {[1, 2].map((g) => (
+                <div key={g} className="space-y-5">
+                    <div className="flex items-center gap-3 px-2">
+                        <div className="w-2 h-8 rounded-full bg-gray-200 dark:bg-gray-700" />
+                        <div className="h-7 w-48 rounded-lg bg-gray-200 dark:bg-gray-700" />
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                        {[1, 2, 3, 4].map((c) => (
+                            <div key={c} className="rounded-3xl p-6 bg-white dark:bg-gray-900 shadow-sm space-y-4 border border-gray-100 dark:border-gray-800">
+                                <div className="h-14 w-14 rounded-2xl bg-gray-100 dark:bg-gray-800" />
+                                <div className="h-5 w-24 rounded-lg bg-gray-200 dark:bg-gray-700" />
+                                <div className="h-4 w-full rounded-md bg-gray-100 dark:bg-gray-800" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
 export default function DashboardPage() {
     const { user, permissions, isLoading } = usePermissions()
 
@@ -80,7 +113,8 @@ export default function DashboardPage() {
         return 'Chào buổi tối'
     }
 
-    if (isLoading) return null
+    // Show skeleton instead of blank screen while loading permissions
+    if (isLoading) return <DashboardSkeleton />
 
     const userName = user?.name || 'Admin'
     const isStaff = permissions.isStaffOnly
@@ -95,14 +129,14 @@ export default function DashboardPage() {
             {/* Hero Section */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FD5771] to-[#E5485D] p-6 md:p-10 text-white shadow-2xl shadow-[#FD5771]/20">
                 <div className="relative z-10 max-w-2xl">
-                    <motion.h1 
+                    <motion.h1
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="text-2xl md:text-4xl font-bold tracking-tight mb-4"
                     >
                         {getGreeting()}, {userName}
                     </motion.h1>
-                    <motion.p 
+                    <motion.p
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
@@ -110,7 +144,7 @@ export default function DashboardPage() {
                     >
                         Truy cập nhanh các tính năng và quản lý mọi hoạt động của phòng tập một cách hiệu quả nhất.
                     </motion.p>
-                    
+
                     {!isStaff && (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
@@ -149,7 +183,7 @@ export default function DashboardPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {group.features.map((feature, featureIdx) => (
                                 <Link key={featureIdx} href={feature.href}>
-                                    <motion.div 
+                                    <motion.div
                                         whileHover={{ y: -5 }}
                                         className="h-full"
                                     >
@@ -185,7 +219,7 @@ export default function DashboardPage() {
                         <div className="grid grid-cols-4 gap-y-6">
                             {group.features.map((feature, featureIdx) => (
                                 <Link key={featureIdx} href={feature.href} className="flex flex-col items-center gap-2">
-                                    <motion.div 
+                                    <motion.div
                                         whileTap={{ scale: 0.9 }}
                                         className={cn(
                                             "w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg active:shadow-inner transition-all",
@@ -208,4 +242,3 @@ export default function DashboardPage() {
         </div>
     )
 }
-

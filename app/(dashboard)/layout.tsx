@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { AppDataInitializer } from '@/components/layout/app-data-initializer'
 import { DataSyncStatus } from '@/components/layout/data-sync-status'
 import { LogoLoading } from '@/components/ui/logo-loading'
+import { NavigationProgress } from '@/components/layout/navigation-progress'
 
 export default function DashboardLayout({
     children,
@@ -82,6 +83,10 @@ export default function DashboardLayout({
 
     return (
         <div suppressHydrationWarning className="flex h-[100dvh] bg-[#F8FAFC] dark:bg-gray-900 overflow-hidden transition-colors duration-300 font-sans">
+            {/* Top progress bar — fires on every route change */}
+            <React.Suspense fallback={null}>
+                <NavigationProgress />
+            </React.Suspense>
             {/* Prefetch all critical data silently — no longer blocks the UI */}
             <AppDataInitializer />
 
