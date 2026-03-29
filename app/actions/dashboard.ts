@@ -1,7 +1,24 @@
 'use server'
 
-import { createAdminClient } from '@/lib/supabase-server'
+import { createAdminClient, createClient as createSupabaseClient } from '@/lib/supabase-server'
 import { startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, subWeeks, format } from 'date-fns'
+import { getAccessControl, UserProfile } from '@/lib/permissions'
+import { cache } from 'react'
+
+const getAccessFilter = cache(async () => {
+    const supabase = await createSupabaseClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser?.email) return null
+
+    const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', authUser.email)
+        .maybeSingle()
+
+    if (!profile) return null
+    return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
+})
 
 export async function fetchDashboardMetrics(filters?: { startDate?: string; endDate?: string; branchId?: string }) {
     const supabase = await createAdminClient()
@@ -14,15 +31,28 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
     const lastMonthEnd = endOfMonth(subMonths(now, 1)).toISOString()
 
     try {
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
         // Build base queries
         let clientsQuery = supabase.from('clients').select('id, status, source, registration_type, created_at, pt_name, branch_id')
         let revenueQuery = supabase.from('revenue').select('amount, recorded_at, branch_id, customer_id')
         let expenseQuery = supabase.from('expense').select('amount, recorded_at, branch_id')
         let debtsQuery = supabase.from('debts').select('remaining_amount, paid_amount, status, created_at, branch_id')
         let contractsQuery = supabase.from('contracts').select('id, status, total_amount, end_date, created_at, branch_id')
-        const branchesQuery = supabase.from('branches').select('id, name')
+        let branchesQuery = supabase.from('branches').select('id, name')
 
-        // Apply filters if provided
+        // Apply RBAC filters (Primary security layer)
+        if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
+            clientsQuery = clientsQuery.in('branch_id', accessInfo.access.allowedBranchIds)
+            revenueQuery = revenueQuery.in('branch_id', accessInfo.access.allowedBranchIds)
+            expenseQuery = expenseQuery.in('branch_id', accessInfo.access.allowedBranchIds)
+            debtsQuery = debtsQuery.in('branch_id', accessInfo.access.allowedBranchIds)
+            contractsQuery = contractsQuery.in('branch_id', accessInfo.access.allowedBranchIds)
+            branchesQuery = branchesQuery.in('id', accessInfo.access.allowedBranchIds)
+        }
+
+        // Apply UI filters if provided
         if (filters?.startDate) {
             clientsQuery = clientsQuery.gte('created_at', filters.startDate)
             revenueQuery = revenueQuery.gte('recorded_at', filters.startDate)

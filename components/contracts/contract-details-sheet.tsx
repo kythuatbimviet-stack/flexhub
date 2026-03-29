@@ -204,6 +204,14 @@ export function ContractDetailsSheet({
     const [packageOpen, setPackageOpen] = React.useState(false)
     const [selectedPackageId, setSelectedPackageId] = React.useState<string>('')
 
+    const allowedBranches = React.useMemo(() => {
+        if (permissions.canViewAllBranches) return branches
+        if (permissions.allowedBranchIds) {
+            return branches.filter(b => permissions.allowedBranchIds?.includes(b.id))
+        }
+        return []
+    }, [branches, permissions])
+
     const defaultStatus = React.useMemo(() => {
         return statuses.find(s => s.is_default)?.nam || statuses[0]?.nam || 'Chờ ký HĐ'
     }, [statuses])
@@ -315,7 +323,7 @@ export function ContractDetailsSheet({
             }
 
             // If we have a branch, generate ID
-            const branchId = initialData.branch_id || branches[0]?.id
+            const branchId = initialData.branch_id || allowedBranches[0]?.id
             if (branchId) {
                 initialData.branch_id = branchId
                 const branch = branches.find((b: any) => b.id === branchId)

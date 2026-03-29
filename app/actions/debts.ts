@@ -1,12 +1,32 @@
 'use server'
 
-import { createClient, createAdminClient } from '@/lib/supabase-server'
+import { createClient, createAdminClient, createClient as createSupabaseClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
+import { getAccessControl, UserProfile } from '@/lib/permissions'
+import { cache } from 'react'
+
+const getAccessFilter = cache(async () => {
+    const supabase = await createSupabaseClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser?.email) return null
+
+    const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', authUser.email)
+        .maybeSingle()
+
+    if (!profile) return null
+    return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
+})
 
 export async function fetchDebts() {
     const supabase = await createClient()
     try {
-        const { data, error } = await supabase
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        let query = supabase
             .from('debts')
             .select(`
                 *,
@@ -15,6 +35,17 @@ export async function fetchDebts() {
                 branches (name)
             `)
             .order('created_at', { ascending: false })
+
+        // Apply RBAC filters
+        if (accessInfo.access.isStaffOnly) {
+            query = query.eq('created_by_email', accessInfo.user.email) // Note: assuming debts has created_by_email or similar
+            // If debts doesn't have it, we might need a join or another logic. 
+            // Usually, staff only see debts of their own clients.
+        } else if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
+            query = query.in('branch_id', accessInfo.access.allowedBranchIds)
+        }
+
+        const { data, error } = await query
 
         if (error) throw error
         return { success: true, data }

@@ -33,10 +33,25 @@ export async function fetchClients() {
             .order('created_at', { ascending: false })
 
         // Apply RBAC filters
-        if (accessInfo.access.isStaffOnly) {
-            query = query.or(`created_by_email.eq.${accessInfo.user.email},assigned_pt.eq.${accessInfo.user.email},pt_name.ilike.%${accessInfo.user.name}%`)
-        } else if (!accessInfo.access.canViewAllBranches) {
-            query = query.or(`branch_id.eq.${accessInfo.user.branch_id},created_by_email.eq.${accessInfo.user.email}`)
+        if (!accessInfo.access.canViewAllBranches) {
+            const allowedIds = accessInfo.access.allowedBranchIds || []
+            
+            if (accessInfo.access.isStaffOnly) {
+                // Staff: Must be in allowed branches AND (Created by him OR Assigned to him)
+                if (allowedIds.length > 0) {
+                    query = query.in('branch_id', allowedIds)
+                }
+                const email = accessInfo.user.email
+                const name = accessInfo.user.name
+                query = query.or(`created_by_email.eq.${email},assigned_pt.eq.${email},pt_name.ilike.%${name}%`)
+            } else {
+                // Manager/BM: strictly in allowed branches
+                if (allowedIds.length > 0) {
+                    query = query.in('branch_id', allowedIds)
+                } else {
+                    query = query.eq('created_by_email', accessInfo.user.email)
+                }
+            }
         }
 
         const { data, error } = await query
@@ -94,10 +109,25 @@ export async function fetchClientsPage({
             if (regType) q = q.eq('registration_type', regType)
 
             // Apply RBAC filters
-            if (accessInfo.access.isStaffOnly) {
-                q = q.or(`created_by_email.eq.${accessInfo.user.email},assigned_pt.eq.${accessInfo.user.email},pt_name.ilike.%${accessInfo.user.name}%`)
-            } else if (!accessInfo.access.canViewAllBranches) {
-                q = q.or(`branch_id.eq.${accessInfo.user.branch_id},created_by_email.eq.${accessInfo.user.email}`)
+            if (!accessInfo.access.canViewAllBranches) {
+                const allowedIds = accessInfo.access.allowedBranchIds || []
+                
+                if (accessInfo.access.isStaffOnly) {
+                    // Staff filters
+                    if (allowedIds.length > 0) {
+                        q = q.in('branch_id', allowedIds)
+                    }
+                    const email = accessInfo.user.email
+                    const name = accessInfo.user.name
+                    q = q.or(`created_by_email.eq.${email},assigned_pt.eq.${email},pt_name.ilike.%${name}%`)
+                } else {
+                    // Manager/BM filters
+                    if (allowedIds.length > 0) {
+                        q = q.in('branch_id', allowedIds)
+                    } else {
+                        q = q.eq('created_by_email', accessInfo.user.email)
+                    }
+                }
             }
 
             return q

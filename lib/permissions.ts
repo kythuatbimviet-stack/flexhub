@@ -7,12 +7,13 @@ export interface UserProfile {
     permissions: string | null
     position: UserPosition
     branch_id?: string
+    managed_branches?: string | string[] | null
 }
 
 export interface AccessControl {
     canViewAllBranches: boolean
     canManageUsers: boolean
-    branchIdLimit?: string // If set, user only sees data from this branch
+    allowedBranchIds?: string[] // Array of branch IDs user can access
     isStaffOnly: boolean   // If true, user only sees data they created or are assigned to
 }
 
@@ -20,7 +21,31 @@ export function getAccessControl(user: UserProfile): AccessControl {
     const permissions = user.permissions
     const position = user.position
 
-    // Admin: Full access
+    // Parse managed branches if it's a string
+    let managedBranches: string[] = []
+    if (user.managed_branches) {
+        if (Array.isArray(user.managed_branches)) {
+            managedBranches = user.managed_branches
+        } else if (typeof user.managed_branches === 'string') {
+            const cleaned = user.managed_branches.trim()
+            if (cleaned.startsWith('[') || cleaned.startsWith('{')) {
+                try {
+                    // Handle JSON or Postgres array format
+                    const jsonStr = cleaned.replace(/{/g, '[').replace(/}/g, ']')
+                    managedBranches = JSON.parse(jsonStr)
+                } catch (e) {
+                    console.error('Failed to parse managed_branches as JSON/Array:', e)
+                    // Fallback to comma separation
+                    managedBranches = cleaned.split(',').map(s => s.trim()).filter(Boolean)
+                }
+            } else if (cleaned) {
+                // Handle simple comma-separated string
+                managedBranches = cleaned.split(',').map(s => s.trim()).filter(Boolean)
+            }
+        }
+    }
+
+    // Admin: Full access to everything
     if (permissions === 'Admin') {
         return {
             canViewAllBranches: true,
@@ -29,8 +54,8 @@ export function getAccessControl(user: UserProfile): AccessControl {
         }
     }
 
-    // Positions that can see everything (CEO, Manager)
-    if (position === 'CEO' || position === 'Quản lý') {
+    // CEO: Full branch access, but no user management
+    if (position === 'CEO') {
         return {
             canViewAllBranches: true,
             canManageUsers: false,
@@ -38,20 +63,32 @@ export function getAccessControl(user: UserProfile): AccessControl {
         }
     }
 
-    if (position === 'Quản lý chi nhánh') {
+    // Quản lý (Manager)
+    if (position === 'Quản lý') {
+        const hasManagedBranches = managedBranches.length > 0
         return {
-            canViewAllBranches: false,
+            canViewAllBranches: !hasManagedBranches,
             canManageUsers: false,
-            branchIdLimit: user.branch_id,
+            allowedBranchIds: hasManagedBranches ? managedBranches : undefined,
             isStaffOnly: false
         }
     }
 
-    // Staff (Nhân viên)
+    // Quản lý chi nhánh (Branch Manager): Limited to their own branch
+    if (position === 'Quản lý chi nhánh') {
+        return {
+            canViewAllBranches: false,
+            canManageUsers: false,
+            allowedBranchIds: user.branch_id ? [user.branch_id] : [],
+            isStaffOnly: false
+        }
+    }
+
+    // Staff (Nhân viên): Limited to their own branch + only assigned data
     return {
         canViewAllBranches: false,
         canManageUsers: false,
-        branchIdLimit: user.branch_id,
+        allowedBranchIds: user.branch_id ? [user.branch_id] : [],
         isStaffOnly: true
     }
 }
@@ -68,8 +105,8 @@ export function canAccessRecord(user: UserProfile, record: any): boolean {
     if (isOwner || isAssigned) return true
 
     // 2. Check branch access for non-owners
-    if (!access.canViewAllBranches) {
-        if (record.branch_id !== user.branch_id) return false
+    if (!access.canViewAllBranches && access.allowedBranchIds) {
+        if (!access.allowedBranchIds.includes(record.branch_id)) return false
     }
 
     // 3. Check ownership/assignment for staff (redundant but safe)

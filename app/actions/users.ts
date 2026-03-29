@@ -43,9 +43,9 @@ export async function fetchUsers() {
             `)
             .order('created_at', { ascending: false })
 
-        // Non-admin/CEO/manager users only see their own branch
-        if (!access.canViewAllBranches && profile.branch_id) {
-            query = query.eq('branch_id', profile.branch_id)
+        // Apply RBAC filters
+        if (!access.canViewAllBranches && access.allowedBranchIds) {
+            query = query.in('branch_id', access.allowedBranchIds)
         }
 
         const { data, error } = await query

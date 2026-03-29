@@ -40,6 +40,7 @@ import {
     AvatarImage,
     AvatarFallback,
 } from '@/components/ui/avatar'
+import { usePermissions } from '@/hooks/use-permissions'
 
 const ONE_MINUTE = 60000
 const ONE_HOUR = 3600000
@@ -75,7 +76,8 @@ export default function ClientsPage() {
     }, [searchTerm])
     React.useEffect(() => { setPage(1) }, [statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter, pageSize])
 
-    // ── Data from global cache ────────────────────────────────────────────────
+    const { permissions, user: currentUser, isLoading: isLoadingPermissions } = usePermissions()
+
     const { data: configResult } = useQuery({
         queryKey: ['client-configs'],
         queryFn: fetchClientConfigs,
@@ -91,6 +93,21 @@ export default function ClientsPage() {
         },
         staleTime: ONE_HOUR,
     })
+
+    const allowedBranches = React.useMemo(() => {
+        if (permissions.canViewAllBranches) return branches
+        if (permissions.allowedBranchIds) {
+            return branches.filter(b => permissions.allowedBranchIds?.includes(b.id))
+        }
+        return []
+    }, [branches, permissions])
+
+    // Set initial branch filter if restricted to one branch
+    React.useEffect(() => {
+        if (!isLoadingPermissions && !permissions.canViewAllBranches && allowedBranches.length === 1 && branchFilter === 'all') {
+            setBranchFilter(allowedBranches[0].id)
+        }
+    }, [allowedBranches, permissions, isLoadingPermissions, branchFilter])
 
     // ── Server-side paginated data ────────────────────────────────────────────
     const clientsQuery = useQuery({
@@ -158,8 +175,8 @@ export default function ClientsPage() {
 
     const SortIcon = ({ columnKey }: { columnKey: string }) => {
         if (!sortConfig || sortConfig.key !== columnKey) return <ArrowUpDown className="ml-1 w-3 h-3 opacity-30" />
-        return sortConfig.direction === 'asc' 
-            ? <ChevronUp className="ml-1 w-3 h-3 text-red-500" /> 
+        return sortConfig.direction === 'asc'
+            ? <ChevronUp className="ml-1 w-3 h-3 text-red-500" />
             : <ChevronDown className="ml-1 w-3 h-3 text-red-500" />
     }
 
@@ -368,7 +385,7 @@ export default function ClientsPage() {
                             <FileDown className="w-4.5 h-4.5 mr-2" />
                             <span className="hidden sm:inline">Xuất Excel</span>
                         </Button>
-                        <Button onClick={() => { setSelectedClient(null); setIsDetailsOpen(true); }} 
+                        <Button onClick={() => { setSelectedClient(null); setIsDetailsOpen(true); }}
                             className="bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 h-11 transition-colors shadow-sm font-medium dark:shadow-red-900/20 active:scale-95">
                             <Plus className="w-4 h-4 mr-2" />
                             <span className="hidden sm:inline">Thêm Khách hàng</span>
@@ -424,8 +441,10 @@ export default function ClientsPage() {
                                                 <SelectValue placeholder="Chi nhánh" />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                <SelectItem value="all">Tất cả Chi nhánh</SelectItem>
-                                                {branches.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                                                {(permissions.canViewAllBranches || allowedBranches.length > 1) && (
+                                                    <SelectItem value="all">{permissions.canViewAllBranches ? 'Tất cả Chi nhánh' : 'Tất cả chi nhánh'}</SelectItem>
+                                                )}
+                                                {allowedBranches.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                         <Select value={ptFilter} onValueChange={setPtFilter}>
@@ -455,12 +474,12 @@ export default function ClientsPage() {
                                                 {sourceOptions.map((s: any) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
-                                            <SortPopover />
-                                            <Button variant="ghost" onClick={clearFilters}
-                                                className="h-9 px-3 rounded-lg text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 transition-all col-span-2 lg:col-span-1 justify-center">
-                                                <RotateCcw className="w-4 h-4 mr-2 lg:mr-0" />
-                                                <span className="lg:hidden text-sm">Làm mới bộ lọc</span>
-                                            </Button>
+                                        <SortPopover />
+                                        <Button variant="ghost" onClick={clearFilters}
+                                            className="h-9 px-3 rounded-lg text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 transition-all col-span-2 lg:col-span-1 justify-center">
+                                            <RotateCcw className="w-4 h-4 mr-2 lg:mr-0" />
+                                            <span className="lg:hidden text-sm">Làm mới bộ lọc</span>
+                                        </Button>
                                     </div>
                                 </motion.div>
                             )}
@@ -655,15 +674,15 @@ export default function ClientsPage() {
                                                     className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500" title="Chỉnh sửa">
                                                     <Edit2 className="h-3.5 w-3.5" />
                                                 </Button>
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
                                                     onClick={(e) => {
                                                         e.stopPropagation()
                                                         setContractInitialClient(client)
                                                         setIsContractCreateOpen(true)
                                                     }}
-                                                    className="w-8 h-8 rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500" 
+                                                    className="w-8 h-8 rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-500"
                                                     title="Thêm hợp đồng"
                                                 >
                                                     <FilePlus2 className="h-3.5 w-3.5" />

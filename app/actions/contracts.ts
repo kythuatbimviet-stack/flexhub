@@ -142,10 +142,26 @@ export async function fetchContracts() {
             .order('created_at', { ascending: false })
 
         // Apply RBAC filters
-        if (accessInfo.access.isStaffOnly) {
-            query = query.or(`created_by_email.eq.${accessInfo.user.email},assigned_pt.eq.${accessInfo.user.email},trainer_name.ilike.%${accessInfo.user.name}%`)
-        } else if (!accessInfo.access.canViewAllBranches) {
-            query = query.or(`branch_id.eq.${accessInfo.user.branch_id},created_by_email.eq.${accessInfo.user.email}`)
+        if (!accessInfo.access.canViewAllBranches) {
+            const allowedIds = accessInfo.access.allowedBranchIds || []
+            
+            if (accessInfo.access.isStaffOnly) {
+                // Staff: Branch restriction AND (Created by him OR Assigned to him)
+                if (allowedIds.length > 0) {
+                    query = query.in('branch_id', allowedIds)
+                }
+                const email = accessInfo.user.email
+                const name = accessInfo.user.name
+                query = query.or(`created_by_email.eq.${email},assigned_pt.eq.${email},trainer_name.ilike.%${name}%`)
+            } else {
+                // Manager or Branch Manager: Strictly within allowed branches
+                if (allowedIds.length > 0) {
+                    query = query.in('branch_id', allowedIds)
+                } else {
+                    // Fail-safe if no branches allowed
+                    query = query.eq('created_by_email', accessInfo.user.email)
+                }
+            }
         }
 
         const { data, error } = await query
@@ -176,6 +192,14 @@ export async function fetchContractById(id: string) {
 
         if (error) throw error
         if (!data) return { success: false, error: 'Không tìm thấy dữ liệu hợp đồng' }
+
+        // RBAC Check for View
+        const canAccess = accessInfo.access.canViewAllBranches || 
+                         (accessInfo.access.allowedBranchIds && accessInfo.access.allowedBranchIds.includes(data.branch_id)) ||
+                         (data.created_by_email === accessInfo.user.email)
+        
+        if (!canAccess) return { success: false, error: 'Bạn không có quyền xem hợp đồng này' }
+
         return { success: true, data }
     } catch (error: any) {
         return { success: false, error: error.message }
@@ -249,11 +273,19 @@ export async function createContract(contract: any) {
 export async function finalizeContract(id: string, finalizeData: any) {
     const supabase = await createClient()
     try {
-        // [SEC] Auth check before finalizing
-        const accessInfo = await getAccessFilter()
-        if (!accessInfo) return { success: false, error: 'Unauthorized' }
-
         const { contractUpdates, debtPlan } = finalizeData
+
+        // RBAC Check
+        const { data: existing, error: fetchErr } = await supabase
+            .from('contracts')
+            .select('branch_id, created_by_email')
+            .eq('id', id)
+            .maybeSingle()
+        
+        if (fetchErr || !existing) throw new Error('Không tìm thấy hợp đồng')
+        const canAccess = accessInfo.access.canViewAllBranches || 
+                         (accessInfo.access.allowedBranchIds && accessInfo.access.allowedBranchIds.includes(existing.branch_id))
+        if (!canAccess) throw new Error('Bạn không có quyền chốt hợp đồng này')
 
         // 1. Cập nhật hợp đồng (Trạng thái, ngày ký, ngày bắt đầu/kết thúc)
         const { data: contractData, error: contractError } = await supabase
@@ -337,6 +369,13 @@ export async function updateContract(id: string, updates: any) {
         const accessInfo = await getAccessFilter()
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
 
+        // RBAC Check
+        const { data: existing } = await supabase.from('contracts').select('branch_id').eq('id', id).maybeSingle()
+        if (!existing) throw new Error('Hợp đồng không tồn tại')
+        const canAccess = accessInfo.access.canViewAllBranches || 
+                         (accessInfo.access.allowedBranchIds && accessInfo.access.allowedBranchIds.includes(existing.branch_id))
+        if (!canAccess) throw new Error('Bạn không có quyền sửa hợp đồng này')
+
         const enriched = computeAmountTextFields(updates)
         const { data, error } = await supabase
             .from('contracts')
@@ -359,6 +398,13 @@ export async function deleteContract(id: string) {
         // [SEC] Auth check before delete
         const accessInfo = await getAccessFilter()
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        // RBAC Check
+        const { data: existing } = await supabase.from('contracts').select('branch_id').eq('id', id).maybeSingle()
+        if (!existing) throw new Error('Hợp đồng không tồn tại')
+        const canAccess = accessInfo.access.canViewAllBranches || 
+                         (accessInfo.access.allowedBranchIds && accessInfo.access.allowedBranchIds.includes(existing.branch_id))
+        if (!canAccess) throw new Error('Bạn không có quyền xóa hợp đồng này')
 
         // 1. Get debt IDs to delete installments
         const { data: debts } = await supabase
@@ -495,6 +541,13 @@ export async function importContracts(contracts: any[]) {
         // [SEC] Auth check before bulk import
         const accessInfo = await getAccessFilter()
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        // RBAC Check for each contract
+        contracts.forEach(c => {
+            const canAccess = accessInfo.access.canViewAllBranches || 
+                             (accessInfo.access.allowedBranchIds && accessInfo.access.allowedBranchIds.includes(c.branch_id))
+            if (!canAccess) throw new Error(`Bạn không có quyền nhập hợp đồng cho chi nhánh ${c.branch_id}`)
+        })
 
         const enriched = contracts.map(c => computeAmountTextFields(c))
         const { data, error } = await supabase

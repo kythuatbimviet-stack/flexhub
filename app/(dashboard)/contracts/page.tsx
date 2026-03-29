@@ -72,6 +72,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import { usePermissions } from '@/hooks/use-permissions'
 import { format } from 'date-fns'
 import * as XLSX from 'xlsx'
 
@@ -210,8 +211,9 @@ export default function ContractsPage() {
     const [branchFilter, setBranchFilter] = React.useState('all')
     const [ptFilter, setPtFilter] = React.useState('all')
     const [contractTypeFilter, setContractTypeFilter] = React.useState('all')
-    const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'updated_at', direction: 'desc' })
     const [isSortOpen, setIsSortOpen] = React.useState(false)
+
+    const { permissions, user: currentUser, isLoading: isLoadingPermissions } = usePermissions()
 
     const SortPopover = () => {
         const [localSort, setLocalSort] = React.useState(sortConfig || { key: 'updated_at', direction: 'desc' })
@@ -334,12 +336,14 @@ export default function ContractsPage() {
             : <ChevronDown className="ml-1 w-3 h-3 text-red-500" />
     }
 
-    // Debounce search
     React.useEffect(() => {
         const t = setTimeout(() => { setDebouncedSearch(searchTerm); setPage(1) }, 400)
         return () => clearTimeout(t)
     }, [searchTerm])
     React.useEffect(() => { setPage(1) }, [statusFilter, branchFilter, ptFilter, contractTypeFilter, pageSize])
+    
+    // Sort config state moved after usePermissions for correct initialization order if needed
+    const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'updated_at', direction: 'desc' })
 
     // ── Data from global cache ────────────────────────────────────────────────
     const { data: configResult } = useQuery({
@@ -367,6 +371,21 @@ export default function ContractsPage() {
         },
         staleTime: Infinity,
     })
+
+    const allowedBranches = React.useMemo(() => {
+        if (permissions.canViewAllBranches) return branches
+        if (permissions.allowedBranchIds) {
+            return branches.filter(b => permissions.allowedBranchIds?.includes(b.id))
+        }
+        return []
+    }, [branches, permissions])
+
+    // Set initial branch filter if restricted to one branch
+    React.useEffect(() => {
+        if (!isLoadingPermissions && !permissions.canViewAllBranches && allowedBranches.length === 1 && branchFilter === 'all') {
+            setBranchFilter(allowedBranches[0].id)
+        }
+    }, [allowedBranches, permissions, isLoadingPermissions, branchFilter])
 
     // ── Client-side filtering ─────────────────────────────────────────────────
     const filteredContracts = React.useMemo(() => {
@@ -685,8 +704,10 @@ export default function ContractsPage() {
                                                 <SelectValue placeholder="Chi nhánh" />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                <SelectItem value="all">Tất cả chi nhánh</SelectItem>
-                                                {branches.map((branch: any) => (
+                                                {(permissions.canViewAllBranches || allowedBranches.length > 1) && (
+                                                    <SelectItem value="all">{permissions.canViewAllBranches ? 'Tất cả chi nhánh' : 'Tất cả chi nhánh'}</SelectItem>
+                                                )}
+                                                {allowedBranches.map((branch: any) => (
                                                     <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
                                                 ))}
                                             </SelectContent>

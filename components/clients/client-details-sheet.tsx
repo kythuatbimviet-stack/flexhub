@@ -258,14 +258,22 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
         }
     }, [isCreateMode, open, formData?.branch_id, generatingId])
 
-    const { data: branches } = useQuery({
+    const { data: branches = [] } = useQuery<any[]>({
         queryKey: ['branches'],
         queryFn: async () => {
             const result = await fetchBranches()
             if (!result.success) throw new Error(result.error)
-            return result.data
+            return result.data || []
         },
     })
+
+    const allowedBranches = React.useMemo(() => {
+        if (permissions.canViewAllBranches) return branches
+        if (permissions.allowedBranchIds) {
+            return branches.filter(b => permissions.allowedBranchIds?.includes(b.id))
+        }
+        return []
+    }, [branches, permissions])
 
     const { data: zaloUsersResult } = useQuery({
         queryKey: ['zalo-users'],
@@ -961,7 +969,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                         </p>
                                                     )}
                                                 </div>
-                                                <ClientInfoRow label="Chi nhánh quản lý" value={formData.branch_id} name="branch_id" type="select" options={branches?.map((b: any) => ({ value: b.id, label: b.name }))} {...sharedRowProps} />
+                                                <ClientInfoRow label="Chi nhánh quản lý" value={formData.branch_id} name="branch_id" type="select" options={allowedBranches.map((b: any) => ({ value: b.id, label: b.name }))} {...sharedRowProps} />
                                             </div>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                                 <ClientInfoRow label="Loại đăng ký" value={formData.registration_type} name="registration_type" options={clientRegistrationTypes.map((t: any) => t.nam)} {...sharedRowProps} />

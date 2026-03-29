@@ -1,7 +1,24 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
+import { createClient, createClient as createSupabaseClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
+import { getAccessControl, UserProfile } from '@/lib/permissions'
+import { cache } from 'react'
+
+const getAccessFilter = cache(async () => {
+    const supabase = await createSupabaseClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser?.email) return null
+
+    const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', authUser.email)
+        .maybeSingle()
+
+    if (!profile) return null
+    return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
+})
 
 // --- Categories ---
 
@@ -25,7 +42,10 @@ export async function fetchFinancialCategories(type?: 'revenue' | 'expense') {
 export async function fetchRevenue() {
     const supabase = await createClient()
     try {
-        const { data, error } = await supabase
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        let query = supabase
             .from('revenue')
             .select(`
                 *,
@@ -33,6 +53,13 @@ export async function fetchRevenue() {
                 clients (member_name)
             `)
             .order('recorded_at', { ascending: false })
+
+        // Apply RBAC filters
+        if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
+            query = query.in('branch_id', accessInfo.access.allowedBranchIds)
+        }
+
+        const { data, error } = await query
 
         if (error) throw error
         return { success: true, data }
@@ -168,13 +195,23 @@ export async function bulkDeleteRevenue(ids: string[]) {
 export async function fetchExpense() {
     const supabase = await createClient()
     try {
-        const { data, error } = await supabase
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        let query = supabase
             .from('expense')
             .select(`
                 *,
                 branches (name, short_name)
             `)
             .order('recorded_at', { ascending: false })
+
+        // Apply RBAC filters
+        if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
+            query = query.in('branch_id', accessInfo.access.allowedBranchIds)
+        }
+
+        const { data, error } = await query
 
         if (error) {
             console.error('Fetch Expense Error:', error)
@@ -279,7 +316,10 @@ export async function bulkDeleteExpense(ids: string[]) {
 export async function fetchCashFlowData() {
     const supabase = await createClient()
     try {
-        const { data: revenue, error: rError } = await supabase
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        let rQuery = supabase
             .from('revenue')
             .select(`
                 id, 
@@ -290,8 +330,8 @@ export async function fetchCashFlowData() {
                 payment_method,
                 branches (name)
             `)
-
-        const { data: expense, error: eError } = await supabase
+        
+        let eQuery = supabase
             .from('expense')
             .select(`
                 id, 
@@ -302,6 +342,17 @@ export async function fetchCashFlowData() {
                 payment_method,
                 branches (name)
             `)
+
+        // Apply RBAC filters
+        if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
+            rQuery = rQuery.in('branch_id', accessInfo.access.allowedBranchIds)
+            eQuery = eQuery.in('branch_id', accessInfo.access.allowedBranchIds)
+        }
+
+        const [{ data: revenue, error: rError }, { data: expense, error: eError }] = await Promise.all([
+            rQuery,
+            eQuery
+        ])
 
         if (rError) throw rError
         if (eError) throw eError
