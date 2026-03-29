@@ -41,7 +41,8 @@ import {
     AvatarFallback,
 } from '@/components/ui/avatar'
 
-const THIRTY_MINUTES = 30 * 60 * 1000
+const ONE_MINUTE = 60000
+const ONE_HOUR = 3600000
 
 export default function ClientsPage() {
     const queryClient = useQueryClient()
@@ -78,7 +79,7 @@ export default function ClientsPage() {
     const { data: configResult } = useQuery({
         queryKey: ['client-configs'],
         queryFn: fetchClientConfigs,
-        staleTime: Infinity,
+        staleTime: ONE_HOUR,
     })
     const clientStatuses = React.useMemo(() => configResult?.data?.statuses || [], [configResult])
 
@@ -88,7 +89,7 @@ export default function ClientsPage() {
             const res = await fetchBranches()
             return res.success ? (res.data ?? []) : []
         },
-        staleTime: Infinity,
+        staleTime: ONE_HOUR,
     })
 
     // ── Server-side paginated data ────────────────────────────────────────────
@@ -114,7 +115,7 @@ export default function ClientsPage() {
             if (!res.success) throw new Error(res.error)
             return res
         },
-        staleTime: THIRTY_MINUTES,
+        staleTime: ONE_MINUTE,
         placeholderData: (prev) => prev, // keep old data while fetching new page (no layout shift)
     })
 
@@ -140,7 +141,7 @@ export default function ClientsPage() {
             const res = await fetchClientsPage({ pageSize: -1 })
             return res.success ? (res.data ?? []) : []
         },
-        staleTime: THIRTY_MINUTES,
+        staleTime: ONE_HOUR,
         enabled: false, // only fetch when exportToExcel triggers refetch
     })
 

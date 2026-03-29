@@ -1013,7 +1013,7 @@ export function ContractDetailsSheet({
                     </div>
 
                     {/* Section: Thông tin khách hàng */}
-                    <ContractCardSection title="Thông tin khách hàng" icon={User}>
+                    <ContractCardSection title="KHÁCH HÀNG" icon={User}>
                         <div className="space-y-5">
                             <ContractDetailRow label="Chọn Khách hàng" value={formData.member_name} name="client_id" icon={Users} {...sharedRowProps}>
                                 <Popover modal={true} open={clientOpen} onOpenChange={setClientOpen}>
@@ -1134,7 +1134,7 @@ export function ContractDetailsSheet({
                     </ContractCardSection>
 
                     {/* Section: Chỉ số sức khỏe */}
-                    <ContractCardSection title="Chỉ số sức khỏe" icon={Hash}>
+                    <ContractCardSection title="CHỈ SỐ SỨC KHỎE" icon={Hash}>
                         <div className="space-y-5">
                             <ContractDetailRow label="Bệnh lý" value={formData.medical_condition} name="medical_condition" icon={FileText} {...sharedRowProps} />
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -1238,7 +1238,7 @@ export function ContractDetailsSheet({
                     </ContractCardSection>
 
                     {/* Section: Nhân sự & Trung tâm */}
-                    <ContractCardSection title="Nhân sự & Trung tâm" icon={ShieldCheck}>
+                    <ContractCardSection title="NHÂN SỰ - CHI NHÁNH" icon={ShieldCheck}>
                         <div className="space-y-5">
                             <ContractDetailRow label="Chi nhánh" value={branches?.find((b: any) => b.id === formData.branch_id)?.name} name="branch_id" icon={Building2} {...sharedRowProps}>
                                 <Select
@@ -1330,7 +1330,7 @@ export function ContractDetailsSheet({
                     </ContractCardSection>
 
                     {/* Section: Thanh toán */}
-                    <ContractCardSection title="Thanh toán" icon={CreditCard}>
+                    <ContractCardSection title="THANH TOÁN" icon={CreditCard}>
                         <div className="space-y-5">
                             <ContractDetailRow label="Hình thức" value={formData.payment_method} name="payment_method" icon={CreditCard} {...sharedRowProps}>
                                 <Select
@@ -1398,7 +1398,7 @@ export function ContractDetailsSheet({
 
 
                     {/* Section: Chữ ký khách hàng */}
-                    <ContractCardSection title="Chữ ký khách hàng" icon={Cloud}>
+                    <ContractCardSection title="CHỮ KÝ KHÁCH HÀNG" icon={Cloud}>
                         <div className="space-y-4">
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-tight flex items-center gap-2">
@@ -1429,7 +1429,7 @@ export function ContractDetailsSheet({
                     </ContractCardSection>
 
                     {/* Section: Gửi Hợp đồng Khách hàng */}
-                    <ContractCardSection title="Gửi Hợp đồng Khách hàng" icon={Cloud}>
+                    <ContractCardSection title="GỬI HỢP ĐỒNG" icon={Cloud}>
                         <div className="space-y-5">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
