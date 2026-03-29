@@ -62,6 +62,8 @@ export async function fetchClientsPage({
     pt = '',
     source = '',
     regType = '',
+    sortKey = 'created_at',
+    sortOrder = 'desc',
 }: {
     page?: number
     pageSize?: number
@@ -71,6 +73,8 @@ export async function fetchClientsPage({
     pt?: string
     source?: string
     regType?: string
+    sortKey?: string
+    sortOrder?: 'asc' | 'desc'
 } = {}) {
     try {
         const accessInfo = await getAccessFilter()
@@ -103,7 +107,7 @@ export async function fetchClientsPage({
         let dataQuery = adminClient
             .from('clients')
             .select('*', { count: 'exact' })
-            .order('created_at', { ascending: false })
+            .order(sortKey || 'created_at', { ascending: sortOrder === 'asc' })
 
         if (!isAll) {
             const from = (page - 1) * pageSize

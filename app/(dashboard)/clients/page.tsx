@@ -14,6 +14,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -59,7 +64,8 @@ export default function ClientsPage() {
     const [regTypeFilter, setRegTypeFilter] = React.useState('all')
     const [sourceFilter, setSourceFilter] = React.useState('all')
     const [showMobileFilters, setShowMobileFilters] = React.useState(false)
-    const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'created_at', direction: 'desc' })
+    const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' })
+    const [isSortOpen, setIsSortOpen] = React.useState(false)
 
     // Debounce search
     React.useEffect(() => {
@@ -89,7 +95,8 @@ export default function ClientsPage() {
     const clientsQuery = useQuery({
         queryKey: [
             'clients-page',
-            page, pageSize, debouncedSearch, statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter
+            page, pageSize, debouncedSearch, statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter,
+            sortConfig.key, sortConfig.direction
         ],
         queryFn: async () => {
             const res = await fetchClientsPage({
@@ -101,6 +108,8 @@ export default function ClientsPage() {
                 pt: ptFilter !== 'all' ? ptFilter : '',
                 source: sourceFilter !== 'all' ? sourceFilter : '',
                 regType: regTypeFilter !== 'all' ? regTypeFilter : '',
+                sortKey: sortConfig.key,
+                sortOrder: sortConfig.direction,
             })
             if (!res.success) throw new Error(res.error)
             return res
@@ -152,19 +161,80 @@ export default function ClientsPage() {
         toast.info('Đã xóa tất cả bộ lọc')
     }
 
-    const handleSort = (key: string) => {
-        let direction: 'asc' | 'desc' = 'asc'
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc'
-        }
-        setSortConfig({ key, direction })
-    }
+    const SortPopover = () => {
+        const [localSort, setLocalSort] = React.useState(sortConfig)
 
-    const SortIcon = ({ columnKey }: { columnKey: string }) => {
-        if (!sortConfig || sortConfig.key !== columnKey) return <ArrowUpDown className="ml-1 w-3 h-3 opacity-30" />
-        return sortConfig.direction === 'asc' 
-            ? <ChevronUp className="ml-1 w-3 h-3 text-red-500" /> 
-            : <ChevronDown className="ml-1 w-3 h-3 text-red-500" />
+        const fields = [
+            { label: 'Ngày tạo', value: 'created_at' },
+            { label: 'Tên hội viên', value: 'member_name' },
+            { label: 'Mã khách hàng', value: 'id' },
+            { label: 'Số điện thoại', value: 'phone' },
+            { label: 'Trạng thái', value: 'status' },
+            { label: 'Hợp đồng mới nhất', value: 'updated_at' },
+        ]
+
+        return (
+            <Popover open={isSortOpen} onOpenChange={setIsSortOpen}>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" className="h-9 px-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/50 hover:bg-red-50 dark:hover:bg-red-950/20 text-gray-950 dark:text-gray-300 transition-all font-inter">
+                        <ArrowUpDown className="w-4 h-4 mr-2" />
+                        <span className="text-[12px] font-medium text-black dark:text-gray-300">Sắp xếp: </span>
+                        <span className="text-[12px] text-red-600 ml-1 font-semibold">
+                            {fields.find(f => f.value === sortConfig.key)?.label} ({sortConfig.direction === 'asc' ? 'Tăng' : 'Giảm'})
+                        </span>
+                        <ChevronDown className="w-3 h-3 ml-1.5 text-gray-400" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-4 rounded-2xl shadow-xl border-gray-100 dark:border-gray-800" align="end">
+                    <div className="space-y-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-semibold text-gray-900 dark:text-gray-300 pl-1">Ưu tiên theo</label>
+                            <Select value={localSort.key} onValueChange={(v) => setLocalSort(prev => ({ ...prev, key: v }))}>
+                                <SelectTrigger className="h-9 rounded-xl border-gray-200 bg-gray-50/10 font-medium text-xs text-gray-950 dark:text-white">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl border-gray-100">
+                                    {fields.map(f => <SelectItem key={f.value} value={f.value} className="font-medium">{f.label}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-semibold text-gray-900 dark:text-gray-300 pl-1">Thứ tự</label>
+                            <div className="grid grid-cols-2 gap-2 p-1 bg-gray-50/10 rounded-xl border border-gray-200/50">
+                                <button
+                                    onClick={() => setLocalSort(prev => ({ ...prev, direction: 'asc' }))}
+                                    className={cn(
+                                        "py-1.5 rounded-lg text-xs font-semibold transition-all",
+                                        localSort.direction === 'asc' ? "bg-white shadow-sm text-red-600 border border-red-50" : "text-gray-900 dark:text-gray-400 hover:text-black"
+                                    )}
+                                >
+                                    Tăng dần
+                                </button>
+                                <button
+                                    onClick={() => setLocalSort(prev => ({ ...prev, direction: 'desc' }))}
+                                    className={cn(
+                                        "py-1.5 rounded-lg text-xs font-semibold transition-all",
+                                        localSort.direction === 'desc' ? "bg-white shadow-sm text-red-600 border border-red-50" : "text-gray-900 dark:text-gray-400 hover:text-black"
+                                    )}
+                                >
+                                    Giảm dần
+                                </button>
+                            </div>
+                        </div>
+                        <Button
+                            className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl h-9 font-medium shadow-sm transition-all active:scale-95 text-xs"
+                            onClick={() => {
+                                setSortConfig(localSort)
+                                setIsSortOpen(false)
+                                setPage(1)
+                            }}
+                        >
+                            Đồng ý
+                        </Button>
+                    </div>
+                </PopoverContent>
+            </Popover>
+        )
     }
 
     const handleRowClick = (client: any, e: React.MouseEvent) => {
@@ -366,11 +436,12 @@ export default function ClientsPage() {
                                                 {sourceOptions.map((s: any) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
-                                        <Button variant="ghost" onClick={clearFilters}
-                                            className="h-9 px-3 rounded-lg text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 transition-all col-span-2 lg:col-span-1 justify-center">
-                                            <RotateCcw className="w-4 h-4 mr-2 lg:mr-0" />
-                                            <span className="lg:hidden text-sm">Làm mới bộ lọc</span>
-                                        </Button>
+                                            <SortPopover />
+                                            <Button variant="ghost" onClick={clearFilters}
+                                                className="h-9 px-3 rounded-lg text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 transition-all col-span-2 lg:col-span-1 justify-center">
+                                                <RotateCcw className="w-4 h-4 mr-2 lg:mr-0" />
+                                                <span className="lg:hidden text-sm">Làm mới bộ lọc</span>
+                                            </Button>
                                     </div>
                                 </motion.div>
                             )}
@@ -443,21 +514,21 @@ export default function ClientsPage() {
                                         className="rounded-lg border-gray-300 dark:border-gray-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                                     />
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('member_name')} className="text-[11px] font-black text-black dark:text-blue-300 h-9 cursor-pointer hover:text-gray-600 transition-colors">
-                                    <div className="flex items-center">Hội viên <SortIcon columnKey="member_name" /></div>
+                                <TableHead className="text-[11px] font-black text-black dark:text-blue-300 h-9">
+                                    Hội viên
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('phone')} className="text-[11px] font-black text-black dark:text-blue-300 h-9 hidden md:table-cell cursor-pointer hover:text-gray-600 transition-colors">
-                                    <div className="flex items-center">Liên hệ <SortIcon columnKey="phone" /></div>
+                                <TableHead className="text-[11px] font-black text-black dark:text-blue-300 h-9 hidden md:table-cell">
+                                    Liên hệ
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('branch_name')} className="text-[11px] font-black text-black dark:text-blue-300 h-9 hidden sm:table-cell cursor-pointer hover:text-gray-600 transition-colors">
-                                    <div className="flex items-center">PT & Chi nhánh <SortIcon columnKey="branch_name" /></div>
+                                <TableHead className="text-[11px] font-black text-black dark:text-blue-300 h-9 hidden sm:table-cell">
+                                    PT & Chi nhánh
                                 </TableHead>
                                 <TableHead className="text-[11px] font-black text-black dark:text-blue-300 h-9 hidden lg:table-cell">Chỉ số & Mục tiêu</TableHead>
-                                <TableHead onClick={() => handleSort('status')} className="text-[11px] font-black text-black dark:text-blue-300 h-9 cursor-pointer hover:text-gray-600 transition-colors">
-                                    <div className="flex items-center">Trạng thái <SortIcon columnKey="status" /></div>
+                                <TableHead className="text-[11px] font-black text-black dark:text-blue-300 h-9">
+                                    Trạng thái
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('created_at')} className="text-right pr-8 text-[11px] font-black text-black dark:text-blue-300 h-9 cursor-pointer hover:text-gray-600 transition-colors">
-                                    <div className="flex items-center justify-end">Tùy chọn <SortIcon columnKey="created_at" /></div>
+                                <TableHead className="text-right pr-8 text-[11px] font-black text-black dark:text-blue-300 h-9">
+                                    Tùy chọn
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
@@ -498,12 +569,12 @@ export default function ClientsPage() {
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-9 w-9 border-2 border-white dark:border-gray-800 shadow-sm">
                                                     <AvatarImage src={client.avatar_url} alt={client.member_name} className="object-cover" />
-                                                    <AvatarFallback className="bg-red-50 text-red-600 font-bold text-[10px]">
+                                                    <AvatarFallback className="bg-red-50 text-red-600 font-medium text-[10px]">
                                                         {client.member_name?.charAt(0)}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-medium text-black dark:text-gray-100 flex items-center gap-1.5 uppercase font-inter tracking-tight">
+                                                    <span className="text-sm font-semibold text-black dark:text-gray-100 flex items-center gap-1.5 uppercase font-inter tracking-tight">
                                                         {client.member_name}
                                                         {client.status === 'Đang tập' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
                                                     </span>
