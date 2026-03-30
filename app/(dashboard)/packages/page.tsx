@@ -67,6 +67,8 @@ export default function PackagesPage() {
     const [searchTerm, setSearchTerm] = React.useState('')
     const [filterBranch, setFilterBranch] = React.useState('all')
     const [filterType, setFilterType] = React.useState('all')
+    const [filterTrainer, setFilterTrainer] = React.useState('all')
+    const [filterDuration, setFilterDuration] = React.useState('all')
     const [selectedRows, setSelectedRows] = React.useState<string[]>([])
     const [selectedPkg, setSelectedPkg] = React.useState<any | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
@@ -177,14 +179,18 @@ export default function PackagesPage() {
 
         const matchesBranch = filterBranch === 'all' || pkg.branch_id === filterBranch
         const matchesType = filterType === 'all' || pkg.package_type === filterType
+        const matchesTrainer = filterTrainer === 'all' || pkg.trainer_type === filterTrainer
+        const matchesDuration = filterDuration === 'all' || (pkg.duration_days !== null && pkg.duration_days !== undefined && pkg.duration_days.toString() === filterDuration)
 
-        return matchesSearch && matchesBranch && matchesType
+        return matchesSearch && matchesBranch && matchesType && matchesTrainer && matchesDuration
     })
 
     const resetFilters = () => {
         setSearchTerm('')
         setFilterBranch('all')
         setFilterType('all')
+        setFilterTrainer('all')
+        setFilterDuration('all')
     }
 
     const toggleRow = (id: string) => {
@@ -329,7 +335,7 @@ export default function PackagesPage() {
                                 >
                                     <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
                                         <Select value={filterType} onValueChange={setFilterType}>
-                                            <SelectTrigger className="w-full lg:w-[150px] rounded-lg border-none h-9 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-1 focus:ring-red-500 shadow-none">
+                                            <SelectTrigger className="w-full lg:w-[160px] rounded-lg border-none h-9 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-1 focus:ring-red-500 shadow-none">
                                                 <SelectValue placeholder="Hình thức" />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800 font-inter">
@@ -337,6 +343,31 @@ export default function PackagesPage() {
                                                 <SelectItem value="Trực tiếp">Trực tiếp</SelectItem>
                                                 <SelectItem value="Online">Online</SelectItem>
                                                 <SelectItem value="Hybrid">Hybrid</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+
+                                        <Select value={filterTrainer} onValueChange={setFilterTrainer}>
+                                            <SelectTrigger className="w-full lg:w-[170px] rounded-lg border-none h-9 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-1 focus:ring-red-500 shadow-none">
+                                                <SelectValue placeholder="Huấn luyện viên" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800 font-inter">
+                                                <SelectItem value="all">Tất cả huấn luyện viên</SelectItem>
+                                                <SelectItem value="Kèm PT">Kèm PT</SelectItem>
+                                                <SelectItem value="Không kèm PT">Không kèm PT</SelectItem>
+                                                <SelectItem value="Tự do">Tự do</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+
+                                        <Select value={filterDuration} onValueChange={setFilterDuration}>
+                                            <SelectTrigger className="w-full lg:w-[150px] rounded-lg border-none h-9 bg-white dark:bg-slate-800 text-xs font-semibold focus:ring-1 focus:ring-red-500 shadow-none">
+                                                <SelectValue placeholder="Thời hạn" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800 font-inter">
+                                                <SelectItem value="all">Tất cả thời hạn</SelectItem>
+                                                <SelectItem value="30">30 ngày</SelectItem>
+                                                <SelectItem value="90">90 ngày</SelectItem>
+                                                <SelectItem value="180">180 ngày</SelectItem>
+                                                <SelectItem value="365">365 ngày</SelectItem>
                                             </SelectContent>
                                         </Select>
 

@@ -289,26 +289,42 @@ export function MembershipDetailsSheet({
                         </div>
                     </div>
                     <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                        {isEditing ? (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleCancel}
-                                className="h-9 px-2 sm:px-4 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-all font-semibold active:scale-95"
-                            >
-                                <XCircle className="w-4 h-4 sm:mr-2" />
-                                <span className="hidden sm:inline text-xs">Hủy</span>
-                            </Button>
-                        ) : (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setIsEditing(true)}
-                                className="h-9 px-2 sm:px-4 rounded-xl text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950/20 transition-all font-semibold active:scale-95"
-                            >
-                                <Edit2 className="w-4 h-4 sm:mr-2" />
-                                <span className="hidden sm:inline text-xs">Sửa</span>
-                            </Button>
+                        {isMobile && (
+                            <>
+                                {isEditing ? (
+                                    <>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={handleSave}
+                                            className="h-9 px-2 rounded-xl text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-950/20 transition-all font-semibold active:scale-95"
+                                            disabled={loading}
+                                        >
+                                            <Save className="w-4 h-4 mr-1" />
+                                            <span className="text-xs">Lưu</span>
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={handleCancel}
+                                            className="h-9 px-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-all font-semibold active:scale-95"
+                                        >
+                                            <XCircle className="w-4 h-4 mr-1" />
+                                            <span className="text-xs">Hủy</span>
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setIsEditing(true)}
+                                        className="h-9 px-2 rounded-xl text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950/20 transition-all font-semibold active:scale-95"
+                                    >
+                                        <Edit2 className="w-4 h-4 mr-1" />
+                                        <span className="text-xs">Sửa</span>
+                                    </Button>
+                                )}
+                            </>
                         )}
                         <Button
                             variant="ghost"
