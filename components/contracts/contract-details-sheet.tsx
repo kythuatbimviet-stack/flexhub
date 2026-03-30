@@ -110,6 +110,9 @@ const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEd
         if (isCurrency && val) {
             return Number(val).toLocaleString('vi-VN')
         }
+        if (['initial_weight', 'initial_height'].includes(name) && val != null) {
+            return val.toString().replace('.', ',')
+        }
         return val
     }
 
@@ -118,6 +121,11 @@ const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEd
             // Strip non-digit characters to keep the underlying value as a raw number string
             const rawValue = e.target.value.replace(/\D/g, '')
             onChange(name, rawValue)
+        } else if (['initial_weight', 'initial_height'].includes(name)) {
+            const val = e.target.value.replace(',', '.')
+            if (/^\d*\.?\d*$/.test(val)) {
+                onChange(name, val)
+            }
         } else {
             onChange(e)
         }
@@ -138,7 +146,13 @@ const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEd
                         type={isCurrency ? 'text' : type}
                         value={getEditValue()}
                         onChange={handleInternalChange}
-                        className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 text-sm focus:ring-2 focus:ring-red-500/20 outline-none transition-all placeholder:text-slate-300"
+                        readOnly={['package_price', 'discounted_price'].includes(name)}
+                        className={cn(
+                            "w-full rounded-xl border-slate-200 dark:border-slate-800 h-10 text-sm focus:ring-2 focus:ring-red-500/20 outline-none transition-all placeholder:text-slate-300",
+                            ['package_price', 'discounted_price'].includes(name) 
+                                ? "bg-slate-200 dark:bg-slate-800 font-medium" 
+                                : "bg-slate-50/50 dark:bg-slate-950"
+                        )}
                     />
                 )
             ) : (
@@ -146,7 +160,11 @@ const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEd
                     "text-[15px] font-medium min-h-[20px] w-full break-words",
                     name === 'id' ? "text-red-600 dark:text-red-500" : "text-slate-900 dark:text-slate-100"
                 )}>
-                    {type === 'number' && value ? (['quantity', 'total_sessions', 'package_duration'].includes(name) ? Number(value).toLocaleString('vi-VN') : Number(value).toLocaleString('vi-VN') + ' ₫') : (value || '-')}
+                    {type === 'number' && value ? (
+                        ['quantity', 'total_sessions', 'package_duration', 'initial_weight', 'initial_height'].includes(name) 
+                            ? Number(value).toLocaleString('vi-VN') 
+                            : Number(value).toLocaleString('vi-VN') + ' ₫'
+                    ) : (value || '-')}
                 </p>
             )}
         </div>
@@ -892,6 +910,12 @@ export function ContractDetailsSheet({
                                                     <FileText className="w-4 h-4 text-blue-500" />
                                                     <span className="font-medium text-sm">{generatingPdf ? 'Đang chuẩn bị...' : 'Tải File Word (GDoc)'}</span>
                                                 </DropdownMenuItem>
+                                                {formData.contract_file_url && formData.contract_file_url !== 'create_contract' && (
+                                                    <DropdownMenuItem onClick={() => window.open(`/contracts/preview-gdoc/${encodeURIComponent(formData.id)}`, '_blank')} className="gap-2.5 py-2.5 rounded-xl focus:bg-slate-50 dark:focus:bg-slate-900 cursor-pointer">
+                                                        <ExternalLink className="w-4 h-4 text-emerald-500" />
+                                                        <span className="font-medium text-sm">Mở hợp đồng</span>
+                                                    </DropdownMenuItem>
+                                                )}
                                                 <DropdownMenuSeparator className="my-1 bg-slate-100 dark:bg-slate-800" />
                                                 <DropdownMenuItem onClick={handleDelete} className="gap-2.5 py-2.5 rounded-xl text-red-600 focus:text-red-700 focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer">
                                                     <Trash2 className="w-4 h-4" />

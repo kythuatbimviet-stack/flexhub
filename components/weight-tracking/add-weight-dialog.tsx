@@ -38,12 +38,9 @@ import {
     User,
     Calendar,
     Activity,
-    Scale,
     FileText,
     ClipboardList,
-    Search,
-    Target,
-    Ruler
+    Search
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createWeightRecord, fetchLatestWeightRecordByClientId } from '@/app/actions/weight-tracking'
@@ -55,7 +52,7 @@ import {
 } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
-import { format } from 'date-fns'
+import { format, differenceInDays } from 'date-fns'
 import { cn } from '@/lib/utils'
 
 const weightSchema = z.object({
@@ -148,6 +145,23 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
         enabled: !!selectedClientId,
     })
 
+    // Calculate real-time speed
+    const currentWeightInput = form.watch('weight')
+    const currentDateInput = form.watch('measurement_date')
+    const weightLossSpeed = React.useMemo(() => {
+        if (!latestContract?.initial_weight || !currentWeightInput || !latestContract?.start_date || !currentDateInput) return "0.00"
+        try {
+            const start = new Date(latestContract.start_date)
+            const current = new Date(currentDateInput)
+            const days = differenceInDays(current, start)
+            const weeks = days / 7
+            if (weeks <= 0) return "0.00"
+            return Math.abs((latestContract.initial_weight - currentWeightInput) / weeks).toFixed(2)
+        } catch (e) {
+            return "0.00"
+        }
+    }, [latestContract, currentWeightInput, currentDateInput])
+
     // Auto-prefill target_weight and height when client is selected
     React.useEffect(() => {
         if (selectedClientId && (latestContract || latestWeight)) {
@@ -156,7 +170,7 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
             const currentHeight = form.getValues('height')
 
             if (!currentTarget) {
-                form.setValue('target_weight', latestContract?.target_weight || null)
+                form.setValue('target_weight', latestWeight?.target_weight || latestContract?.target_weight || null)
             }
             if (!currentHeight) {
                 form.setValue('height', latestWeight?.height || latestContract?.initial_height || null)
@@ -170,8 +184,8 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
     const filteredClients = React.useMemo(() => {
         if (!searchQuery) return clients || []
         const query = searchQuery.toLowerCase().trim()
-        return (clients || []).filter(c => 
-            c.member_name?.toLowerCase().includes(query) || 
+        return (clients || []).filter(c =>
+            c.member_name?.toLowerCase().includes(query) ||
             c.phone?.includes(query)
         )
     }, [clients, searchQuery])
@@ -183,7 +197,7 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
             const result = await createWeightRecord({
                 ...values,
             })
-            
+
             if (!result.success) {
                 console.error('Submission failed from server:', result.error)
                 throw new Error(result.error)
@@ -333,43 +347,9 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                                         </FormItem>
                                     )}
                                 />
-
-                                <FormField
-                                    control={form.control}
-                                    name="measurement_date"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[13px] font-medium text-black dark:text-white mb-2">Ngày đo chỉ số</FormLabel>
-                                            <FormControl>
-                                                <div className="relative">
-                                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                                    <Input type="date" {...field} className="pl-12 rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 h-12 text-[14px] font-medium text-black dark:text-white" />
-                                                </div>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
                             </div>
 
                             <div className="grid grid-cols-3 gap-6">
-                                <FormField
-                                    control={form.control}
-                                    name="target_weight"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[13px] font-medium text-black dark:text-white mb-2">Cân nặng cần đạt</FormLabel>
-                                            <FormControl>
-                                                <div className="relative">
-                                                    <Target className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                                                    <Input type="number" step="0.1" placeholder="Số kg..." {...field} value={field.value || ''} className="pl-12 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-14 text-[16px] font-semibold text-black dark:text-white transition-all focus:ring-2 focus:ring-blue-500/10" />
-                                                </div>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
                                 <FormField
                                     control={form.control}
                                     name="weight"
@@ -377,10 +357,21 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                                         <FormItem>
                                             <FormLabel className="text-[13px] font-medium text-black dark:text-white mb-2">Cân nặng thực tế</FormLabel>
                                             <FormControl>
-                                                <div className="relative">
-                                                    <Scale className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
-                                                    <Input type="number" step="0.1" placeholder="Số kg..." {...field} className="pl-12 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-14 text-[16px] font-semibold text-emerald-600 dark:text-emerald-400 transition-all focus:ring-2 focus:ring-emerald-500/10" />
-                                                </div>
+                                                <Input type="number" step="0.1" placeholder="Số kg..." {...field} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-14 text-[16px] font-semibold text-emerald-600 dark:text-emerald-400 transition-all focus:ring-2 focus:ring-emerald-500/10 px-4" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="target_weight"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-[13px] font-medium text-black dark:text-white mb-2">Cân nặng cần đạt</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" step="0.1" placeholder="Số kg..." {...field} value={field.value || ''} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-14 text-[16px] font-semibold text-black dark:text-white transition-all focus:ring-2 focus:ring-blue-500/10 px-4" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -394,10 +385,7 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                                         <FormItem>
                                             <FormLabel className="text-[13px] font-medium text-black dark:text-white mb-2">Chiều cao (cm)</FormLabel>
                                             <FormControl>
-                                                <div className="relative">
-                                                    <Ruler className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-500" />
-                                                    <Input type="number" step="1" placeholder="Cm..." {...field} value={field.value || ''} className="pl-12 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-14 text-[16px] font-semibold text-purple-600 dark:text-purple-400 transition-all focus:ring-2 focus:ring-purple-500/10" />
-                                                </div>
+                                                <Input type="number" step="1" placeholder="Cm..." {...field} value={field.value || ''} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-14 text-[16px] font-semibold text-purple-600 dark:text-purple-400 transition-all focus:ring-2 focus:ring-purple-500/10 px-4" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -414,7 +402,7 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                                         className="bg-slate-50 dark:bg-slate-900/40 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 space-y-5"
                                     >
                                         <div className="flex items-center justify-between">
-                                            <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider">Thông tin bảo hiểm & Hợp đồng</h3>
+                                            <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider">THÔNG TIN Cân nặng</h3>
                                             {latestContract?.registration_type && (
                                                 <Badge variant="outline" className="border-red-100 text-red-600 bg-red-50/50 dark:bg-red-950/20 dark:border-red-900/30 text-[10px] px-2.5 py-0.5 font-bold rounded-lg uppercase">
                                                     {latestContract.registration_type}
@@ -422,23 +410,29 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                                             )}
                                         </div>
 
-                                        <div className="grid grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             <div className="flex flex-col gap-1.5 p-3 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                                                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Cân nặng ký HĐ</span>
+                                                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Ký HĐ</span>
                                                 <span className="text-[16px] font-semibold text-black dark:text-white">
                                                     {loadingContracts ? "..." : (latestContract?.initial_weight || "-")} <span className="text-[12px] font-medium">kg</span>
                                                 </span>
                                             </div>
                                             <div className="flex flex-col gap-1.5 p-3 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                                                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Cân nặng Gần nhất</span>
+                                                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400"> Gần nhất</span>
                                                 <span className="text-[16px] font-semibold text-black dark:text-white">
                                                     {loadingWeight ? "..." : (latestWeight?.weight || "-")} <span className="text-[12px] font-medium">kg</span>
                                                 </span>
                                             </div>
                                             <div className="flex flex-col gap-1.5 p-3 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                                                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Mục tiêu HĐ</span>
+                                                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Mục tiêu</span>
                                                 <span className="text-[16px] font-semibold text-black dark:text-white">
-                                                    {loadingContracts ? "..." : (latestContract?.target_weight || "-")} <span className="text-[12px] font-medium">kg</span>
+                                                    {loadingWeight || loadingContracts ? "..." : (latestWeight?.target_weight || latestContract?.target_weight || "-")} <span className="text-[12px] font-medium">kg</span>
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col gap-1.5 p-3 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                                                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Tốc độ</span>
+                                                <span className="text-[16px] font-semibold text-blue-600 dark:text-blue-400">
+                                                    {weightLossSpeed} <span className="text-[12px] font-medium">kg/t</span>
                                                 </span>
                                             </div>
                                         </div>
@@ -447,6 +441,23 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                             </AnimatePresence>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField
+                                    control={form.control}
+                                    name="measurement_date"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-[13px] font-medium text-black dark:text-white mb-2">Ngày đo chỉ số</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                                    <Input type="date" {...field} className="pl-12 rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 h-14 text-[14px] font-medium text-black dark:text-white" />
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
                                 <FormField
                                     control={form.control}
                                     name="next_measurement_date"

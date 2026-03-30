@@ -838,7 +838,18 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                         <FormItem>
                                             <FormLabel className="text-[10px] text-gray-600 dark:text-gray-300 font-medium tracking-tight">Cân nặng ban đầu (kg)</FormLabel>
                                             <FormControl>
-                                                <Input {...field} placeholder="60" className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11 text-gray-900 dark:text-white" />
+                                                <Input 
+                                                    {...field} 
+                                                    value={field.value?.toString().replace('.', ',') || ''}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(',', '.')
+                                                        if (/^\d*\.?\d*$/.test(val)) {
+                                                            field.onChange(val)
+                                                        }
+                                                    }}
+                                                    placeholder="60" 
+                                                    className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11 text-gray-900 dark:text-white" 
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -1146,7 +1157,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                             <FormItem>
                                                 <FormLabel className="text-[10px] text-gray-600 dark:text-gray-300 font-medium tracking-tight">Giá tự tính (VNĐ)</FormLabel>
                                                 <FormControl>
-                                                    <Input readOnly {...field} value={field.value ? Number(field.value).toLocaleString('vi-VN') : '0'} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 h-11 font-medium text-gray-500" />
+                                                    <Input readOnly {...field} value={field.value ? Number(field.value).toLocaleString('vi-VN') : '0'} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-200 dark:bg-gray-800 h-11 font-medium text-gray-500" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -1195,7 +1206,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                             <FormItem>
                                                 <FormLabel className="text-[10px] text-gray-600 dark:text-gray-300 font-medium tracking-tight">Phần giảm giá (Tính toán)</FormLabel>
                                                 <FormControl>
-                                                    <Input readOnly {...field} value={field.value ? Number(field.value).toLocaleString('vi-VN') : '0'} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 h-11 font-medium text-emerald-600" />
+                                                    <Input readOnly {...field} value={field.value ? Number(field.value).toLocaleString('vi-VN') : '0'} className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-200 dark:bg-gray-800 h-11 font-medium text-emerald-600" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>

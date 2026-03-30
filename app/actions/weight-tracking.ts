@@ -222,3 +222,87 @@ export async function fetchLatestWeightRecordByClientId(clientId: string) {
         return { success: false, error: error.message }
     }
 }
+export async function fetchClientWeightHistory(clientId: string) {
+    try {
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('weight_tracking')
+            .select('*')
+            .eq('client_id', clientId)
+            .order('measurement_date', { ascending: false })
+
+        if (error) {
+            console.error('Fetch Client Weight History Error:', error)
+            return { success: false, error: error.message }
+        }
+
+        return { success: true, data }
+    } catch (error: any) {
+        console.error('Unexpected Fetch Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+export async function fetchTrainingLogs(startDate: string, endDate: string) {
+    try {
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('training_logs')
+            .select('*')
+            .gte('date', startDate)
+            .lte('date', endDate)
+
+        if (error) {
+            console.error('Fetch Training Logs Error:', error)
+            return { success: false, error: error.message }
+        }
+
+        return { success: true, data }
+    } catch (error: any) {
+        console.error('Unexpected Fetch Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+export async function upsertTrainingStatus(clientId: string, date: string, status: 'Y' | 'N' | 'TĐ' | null) {
+    try {
+        const adminClient = await createAdminClient()
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!status) {
+            // Delete if status is null
+            const { error: deleteError } = await adminClient
+                .from('training_logs')
+                .delete()
+                .eq('client_id', clientId)
+                .eq('date', date)
+            if (deleteError) throw deleteError
+            revalidatePath('/weight-tracking')
+            return { success: true }
+        }
+
+        const { error } = await adminClient
+            .from('training_logs')
+            .upsert({
+                client_id: clientId,
+                date: date,
+                status: status,
+                updated_by: user?.id || null,
+                updated_at: new Date().toISOString()
+            }, { 
+                onConflict: 'client_id,date' 
+            })
+
+        if (error) {
+            console.error('Upsert Training Status Error:', error)
+            return { success: false, error: error.message }
+        }
+
+        revalidatePath('/weight-tracking')
+        return { success: true }
+    } catch (error: any) {
+        console.error('Unexpected Upsert Error:', error)
+        return { success: false, error: error.message }
+    }
+}

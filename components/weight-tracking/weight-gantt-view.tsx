@@ -43,6 +43,7 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select"
+import { useQueryClient, useQuery } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getWeek, isToday, parseISO, differenceInDays } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -50,6 +51,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { AddWeightDialog } from './add-weight-dialog'
 import { WeightDetailsSheet } from './weight-details-sheet'
+import { WeightHistoryPanel } from './weight-history-panel'
+import { fetchTrainingLogs, upsertTrainingStatus } from '@/app/actions/weight-tracking'
 
 interface WeightGanttViewProps {
     records: any[]
@@ -59,12 +62,14 @@ interface WeightGanttViewProps {
 }
 
 export function WeightGanttView({ records, clients, contracts, onSuccess }: WeightGanttViewProps) {
+    const queryClient = useQueryClient()
     const [startDate, setStartDate] = React.useState<string>(format(startOfMonth(new Date()), 'yyyy-MM-01'))
     const [endDate, setEndDate] = React.useState<string>(format(endOfMonth(addDays(new Date(), 30)), 'yyyy-MM-dd'))
     const [localRecords, setLocalRecords] = React.useState<any[]>(records)
     const [showTarget, setShowTarget] = React.useState(true)
     const [showActual, setShowActual] = React.useState(true)
     const [showHeight, setShowHeight] = React.useState(true)
+    const [showTraining, setShowTraining] = React.useState(true)
     const [selectedClientId, setSelectedClientId] = React.useState<string | null>(null)
     const [selectedDate, setSelectedDate] = React.useState<Date | null>(null)
     const [visibleColumns, setVisibleColumns] = React.useState({
@@ -86,7 +91,20 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
     const [selectedRecord, setSelectedRecord] = React.useState<any>(null)
     const [prefilledDate, setPrefilledDate] = React.useState<string | null>(null)
 
-    const visibleCount = [showTarget, showActual, showHeight].filter(Boolean).length
+    // History Panel State
+    const [isHistoryOpen, setIsHistoryOpen] = React.useState(false)
+    const [historyClientId, setHistoryClientId] = React.useState<string | null>(null)
+    const [historyClientName, setHistoryClientName] = React.useState<string | null>(null)
+
+    const { data: trainingLogs = [] } = useQuery({
+        queryKey: ['training-logs', startDate, endDate],
+        queryFn: async () => {
+            const res = await fetchTrainingLogs(startDate, endDate)
+            return res.success ? res.data : []
+        }
+    })
+
+    const visibleCount = [showTarget, showActual, showHeight, showTraining].filter(Boolean).length
 
     const toggleColumn = (col: keyof typeof visibleColumns) => {
         setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }))
@@ -112,7 +130,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
         return `${width}px`
     }
 
-    const toggleCriteria = (criteria: 'target' | 'actual' | 'height', val: boolean) => {
+    const toggleCriteria = (criteria: 'target' | 'actual' | 'height' | 'training', val: boolean) => {
         if (!val && visibleCount === 1) {
             toast.error('Phải chọn ít nhất 1 tiêu chí hiển thị')
             return
@@ -120,6 +138,24 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
         if (criteria === 'target') setShowTarget(val)
         if (criteria === 'actual') setShowActual(val)
         if (criteria === 'height') setShowHeight(val)
+        if (criteria === 'training') setShowTraining(val)
+    }
+
+    const handleUpdateStatus = async (status: 'Y' | 'N' | 'TĐ' | null) => {
+        if (!selectedClientId || !selectedDate) return
+        
+        try {
+            const dateStr = format(selectedDate, 'yyyy-MM-dd')
+            const res = await upsertTrainingStatus(selectedClientId, dateStr, status)
+            if (res.success) {
+                queryClient.invalidateQueries({ queryKey: ['training-logs'] })
+                toast.success('Đã cập nhật trạng thái tập luyện')
+            } else {
+                toast.error(res.error || 'Lỗi khi cập nhật')
+            }
+        } catch (e: any) {
+            toast.error(e.message)
+        }
     }
 
     React.useEffect(() => {
@@ -228,6 +264,13 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
             setIsAddOpen(true)
         }
     }
+
+    const handleClientNameClick = (client: any) => {
+        setHistoryClientId(client.id)
+        setHistoryClientName(client.member_name)
+        setIsHistoryOpen(true)
+    }
+
 
     const handleCellClick = (clientId: string, date: Date) => {
         if (selectedClientId === clientId && selectedDate && isSameDay(selectedDate, date)) {
@@ -351,6 +394,76 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <AnimatePresence>
+                        {selectedClientId && selectedDate && (
+                            <motion.div 
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                className="flex items-center gap-1.5 mr-2 pr-4 border-r border-slate-200 dark:border-slate-800"
+                            >
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Tần suất:</span>
+                                <TooltipProvider>
+                                    <div className="flex items-center gap-1.5">
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button 
+                                                    size="sm" 
+                                                    className="h-8 w-8 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
+                                                    onClick={() => handleUpdateStatus('Y')}
+                                                >
+                                                    Y
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent className="bg-emerald-600 text-white border-none text-[11px] font-medium">
+                                                Y (Tập): Hiển thị màu xanh
+                                            </TooltipContent>
+                                        </Tooltip>
+
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button 
+                                                    size="sm" 
+                                                    className="h-8 w-8 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
+                                                    onClick={() => handleUpdateStatus('N')}
+                                                >
+                                                    N
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent className="bg-rose-600 text-white border-none text-[11px] font-medium">
+                                                N (Nghỉ): Hiển thị màu đỏ
+                                            </TooltipContent>
+                                        </Tooltip>
+
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button 
+                                                    size="sm" 
+                                                    className="h-8 w-10 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
+                                                    onClick={() => handleUpdateStatus('TĐ')}
+                                                >
+                                                    TĐ
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent className="bg-amber-600 text-white border-none text-[11px] font-medium">
+                                                TĐ (Tự tập): Hiển thị màu cam
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </div>
+                                </TooltipProvider>
+                                <Button 
+                                    variant="ghost"
+                                    size="sm" 
+                                    className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-500 p-0"
+                                    onClick={() => handleUpdateStatus(null)}
+                                    title="Xóa trạng thái"
+                                >
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                </Button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
                     <Button
                         variant="outline"
                         size="sm"
@@ -504,7 +617,15 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                         <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-xs text-slate-400 dark:text-slate-300 font-medium">{idx + 1}</div>
                                         {visibleColumns.pt && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-500 dark:text-slate-300 text-center px-2">{contract?.trainer_name || '-'}</div>}
                                         <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-start justify-center px-4 py-2 gap-1.5 overflow-hidden">
-                                            <div className="font-bold text-xs text-slate-900 dark:text-blue-400 truncate w-full">{client.member_name}</div>
+                                            <div 
+                                                className="font-bold text-xs text-slate-900 dark:text-blue-400 truncate w-full cursor-pointer hover:text-blue-600 dark:hover:text-blue-300 hover:underline transition-all"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleClientNameClick(client);
+                                                }}
+                                            >
+                                                {client.member_name}
+                                            </div>
                                             <div className="flex flex-col gap-0.5 w-full">
                                                 <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-300 whitespace-nowrap">
                                                     <span className="font-medium">SĐT:</span>
@@ -567,6 +688,9 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                             {showHeight && (
                                                 <div className="h-8 flex items-center justify-center border-purple-100 dark:border-purple-900/50 bg-purple-50/50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-1">Chiều cao</div>
                                             )}
+                                            {showTraining && (
+                                                <div className="h-8 flex items-center justify-center border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 px-1">Tần suất</div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -627,24 +751,68 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                         >
                                                             <span className={cn("text-[11px] font-semibold", isCellSelected ? "text-emerald-700 dark:text-emerald-300" : "text-emerald-600 dark:text-emerald-400")}>
                                                                 {record?.weight ? record.weight : (
-                                                                    plannedDates.has(format(day, 'yyyy-MM-dd')) ? (
-                                                                        <TooltipProvider>
-                                                                            <Tooltip>
-                                                                                <TooltipTrigger asChild>
-                                                                                    <motion.div
-                                                                                        initial={{ scale: 0.5, opacity: 0 }}
-                                                                                        animate={{ scale: 1, opacity: 1 }}
-                                                                                        className="text-amber-500 cursor-help"
-                                                                                    >
-                                                                                        <Flag className="w-3.5 h-3.5 fill-amber-500" />
-                                                                                    </motion.div>
-                                                                                </TooltipTrigger>
-                                                                                <TooltipContent className="bg-slate-900 text-white border-slate-800 rounded-xl px-3 py-1.5 text-[11px] font-bold">
-                                                                                    Kế hoạch đo tiếp theo
-                                                                                </TooltipContent>
-                                                                            </Tooltip>
-                                                                        </TooltipProvider>
-                                                                    ) : '-'
+                                                                    plannedDates.has(format(day, 'yyyy-MM-dd')) ? (() => {
+                                                                        const sourceRecord = clientRecords.find(r => 
+                                                                            r.next_measurement_date && 
+                                                                            isSameDay(parseISO(r.next_measurement_date), day)
+                                                                        )
+                                                                        if (!sourceRecord) return null
+                                                                        return (
+                                                                            <TooltipProvider>
+                                                                                <Tooltip>
+                                                                                    <TooltipTrigger asChild>
+                                                                                        <motion.div
+                                                                                            initial={{ scale: 0.5, opacity: 0 }}
+                                                                                            animate={{ scale: 1, opacity: 1 }}
+                                                                                            className="text-amber-500 cursor-help"
+                                                                                        >
+                                                                                            <Flag className="w-3.5 h-3.5 fill-amber-500" />
+                                                                                        </motion.div>
+                                                                                    </TooltipTrigger>
+                                                                                    <TooltipContent side="top" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800 rounded-[20px] p-4 shadow-2xl min-w-[240px] z-[100] font-inter border-2">
+                                                                                        <div className="space-y-3">
+                                                                                            {/* Name Header */}
+                                                                                            <div className="border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center justify-between">
+                                                                                                <span className="font-medium text-[13px] text-slate-950 dark:text-white">{client.member_name}</span>
+                                                                                                <span className="text-[10px] bg-amber-50 text-amber-600 dark:bg-amber-950/30 px-2 py-0.5 rounded-full font-medium tracking-tight uppercase">LỊCH HẸN</span>
+                                                                                            </div>
+
+                                                                                            {/* Weight Indices */}
+                                                                                            <div className="grid grid-cols-2 gap-4">
+                                                                                                <div className="flex flex-col gap-0.5">
+                                                                                                    <span className="text-[10px] text-slate-400 font-medium">Lần đo trước đó</span>
+                                                                                                    <span className="text-sm font-medium text-slate-950 dark:text-emerald-400 leading-tight">{sourceRecord.weight} kg</span>
+                                                                                                </div>
+                                                                                                <div className="flex flex-col gap-0.5">
+                                                                                                    <span className="text-[10px] text-slate-400 font-medium">Mục tiêu</span>
+                                                                                                    <span className="text-sm font-medium text-slate-950 dark:text-blue-400 leading-tight">{sourceRecord.target_weight || '-'} kg</span>
+                                                                                                </div>
+                                                                                            </div>
+
+                                                                                            {/* Date */}
+                                                                                            <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-100 dark:border-slate-800">
+                                                                                                <span className="text-slate-400 font-medium tracking-tight">Ngày cân gần nhất</span>
+                                                                                                <span className="text-slate-950 dark:text-slate-200 font-medium">{format(parseISO(sourceRecord.measurement_date), 'dd/MM/yyyy')}</span>
+                                                                                            </div>
+
+                                                                                            {/* Notes */}
+                                                                                            {sourceRecord.measurements && (
+                                                                                                <div className="bg-slate-50 dark:bg-slate-950/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 mt-1">
+                                                                                                    <div className="flex items-center gap-1.5 mb-1.5">
+                                                                                                        <Activity className="w-3 h-3 text-slate-400" />
+                                                                                                        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Ghi chú chuyên môn</span>
+                                                                                                    </div>
+                                                                                                    <p className="text-[11px] font-medium text-slate-950 dark:text-slate-300 leading-relaxed italic">
+                                                                                                        "{sourceRecord.measurements}"
+                                                                                                    </p>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </TooltipContent>
+                                                                                </Tooltip>
+                                                                            </TooltipProvider>
+                                                                        )
+                                                                    })() : '-'
                                                                 )}
                                                             </span>
                                                         </div>
@@ -672,6 +840,38 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                             <span className={cn("text-[11px] font-semibold", isCellSelected ? "text-purple-700 dark:text-purple-300" : "text-purple-600 dark:text-purple-400")}>
                                                                 {record?.height || '-'}
                                                             </span>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        )}
+                                        {showTraining && (
+                                            <div className="h-8 flex">
+                                                {days.map((day, i) => {
+                                                    const log = trainingLogs.find(l => l.client_id === client.id && isSameDay(new Date(l.date), day))
+                                                    const isCellSelected = isSelected && selectedDate && isSameDay(selectedDate, day)
+                                                    const isFriday = day.getDay() === 5
+                                                    
+                                                    return (
+                                                        <div
+                                                            key={i}
+                                                            className={cn(
+                                                                "w-[50px] shrink-0 border-r border-slate-100 dark:border-slate-800/50 flex items-center justify-center cursor-pointer transition-all duration-200",
+                                                                isCellSelected ? "bg-slate-500/20 ring-2 ring-slate-500 ring-inset z-10" : "hover:bg-slate-50/50 dark:hover:bg-slate-900/10",
+                                                                isFriday && !isCellSelected && "bg-amber-200/20 dark:bg-amber-900/30"
+                                                            )}
+                                                            onClick={() => handleCellClick(client.id, day)}
+                                                        >
+                                                            {log?.status && (
+                                                                <span className={cn(
+                                                                    "text-[10px] font-bold px-1.5 py-0.5 rounded-md",
+                                                                    log.status === 'Y' && "bg-emerald-500 text-white",
+                                                                    log.status === 'N' && "bg-rose-500 text-white",
+                                                                    log.status === 'TĐ' && "bg-amber-500 text-white",
+                                                                )}>
+                                                                    {log.status}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     )
                                                 })}
@@ -723,6 +923,15 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                         />
                         <label htmlFor="chk-height" className="text-xs font-semibold text-slate-600 dark:text-slate-400 cursor-pointer">Chiều cao</label>
                     </div>
+                    <div className="flex items-center gap-2.5 cursor-pointer">
+                        <Checkbox
+                            id="chk-training"
+                            checked={showTraining}
+                            onCheckedChange={(v) => toggleCriteria('training', !!v)}
+                            className="w-4 h-4 border-slate-300"
+                        />
+                        <label htmlFor="chk-training" className="text-xs font-semibold text-slate-600 dark:text-slate-400 cursor-pointer">Tần suất tập</label>
+                    </div>
                 </div>
 
                 {/* Legend */}
@@ -748,6 +957,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                 initialClientId={selectedClientId || undefined}
                 initialDate={prefilledDate || (selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined)}
                 onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ['client-weight-history'] })
+                    queryClient.invalidateQueries({ queryKey: ['latest-weight'] })
                     onSuccess?.()
                     setIsAddOpen(false)
                 }}
@@ -759,11 +970,21 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                 onOpenChange={setIsDetailsOpen}
                 record={selectedRecord}
                 onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ['client-weight-history'] })
+                    queryClient.invalidateQueries({ queryKey: ['latest-weight'] })
                     onSuccess?.()
                     setIsDetailsOpen(false)
                 }}
                 clients={clients}
             />
+
+            <WeightHistoryPanel
+                clientId={historyClientId}
+                clientName={historyClientName}
+                open={isHistoryOpen}
+                onOpenChange={setIsHistoryOpen}
+            />
+
         </div>
     )
 }
