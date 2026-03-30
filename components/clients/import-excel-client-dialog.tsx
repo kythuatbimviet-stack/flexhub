@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { FileUp, Loader2, Download, AlertCircle, CheckCircle2, ChevronLeft, ArrowRight } from 'lucide-react'
+import { FileUp, Loader2, Download, AlertCircle, CheckCircle2, ChevronLeft, ArrowRight, Calendar, RefreshCw } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import {
     Dialog,
@@ -24,7 +24,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -49,6 +48,66 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
         setParsedData([])
         setValidationErrors({})
         setIsUploading(false)
+    }
+
+    /**
+     * Parse a datetime value from an Excel cell.
+     *
+     * Real data formats observed in actual CSV/Excel files:
+     *   "22/03/2025 0:00"    → Ngày tạo   → D/M/YYYY H:mm  (Vietnamese)
+     *   "07:28:35 29/3/2026" → Ngày CN    → HH:mm:ss D/M/YYYY
+     *   "29/03/2026 7:28"    → Ngày CN    → D/M/YYYY H:mm
+     *   "3/22/2025 0:00"     → M/D/YYYY   (American Excel export)
+     *   JS Date object, Excel serial number
+     *
+     * Disambiguation rule for "A/B/YYYY H:mm":
+     *   – If A > 12  → A is day, B is month  (D/M/YYYY) — e.g. "22/03/2025"
+     *   – If B > 12  → B is day, A is month  (M/D/YYYY) — e.g. "3/22/2025"
+     *   – Both ≤ 12  → default D/M/YYYY (Vietnamese convention)
+     */
+    const parseExcelDateTime = (value: any): string | null => {
+        if (value === null || value === undefined || value === '') return null
+        if (value instanceof Date) {
+            return isNaN(value.getTime()) ? null : value.toISOString()
+        }
+        if (typeof value === 'number') {
+            const d = new Date(Math.round((value - 25569) * 86400 * 1000))
+            return isNaN(d.getTime()) ? null : d.toISOString()
+        }
+        const str = String(value).trim()
+        if (!str) return null
+
+        // Format 1: "HH:mm:ss D/M/YYYY"  e.g. "07:28:35 29/3/2026"
+        const fmt1 = str.match(/^(\d{1,2}):(\d{2}):(\d{2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+        if (fmt1) {
+            const [, HH, mm, ss, d, m, y] = fmt1
+            const dt = new Date(+y, +m - 1, +d, +HH, +mm, +ss)
+            return isNaN(dt.getTime()) ? null : dt.toISOString()
+        }
+
+        // Format 2: "A/B/YYYY H:mm" or "A/B/YYYY HH:mm:ss"
+        //   e.g. "22/03/2025 0:00"  or  "3/22/2025 0:00"
+        const fmt2 = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/)
+        if (fmt2) {
+            const [, a, b, y, HH, mm, ss] = fmt2
+            let day: number, month: number
+            if (+a > 12) {
+                // a > 12 → must be day (D/M/YYYY) e.g. "22/03/2025"
+                day = +a; month = +b
+            } else if (+b > 12) {
+                // b > 12 → must be day (M/D/YYYY) e.g. "3/22/2025"
+                month = +a; day = +b
+            } else {
+                // Ambiguous: default Vietnamese D/M/YYYY
+                day = +a; month = +b
+            }
+            const dt = new Date(+y, month - 1, day, +HH, +mm, +(ss || 0))
+            return isNaN(dt.getTime()) ? null : dt.toISOString()
+        }
+
+        // Fallback: native parse (handles ISO strings etc.)
+        const parsed = new Date(str)
+        return isNaN(parsed.getTime()) ? null : parsed.toISOString()
     }
 
     const validateData = (data: any[]) => {
@@ -107,6 +166,12 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                 signature_url: row['URL chữ ký'] || row['signature_url'] || '',
                 created_by: row['Người tạo (ID)'] || row['created_by'] || '',
                 created_by_email: row['Email người tạo'] || row['created_by_email'] || '',
+                // Ngày tạo / Ngày cập nhật: đọc từ Excel, nếu trống → thời điểm hiện tại
+                created_at: parseExcelDateTime(row['Ngày tạo'] || row['created_at']) || new Date().toISOString(),
+                updated_at: parseExcelDateTime(row['Ngày cập nhật'] || row['updated_at']) || new Date().toISOString(),
+                // Metadata for preview only (will be stripped before import)
+                _created_at_from_excel: !!(parseExcelDateTime(row['Ngày tạo'] || row['created_at'])),
+                _updated_at_from_excel: !!(parseExcelDateTime(row['Ngày cập nhật'] || row['updated_at'])),
             }
         })
 
@@ -157,8 +222,8 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
 
         setIsUploading(true)
         try {
-            // CRITICAL: Remove UI-only fields like _originalIndex before sending to database
-            const dataToInsert = parsedData.map(({ _originalIndex, ...rest }) => rest)
+            // CRITICAL: Remove UI-only fields like _originalIndex and preview metadata before sending to database
+            const dataToInsert = parsedData.map(({ _originalIndex, _created_at_from_excel, _updated_at_from_excel, ...rest }) => rest)
 
             const result = await importClients(dataToInsert)
             if (!result.success) throw new Error(result.error)
@@ -343,11 +408,11 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                             </Tabs>
                         </div>
 
-                        <div className="flex-1 overflow-hidden relative">
-                            <ScrollArea className="h-full">
-                                <div className="p-8">
-                                    <div className="rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900 shadow-sm">
-                                        <Table>
+                        <div className="flex-1 min-h-0 overflow-auto">
+                            <div className="p-4">
+                                <div className="rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900 shadow-sm">
+                                    <div className="overflow-x-auto">
+                                        <Table className="min-w-[900px]">
                                             <TableHeader className="bg-gray-50/80 dark:bg-gray-800/80 sticky top-0 z-10 backdrop-blur-sm">
                                                 <TableRow>
                                                     <TableHead className="w-[60px] text-center font-bold text-gray-400 uppercase text-[10px]">STT</TableHead>
@@ -356,6 +421,12 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                                                     <TableHead className="min-w-[120px] font-bold text-gray-900 dark:text-gray-100 uppercase text-[10px]">Số điện thoại</TableHead>
                                                     <TableHead className="min-w-[120px] font-bold text-gray-900 dark:text-gray-100 uppercase text-[10px]">Ngày sinh</TableHead>
                                                     <TableHead className="min-w-[150px] font-bold text-gray-900 dark:text-gray-100 uppercase text-[10px]">Chi nhánh</TableHead>
+                                                    <TableHead className="min-w-[160px] font-bold text-blue-600 dark:text-blue-400 uppercase text-[10px] bg-blue-50/50 dark:bg-blue-900/20">
+                                                        <div className="flex items-center gap-1"><Calendar className="w-3 h-3" />Ngày tạo</div>
+                                                    </TableHead>
+                                                    <TableHead className="min-w-[160px] font-bold text-purple-600 dark:text-purple-400 uppercase text-[10px] bg-purple-50/50 dark:bg-purple-900/20">
+                                                        <div className="flex items-center gap-1"><Calendar className="w-3 h-3" />Ngày cập nhật</div>
+                                                    </TableHead>
                                                     <TableHead className="min-w-[200px] font-bold text-gray-900 dark:text-gray-100 uppercase text-[10px]">Trạng thái / Lỗi</TableHead>
                                                 </TableRow>
                                             </TableHeader>
@@ -363,6 +434,12 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                                                 {filteredData.map((client) => {
                                                     const idx = client._originalIndex
                                                     const errors = validationErrors[idx]
+                                                    const fmtDate = (iso: string) => {
+                                                        if (!iso) return '—'
+                                                        const d = new Date(iso)
+                                                        if (isNaN(d.getTime())) return iso
+                                                        return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                                                    }
                                                     return (
                                                         <TableRow key={idx} className={cn("transition-colors", errors ? "bg-red-50/30 dark:bg-red-950/10 hover:bg-red-50/50" : "hover:bg-gray-50/50")}>
                                                             <TableCell className="text-center font-medium text-gray-400 text-[11px]">{idx + 1}</TableCell>
@@ -371,6 +448,31 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                                                             <TableCell className="text-gray-600 dark:text-gray-400">{client.phone || '-'}</TableCell>
                                                             <TableCell className="text-gray-600 dark:text-gray-400">{client.date_of_birth || <span className="text-gray-300 italic">N/A</span>}</TableCell>
                                                             <TableCell className="text-gray-600 dark:text-gray-400">{client.branch_name || '-'}</TableCell>
+
+                                                            {/* Ngày tạo */}
+                                                            <TableCell className="bg-blue-50/30 dark:bg-blue-900/10 text-[11px] whitespace-nowrap">
+                                                                <div className="flex items-center gap-1">
+                                                                    {client._created_at_from_excel
+                                                                        ? <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" title="Lấy từ file Excel" />
+                                                                        : <RefreshCw className="w-3 h-3 text-amber-400 shrink-0" title="Trống trong file → dùng thời điểm hiện tại" />}
+                                                                    <span className={client._created_at_from_excel ? 'text-gray-700 dark:text-gray-300 font-mono' : 'text-amber-600 dark:text-amber-400 font-mono'}>
+                                                                        {fmtDate(client.created_at)}
+                                                                    </span>
+                                                                </div>
+                                                            </TableCell>
+
+                                                            {/* Ngày cập nhật */}
+                                                            <TableCell className="bg-purple-50/30 dark:bg-purple-900/10 text-[11px] whitespace-nowrap">
+                                                                <div className="flex items-center gap-1">
+                                                                    {client._updated_at_from_excel
+                                                                        ? <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" title="Lấy từ file Excel" />
+                                                                        : <RefreshCw className="w-3 h-3 text-amber-400 shrink-0" title="Trống trong file → dùng thời điểm hiện tại" />}
+                                                                    <span className={client._updated_at_from_excel ? 'text-gray-700 dark:text-gray-300 font-mono' : 'text-amber-600 dark:text-amber-400 font-mono'}>
+                                                                        {fmtDate(client.updated_at)}
+                                                                    </span>
+                                                                </div>
+                                                            </TableCell>
+
                                                             <TableCell>
                                                                 {errors ? (
                                                                     <div className="flex flex-col gap-1 py-1">
@@ -393,7 +495,7 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                                                 })}
                                                 {filteredData.length === 0 && (
                                                     <TableRow>
-                                                        <TableCell colSpan={6} className="h-32 text-center text-gray-400 font-medium">
+                                                        <TableCell colSpan={9} className="h-32 text-center text-gray-400 font-medium">
                                                             Không có dữ liệu trong mục này
                                                         </TableCell>
                                                     </TableRow>
@@ -402,7 +504,7 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                                         </Table>
                                     </div>
                                 </div>
-                            </ScrollArea>
+                            </div>
                         </div>
 
                         <div className="p-6 border-t flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50">
