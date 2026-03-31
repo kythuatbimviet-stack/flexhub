@@ -24,6 +24,41 @@ export async function fetchWeightRecords() {
     }
 }
 
+/**
+ * fetchWeightRecordsRecent — Fetch chỉ N ngày gần nhất để tăng tốc load.
+ * 
+ * ✅ Filter server-side: chỉ transfer data thực sự cần thiết.
+ * ✅ RBAC qua Supabase RLS (createClient dùng session của user).
+ * ✅ Default 180 ngày — đủ cho Gantt view thông thường.
+ * 
+ * @param days Số ngày gần nhất cần lấy (default: 180)
+ */
+export async function fetchWeightRecordsRecent(days: number = 180) {
+    try {
+        const supabase = await createClient()
+        const since = new Date()
+        since.setDate(since.getDate() - days)
+        const sinceStr = since.toISOString().split('T')[0] // YYYY-MM-DD
+
+        const { data, error } = await supabase
+            .from('weight_tracking')
+            .select('*')
+            .gte('measurement_date', sinceStr)
+            .order('measurement_date', { ascending: false })
+
+        if (error) {
+            console.error('Fetch Recent Weight Records Error:', error)
+            return { success: false, error: `${error.code}: ${error.message} - ${error.details}` }
+        }
+
+        return { success: true, data }
+    } catch (error: any) {
+        console.error('Unexpected Fetch Recent Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+
 export async function createWeightRecord(record: any) {
     try {
         const adminClient = await createAdminClient()

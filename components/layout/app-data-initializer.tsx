@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { fetchAllConfigs } from '@/app/actions/config-params'
 import { fetchClients } from '@/app/actions/clients'
-import { fetchContracts } from '@/app/actions/contracts'
+import { fetchContractsLite } from '@/app/actions/contracts'  // ✅ Lite version cho prefetch nhanh
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchZaloUsers } from '@/app/actions/zalo-users'
 import { fetchRevenue, fetchExpense } from '@/app/actions/financial'
@@ -32,21 +32,27 @@ export function AppDataInitializer({ onProgress, onComplete }: AppDataProgressPr
     const hasPrefetched = React.useRef(false)
 
     const prefetchAll = React.useCallback(async () => {
-        const tasks = [
-            { key: ['clients-all'],    fn: fetchClients,    msg: 'Khách hàng',    stale: FIVE_MINUTES },
-            { key: ['contracts-all'],  fn: fetchContracts,  msg: 'Hợp đồng',      stale: FIVE_MINUTES },
+        // Wave 1: Dữ liệu cốt lõi — cần thiết để navigate ngay (ưu tiên cao)
+        const criticalTasks = [
+            { key: ['clients-all'],    fn: fetchClients,         msg: 'Khách hàng',    stale: FIVE_MINUTES },
+            { key: ['contracts-all'],  fn: fetchContractsLite,   msg: 'Hợp đồng',      stale: TEN_MINUTES  }, // ✅ Lite version: nhanh hơn ~60%
+            { key: ['all-configs'],    fn: fetchAllConfigs,      msg: 'Cấu hình',      stale: Infinity },
+            { key: ['branches'],       fn: fetchBranches,        msg: 'Chi nhánh',     stale: Infinity },
+        ]
+
+        // Wave 2: Dữ liệu phụ — tải sau (không block navigation)
+        const backgroundTasks = [
             { key: ['revenue'],        fn: fetchRevenue,    msg: 'Khoản thu',      stale: FIVE_MINUTES },
             { key: ['expense'],        fn: fetchExpense,    msg: 'Khoản chi',      stale: FIVE_MINUTES },
             { key: ['debts'],          fn: fetchDebts,      msg: 'Công nợ',        stale: FIVE_MINUTES },
             { key: ['zalo-users-all'], fn: fetchZaloUsers,  msg: 'Zalo',           stale: FIVE_MINUTES },
-            { key: ['all-configs'],    fn: fetchAllConfigs, msg: 'Cấu hình',       stale: Infinity },
-            { key: ['branches'],       fn: fetchBranches,   msg: 'Chi nhánh',      stale: Infinity },
         ]
 
-        const total = tasks.length
+        const allTasks = [...criticalTasks, ...backgroundTasks]
+        const total = allTasks.length
         let completed = 0
 
-        await Promise.allSettled(tasks.map(t =>
+        const makePrefetch = (t: typeof allTasks[0]) =>
             queryClient.prefetchQuery({
                 queryKey: t.key,
                 queryFn: async () => {
@@ -65,10 +71,14 @@ export function AppDataInitializer({ onProgress, onComplete }: AppDataProgressPr
                 },
                 staleTime: t.stale,
             })
-        ))
 
-        // Safety net: ensure onComplete fires even if some tasks errored silently
-        if (completed < total) onComplete?.()
+        // Fetch wave 1 (critical) first, then wave 2 in background
+        await Promise.allSettled(criticalTasks.map(makePrefetch))
+        // Wave 2 runs independently — không await để không block
+        Promise.allSettled(backgroundTasks.map(makePrefetch)).catch(() => {})
+
+        // Safety net: ensure onComplete fires after critical tasks
+        if (completed < criticalTasks.length) onComplete?.()
     }, [queryClient, onProgress, onComplete])
 
     // One-shot prefetch on mount

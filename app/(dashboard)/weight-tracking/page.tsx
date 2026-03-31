@@ -40,7 +40,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { format, isWithinInterval, parseISO } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { fetchWeightRecords, deleteWeightRecord, deleteBulkWeightRecords } from '@/app/actions/weight-tracking'
+import { fetchWeightRecords, fetchWeightRecordsRecent, deleteWeightRecord, deleteBulkWeightRecords } from '@/app/actions/weight-tracking'
 import { fetchClients } from '@/app/actions/clients'
 import { fetchContracts } from '@/app/actions/contracts'
 import { fetchUsers } from '@/app/actions/users'
@@ -74,36 +74,57 @@ export default function WeightTrackingPage() {
     const [expandedClients, setExpandedClients] = React.useState<Set<string>>(new Set())
     const [selectedRecordIds, setSelectedRecordIds] = React.useState<Set<string>>(new Set())
 
-    const { data: recordsResult, isLoading: isLoadingRecords, refetch: refetchRecords, error: queryError } = useQuery({
+    // ── Weight records — own cache key, staleTime 5 phút ──────────────────────
+    const FIVE_MINUTES = 5 * 60 * 1000
+    const THIRTY_MINUTES = 30 * 60 * 1000
+
+    const { data: records = [], isLoading: isLoadingRecords, refetch: refetchRecords, error: queryError } = useQuery<any[]>({
         queryKey: ['weight-records'],
-        queryFn: () => fetchWeightRecords()
+        queryFn: async () => {
+            const res = await fetchWeightRecordsRecent(180) // ✅ 180 ngày gần nhất, filter server-side
+            if (!res.success) throw new Error(res.error || 'Lỗi tải dữ liệu theo dõi cân nặng')
+            return res.data ?? []
+        },
+        staleTime: FIVE_MINUTES,          // ✅ Tránh refetch liên tục khi focus tab
+        refetchOnWindowFocus: false,       // ✅ Chỉ refetch khi user thao tác
     })
 
     React.useEffect(() => {
-        if (recordsResult && !recordsResult.success) {
-            toast.error('Lỗi tải dữ liệu: ' + recordsResult.error)
+        if (queryError) {
+            toast.error('Lỗi tải dữ liệu: ' + (queryError as Error).message)
         }
-    }, [recordsResult])
+    }, [queryError])
 
-    const { data: clientsResult } = useQuery({
-        queryKey: ['clients-simple'],
-        queryFn: () => fetchClients()
+    // ── Clients — Reuse cache từ AppDataInitializer (key: 'clients-all') ──────
+    const { data: clients = [] } = useQuery<any[]>({
+        queryKey: ['clients-all'],         // ✅ Dùng đúng cache key chung
+        queryFn: async () => {
+            const res = await fetchClients()
+            return res.success ? (res.data ?? []) : []
+        },
+        staleTime: FIVE_MINUTES,
     })
 
-    const { data: contractsResult } = useQuery({
-        queryKey: ['contracts-simple'],
-        queryFn: () => fetchContracts()
+    // ── Contracts — Reuse cache từ AppDataInitializer (key: 'contracts-all') ──
+    const { data: contracts = [] } = useQuery<any[]>({
+        queryKey: ['contracts-all'],       // ✅ Dùng đúng cache key chung
+        queryFn: async () => {
+            const res = await fetchContracts()
+            return res.success ? (res.data ?? []) : []
+        },
+        staleTime: THIRTY_MINUTES,
+        select: (data) => Array.isArray(data) ? data : [],
     })
 
-    const { data: usersResult } = useQuery({
-        queryKey: ['users-simple'],
-        queryFn: () => fetchUsers()
+    // ── Users — Ít thay đổi, cache 30 phút ───────────────────────────────────
+    const { data: users = [] } = useQuery<any[]>({
+        queryKey: ['users-all'],           // ✅ Key nhất quán, tránh duplicate
+        queryFn: async () => {
+            const res = await fetchUsers()
+            return res.success ? (res.data ?? []) : []
+        },
+        staleTime: THIRTY_MINUTES,         // ✅ Users ít thay đổi
     })
-
-    const records: any[] = (recordsResult?.success && recordsResult.data) ? recordsResult.data : []
-    const clients: any[] = (clientsResult?.success && clientsResult.data) ? clientsResult.data : []
-    const contracts: any[] = (contractsResult?.success && contractsResult.data) ? contractsResult.data : []
-    const users: any[] = (usersResult?.success && usersResult.data) ? usersResult.data : []
 
     const branchOptions = React.useMemo(() => {
         const branches = new Set(contracts.map(c => c.facility_name).filter(Boolean))
@@ -360,12 +381,42 @@ export default function WeightTrackingPage() {
 
             {viewMode === 'gantt' ? (
                 <div className="px-1 h-[calc(100vh-165px)]">
-                    <WeightGanttView
+                    {isLoadingRecords ? (
+                        // Skeleton loading cho Gantt view
+                        <div className="h-full bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden animate-pulse">
+                            <div className="flex h-full">
+                                {/* Client list skeleton */}
+                                <div className="w-48 border-r border-gray-100 dark:border-gray-800 flex-shrink-0 p-3 space-y-2">
+                                    <div className="h-8 bg-gray-100 dark:bg-gray-800 rounded-lg mb-3" />
+                                    {Array.from({ length: 8 }).map((_, i) => (
+                                        <div key={i} className="h-12 bg-gray-50 dark:bg-gray-800/50 rounded-xl" style={{ opacity: 1 - i * 0.1 }} />
+                                    ))}
+                                </div>
+                                {/* Gantt grid skeleton */}
+                                <div className="flex-1 p-3 space-y-2">
+                                    <div className="flex gap-1 mb-3">
+                                        {Array.from({ length: 14 }).map((_, i) => (
+                                            <div key={i} className="flex-1 h-8 bg-gray-100 dark:bg-gray-800 rounded" />
+                                        ))}
+                                    </div>
+                                    {Array.from({ length: 8 }).map((_, i) => (
+                                        <div key={i} className="flex gap-1">
+                                            {Array.from({ length: 14 }).map((_, j) => (
+                                                <div key={j} className="flex-1 h-12 bg-gray-50 dark:bg-gray-800/30 rounded" style={{ opacity: Math.random() > 0.6 ? 0.5 : 0.15 }} />
+                                            ))}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <WeightGanttView
                         records={records}
-                        clients={clients}
-                        contracts={contracts}
-                        onSuccess={refetchAll}
-                    />
+                            clients={clients}
+                            contracts={contracts}
+                            onSuccess={refetchAll}
+                        />
+                    )}
                 </div>
             ) : (
                 <>

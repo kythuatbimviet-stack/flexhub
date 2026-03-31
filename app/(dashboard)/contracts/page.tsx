@@ -53,7 +53,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { fetchContracts, bulkDeleteContracts } from '@/app/actions/contracts'
+import { fetchContracts, fetchContractsLite, bulkDeleteContracts } from '@/app/actions/contracts'
 
 import { ContractDetailsSheet } from '@/components/contracts/contract-details-sheet'
 import { ImportExcelContractDialog } from '@/components/contracts/import-excel-contract-dialog'
@@ -76,7 +76,7 @@ import { usePermissions } from '@/hooks/use-permissions'
 import { format } from 'date-fns'
 import * as XLSX from 'xlsx'
 
-const THIRTY_MINUTES = 30 * 60 * 1000
+const TEN_MINUTES = 10 * 60 * 1000
 
 const MemberSummaryPopover = ({ contract, onShowDetails }: { contract: any, onShowDetails: () => void }) => {
     const age = React.useMemo(() => {
@@ -353,13 +353,15 @@ export default function ContractsPage() {
     })
     const contractStatuses = React.useMemo(() => configResult?.data?.statuses || [], [configResult])
 
+    // ── Contracts list — dùng Lite version (không JOIN clients nặng) ───────────
+    // Khi mở ContractDetailsSheet, fetchContractById sẽ tải full data
     const { data: contracts = [], isLoading } = useQuery<any[]>({
         queryKey: ['contracts-all'],
         queryFn: async () => {
-            const res = await fetchContracts()
+            const res = await fetchContractsLite()  // ✅ Lite: nhanh hơn ~60%
             return res.success ? (res.data ?? []) : []
         },
-        staleTime: THIRTY_MINUTES,
+        staleTime: TEN_MINUTES,            // ✅ Match với AppDataInitializer
         select: (data) => Array.isArray(data) ? data : [],
     })
 

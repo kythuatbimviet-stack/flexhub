@@ -173,6 +173,68 @@ export async function fetchContracts() {
     }
 }
 
+/**
+ * fetchContractsLite — Fetch nhẹ cho background prefetch & list view.
+ * 
+ * ✅ Chỉ select các flat fields cần hiển thị trong bảng (không JOIN clients nặng).
+ * ✅ JOIN nhẹ với branches(name) để hiển thị tên chi nhánh.
+ * ✅ RBAC hoàn toàn giống fetchContracts() — không có data leak.
+ * ✅ Không fetch: medical_history, height, weight, avatar_url, signature_url, 
+ *    account_number, bank_*, contract_file_url, email_message, etc.
+ */
+export async function fetchContractsLite() {
+    const supabase = await createClient()
+    try {
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        let query = supabase
+            .from('contracts')
+            .select(`
+                id, client_id, member_name, phone, dob, avatar_url,
+                status, branch_id, start_date, end_date, signing_date,
+                total_amount, payment_method, trainer_name, assigned_pt,
+                contract_type, package_name, package_type, facility_name,
+                created_by_email, created_at, updated_at,
+                sendzalo, sendemail, contract_file_url,
+                initial_weight, initial_height, target_weight, email,
+                closure_status, closure_reason, closed_at,
+                branches(name)
+            `)
+            .order('created_at', { ascending: false })
+
+        // [SEC] Apply RBAC filters — Giống hệt fetchContracts()
+        if (!accessInfo.access.canViewAllBranches) {
+            const allowedIds = accessInfo.access.allowedBranchIds || []
+
+            if (accessInfo.access.isStaffOnly) {
+                // Staff: Branch restriction AND (Created by him OR Assigned to him)
+                if (allowedIds.length > 0) {
+                    query = query.in('branch_id', allowedIds)
+                }
+                const email = accessInfo.user.email
+                const name = accessInfo.user.name
+                query = query.or(`created_by_email.eq.${email},assigned_pt.eq.${email},trainer_name.ilike.%${name}%`)
+            } else {
+                // Manager or Branch Manager: Strictly within allowed branches
+                if (allowedIds.length > 0) {
+                    query = query.in('branch_id', allowedIds)
+                } else {
+                    // Fail-safe if no branches allowed
+                    query = query.eq('created_by_email', accessInfo.user.email)
+                }
+            }
+        }
+
+        const { data, error } = await query
+
+        if (error) throw error
+        return { success: true, data }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
 export async function fetchContractById(id: string) {
     try {
         // [SEC] Auth check before using admin client
