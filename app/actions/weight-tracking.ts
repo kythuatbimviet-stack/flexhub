@@ -264,6 +264,27 @@ export async function fetchTrainingLogs(startDate: string, endDate: string) {
     }
 }
 
+export async function fetchClientTrainingLogs(clientId: string) {
+    try {
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('training_logs')
+            .select('*')
+            .eq('client_id', clientId)
+            .order('date', { ascending: false })
+
+        if (error) {
+            console.error('Fetch Client Training Logs Error:', error)
+            return { success: false, error: error.message }
+        }
+
+        return { success: true, data }
+    } catch (error: any) {
+        console.error('Unexpected Fetch Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
 export async function upsertTrainingStatus(clientId: string, date: string, status: 'Y' | 'N' | 'TĐ' | null) {
     try {
         const adminClient = await createAdminClient()
