@@ -612,6 +612,12 @@ export default function ClientsPage() {
                                     <div className="flex items-center">PT & Chi nhánh<SortIcon columnKey="branch_name" /></div>
                                 </TableHead>
                                 <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden lg:table-cell">Chỉ số & Mục tiêu</TableHead>
+                                <TableHead onClick={() => handleSort('created_at')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden xl:table-cell cursor-pointer hover:text-red-600 transition-colors group">
+                                    <div className="flex items-center">Ngày tạo<SortIcon columnKey="created_at" /></div>
+                                </TableHead>
+                                <TableHead onClick={() => handleSort('updated_at')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden xl:table-cell cursor-pointer hover:text-red-600 transition-colors group">
+                                    <div className="flex items-center">Cập nhật<SortIcon columnKey="updated_at" /></div>
+                                </TableHead>
                                 <TableHead onClick={() => handleSort('status')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider cursor-pointer hover:text-red-600 transition-colors group">
                                     <div className="flex items-center">Trạng thái<SortIcon columnKey="status" /></div>
                                 </TableHead>
@@ -694,6 +700,16 @@ export default function ClientsPage() {
                                                     <Target className="w-3 h-3" />
                                                     {client.medical_history || 'Không có tiền sử bệnh lý'}
                                                 </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="hidden xl:table-cell">
+                                            <div className="text-[11px] text-slate-500 dark:text-gray-400 font-medium">
+                                                {client.created_at ? new Date(client.created_at).toLocaleDateString('vi-VN') : '-'}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="hidden xl:table-cell">
+                                            <div className="text-[11px] text-slate-500 dark:text-gray-400 font-medium whitespace-nowrap">
+                                                {client.updated_at ? new Date(client.updated_at).toLocaleDateString('vi-VN') : '-'}
                                             </div>
                                         </TableCell>
                                         <TableCell>

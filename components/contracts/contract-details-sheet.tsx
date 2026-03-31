@@ -310,63 +310,66 @@ export function ContractDetailsSheet({
             getFullContract()
             setIsEditing(false)
         } else if (open && isCreateMode) {
-            setIsEditing(true)
-            const initialData: any = {
-                status: defaultStatus,
-                start_date: format(new Date(), 'yyyy-MM-dd'),
-                contract_type: 'Hội viên',
-                quantity: '1',
-                payment_method: 'Tiền mặt',
-                package_type: 'Offline',
-            }
-
-            // Handle pre-filled client
-            const targetClient = initialClient || (initialClientId ? clients.find(c => c.id === initialClientId) : null)
-            if (targetClient) {
-                initialData.client_id = targetClient.id
-                initialData.member_name = targetClient.member_name
-                initialData.phone = targetClient.phone || ''
-                initialData.email = targetClient.email || ''
-                initialData.member_address = targetClient.member_address || targetClient.address || ''
-                initialData.trainer_name = targetClient.pt_name || ''
-                initialData.dob = targetClient.dob ? targetClient.dob.split('T')[0] : ''
-                initialData.avatar_url = targetClient.avatar_url || ''
-                initialData.assigned_pt = targetClient.assigned_pt || ''
-                initialData.branch_id = targetClient.branch_id || ''
-                initialData.initial_height = targetClient.height?.toString() || ''
-                initialData.initial_weight = targetClient.weight?.toString() || ''
-                initialData.medical_condition = targetClient.medical_history || ''
-                initialData.signature_url = targetClient.signature_url || ''
-                initialData.source = targetClient.source || ''
-            }
-
-            // If we have a branch, generate ID
-            const branchId = initialData.branch_id || allowedBranches[0]?.id
-            if (branchId) {
-                initialData.branch_id = branchId
-                const branch = branches.find((b: any) => b.id === branchId)
-                if (branch) {
-                    initialData.facility_name = branch.name || ''
-                    initialData.address = branch.address || ''
-                    initialData.center_phone = branch.center_phone || branch.phone || ''
-                    initialData.center_address = branch.center_address || branch.address || ''
-                    initialData.center_representative = branch.representative || ''
-                    initialData.signature_center = branch.representative || ''
-                    initialData.account_number = branch.account_number?.toString() || ''
-                    initialData.account_holder = branch.account_holder || ''
-                    initialData.bank_name = branch.bank_name || ''
-                    initialData.bank_code = branch.bank_code || ''
+            const initCreateMode = async () => {
+                setIsEditing(true)
+                const initialData: any = {
+                    status: defaultStatus,
+                    start_date: format(new Date(), 'yyyy-MM-dd'),
+                    contract_type: 'Hội viên',
+                    quantity: '1',
+                    payment_method: 'Tiền mặt',
+                    package_type: 'Offline',
                 }
-                const fetchId = async () => {
+
+                // Handle pre-filled client
+                const targetClient = initialClient || (initialClientId ? clients.find(c => c.id === initialClientId) : null)
+                if (targetClient) {
+                    initialData.client_id = targetClient.id
+                    initialData.member_name = targetClient.member_name
+                    initialData.phone = targetClient.phone || ''
+                    initialData.email = targetClient.email || ''
+                    initialData.member_address = targetClient.member_address || targetClient.address || ''
+                    initialData.trainer_name = targetClient.pt_name || ''
+                    initialData.dob = targetClient.dob ? targetClient.dob.split('T')[0] : ''
+                    initialData.avatar_url = targetClient.avatar_url || ''
+                    initialData.assigned_pt = targetClient.assigned_pt || ''
+                    initialData.branch_id = targetClient.branch_id || ''
+                    initialData.initial_height = targetClient.height?.toString() || ''
+                    initialData.initial_weight = targetClient.weight?.toString() || ''
+                    initialData.medical_condition = targetClient.medical_history || ''
+                    initialData.signature_url = targetClient.signature_url || ''
+                    initialData.source = targetClient.source || ''
+                }
+
+                // If we have a branch, generate ID
+                const branchId = initialData.branch_id || allowedBranches[0]?.id
+                if (branchId) {
+                    initialData.branch_id = branchId
+                    const branch = branches.find((b: any) => b.id === branchId)
+                    if (branch) {
+                        initialData.facility_name = branch.name || ''
+                        initialData.address = branch.address || ''
+                        initialData.center_phone = branch.center_phone || branch.phone || ''
+                        initialData.center_address = branch.center_address || branch.address || ''
+                        initialData.center_representative = branch.representative || ''
+                        initialData.signature_center = branch.representative || ''
+                        initialData.account_number = branch.account_number?.toString() || ''
+                        initialData.account_holder = branch.account_holder || ''
+                        initialData.bank_name = branch.bank_name || ''
+                        initialData.bank_code = branch.bank_code || ''
+                    }
+                    // Generate ID and AWAIT it before setting formData to avoid race condition
                     setGeneratingId(true)
-                    const res = await generateContractId(branchId)
-                    if (res.success) setFormData((prev: any) => ({ ...prev, id: res.data }))
+                    const idRes = await generateContractId(branchId)
+                    if (idRes.success && idRes.data) {
+                        initialData.id = idRes.data
+                    }
                     setGeneratingId(false)
                 }
-                fetchId()
-            }
 
-            setFormData(initialData)
+                setFormData(initialData)
+            }
+            initCreateMode()
         }
     }, [contract, open, isCreateMode, initialClient, initialClientId, clients, branches, defaultStatus])
 

@@ -989,6 +989,38 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                         </div>
                                     </ClientCardSection>
 
+                                    {/* Section: Hệ thống */}
+                                    {!isCreateMode && (
+                                        <ClientCardSection title="THÔNG TIN HỆ THỐNG" icon={History}>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                                <div className="space-y-1">
+                                                    <Label className="text-xs font-medium text-slate-600 dark:text-slate-200">Ngày tạo hệ thống</Label>
+                                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                                                        {formData.created_at ? new Date(formData.created_at).toLocaleString('vi-VN', {
+                                                            day: '2-digit',
+                                                            month: '2-digit',
+                                                            year: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        }) : 'Chưa rõ'}
+                                                    </p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <Label className="text-xs font-medium text-slate-600 dark:text-slate-200">Cập nhật gần nhất</Label>
+                                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                                                        {formData.updated_at ? new Date(formData.updated_at).toLocaleString('vi-VN', {
+                                                            day: '2-digit',
+                                                            month: '2-digit',
+                                                            year: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        }) : 'Chưa rõ'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </ClientCardSection>
+                                    )}
+
                                     {/* Section: Chữ ký khách hàng */}
                                     <ClientCardSection title="Chữ ký khách hàng" icon={FileText}>
                                         <div className="space-y-4">
