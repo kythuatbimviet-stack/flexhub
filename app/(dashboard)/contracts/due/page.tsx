@@ -17,7 +17,12 @@ import {
     Edit2,
     Trash2,
     Trash,
-    CreditCard
+    CreditCard,
+    ClipboardCheck,
+    RefreshCw,
+    PauseCircle,
+    XCircle,
+    AlertCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -38,6 +43,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useQuery } from '@tanstack/react-query'
@@ -46,6 +52,30 @@ import { cn } from '@/lib/utils'
 import { fetchContracts, bulkDeleteContracts } from '@/app/actions/contracts'
 import Link from 'next/link'
 import { ContractDetailsSheet } from '@/components/contracts/contract-details-sheet'
+import { ContractClosureDialog } from '@/components/contracts/contract-closure-dialog'
+
+// ─── Closure Status Badge ────────────────────────────────────
+function ClosureStatusBadge({ status }: { status?: string }) {
+    if (!status) {
+        return (
+            <span className="text-[10px] text-gray-400 italic font-medium">Chưa xử lý</span>
+        )
+    }
+    const map: Record<string, { label: string; icon: React.ElementType; cls: string }> = {
+        Renew: { label: 'Gia hạn', icon: RefreshCw, cls: 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400' },
+        'Tạm nghỉ': { label: 'Tạm nghỉ', icon: PauseCircle, cls: 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/30 dark:text-amber-400' },
+        'Nghỉ hẳn': { label: 'Nghỉ hẳn', icon: XCircle, cls: 'bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:text-red-400' },
+    }
+    const cfg = map[status]
+    if (!cfg) return <Badge variant="outline" className="text-[10px]">{status}</Badge>
+    const Icon = cfg.icon
+    return (
+        <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border', cfg.cls)}>
+            <Icon className="w-2.5 h-2.5" />
+            {cfg.label}
+        </span>
+    )
+}
 
 export default function DueContractsPage() {
     const [searchTerm, setSearchTerm] = React.useState('')
@@ -56,12 +86,20 @@ export default function DueContractsPage() {
     const [page, setPage] = React.useState(1)
     const [pageSize, setPageSize] = React.useState(20)
 
+    // Closure dialog state
+    const [closureContract, setClosureContract] = React.useState<any | null>(null)
+    const [isClosureOpen, setIsClosureOpen] = React.useState(false)
+
     const handleRowClick = (contract: any, e: React.MouseEvent) => {
-        // Prevent opening if clicking on checkbox or actions
         if ((e.target as HTMLElement).closest('[data-no-click]')) return
-        
         setSelectedContract(contract)
         setIsDetailsOpen(true)
+    }
+
+    const handleOpenClosure = (contract: any, e: React.MouseEvent) => {
+        e.stopPropagation()
+        setClosureContract(contract)
+        setIsClosureOpen(true)
     }
 
     const handleDelete = async (id: string) => {
@@ -98,7 +136,7 @@ export default function DueContractsPage() {
     const filteredContracts = React.useMemo(() => {
         const today = new Date()
         today.setHours(0, 0, 0, 0)
-        
+
         const next7Days = new Date(today)
         next7Days.setDate(today.getDate() + 7)
 
@@ -123,20 +161,15 @@ export default function DueContractsPage() {
             }
 
             // Tab filter
-            if (tab === 'this-week') {
-                return endDate >= today && endDate <= next7Days
-            }
-            if (tab === 'next-week') {
-                return endDate > next7Days && endDate <= next14Days
-            }
-            if (tab === 'this-month') {
-                return endDate >= today && endDate <= next30Days
-            }
+            if (tab === 'this-week') return endDate >= today && endDate <= next7Days
+            if (tab === 'next-week') return endDate > next7Days && endDate <= next14Days
+            if (tab === 'this-month') return endDate >= today && endDate <= next30Days
+            if (tab === 'expired') return endDate < today
             return true
         })
     }, [contracts, tab, searchTerm])
 
-    // ── Pagination (client-side) ──────────────────────────────────────────────
+    // ── Pagination ──────────────────────────────────────────
     const totalCount = filteredContracts.length
     const totalPages = pageSize === -1 ? 1 : Math.ceil(totalCount / pageSize)
     const pagedContracts = React.useMemo(() => {
@@ -150,24 +183,16 @@ export default function DueContractsPage() {
     const counts = React.useMemo(() => {
         const today = new Date()
         today.setHours(0, 0, 0, 0)
-        const next7 = new Date(today)
-        next7.setDate(today.getDate() + 7)
-        const next14 = new Date(today)
-        next14.setDate(today.getDate() + 14)
-        const next30 = new Date(today)
-        next30.setDate(today.getDate() + 30)
+        const next7 = new Date(today); next7.setDate(today.getDate() + 7)
+        const next14 = new Date(today); next14.setDate(today.getDate() + 14)
+        const next30 = new Date(today); next30.setDate(today.getDate() + 30)
 
         const cAll = contracts ?? []
         return {
-            thisWeek: cAll.filter((c: any) => {
-                const d = new Date(c.end_date); return d >= today && d <= next7
-            }).length,
-            nextWeek: cAll.filter((c: any) => {
-                const d = new Date(c.end_date); return d > next7 && d <= next14
-            }).length,
-            thisMonth: cAll.filter((c: any) => {
-                const d = new Date(c.end_date); return d >= today && d <= next30
-            }).length,
+            thisWeek: cAll.filter((c: any) => { const d = new Date(c.end_date); return d >= today && d <= next7 }).length,
+            nextWeek: cAll.filter((c: any) => { const d = new Date(c.end_date); return d > next7 && d <= next14 }).length,
+            thisMonth: cAll.filter((c: any) => { const d = new Date(c.end_date); return d >= today && d <= next30 }).length,
+            expired: cAll.filter((c: any) => { const d = new Date(c.end_date); d.setHours(0,0,0,0); return d < today }).length,
         }
     }, [contracts])
 
@@ -176,15 +201,23 @@ export default function DueContractsPage() {
         const end = new Date(end_date)
         const today = new Date()
         today.setHours(0, 0, 0, 0)
-        const diff = end.getTime() - today.getTime()
-        return Math.ceil(diff / (1000 * 60 * 60 * 24))
+        return Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
     }
+
+    const isExpiredTab = tab === 'expired'
 
     return (
         <div className="space-y-6 font-inter pb-10">
+            {/* Dialogs */}
             <ContractDetailsSheet
                 contract={selectedContract} open={isDetailsOpen}
                 onOpenChange={setIsDetailsOpen} onSuccess={refetch}
+            />
+            <ContractClosureDialog
+                contract={closureContract}
+                open={isClosureOpen}
+                onOpenChange={setIsClosureOpen}
+                onSuccess={refetch}
             />
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
@@ -201,7 +234,7 @@ export default function DueContractsPage() {
                         </h1>
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight ml-12">
-                        Theo dõi các hợp đồng sắp hết hạn để kịp thời gia hạn.
+                        Theo dõi các hợp đồng sắp hết hạn và xử lý các hợp đồng đã hết hạn.
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -222,7 +255,7 @@ export default function DueContractsPage() {
             <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-gray-900 p-6">
                 <Tabs value={tab} onValueChange={setTab} className="w-full space-y-6">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                        <TabsList className="bg-gray-100/50 dark:bg-gray-800/50 p-1 rounded-xl h-auto self-start">
+                        <TabsList className="bg-gray-100/50 dark:bg-gray-800/50 p-1 rounded-xl h-auto self-start flex-wrap">
                             <TabsTrigger value="this-week" className="rounded-lg px-4 py-2 text-sm data-[state=active]:bg-white data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all flex items-center gap-2">
                                 Tuần này
                                 <span className={cn("px-1.5 py-0.5 rounded-md text-[10px] font-bold", tab === 'this-week' ? "bg-red-50 text-red-600" : "bg-gray-200 text-gray-500")}>
@@ -241,6 +274,19 @@ export default function DueContractsPage() {
                                     {counts.thisMonth}
                                 </span>
                             </TabsTrigger>
+                            {/* Tab Đã hết hạn — nổi bật hơn */}
+                            <TabsTrigger
+                                value="expired"
+                                className="rounded-lg px-4 py-2 text-sm data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:shadow-sm transition-all flex items-center gap-2"
+                            >
+                                <AlertCircle className="w-3.5 h-3.5" />
+                                Đã hết hạn
+                                {counts.expired > 0 && (
+                                    <span className={cn("px-1.5 py-0.5 rounded-md text-[10px] font-bold", tab === 'expired' ? "bg-white/20 text-white" : "bg-red-100 text-red-600")}>
+                                        {counts.expired}
+                                    </span>
+                                )}
+                            </TabsTrigger>
                         </TabsList>
 
                         <div className="relative group max-w-sm w-full lg:w-72">
@@ -253,6 +299,16 @@ export default function DueContractsPage() {
                             />
                         </div>
                     </div>
+
+                    {/* Expired tab banner */}
+                    {isExpiredTab && (
+                        <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30">
+                            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                            <p className="text-xs text-red-700 dark:text-red-400 font-medium">
+                                Danh sách hợp đồng đã hết hạn. Nhấn <strong>"Xử lý HĐ"</strong> để hoàn tất chu kỳ, nhập cân kết thúc và chọn tình trạng.
+                            </p>
+                        </div>
+                    )}
 
                     {/* Pagination controls (top) */}
                     {!isLoading && totalCount > 0 && (
@@ -320,6 +376,9 @@ export default function DueContractsPage() {
                                     <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Giá trị & Thanh toán</TableHead>
                                     <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Chi nhánh và PT</TableHead>
                                     <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Ngày hợp đồng</TableHead>
+                                    {isExpiredTab && (
+                                        <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Tình trạng</TableHead>
+                                    )}
                                     <TableHead className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9">Tùy chọn</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -333,27 +392,34 @@ export default function DueContractsPage() {
                                             <TableCell><div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-3 w-16" /></div></TableCell>
                                             <TableCell><div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-3 w-16" /></div></TableCell>
                                             <TableCell><div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-3 w-16" /></div></TableCell>
+                                            {isExpiredTab && <TableCell><Skeleton className="h-5 w-20" /></TableCell>}
                                             <TableCell className="text-right pr-8"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                                         </TableRow>
                                     ))
                                 ) : filteredContracts.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="h-48 text-center">
+                                        <TableCell colSpan={isExpiredTab ? 8 : 7} className="h-48 text-center">
                                             <div className="flex flex-col items-center gap-3">
                                                 <div className="w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center">
                                                     <FileText className="w-6 h-6 text-gray-200" />
                                                 </div>
-                                                <p className="text-gray-400 text-sm font-medium">Không có hợp đồng nào đến hạn trong giai đoạn này.</p>
+                                                <p className="text-gray-400 text-sm font-medium">
+                                                    {isExpiredTab ? 'Không có hợp đồng đã hết hạn.' : 'Không có hợp đồng nào đến hạn trong giai đoạn này.'}
+                                                </p>
                                             </div>
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     pagedContracts.map((contract: any) => {
                                         const remainingDays = getRemainingDays(contract.end_date)
+                                        const isExpired = remainingDays !== null && remainingDays <= 0
+                                        const isProcessed = !!contract.closure_status
+
                                         return (
                                             <TableRow key={contract.id} onClick={(e) => handleRowClick(contract, e)}
                                                 className={cn('border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors group',
-                                                    selectedRows.includes(contract.id) && 'bg-red-50/30 dark:bg-red-950/20')}>
+                                                    selectedRows.includes(contract.id) && 'bg-red-50/30 dark:bg-red-950/20',
+                                                    isExpired && !isProcessed && 'bg-red-50/10 dark:bg-red-950/5')}>
                                                 <TableCell className="pl-6" data-no-click>
                                                     <Checkbox checked={selectedRows.includes(contract.id)}
                                                         onCheckedChange={() => toggleRow(contract.id)} className="rounded-lg" />
@@ -412,13 +478,37 @@ export default function DueContractsPage() {
                                                             <Clock className="w-3 h-3" />
                                                             <span>Hết: {contract.end_date ? new Date(contract.end_date).toLocaleDateString('vi-VN') : '-'}</span>
                                                         </div>
-                                                        <div className={cn("mt-1 font-bold", remainingDays !== null && remainingDays <= 0 ? "text-red-500" : "text-blue-500")}>
-                                                            Còn: {remainingDays !== null ? (remainingDays > 0 ? `${remainingDays} ngày` : 'Hết hạn') : '-'}
+                                                        <div className={cn("mt-1 font-bold", isExpired ? "text-red-500" : "text-blue-500")}>
+                                                            {isExpired
+                                                                ? `Quá hạn ${Math.abs(remainingDays!)} ngày`
+                                                                : remainingDays !== null ? `Còn ${remainingDays} ngày` : '-'}
                                                         </div>
                                                     </div>
                                                 </TableCell>
+                                                {isExpiredTab && (
+                                                    <TableCell data-no-click>
+                                                        <ClosureStatusBadge status={contract.closure_status} />
+                                                    </TableCell>
+                                                )}
                                                 <TableCell className="text-right pr-8" data-no-click>
                                                     <div className="flex items-center justify-end gap-1">
+                                                        {/* Nút Xử lý HĐ — chỉ hiện tab expired */}
+                                                        {isExpiredTab && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={(e) => handleOpenClosure(contract, e)}
+                                                                className={cn(
+                                                                    'h-8 px-3 rounded-lg text-[11px] font-semibold transition-all',
+                                                                    isProcessed
+                                                                        ? 'text-gray-500 hover:bg-gray-50 border border-gray-100'
+                                                                        : 'text-orange-600 hover:bg-orange-50 border border-orange-100 dark:border-orange-900/30 dark:hover:bg-orange-950/20'
+                                                                )}
+                                                            >
+                                                                <ClipboardCheck className="w-3.5 h-3.5 mr-1.5" />
+                                                                {isProcessed ? 'Cập nhật' : 'Xử lý HĐ'}
+                                                            </Button>
+                                                        )}
                                                         <Button variant="ghost" size="icon"
                                                             onClick={(e) => { e.stopPropagation(); setSelectedContract(contract); setIsDetailsOpen(true) }}
                                                             className="w-8 h-8 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600">

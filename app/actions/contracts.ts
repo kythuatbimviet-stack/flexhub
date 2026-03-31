@@ -872,3 +872,81 @@ export async function fetchContractsByClientId(clientId: string) {
         return { success: false, error: error.message, data: [] }
     }
 }
+
+export async function closeContract(
+    id: string,
+    closureData: {
+        final_weight?: number | null
+        weight_change?: number | null
+        closure_status: 'Renew' | 'Tạm nghỉ' | 'Nghỉ hẳn'
+        closure_reason?: string
+    }
+) {
+    const supabase = await createClient()
+    try {
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        // RBAC Check
+        const { data: existing } = await supabase
+            .from('contracts')
+            .select('branch_id, created_by_email')
+            .eq('id', id)
+            .maybeSingle()
+
+        if (!existing) return { success: false, error: 'Hợp đồng không tồn tại' }
+
+        const canAccess =
+            accessInfo.access.canViewAllBranches ||
+            (accessInfo.access.allowedBranchIds &&
+                accessInfo.access.allowedBranchIds.includes(existing.branch_id)) ||
+            existing.created_by_email === accessInfo.user.email
+
+        if (!canAccess) return { success: false, error: 'Bạn không có quyền xử lý hợp đồng này' }
+
+        // Validate: lý do bắt buộc khi không renew
+        if (
+            (closureData.closure_status === 'Tạm nghỉ' || closureData.closure_status === 'Nghỉ hẳn') &&
+            !closureData.closure_reason?.trim()
+        ) {
+            return { success: false, error: 'Vui lòng nhập lý do khi khách hàng nghỉ' }
+        }
+
+        const updates: any = {
+            closure_status: closureData.closure_status,
+            closure_reason: closureData.closure_reason || null,
+            closed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        }
+
+        // Ghi cân nặng kết thúc nếu có
+        if (closureData.final_weight != null) {
+            updates.final_weight = closureData.final_weight
+        }
+        if (closureData.weight_change != null) {
+            updates.weight_change = closureData.weight_change
+        }
+
+        // Chỉ cập nhật status chính khi Tạm nghỉ hoặc Nghỉ hẳn
+        if (closureData.closure_status === 'Tạm nghỉ' || closureData.closure_status === 'Nghỉ hẳn') {
+            updates.status = 'Kết thúc hợp đồng'
+        }
+
+        const { data, error } = await supabase
+            .from('contracts')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .maybeSingle()
+
+        if (error) throw error
+
+        revalidatePath('/contracts')
+        revalidatePath('/contracts/due')
+        revalidatePath('/')
+        return { success: true, data }
+    } catch (error: any) {
+        console.error('Close Contract Error:', error)
+        return { success: false, error: error.message }
+    }
+}

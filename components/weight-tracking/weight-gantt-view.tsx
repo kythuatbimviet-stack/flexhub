@@ -68,7 +68,6 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
     const [localRecords, setLocalRecords] = React.useState<any[]>(records)
     const [showTarget, setShowTarget] = React.useState(true)
     const [showActual, setShowActual] = React.useState(true)
-    const [showHeight, setShowHeight] = React.useState(true)
     const [showTraining, setShowTraining] = React.useState(true)
     const [selectedClientId, setSelectedClientId] = React.useState<string | null>(null)
     const [selectedDate, setSelectedDate] = React.useState<Date | null>(null)
@@ -104,7 +103,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
         }
     })
 
-    const visibleCount = [showTarget, showActual, showHeight, showTraining].filter(Boolean).length
+    const visibleCount = [showTarget, showActual, showTraining].filter(Boolean).length
 
     const toggleColumn = (col: keyof typeof visibleColumns) => {
         setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }))
@@ -137,7 +136,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
         }
         if (criteria === 'target') setShowTarget(val)
         if (criteria === 'actual') setShowActual(val)
-        if (criteria === 'height') setShowHeight(val)
+        if (criteria === 'actual') setShowActual(val)
         if (criteria === 'training') setShowTraining(val)
     }
 
@@ -633,10 +632,6 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                 </div>
                                                 <div className="flex items-center gap-3 text-[10px] text-slate-500 dark:text-slate-300">
                                                     <div className="flex items-center gap-1">
-                                                        <span className="font-medium">H:</span>
-                                                        <span>{contract?.initial_height ? `${contract.initial_height}cm` : '-'}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
                                                         <span className="font-medium">W:</span>
                                                         <span>{contract?.initial_weight ? `${contract.initial_weight}kg` : '-'}</span>
                                                     </div>
@@ -684,9 +679,6 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                             )}
                                             {showActual && (
                                                 <div className="h-8 flex items-center justify-center border-b border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-1">Thực tế</div>
-                                            )}
-                                            {showHeight && (
-                                                <div className="h-8 flex items-center justify-center border-purple-100 dark:border-purple-900/50 bg-purple-50/50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-1">Chiều cao</div>
                                             )}
                                             {showTraining && (
                                                 <div className="h-8 flex items-center justify-center border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 px-1">Tần suất</div>
@@ -820,31 +812,6 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                 })}
                                             </div>
                                         )}
-                                        {showHeight && (
-                                            <div className="h-8 flex">
-                                                {days.map((day, i) => {
-                                                    const record = clientRecords.find(r => isSameDay(new Date(r.measurement_date), day))
-                                                    const isCellSelected = isSelected && selectedDate && isSameDay(selectedDate, day)
-                                                    const isFriday = day.getDay() === 5
-                                                    return (
-                                                        <div
-                                                            key={i}
-                                                            className={cn(
-                                                                "w-[50px] shrink-0 border-r border-slate-100 dark:border-slate-800/50 flex items-center justify-center cursor-pointer transition-all duration-200",
-                                                                isCellSelected ? "bg-purple-500/20 ring-2 ring-purple-500 ring-inset z-10" : "hover:bg-purple-50/50 dark:hover:bg-purple-900/10",
-                                                                isFriday && !isCellSelected && "bg-amber-200/20 dark:bg-amber-900/30"
-                                                            )}
-                                                            onClick={() => handleCellClick(client.id, day)}
-                                                            onDoubleClick={() => handleOpenEdit(client.id, day)}
-                                                        >
-                                                            <span className={cn("text-[11px] font-semibold", isCellSelected ? "text-purple-700 dark:text-purple-300" : "text-purple-600 dark:text-purple-400")}>
-                                                                {record?.height || '-'}
-                                                            </span>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        )}
                                         {showTraining && (
                                             <div className="h-8 flex">
                                                 {days.map((day, i) => {
@@ -916,15 +883,6 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                     </div>
                     <div className="flex items-center gap-2.5 cursor-pointer">
                         <Checkbox
-                            id="chk-height"
-                            checked={showHeight}
-                            onCheckedChange={(v) => toggleCriteria('height', !!v)}
-                            className="w-4 h-4 border-slate-300"
-                        />
-                        <label htmlFor="chk-height" className="text-xs font-semibold text-slate-600 dark:text-slate-400 cursor-pointer">Chiều cao</label>
-                    </div>
-                    <div className="flex items-center gap-2.5 cursor-pointer">
-                        <Checkbox
                             id="chk-training"
                             checked={showTraining}
                             onCheckedChange={(v) => toggleCriteria('training', !!v)}
@@ -943,10 +901,6 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                     <div className="flex items-center gap-2 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                         <div className="w-2.5 h-2.5 rounded-full bg-emerald-100 dark:bg-emerald-900 border border-emerald-400 shadow-sm" />
                         <span>Cân thực tế</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-purple-600 dark:text-purple-400 whitespace-nowrap">
-                        <div className="w-2.5 h-2.5 rounded-full bg-purple-100 dark:bg-purple-900 border border-purple-400 shadow-sm" />
-                        <span>Chiều cao</span>
                     </div>
                 </div>
             </div>

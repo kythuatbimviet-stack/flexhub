@@ -61,7 +61,6 @@ const weightSchema = z.object({
     measurement_date: z.string().min(1, 'Vui lòng chọn ngày đo'),
     weight: z.coerce.number().min(1, 'Cân nặng phải lớn hơn 0'),
     target_weight: z.coerce.number().optional().nullable(),
-    height: z.coerce.number().optional().nullable(),
     measurements: z.string().optional(),
     next_measurement_date: z.string().optional().nullable(),
     contract_id: z.string().optional().nullable(),
@@ -87,13 +86,12 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
     const [loading, setLoading] = React.useState(false)
 
     const form = useForm<WeightFormValues>({
-        resolver: zodResolver(weightSchema),
+        resolver: zodResolver(weightSchema) as any,
         defaultValues: {
             client_id: initialClientId || '',
             measurement_date: initialDate || format(new Date(), 'yyyy-MM-dd'),
             weight: 0,
             target_weight: null,
-            height: null,
             measurements: '',
             next_measurement_date: null,
             contract_id: null,
@@ -111,7 +109,6 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                 measurement_date: initialDate || format(new Date(), 'yyyy-MM-dd'),
                 weight: 0,
                 target_weight: null,
-                height: null,
                 measurements: '',
                 next_measurement_date: null,
                 contract_id: null,
@@ -167,13 +164,9 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
         if (selectedClientId && (latestContract || latestWeight)) {
             const currentWeight = form.getValues('weight')
             const currentTarget = form.getValues('target_weight')
-            const currentHeight = form.getValues('height')
 
             if (!currentTarget) {
                 form.setValue('target_weight', latestWeight?.target_weight || latestContract?.target_weight || null)
-            }
-            if (!currentHeight) {
-                form.setValue('height', latestWeight?.height || latestContract?.initial_height || null)
             }
             if (!form.getValues('contract_id')) {
                 form.setValue('contract_id', latestContract?.id || null)
@@ -349,7 +342,7 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                                 />
                             </div>
 
-                            <div className="grid grid-cols-3 gap-6">
+                            <div className="grid grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
                                     name="weight"
@@ -372,20 +365,6 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                                             <FormLabel className="text-[13px] font-medium text-black dark:text-white mb-2">Cân nặng cần đạt</FormLabel>
                                             <FormControl>
                                                 <Input type="number" step="0.1" placeholder="Số kg..." {...field} value={field.value || ''} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-14 text-[16px] font-semibold text-black dark:text-white transition-all focus:ring-2 focus:ring-blue-500/10 px-4" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <FormField
-                                    control={form.control}
-                                    name="height"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[13px] font-medium text-black dark:text-white mb-2">Chiều cao (cm)</FormLabel>
-                                            <FormControl>
-                                                <Input type="number" step="1" placeholder="Cm..." {...field} value={field.value || ''} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-14 text-[16px] font-semibold text-purple-600 dark:text-purple-400 transition-all focus:ring-2 focus:ring-purple-500/10 px-4" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

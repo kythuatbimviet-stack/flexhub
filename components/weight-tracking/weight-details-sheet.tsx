@@ -132,7 +132,6 @@ export function WeightDetailsSheet({ record, open, onOpenChange, onSuccess, clie
                 contract_id: record.contract_id || null,
                 measurement_date: record.measurement_date ? record.measurement_date.split('T')[0] : '',
                 weight: record.weight,
-                height: record.height || null,
                 target_weight: record.target_weight || null,
                 measurements: record.measurements || '',
                 next_measurement_date: record.next_measurement_date ? record.next_measurement_date.split('T')[0] : null,
@@ -282,10 +281,6 @@ export function WeightDetailsSheet({ record, open, onOpenChange, onSuccess, clie
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cần đạt</p>
                                         <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{formData.target_weight || '-'}<span className="text-[10px] ml-0.5 font-bold uppercase">kg</span></p>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Chiều cao</p>
-                                        <p className="text-lg font-bold text-purple-600 dark:text-purple-400">{formData.height || '-'}<span className="text-[10px] ml-0.5 font-bold uppercase">cm</span></p>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -423,16 +418,6 @@ export function WeightDetailsSheet({ record, open, onOpenChange, onSuccess, clie
                                 handleChange={handleChange}
                             />
                             <DetailRow 
-                                label="Chiều cao (cm)" 
-                                value={formData.height ? `${formData.height} cm` : ''} 
-                                name="height" 
-                                type="number" 
-                                icon={Ruler}
-                                isEditing={isEditing}
-                                formData={formData}
-                                handleChange={handleChange}
-                            />
-                            <DetailRow 
                                 label="Ngày đo" 
                                 value={formData.measurement_date} 
                                 name="measurement_date" 
@@ -442,18 +427,16 @@ export function WeightDetailsSheet({ record, open, onOpenChange, onSuccess, clie
                                 formData={formData}
                                 handleChange={handleChange}
                             />
-                            <div className="sm:col-span-2">
-                                <DetailRow 
-                                    label="Ngày hẹn tiếp theo" 
-                                    value={formData.next_measurement_date} 
-                                    name="next_measurement_date" 
-                                    type="date" 
-                                    icon={Clock}
-                                    isEditing={isEditing}
-                                    formData={formData}
-                                    handleChange={handleChange}
-                                />
-                            </div>
+                            <DetailRow 
+                                label="Ngày hẹn tiếp theo" 
+                                value={formData.next_measurement_date} 
+                                name="next_measurement_date" 
+                                type="date" 
+                                icon={Clock}
+                                isEditing={isEditing}
+                                formData={formData}
+                                handleChange={handleChange}
+                            />
                         </div>
                     </CardSection>
 

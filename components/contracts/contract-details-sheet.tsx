@@ -85,8 +85,10 @@ import { fetchMemberships } from '@/app/actions/memberships'
 import { cn, numberToVietnameseWords, getVietQRUrl } from '@/lib/utils'
 import { createClient } from '@/lib/supabase'
 import { FinalizeContractDialog } from './finalize-contract-dialog'
+import { ContractClosureDialog } from './contract-closure-dialog'
 import { usePermissions } from '@/hooks/use-permissions'
 import { canAccessRecord } from '@/lib/permissions'
+import { TrendingDown, TrendingUp, Minus, ClipboardCheck, RefreshCw, PauseCircle, XCircle as XCircleIcon } from 'lucide-react'
 
 // ─── Component con nằm NGOÀI component cha để tránh re-mount khi state thay đổi ───
 const ContractCardSection = ({ title, icon: Icon, children }: any) => (
@@ -213,6 +215,7 @@ export function ContractDetailsSheet({
     const [ptSearchTerm, setPtSearchTerm] = React.useState('')
     const [ptOpen, setPtOpen] = React.useState(false)
     const [showFinalizeDialog, setShowFinalizeDialog] = React.useState(false)
+    const [showClosureDialog, setShowClosureDialog] = React.useState(false)
     const [generatingPdf, setGeneratingPdf] = React.useState(false)
     const [clients, setClients] = React.useState<any[]>([])
     const [clientSearchTerm, setClientSearchTerm] = React.useState('')
@@ -565,6 +568,15 @@ export function ContractDetailsSheet({
         const diff = end.getTime() - today.getTime()
         const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
         return days > 0 ? `${days} ngày` : 'Hết hạn'
+    }, [formData.end_date])
+
+    const isContractExpired = React.useMemo(() => {
+        if (!formData.end_date) return false
+        const end = new Date(formData.end_date)
+        end.setHours(0, 0, 0, 0)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        return end < today
     }, [formData.end_date])
 
     // Auto-calculate end_date logic
@@ -1472,6 +1484,114 @@ export function ContractDetailsSheet({
                         </div>
                     </ContractCardSection>
 
+                    {/* Section: Tổng kết HĐ — chỉ hiện khi đã hết hạn */}
+                    {isContractExpired && !isCreateMode && (
+                        <ContractCardSection title="TỔNG KẾT HỢP ĐỒNG" icon={ClipboardCheck}>
+                            <div className="space-y-5">
+                                {/* Cân nặng & Thay đổi */}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 space-y-1">
+                                        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Cân ban đầu</p>
+                                        <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                                            {formData.initial_weight ? `${formData.initial_weight} kg` : '—'}
+                                        </p>
+                                    </div>
+                                    <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 space-y-1">
+                                        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Cân kết thúc</p>
+                                        <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                                            {formData.final_weight ? `${formData.final_weight} kg` : '—'}
+                                        </p>
+                                    </div>
+                                    <div className={cn(
+                                        'p-3.5 rounded-xl space-y-1',
+                                        formData.weight_change > 0
+                                            ? 'bg-emerald-50 dark:bg-emerald-950/30'
+                                            : formData.weight_change < 0
+                                            ? 'bg-orange-50 dark:bg-orange-950/30'
+                                            : 'bg-gray-50 dark:bg-gray-800/50'
+                                    )}>
+                                        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Số cân giảm</p>
+                                        <p className={cn(
+                                            'text-base font-bold flex items-center gap-1',
+                                            formData.weight_change > 0
+                                                ? 'text-emerald-700 dark:text-emerald-400'
+                                                : formData.weight_change < 0
+                                                ? 'text-orange-700 dark:text-orange-400'
+                                                : 'text-gray-500'
+                                        )}>
+                                            {formData.weight_change > 0 ? (
+                                                <TrendingDown className="w-4 h-4" />
+                                            ) : formData.weight_change < 0 ? (
+                                                <TrendingUp className="w-4 h-4" />
+                                            ) : (
+                                                <Minus className="w-4 h-4" />
+                                            )}
+                                            {formData.weight_change
+                                                ? `${formData.weight_change > 0 ? '' : '+'}${(-formData.weight_change).toFixed(1)} kg`
+                                                : '—'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Trạng thái đóng HĐ */}
+                                {formData.closure_status ? (
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Tình trạng</p>
+                                            <span className={cn(
+                                                'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border',
+                                                formData.closure_status === 'Renew'
+                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400'
+                                                    : formData.closure_status === 'Tạm nghỉ'
+                                                    ? 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/30 dark:text-amber-400'
+                                                    : 'bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:text-red-400'
+                                            )}>
+                                                {formData.closure_status === 'Renew' && <RefreshCw className="w-3 h-3" />}
+                                                {formData.closure_status === 'Tạm nghỉ' && <PauseCircle className="w-3 h-3" />}
+                                                {formData.closure_status === 'Nghỉ hẳn' && <XCircleIcon className="w-3 h-3" />}
+                                                {formData.closure_status}
+                                            </span>
+                                        </div>
+                                        {formData.closure_reason && (
+                                            <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                                                <p className="text-[10px] font-medium text-gray-400 mb-1">Lý do nghỉ</p>
+                                                <p className="text-sm text-gray-700 dark:text-gray-300">{formData.closure_reason}</p>
+                                            </div>
+                                        )}
+                                        {formData.closed_at && (
+                                            <p className="text-[11px] text-gray-400">
+                                                Đã xử lý: {new Date(formData.closed_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-3 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30">
+                                        <ClipboardCheck className="w-4 h-4 text-amber-600 shrink-0" />
+                                        <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                                            Hợp đồng đã hết hạn nhưng chưa được xử lý.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Nút xử lý */}
+                                {!isEditing && (
+                                    <Button
+                                        onClick={() => setShowClosureDialog(true)}
+                                        className={cn(
+                                            'w-full rounded-xl h-11 font-semibold text-[13px] transition-all',
+                                            formData.closure_status
+                                                ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                                : 'bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-100 dark:shadow-orange-900/20'
+                                        )}
+                                    >
+                                        <ClipboardCheck className="w-4 h-4 mr-2" />
+                                        {formData.closure_status ? 'Cập nhật tình trạng HĐ' : 'Xử lý hợp đồng hết hạn'}
+                                    </Button>
+                                )}
+                            </div>
+                        </ContractCardSection>
+                    )}
+
                     {/* Section: Gửi Hợp đồng Khách hàng */}
                     <ContractCardSection title="GỬI HỢP ĐỒNG" icon={Cloud}>
                         <div className="space-y-5">
@@ -1604,6 +1724,31 @@ export function ContractDetailsSheet({
                     onSuccess={() => {
                         onSuccess()
                         onOpenChange(false)
+                    }}
+                />
+
+                <ContractClosureDialog
+                    contract={formData}
+                    open={showClosureDialog}
+                    onOpenChange={setShowClosureDialog}
+                    onSuccess={() => {
+                        onSuccess()
+                        // Refresh dữ liệu trong sheet
+                        if (contract?.id) {
+                            fetchContractById(contract.id).then(res => {
+                                if (res.success && res.data) {
+                                    setFormData((prev: any) => ({
+                                        ...prev,
+                                        closure_status: res.data.closure_status,
+                                        closure_reason: res.data.closure_reason,
+                                        closed_at: res.data.closed_at,
+                                        final_weight: res.data.final_weight,
+                                        weight_change: res.data.weight_change,
+                                        status: res.data.status,
+                                    }))
+                                }
+                            })
+                        }
                     }}
                 />
 

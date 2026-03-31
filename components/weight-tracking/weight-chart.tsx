@@ -37,8 +37,7 @@ export function WeightChart({ data }: WeightChartProps) {
         date: format(new Date(item.measurement_date), 'dd/MM', { locale: vi }),
         fullDate: format(new Date(item.measurement_date), 'dd/MM/yyyy', { locale: vi }),
         weight: parseFloat(item.weight) || 0,
-        target: parseFloat(item.target_weight) || null,
-        height: parseFloat(item.height) || null
+        target: parseFloat(item.target_weight) || null
     }))
 
     return (

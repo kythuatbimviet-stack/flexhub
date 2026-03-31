@@ -224,14 +224,14 @@ export function EditWeightDialog({ open, onOpenChange, record, onSuccess, client
 
                             <FormField
                                 control={form.control}
-                                name="weight"
+                                name="next_measurement_date"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs font-medium text-gray-400">Cân nặng (kg)</FormLabel>
+                                        <FormLabel className="text-xs font-medium text-gray-400">Ngày đo tiếp theo (dự kiến)</FormLabel>
                                         <FormControl>
                                             <div className="relative">
-                                                <Scale className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                                <Input type="number" step="0.1" placeholder="65.0" {...field} className="pl-10 rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 h-11" />
+                                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <Input type="date" value={field.value || ''} onChange={field.onChange} className="pl-10 rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 h-11" />
                                             </div>
                                         </FormControl>
                                         <FormMessage />
@@ -241,14 +241,14 @@ export function EditWeightDialog({ open, onOpenChange, record, onSuccess, client
 
                             <FormField
                                 control={form.control}
-                                name="next_measurement_date"
+                                name="weight"
                                 render={({ field }) => (
-                                    <FormItem className="md:col-span-2">
-                                        <FormLabel className="text-xs font-medium text-gray-400">Ngày đo tiếp theo (dự kiến)</FormLabel>
+                                    <FormItem>
+                                        <FormLabel className="text-xs font-medium text-gray-400">Cân nặng (kg)</FormLabel>
                                         <FormControl>
                                             <div className="relative">
-                                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                                <Input type="date" value={field.value || ''} onChange={field.onChange} className="pl-10 rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 h-11" />
+                                                <Scale className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <Input type="number" step="0.1" placeholder="65.0" {...field} className="pl-10 rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 h-11" />
                                             </div>
                                         </FormControl>
                                         <FormMessage />
