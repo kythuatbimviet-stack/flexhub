@@ -49,7 +49,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { fetchContracts, bulkDeleteContracts } from '@/app/actions/contracts'
+import { fetchContractsLite, bulkDeleteContracts } from '@/app/actions/contracts'
 import Link from 'next/link'
 import { ContractDetailsSheet } from '@/components/contracts/contract-details-sheet'
 import { ContractClosureDialog } from '@/components/contracts/contract-closure-dialog'
@@ -127,10 +127,10 @@ export default function DueContractsPage() {
     const { data: contracts = [], isLoading, refetch } = useQuery<any[]>({
         queryKey: ['contracts-all'],
         queryFn: async () => {
-            const res = await fetchContracts()
+            const res = await fetchContractsLite()  // ✅ Dùng Lite — cùng queryFn với main contracts page
             return res.success ? (res.data ?? []) : []
         },
-        staleTime: 5 * 60 * 1000,
+        staleTime: 10 * 60 * 1000,  // ✅ Đồng nhất 10 phút với AppDataInitializer & contracts/page.tsx
     })
 
     const filteredContracts = React.useMemo(() => {

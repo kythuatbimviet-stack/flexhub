@@ -188,9 +188,20 @@ export async function fetchCurrentUserProfile() {
             .eq('email', user.email)
             .maybeSingle()
 
-        if (error) return { success: false, error: 'User profile not found' }
-        return { success: true, data: data }
+        if (error) {
+            console.error('[fetchCurrentUserProfile] DB error:', error.message)
+            return { success: false, error: error.message }
+        }
+        
+        // Nếu profile không tồn tại trong bảng users (data = null)
+        if (!data) {
+            console.warn('[fetchCurrentUserProfile] No profile found for email:', user.email)
+            return { success: false, error: 'Tài khoản chưa được tạo hồ sơ trong hệ thống. Vui lòng liên hệ Admin.' }
+        }
+
+        return { success: true, data }
     } catch (error: any) {
+        console.error('[fetchCurrentUserProfile] Unexpected error:', error.message)
         return { success: false, error: error.message }
     }
 }

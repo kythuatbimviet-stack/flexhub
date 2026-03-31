@@ -87,6 +87,7 @@ export default function WeightTrackingPage() {
         },
         staleTime: FIVE_MINUTES,          // ✅ Tránh refetch liên tục khi focus tab
         refetchOnWindowFocus: false,       // ✅ Chỉ refetch khi user thao tác
+        select: (data) => Array.isArray(data) ? data : [],
     })
 
     React.useEffect(() => {
@@ -103,6 +104,7 @@ export default function WeightTrackingPage() {
             return res.success ? (res.data ?? []) : []
         },
         staleTime: FIVE_MINUTES,
+        select: (data) => Array.isArray(data) ? data : [],
     })
 
     // ── Contracts — Reuse cache từ AppDataInitializer (key: 'contracts-all') ──
@@ -124,6 +126,7 @@ export default function WeightTrackingPage() {
             return res.success ? (res.data ?? []) : []
         },
         staleTime: THIRTY_MINUTES,         // ✅ Users ít thay đổi
+        select: (data) => Array.isArray(data) ? data : [],
     })
 
     const branchOptions = React.useMemo(() => {
@@ -146,6 +149,7 @@ export default function WeightTrackingPage() {
     }
 
     const filteredRecords = React.useMemo(() => {
+        if (!Array.isArray(records)) return []
         return records.filter((record: any) => {
             const client = clients.find(c => c.id === record.client_id)
             if (!client) return false

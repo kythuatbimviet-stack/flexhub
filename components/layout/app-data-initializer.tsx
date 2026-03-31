@@ -23,9 +23,9 @@ const TEN_MINUTES = 10 * 60 * 1000
  * the React Query cache silently after login.
  *
  * ✅ No longer blocks the UI — layout renders immediately.
- * ✅ Data is served from IndexedDB cache on subsequent visits (near-instant).
  * ✅ staleTime: 5 min for business data — auto-refetches when stale.
  * ✅ Background auto-sync every 10 minutes.
+ * ✅ Throws errors properly so React Query can retry (không silent-fail).
  */
 export function AppDataInitializer({ onProgress, onComplete }: AppDataProgressProps = {}) {
     const queryClient = useQueryClient()
@@ -53,23 +53,25 @@ export function AppDataInitializer({ onProgress, onComplete }: AppDataProgressPr
         let completed = 0
 
         const makePrefetch = (t: typeof allTasks[0]) =>
-            queryClient.prefetchQuery({
+            queryClient.fetchQuery({
                 queryKey: t.key,
                 queryFn: async () => {
-                    try {
-                        const res = await t.fn()
-                        return res.success ? (res.data ?? []) : []
-                    } catch (e) {
-                        console.warn(`[AppDataInitializer] Prefetch failed for ${t.msg}:`, e)
-                        return []
-                    } finally {
-                        completed++
-                        const percent = Math.round((completed / total) * 100)
-                        onProgress?.(percent, `Đã tải ${t.msg.toLowerCase()}`)
-                        if (completed === total) onComplete?.()
+                    const res = await t.fn()
+                    if (!res.success) {
+                        // Throw để React Query đánh dấu error state — không cache [] sai
+                        throw new Error(`[AppDataInitializer] ${t.msg}: ${res.error || 'Fetch failed'}`)
                     }
+                    return res.data ?? []
                 },
                 staleTime: t.stale,
+            }).catch((e) => {
+                // Log nhưng không crash — wave tiếp tục bình thường
+                console.warn(`[AppDataInitializer] Prefetch failed for ${t.msg}:`, e?.message)
+            }).finally(() => {
+                completed++
+                const percent = Math.round((completed / total) * 100)
+                onProgress?.(percent, `Đã tải ${t.msg.toLowerCase()}`)
+                if (completed === total) onComplete?.()
             })
 
         // Fetch wave 1 (critical) first, then wave 2 in background
