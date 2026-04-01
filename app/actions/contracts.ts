@@ -196,7 +196,9 @@ export async function fetchContractsLite() {
                 contract_type, package_name, package_type, facility_name,
                 created_by_email, created_at, updated_at,
                 sendzalo, sendemail, contract_file_url,
-                initial_weight, target_weight,
+                id_number, phone, email, member_address, dob, source,
+                initial_height, initial_weight, target_weight, medical_condition,
+                legal_representative, representative_phone, center_address,
                 closure_status, closure_reason, closed_at,
                 clients (member_name, phone, dob, avatar_url, email),
                 branches(name)

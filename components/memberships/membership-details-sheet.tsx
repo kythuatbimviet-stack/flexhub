@@ -398,9 +398,8 @@ export function MembershipDetailsSheet({
                                     name="package_type"
                                     isSelect={true}
                                     options={[
-                                        { label: 'Trực tiếp', value: 'Trực tiếp' },
-                                        { label: 'Online', value: 'Online' },
-                                        { label: 'Hybrid', value: 'Hybrid' }
+                                        { label: 'Offline', value: 'Offline' },
+                                        { label: 'Online', value: 'Online' }
                                     ]}
                                     {...sharedRowProps}
                                 />

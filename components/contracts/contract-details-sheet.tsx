@@ -151,8 +151,8 @@ const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEd
                         readOnly={['package_price', 'discounted_price'].includes(name)}
                         className={cn(
                             "w-full rounded-xl border-slate-200 dark:border-slate-800 h-10 text-sm focus:ring-2 focus:ring-red-500/20 outline-none transition-all placeholder:text-slate-300",
-                            ['package_price', 'discounted_price'].includes(name) 
-                                ? "bg-slate-200 dark:bg-slate-800 font-medium" 
+                            ['package_price', 'discounted_price'].includes(name)
+                                ? "bg-slate-200 dark:bg-slate-800 font-medium"
                                 : "bg-slate-50/50 dark:bg-slate-950"
                         )}
                     />
@@ -163,8 +163,8 @@ const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEd
                     name === 'id' ? "text-red-600 dark:text-red-500" : "text-slate-900 dark:text-slate-100"
                 )}>
                     {type === 'number' && value ? (
-                        ['quantity', 'total_sessions', 'package_duration', 'initial_weight', 'initial_height'].includes(name) 
-                            ? Number(value).toLocaleString('vi-VN') 
+                        ['quantity', 'total_sessions', 'package_duration', 'initial_weight', 'initial_height'].includes(name)
+                            ? Number(value).toLocaleString('vi-VN')
                             : Number(value).toLocaleString('vi-VN') + ' ₫'
                     ) : (value || '-')}
                 </p>
@@ -265,18 +265,26 @@ export function ContractDetailsSheet({
     React.useEffect(() => {
         if (contract?.id && open) {
             // Check if the contract object already has the necessary joined data (clients and branches)
-            // If it does, we can skip the fetch and show it instantly
-            const hasFullData = contract.clients && contract.branches;
+            // 'account_number' chỉ có trong fetchContractById (SELECT *), không có trong fetchContractsLite
+            const hasFullData = 'account_number' in contract
 
             const initializeWithData = (data: any) => {
                 setFormData({
                     ...data,
                     avatar_url: data.clients?.avatar_url || '',
-                    dob: data.dob || data.clients?.dob || '',
                     client_status: data.clients?.status || '',
-                    medical_condition: data.medical_condition || data.medical_history || '',
+                    dob: data.dob || '',
+                    medical_condition: data.medical_condition || '',
                     initial_height: data.initial_height?.toString() || '',
                     initial_weight: data.initial_weight?.toString() || '',
+                    target_weight: data.target_weight?.toString() || '',
+                    id_number: data.id_number || '',
+                    phone: data.phone || '',
+                    email: data.email || '',
+                    member_address: data.member_address || '',
+                    source: data.source || '',
+                    assigned_pt: data.assigned_pt || '',
+                    trainer_name: data.trainer_name || '',
                     account_number: data.account_number || data.branches?.account_number || '',
                     account_holder: data.account_holder || data.branches?.account_holder || '',
                     bank_name: data.bank_name || data.branches?.bank_name || '',
@@ -285,33 +293,28 @@ export function ContractDetailsSheet({
                 })
             }
 
+            // Nạp dữ liệu có sẵn ngay lập tức (dữ liệu lite từ danh sách)
+            initializeWithData(contract)
+            setIsEditing(false)
+
+            // Nếu đã là full data, không cần fetch thêm
             if (hasFullData) {
-                initializeWithData(contract)
-                setIsEditing(false)
-                setLoading(false) // No need to fetch
+                setLoading(false)
                 return
             }
 
+            // Nếu là lite data, fetch full data ngầm mà không chặn UI (không dùng setLoading(true))
             const getFullContract = async () => {
-                setLoading(true)
                 try {
                     const res = await fetchContractById(contract.id)
                     if (res.success && res.data) {
                         initializeWithData(res.data)
-                    } else {
-                        // Fallback to passed contract if fetch fails
-                        setFormData({ ...contract })
-                        toast.error('Không thể nạp toàn bộ thông tin hợp đồng')
                     }
                 } catch (error) {
                     console.error('Error fetching full contract:', error)
-                    setFormData({ ...contract })
-                } finally {
-                    setLoading(false)
                 }
             }
             getFullContract()
-            setIsEditing(false)
         } else if (open && isCreateMode) {
             const initCreateMode = async () => {
                 setIsEditing(true)
@@ -321,7 +324,7 @@ export function ContractDetailsSheet({
                     contract_type: 'Hội viên',
                     quantity: '1',
                     payment_method: 'Tiền mặt',
-                    package_type: 'Offline',
+                    package_type: 'Trực tiếp',
                 }
 
                 // Handle pre-filled client
@@ -331,14 +334,16 @@ export function ContractDetailsSheet({
                     initialData.member_name = targetClient.member_name
                     initialData.phone = targetClient.phone || ''
                     initialData.email = targetClient.email || ''
-                    initialData.member_address = targetClient.member_address || targetClient.address || ''
+                    initialData.member_address = targetClient.address || '' // Lấy từ 'address' của Client
+                    initialData.id_number = targetClient.id_number || '' // Căn cước công dân
                     initialData.trainer_name = targetClient.pt_name || ''
-                    initialData.dob = targetClient.dob ? targetClient.dob.split('T')[0] : ''
+                    initialData.dob = (targetClient.dob || targetClient.date_of_birth) ? (targetClient.dob || targetClient.date_of_birth).split('T')[0] : ''
                     initialData.avatar_url = targetClient.avatar_url || ''
                     initialData.assigned_pt = targetClient.assigned_pt || ''
                     initialData.branch_id = targetClient.branch_id || ''
                     initialData.initial_height = targetClient.height?.toString() || ''
                     initialData.initial_weight = targetClient.weight?.toString() || ''
+                    initialData.target_weight = targetClient.target_weight?.toString() || ''
                     initialData.medical_condition = targetClient.medical_history || ''
                     initialData.signature_url = targetClient.signature_url || ''
                     initialData.source = targetClient.source || ''
@@ -386,12 +391,20 @@ export function ContractDetailsSheet({
         )
     }, [clients, clientSearchTerm])
 
+
+    // So sánh package_type case-insensitive (DB và UI đều dùng 'Offline' / 'Online')
+    const normalizePackageType = (type: string) => {
+        if (!type) return ''
+        return type.toLowerCase().trim()
+    }
+
     const filteredPackages = React.useMemo(() => {
         if (!formData.branch_id) return []
         let filtered = packages.filter((pkg: any) => pkg.branch_id === formData.branch_id)
         if (formData.package_type) {
+            const normalizedSelected = normalizePackageType(formData.package_type)
             filtered = filtered.filter((pkg: any) =>
-                pkg.package_type?.toLowerCase() === formData.package_type.toLowerCase()
+                normalizePackageType(pkg.package_type) === normalizedSelected
             )
         }
         if (!packageSearchTerm) return filtered
@@ -444,14 +457,16 @@ export function ContractDetailsSheet({
                     member_name: client.member_name,
                     phone: client.phone || '',
                     email: client.email || '',
-                    member_address: client.member_address || client.address || '',
+                    member_address: client.address || '', // Lấy từ 'address' của Client
+                    id_number: client.id_number || '', // Căn cước công dân
                     trainer_name: client.pt_name || '',
-                    dob: client.dob ? client.dob.split('T')[0] : '',
+                    dob: (client.dob || client.date_of_birth) ? (client.dob || client.date_of_birth).split('T')[0] : '',
                     avatar_url: client.avatar_url || '',
                     assigned_pt: client.assigned_pt || '',
                     branch_id: client.branch_id || prev.branch_id,
                     initial_height: client.height?.toString() || '',
                     initial_weight: client.weight?.toString() || '',
+                    target_weight: client.target_weight?.toString() || '',
                     medical_condition: client.medical_history || '',
                     signature_url: client.signature_url || '',
                     source: client.source || '',
@@ -838,7 +853,7 @@ export function ContractDetailsSheet({
 
             // Mở trang xem trước trong tab mới
             window.open(`/contracts/preview-gdoc/${contract.id}`, '_blank')
-            
+
             // Đóng bảng chi tiết và reset trạng thái ngay lập tức
             setGeneratingPdf(false)
             onOpenChange(false)
@@ -1220,7 +1235,7 @@ export function ContractDetailsSheet({
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                            <SelectItem value="Offline">Offline (Tại trung tâm)</SelectItem>
+                                            <SelectItem value="Offline">Offline</SelectItem>
                                             <SelectItem value="Online">Online</SelectItem>
                                         </SelectContent>
                                     </Select>
@@ -1399,6 +1414,7 @@ export function ContractDetailsSheet({
                                     <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
                                         <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
                                         <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
+                                        <SelectItem value="Chuyển khoản">TM+CK</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </ContractDetailRow>
@@ -1507,8 +1523,8 @@ export function ContractDetailsSheet({
                                         formData.weight_change > 0
                                             ? 'bg-emerald-50 dark:bg-emerald-950/30'
                                             : formData.weight_change < 0
-                                            ? 'bg-orange-50 dark:bg-orange-950/30'
-                                            : 'bg-gray-50 dark:bg-gray-800/50'
+                                                ? 'bg-orange-50 dark:bg-orange-950/30'
+                                                : 'bg-gray-50 dark:bg-gray-800/50'
                                     )}>
                                         <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Số cân giảm</p>
                                         <p className={cn(
@@ -1516,8 +1532,8 @@ export function ContractDetailsSheet({
                                             formData.weight_change > 0
                                                 ? 'text-emerald-700 dark:text-emerald-400'
                                                 : formData.weight_change < 0
-                                                ? 'text-orange-700 dark:text-orange-400'
-                                                : 'text-gray-500'
+                                                    ? 'text-orange-700 dark:text-orange-400'
+                                                    : 'text-gray-500'
                                         )}>
                                             {formData.weight_change > 0 ? (
                                                 <TrendingDown className="w-4 h-4" />
@@ -1543,8 +1559,8 @@ export function ContractDetailsSheet({
                                                 formData.closure_status === 'Renew'
                                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400'
                                                     : formData.closure_status === 'Tạm nghỉ'
-                                                    ? 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/30 dark:text-amber-400'
-                                                    : 'bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:text-red-400'
+                                                        ? 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/30 dark:text-amber-400'
+                                                        : 'bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:text-red-400'
                                             )}>
                                                 {formData.closure_status === 'Renew' && <RefreshCw className="w-3 h-3" />}
                                                 {formData.closure_status === 'Tạm nghỉ' && <PauseCircle className="w-3 h-3" />}

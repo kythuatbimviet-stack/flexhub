@@ -53,8 +53,9 @@ export function ImportMembershipsDialog({ onSuccess }: { onSuccess: () => void }
         const template = [
             {
                 id: 'GOI-1M',
+                branch_id: '(uuid-chi-nhanh)',
                 branch_name: 'Eva\'s Fit Thanh Xuân',
-                package_type: 'Trực tiếp',
+                package_type: 'Offline',
                 package_name: 'Gói 1 tháng cơ bản',
                 trainer_type: 'Không kèm PT',
                 unit_price: 1500000,
@@ -74,45 +75,67 @@ export function ImportMembershipsDialog({ onSuccess }: { onSuccess: () => void }
         if (!file) return
         setLoading(true)
         try {
-            const reader = new FileReader()
-            reader.onload = async (event) => {
-                const data = new Uint8Array(event.target?.result as ArrayBuffer)
-                const workbook = XLSX.read(data, { type: 'array' })
-                const sheetName = workbook.SheetNames[0]
-                const worksheet = workbook.Sheets[sheetName]
-                const json = XLSX.utils.sheet_to_json(worksheet) as any[]
+            // Wrap FileReader trong Promise để await đúng — tránh finally chạy trước onload
+            await new Promise<void>((resolve, reject) => {
+                const reader = new FileReader()
+                reader.onerror = () => reject(new Error('Không đọc được file'))
+                reader.onload = async (event) => {
+                    try {
+                        const data = new Uint8Array(event.target?.result as ArrayBuffer)
+                        const workbook = XLSX.read(data, { type: 'array' })
+                        const sheetName = workbook.SheetNames[0]
+                        const worksheet = workbook.Sheets[sheetName]
+                        const json = XLSX.utils.sheet_to_json(worksheet) as any[]
 
-                const itemsToCreate = json.map(item => {
-                    const branch = branches.find(b =>
-                        b.name?.toLowerCase() === item.branch_name?.toString().toLowerCase() ||
-                        b.short_name?.toLowerCase() === item.branch_name?.toString().toLowerCase()
-                    )
-                    return {
-                        id: item.id?.toString(),
-                        branch_id: branch?.id || null,
-                        package_type: item.package_type?.toString(),
-                        package_name: item.package_name?.toString(),
-                        trainer_type: item.trainer_type?.toString(),
-                        unit_price: parseFloat(item.unit_price) || 0,
-                        months_purchased: parseFloat(item.months_purchased) || 0,
-                        discounted_price: parseFloat(item.discounted_price) || null,
-                        duration_days: parseInt(item.duration_days) || 0,
-                        image_url: item.image_url?.toString() || null
+                        const itemsToCreate = json.map(item => {
+                            // Ưu tiên branch_id trực tiếp từ Excel
+                            let branchId: string | null = item.branch_id?.toString()?.trim() || null
+                            // Nếu không có, fallback tìm theo branch_name
+                            if (!branchId && item.branch_name) {
+                                const nameLower = item.branch_name.toString().trim().toLowerCase()
+                                const found = branches.find((b: any) =>
+                                    b.name?.trim().toLowerCase() === nameLower ||
+                                    b.short_name?.trim().toLowerCase() === nameLower
+                                )
+                                branchId = found?.id || null
+                            }
+                            return {
+                                id: item.id?.toString(),
+                                branch_id: branchId,
+                                package_type: item.package_type?.toString(),
+                                package_name: item.package_name?.toString(),
+                                trainer_type: item.trainer_type?.toString(),
+                                unit_price: parseFloat(item.unit_price) || 0,
+                                months_purchased: parseFloat(item.months_purchased) || 0,
+                                discounted_price: parseFloat(item.discounted_price) || null,
+                                duration_days: parseInt(item.duration_days) || 0,
+                                image_url: item.image_url?.toString() || null
+                            }
+                        })
+
+                        // Cảnh báo nếu có dòng nào bị thiếu chi nhánh
+                        const missingBranch = itemsToCreate.filter(i => !i.branch_id)
+                        if (missingBranch.length > 0) {
+                            toast.warning(`${missingBranch.length} gói tập không tìm được chi nhánh, branch_id sẽ để trống`)
+                        }
+
+                        const result = await bulkCreateMemberships(itemsToCreate)
+                        if (result.success) {
+                            toast.success(`Đã nhập thành công ${itemsToCreate.length} gói tập`)
+                            setOpen(false)
+                            setFile(null)
+                            setPreviewData([])
+                            onSuccess()
+                        } else {
+                            toast.error('Lỗi khi nhập dữ liệu: ' + result.error)
+                        }
+                        resolve()
+                    } catch (err) {
+                        reject(err)
                     }
-                })
-
-                const result = await bulkCreateMemberships(itemsToCreate)
-                if (result.success) {
-                    toast.success(`Đã nhập thành công ${itemsToCreate.length} gói tập`)
-                    setOpen(false)
-                    setFile(null)
-                    setPreviewData([])
-                    onSuccess()
-                } else {
-                    toast.error('Lỗi khi nhập dữ liệu: ' + result.error)
                 }
-            }
-            reader.readAsArrayBuffer(file)
+                reader.readAsArrayBuffer(file)
+            })
         } catch (error) {
             toast.error('Đã xảy ra lỗi khi xử lý file')
         } finally {

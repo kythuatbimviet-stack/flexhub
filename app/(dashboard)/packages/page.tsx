@@ -340,9 +340,8 @@ export default function PackagesPage() {
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800 font-inter">
                                                 <SelectItem value="all">Tất cả hình thức</SelectItem>
-                                                <SelectItem value="Trực tiếp">Trực tiếp</SelectItem>
+                                                <SelectItem value="Offline">Offline</SelectItem>
                                                 <SelectItem value="Online">Online</SelectItem>
-                                                <SelectItem value="Hybrid">Hybrid</SelectItem>
                                             </SelectContent>
                                         </Select>
 
