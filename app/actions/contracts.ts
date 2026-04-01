@@ -200,6 +200,7 @@ export async function fetchContractsLite() {
                 initial_height, initial_weight, target_weight, medical_condition,
                 legal_representative, representative_phone, center_address,
                 closure_status, closure_reason, closed_at,
+                total_sessions, package_price, discounted_price, package_duration, quantity,
                 clients (member_name, phone, dob, avatar_url, email),
                 branches(name)
             `)
@@ -358,7 +359,7 @@ export async function createContract(contract: any) {
 }
 
 export async function finalizeContract(id: string, contractUpdates: any, debtPlan?: any) {
-    const supabase = await createAdminClient()
+    const supabase = await createClient()
     try {
         const accessInfo = await getAccessFilter()
         if (!accessInfo) throw new Error('Unauthorized')

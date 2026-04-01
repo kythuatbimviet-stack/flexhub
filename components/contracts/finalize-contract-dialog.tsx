@@ -219,7 +219,7 @@ export function FinalizeContractDialog({
                 debtPlan
             }
 
-            const result = await finalizeContract(contract.id, finalizeData)
+            const result = await finalizeContract(contract.id, finalizeData.contractUpdates, finalizeData.debtPlan)
             if (result.success) {
                 toast.success('Hợp đồng đã được ký kết và chốt công nợ thành công!')
                 onOpenChange(false)

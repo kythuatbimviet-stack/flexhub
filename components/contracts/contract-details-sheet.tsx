@@ -1734,7 +1734,7 @@ export function ContractDetailsSheet({
                 </div>
 
                 <FinalizeContractDialog
-                    contract={contract || formData}
+                    contract={formData}
                     open={showFinalizeDialog}
                     onOpenChange={setShowFinalizeDialog}
                     onSuccess={() => {
