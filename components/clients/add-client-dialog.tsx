@@ -863,9 +863,23 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                     control={form.control}
                                     name="source"
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Nguồn khách hàng <span className="text-red-600">*</span></FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormItem className="space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Nguồn khách hàng <span className="text-red-600">*</span></FormLabel>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => field.onChange('Tự kiếm')}
+                                                    className={cn(
+                                                        "text-[10px] font-semibold px-2 py-1 rounded-lg transition-all border",
+                                                        field.value === 'Tự kiếm' 
+                                                            ? "bg-red-50 border-red-200 text-red-600 shadow-sm" 
+                                                            : "bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100"
+                                                    )}
+                                                >
+                                                    Tự kiếm
+                                                </button>
+                                            </div>
+                                            <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                                                 <FormControl>
                                                     <SelectTrigger className="w-full rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
                                                         <SelectValue placeholder="Chọn nguồn khách" />

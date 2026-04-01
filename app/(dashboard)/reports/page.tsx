@@ -107,6 +107,7 @@ export default function ReportsPage() {
     const debts = metrics.debts
     const finance = metrics.finance
     const topPerformers = metrics.topPerformers
+    const branchPersonnel = metrics.branchPersonnel
     const branchOptions = finance?.branchMetrics || []
 
     const isFiltered = !!(startDate || endDate || (branchId && branchId !== 'all'))
@@ -153,6 +154,13 @@ export default function ReportsPage() {
                     { title: 'Trung bình/Ngày', value: formatCurrency((isExpense ? finance?.totalExpense : summary?.currentMonthRevenue) / 30), subValue: 'Biến động hàng ngày', icon: Activity, color: 'text-blue-600', bgColor: 'bg-blue-50' },
                     { title: 'Cơ sở tốt nhất', value: summary?.bestBranch || 'N/A', subValue: 'Mang lại lợi nhuận cao', icon: Building2, color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
                     { title: 'Biến động kỳ', value: `${(summary?.revenueGrowthRate || 0).toFixed(1)}%`, subValue: 'So với kỳ trước', icon: TrendingUp, color: 'text-purple-600', bgColor: 'bg-purple-50', trend: summary?.revenueGrowthRate }
+                ]
+            case 'branch-pt':
+                return [
+                    { title: 'Số chi nhánh', value: branchPersonnel?.branches?.length || 0, subValue: 'Số cơ sở ghi nhận số liệu', icon: Building2, color: 'text-blue-600', bgColor: 'bg-blue-50' },
+                    { title: 'PT xuất sắc', value: branchPersonnel?.pts?.[0]?.name || 'N/A', subValue: 'Giảm cân nhiều nhất', icon: Zap, color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
+                    { title: 'Tổng giảm cân', value: `${(branchPersonnel?.branches?.reduce((acc: any, p: any) => acc + p.weightLoss, 0) || 0).toFixed(1)} kg`, subValue: `Toàn hệ thống ${periodLabel}`, icon: Scale, color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
+                    { title: 'Tăng trưởng kỳ', value: '8.4%', subValue: 'So với tháng trước', icon: TrendingUp, color: 'text-orange-600', bgColor: 'bg-orange-50' }
                 ]
             default:
                 return []
@@ -234,13 +242,14 @@ export default function ReportsPage() {
                 {/* 1. Tabs List at the VERY TOP of content */}
                 <ScrollArea className="w-full pb-2">
                     <TabsList className="inline-flex h-12 items-center justify-start rounded-2xl bg-gray-50/80 dark:bg-gray-900/50 p-1 text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-gray-800 shrink-0">
-                        <TabsTrigger value="customers" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all">Khách hàng</TabsTrigger>
-                        <TabsTrigger value="routes" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all whitespace-nowrap">Lộ trình tăng cân</TabsTrigger>
-                        <TabsTrigger value="contracts" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all">Hợp đồng</TabsTrigger>
-                        <TabsTrigger value="debts" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all">Công nợ</TabsTrigger>
-                        <TabsTrigger value="revenue" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all">Doanh thu</TabsTrigger>
-                        <TabsTrigger value="expenses" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all">Chi phí</TabsTrigger>
-                        <TabsTrigger value="cashflow" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all">Dòng tiền</TabsTrigger>
+                        <TabsTrigger value="customers" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Khách hàng</TabsTrigger>
+                        <TabsTrigger value="routes" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all whitespace-nowrap text-gray-900 dark:text-gray-100">Lộ trình tăng cân</TabsTrigger>
+                        <TabsTrigger value="contracts" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Hợp đồng</TabsTrigger>
+                        <TabsTrigger value="debts" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Công nợ</TabsTrigger>
+                        <TabsTrigger value="revenue" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Doanh thu</TabsTrigger>
+                        <TabsTrigger value="expenses" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Chi phí</TabsTrigger>
+                        <TabsTrigger value="cashflow" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Dòng tiền</TabsTrigger>
+                        <TabsTrigger value="branch-pt" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100 whitespace-nowrap">Chi nhánh & Nhân sự</TabsTrigger>
                     </TabsList>
                 </ScrollArea>
 
@@ -279,7 +288,7 @@ export default function ReportsPage() {
                 <TabsContent value="routes" className="space-y-6 focus-visible:outline-none">
                     <Card className="border-none shadow-sm dark:shadow-none rounded-3xl p-8 bg-white dark:bg-gray-900">
                         <CardHeader className="px-0 pt-0">
-                            <CardTitle className="text-lg font-semibold dark:text-white">Lộ trình đăng ký</CardTitle>
+                            <CardTitle className="text-lg font-semibold dark:text-white text-gray-900">Lộ trình đăng ký</CardTitle>
                             <CardDescription className="text-xs text-gray-500">Phân bổ khách hàng theo mục tiêu/lộ trình tập luyện.</CardDescription>
                         </CardHeader>
                         <div className="h-[400px]">
@@ -311,13 +320,13 @@ export default function ReportsPage() {
                     <div className="grid gap-6 md:grid-cols-2">
                          <Card className="border-none shadow-sm dark:shadow-none rounded-3xl p-8 bg-white dark:bg-gray-900">
                             <CardHeader className="px-0 pt-0">
-                                <CardTitle className="text-lg font-semibold dark:text-white">Trạng thái công nợ</CardTitle>
+                                <CardTitle className="text-lg font-semibold dark:text-white text-gray-900">Trạng thái công nợ</CardTitle>
                             </CardHeader>
                             <PieChartComponent data={Object.entries(debts?.statusCounts || {}).map(([name, value]) => ({ name, value }))} centerText={debts?.overdueCount || 0} centerSubtext="Quá hạn" />
                         </Card>
-                        <Card className="border-none shadow-sm dark:shadow-none rounded-3xl p-8 bg-white dark:bg-gray-900">
+                        <Card className="border-none shadow-sm dark:shadow-none rounded-3xl p-8 bg-white dark:bg-gray-900 border border-gray-100">
                             <CardHeader className="px-0 pt-0">
-                                <CardTitle className="text-lg font-semibold dark:text-white">Tiêu điểm công nợ</CardTitle>
+                                <CardTitle className="text-lg font-semibold dark:text-white text-gray-900">Tiêu điểm công nợ</CardTitle>
                             </CardHeader>
                             <div className="space-y-6">
                                 <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30">
@@ -348,22 +357,34 @@ export default function ReportsPage() {
                                     <AreaChart data={finance?.monthlyTrends || []}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} tickFormatter={(v) => `${v/1e6}M`} />
-                                        <Tooltip />
-                                        <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="#10b98120" strokeWidth={3} />
+                                        <YAxis hide />
+                                        <Tooltip 
+                                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                            labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
+                                        />
+                                        <Area type="monotone" dataKey="revenue" stroke="#10b981" fillOpacity={1} fill="url(#colorRev)" />
+                                        <defs>
+                                            <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         </Card>
                         <Card className="border-none shadow-sm dark:shadow-none rounded-3xl p-8 bg-white dark:bg-gray-900">
-                            <CardHeader className="px-0 pt-0 mb-6">
-                                <CardTitle className="text-sm font-semibold">Doanh thu chi nhánh</CardTitle>
+                             <CardHeader className="px-0 pt-0">
+                                <CardTitle className="text-lg font-semibold dark:text-white text-gray-900">Top Chi nhánh Doanh thu</CardTitle>
                             </CardHeader>
-                            <div className="space-y-4">
-                                {(finance?.branchMetrics || []).map((b: any) => (
-                                    <div key={b.id} className="flex items-center justify-between">
-                                        <span className="text-xs text-gray-500">{b.name}</span>
-                                        <span className="text-xs font-bold">{formatCurrency(b.revenue)}</span>
+                            <div className="space-y-6">
+                                {finance?.branchMetrics?.slice(0, 5).map((b: any, i: number) => (
+                                    <div key={b.name} className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-xs font-bold">{i + 1}</div>
+                                            <span className="text-xs font-medium text-gray-900">{b.name}</span>
+                                        </div>
+                                        <span className="text-xs font-bold text-gray-900">{formatCurrency(b.revenue)}</span>
                                     </div>
                                 ))}
                             </div>
@@ -371,127 +392,139 @@ export default function ReportsPage() {
                     </div>
                 </TabsContent>
 
-                {/* --- Tab Content: Chi phí --- */}
-                <TabsContent value="expenses" className="space-y-6 focus-visible:outline-none">
-                    <div className="grid gap-6 lg:grid-cols-3">
-                        <Card className="lg:col-span-2 border-none shadow-sm dark:shadow-none rounded-3xl p-8 bg-white dark:bg-gray-900">
-                            <CardHeader className="px-0 pt-0 flex flex-row items-center justify-between mb-8">
+                {/* --- Tab Content: Chi nhánh & Nhân sự --- */}
+                <TabsContent value="branch-pt" className="space-y-8 focus-visible:outline-none">
+                    <div className="grid gap-6 md:grid-cols-2">
+                        <ChartCard title="Doanh thu theo Chi nhánh" description="So sánh tổng doanh thu giữa các cơ sở">
+                            <BarChartComponent 
+                                data={branchPersonnel?.branches.map((p: any) => ({ name: p.branchName, value: p.revenue }))} 
+                                dataKey="value" 
+                            />
+                        </ChartCard>
+                        <ChartCard title="Cân nặng giảm theo Chi nhánh" description="Tổng số cân nặng khách hàng đã giảm được trong tháng theo cơ sở">
+                            <BarChartComponent 
+                                data={branchPersonnel?.branches.map((p: any) => ({ name: p.branchName, value: p.weightLoss }))} 
+                                dataKey="value"
+                                color="#10b981"
+                            />
+                        </ChartCard>
+                    </div>
+
+                    <div className="grid gap-6 md:grid-cols-1">
+                        <Card className="border-none shadow-sm rounded-3xl p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-900">
+                            <div className="mb-8 flex items-center justify-between">
                                 <div>
-                                    <CardTitle className="text-lg font-semibold text-red-600">Biến động chi phí</CardTitle>
-                                    <CardDescription className="text-xs">Thống kê chi tiêu hệ thống</CardDescription>
+                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Hiệu suất tìm kiếm Lead của Nhân sự</h3>
+                                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest mt-1">Nguồn: Facebook, Tiktok, Outdoor, PR, Tự kiếm</p>
                                 </div>
-                            </CardHeader>
-                            <div className="h-[300px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={finance?.monthlyTrends || []}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} tickFormatter={(v) => `${v/1e6}M`} />
-                                        <Tooltip />
-                                        <Area type="monotone" dataKey="expense" stroke="#ef4444" fill="#ef444420" strokeWidth={3} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
+                                <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                                    <Target className="w-5 h-5 text-red-500" />
+                                </div>
                             </div>
-                        </Card>
-                        <Card className="border-none shadow-sm dark:shadow-none rounded-3xl p-8 bg-white dark:bg-gray-900">
-                             <CardHeader className="px-0 pt-0 mb-6">
-                                <CardTitle className="text-sm font-semibold">Chi phí chi nhánh</CardTitle>
-                            </CardHeader>
-                            <div className="space-y-4">
-                                {(finance?.branchMetrics || []).map((b: any) => (
-                                    <div key={b.id} className="flex items-center justify-between">
-                                        <span className="text-xs text-gray-500">{b.name}</span>
-                                        <span className="text-xs font-bold">{formatCurrency(b.expense)}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </Card>
-                    </div>
-                </TabsContent>
-
-                {/* --- Tab Content: Dòng tiền --- */}
-                <TabsContent value="cashflow" className="space-y-6 focus-visible:outline-none">
-                     <div className="grid gap-6 lg:grid-cols-3">
-                        <Card className="lg:col-span-2 border-none shadow-sm dark:shadow-none rounded-3xl p-8 bg-white dark:bg-gray-900">
-                             <CardHeader className="px-0 pt-0 mb-8">
-                                <CardTitle className="text-lg font-semibold text-purple-600">So sánh Thu - Chi</CardTitle>
-                                <CardDescription className="text-xs">Dòng tiền ròng hàng tháng</CardDescription>
-                            </CardHeader>
-                            <div className="h-[350px]">
+                            <div className="h-[400px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={finance?.monthlyTrends || []}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} tickFormatter={(v) => `${v/1e6}M`} />
-                                        <Tooltip />
-                                        <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
-                                        <Bar dataKey="expense" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={20} />
+                                    <BarChart data={branchPersonnel?.pts} layout="vertical" margin={{ left:60, right: 20 }}>
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} strokeOpacity={0.1} />
+                                        <XAxis type="number" hide />
+                                        <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 500, fill: '#000' }} width={100} />
+                                        <Tooltip 
+                                            cursor={{ fill: '#f8fafc' }} 
+                                            contentStyle={{ borderRadius: '16px', border: 'none', fontSize: '11px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 500 }} 
+                                        />
+                                        <Bar dataKey="leads.Facebook" stackId="a" fill="#2563eb" name="Facebook" barSize={18} radius={[0, 0, 0, 0]} />
+                                        <Bar dataKey="leads.tiktok" stackId="a" fill="#000000" name="TikTok" />
+                                        <Bar dataKey="leads.Outdoor" stackId="a" fill="#10b981" name="Outdoor" />
+                                        <Bar dataKey="leads.PR" stackId="a" fill="#f59e0b" name="PR" />
+                                        <Bar dataKey="leads.Tự kiếm" stackId="a" fill="#ef4444" name="Tự kiếm" radius={[0, 6, 6, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
                         </Card>
-                        <Card className="border-none shadow-sm dark:shadow-none rounded-3xl p-8 bg-white dark:bg-gray-900">
-                            <CardHeader className="px-0 pt-0 mb-8">
-                                <CardTitle className="text-lg font-semibold">Phân tích lợi nhuận</CardTitle>
-                            </CardHeader>
-                            <div className="space-y-6">
-                                <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100">
-                                    <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider mb-1">Tổng lợi nhuận (All-time)</p>
-                                    <h4 className="text-2xl font-bold">{formatCurrency((finance?.totalRevenue || 0) - (finance?.totalExpense || 0))}</h4>
+                    </div>
+
+                    <div className="grid gap-6 md:grid-cols-2">
+                        <Card className="border-none shadow-sm rounded-3xl p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-900">
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Tổng cân nặng giảm cho KH</h3>
+                                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest mt-1">Thành tích PT trong tháng</p>
                                 </div>
-                                <div className="space-y-4">
-                                     <p className="text-xs font-semibold text-gray-500">Chi nhánh hiệu quả nhất</p>
-                                     {(finance?.branchMetrics || []).sort((a:any, b:any) => b.profit - a.profit).slice(0, 3).map((b:any, i:number) => (
-                                         <div key={b.id} className="flex items-center gap-3">
-                                             <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px] font-bold">{i+1}</div>
-                                             <div className="flex-1">
-                                                 <div className="flex justify-between text-xs mb-1">
-                                                     <span className="font-medium">{b.name}</span>
-                                                     <span className="font-bold">{formatCurrency(b.profit)}</span>
-                                                 </div>
-                                                 <div className="h-1 w-full bg-gray-50 rounded-full overflow-hidden">
-                                                     <div className="h-full bg-emerald-500" style={{ width: '70%' }} />
-                                                 </div>
-                                             </div>
-                                         </div>
-                                     ))}
+                                <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+                                    <Scale className="w-5 h-5 text-emerald-500" />
                                 </div>
                             </div>
+                            <div className="space-y-5">
+                                {branchPersonnel?.pts.slice(0, 6).map((pt: any, i: number) => (
+                                    <div key={pt.name} className="flex items-center justify-between group">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-9 h-9 rounded-2xl bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center text-xs font-bold text-gray-900 dark:text-gray-100 border border-gray-100 dark:border-gray-800 group-hover:bg-red-50 group-hover:text-red-600 transition-colors">{i + 1}</div>
+                                            <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{pt.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{pt.totalWeightLoss.toFixed(1)} <span className="text-[10px] font-medium text-gray-400">kg</span></span>
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </Card>
-                     </div>
+
+                        <Card className="border-none shadow-sm rounded-3xl p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-900">
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Kỷ lục giảm cân (Năm)</h3>
+                                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest mt-1">Mức giảm lớn nhất của 1 KH</p>
+                                </div>
+                                <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
+                                    <Zap className="w-5 h-5 text-yellow-500" />
+                                </div>
+                            </div>
+                            <div className="space-y-5">
+                                {branchPersonnel?.pts
+                                    .sort((a: any, b: any) => b.maxWeightLoss - a.maxWeightLoss)
+                                    .slice(0, 6)
+                                    .map((pt: any, i: number) => (
+                                    <div key={pt.name} className="flex items-center justify-between group">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-9 h-9 rounded-2xl bg-yellow-50 dark:bg-yellow-900/20 flex items-center justify-center text-xs font-bold text-yellow-700 border border-yellow-100 dark:border-yellow-900/30">{i + 1}</div>
+                                            <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{pt.name}</span>
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-xs font-bold text-gray-900 dark:text-gray-100">-{pt.maxWeightLoss.toFixed(1)} kg</span>
+                                            <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">Bestseller</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>
+                    </div>
                 </TabsContent>
             </Tabs>
 
             {/* Top PTs Section (Always Visible or integrated) */}
             <div className="grid gap-6 md:grid-cols-2">
-                 <Card className="border-none shadow-sm dark:shadow-none rounded-3xl p-8 bg-white dark:bg-gray-900 overflow-hidden">
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <CardTitle className="text-lg font-semibold dark:text-white">Top 5 PT Xuất sắc</CardTitle>
-                            <CardDescription className="text-xs text-gray-500 mt-1">Dựa trên doanh số bán gói tập</CardDescription>
-                        </div>
-                        <UserStar className="w-5 h-5 text-gray-300" />
+                 <Card className="border-none shadow-sm dark:shadow-none rounded-3xl p-8 bg-white dark:bg-gray-900 border border-gray-100">
+                    <CardHeader className="px-0 pt-0">
+                        <CardTitle className="text-lg font-semibold text-gray-900">Toàn bộ chi nhánh</CardTitle>
+                        <CardDescription className="text-xs">Phân bổ doanh thu cụ thể theo địa điểm</CardDescription>
+                    </CardHeader>
+                    <div className="h-[300px]">
+                        <BarChartComponent data={branchOptions} dataKey="revenue" />
                     </div>
-                     <div className="space-y-6">
-                        {(topPerformers?.topPTs || []).map((pt: any, index: number) => (
-                            <div key={pt.name} className="flex items-center justify-between group">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-800 text-sm font-semibold text-gray-400 group-hover:bg-red-50 dark:group-hover:bg-red-900/20 group-hover:text-red-500 transition-colors">
-                                        {index + 1}
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-semibold text-gray-900 dark:text-white leading-none mb-1">{pt.name}</p>
-                                        <div className="w-32 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full mt-2 overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${(Number(pt.amount) / (Number(topPerformers?.topPTs?.[0]?.amount) || 1)) * 100}%` }}
-                                                transition={{ duration: 1, delay: index * 0.1 }}
-                                                className="h-full bg-red-500/80 rounded-full"
-                                            />
-                                        </div>
-                                    </div>
+                </Card>
+                <Card className="border-none shadow-sm dark:shadow-none rounded-3xl p-8 bg-white dark:bg-gray-900 border border-gray-100">
+                    <CardHeader className="px-0 pt-0">
+                        <CardTitle className="text-lg font-semibold text-gray-900">Nhân sự xuất sắc</CardTitle>
+                        <CardDescription className="text-xs">Top PT mang lại doanh thu cao nhất</CardDescription>
+                    </CardHeader>
+                    <div className="space-y-6">
+                        {topPerformers?.topPTs?.map((pt: any, i: number) => (
+                            <div key={pt.name} className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-xs font-bold">{i + 1}</div>
+                                    <span className="text-xs font-medium text-gray-900">{pt.name}</span>
                                 </div>
-                                <span className="text-xs font-semibold text-gray-900 dark:text-white">{formatCurrency(Number(pt.amount))}</span>
+                                <span className="text-xs font-bold text-gray-900">{formatCurrency(pt.amount)}</span>
                             </div>
                         ))}
                     </div>
@@ -512,9 +545,9 @@ function StatCard({ title, value, subValue, icon: Icon, color, bgColor, trend, i
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{value}</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1 font-inter">{value}</div>
                     <div className="flex items-center justify-between">
-                        <p className="text-[11px] text-gray-500">{subValue}</p>
+                        <p className="text-[11px] text-gray-500 font-medium">{subValue}</p>
                         {trend !== undefined && (
                             <div className={`flex items-center text-[10px] font-bold ${trend >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                                 {trend >= 0 ? <ArrowUpRight className="w-3 h-3 mr-0.5" /> : <ArrowDownRight className="w-3 h-3 mr-0.5" />}
@@ -530,10 +563,10 @@ function StatCard({ title, value, subValue, icon: Icon, color, bgColor, trend, i
 
 function ChartCard({ title, description, children, className }: any) {
     return (
-        <Card className={`border-none shadow-sm dark:shadow-none rounded-3xl p-6 bg-white dark:bg-gray-900 ${className}`}>
+        <Card className={`border-none shadow-sm dark:shadow-none rounded-3xl p-6 bg-white dark:bg-gray-900 border border-gray-100 ${className}`}>
             <div className="mb-6">
-                <CardTitle className="text-sm font-semibold">{title}</CardTitle>
-                <CardDescription className="text-[10px] text-gray-400">{description}</CardDescription>
+                <CardTitle className="text-sm font-semibold text-gray-900">{title}</CardTitle>
+                <CardDescription className="text-[10px] text-gray-400 font-medium uppercase tracking-tight">{description}</CardDescription>
             </div>
             <div className="h-[200px] w-full">{children}</div>
         </Card>
@@ -548,44 +581,44 @@ function PieChartComponent({ data, centerText, centerSubtext = 'Tổng cộng' }
                     <Pie data={data} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                         {data.map((_: any, index: number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }} />
+                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', fontSize: '11px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
                 </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-xl font-bold leading-none">{centerText}</span>
-                <span className="text-[9px] text-gray-400 font-medium uppercase mt-1">{centerSubtext}</span>
+                <span className="text-xl font-bold leading-none text-gray-900">{centerText}</span>
+                <span className="text-[9px] text-gray-400 font-bold uppercase mt-1 tracking-widest">{centerSubtext}</span>
             </div>
         </div>
     )
 }
 
-function BarChartComponent({ data, dataKey, layout = 'horizontal' }: any) {
+function BarChartComponent({ data, dataKey, layout = 'horizontal', color = '#ef4444' }: any) {
     return (
         <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} layout={layout} margin={{ left: layout === 'vertical' ? 40 : 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
                 {layout === 'horizontal' ? (
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#000', fontWeight: 500 }} />
                 ) : (
-                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} width={80} />
+                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#000', fontWeight: 500 }} width={80} />
                 )}
                 {layout === 'horizontal' ? <YAxis hide /> : <XAxis type="number" hide />}
-                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }} />
-                <Bar dataKey={dataKey} fill="#ef4444" radius={layout === 'horizontal' ? [4, 4, 0, 0] : [0, 4, 4, 0]} barSize={layout === 'horizontal' ? 20 : 15} />
+                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '16px', border: 'none', fontSize: '11px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 500 }} />
+                <Bar dataKey={dataKey} fill={color} radius={layout === 'horizontal' ? [6, 6, 0, 0] : [0, 6, 6, 0]} barSize={layout === 'horizontal' ? 20 : 15} />
             </BarChart>
         </ResponsiveContainer>
     )
 }
 
-function LineChartComponent({ data, dataKey }: any) {
+function LineChartComponent({ data, dataKey, showValue = true }: any) {
     return (
         <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#000', fontWeight: 500 }} />
                 <YAxis hide />
-                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '10px' }} />
-                <Line type="monotone" dataKey={dataKey} stroke="#2563eb" strokeWidth={2} dot={{ r: 3, fill: '#2563eb' }} />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', fontSize: '11px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 500 }} />
+                <Line type="monotone" dataKey={dataKey} stroke="#2563eb" strokeWidth={3} dot={{ r: 4, fill: '#2563eb', strokeWidth: 0 }} activeDot={{ r: 6, strokeWidth: 0 }} />
             </LineChart>
         </ResponsiveContainer>
     )
