@@ -157,3 +157,21 @@ export function formatExcelDate(value: any): string | null {
 
     return null;
 }
+
+export function formatDecimalForDisplay(value: number | string | null | undefined): string {
+    if (value == null || value === '') return ''
+    return value.toString().replace('.', ',')
+}
+
+export function parseDecimalInput(value: string): string {
+    if (!value) return ''
+    // Replace comma with dot and keep only relevant numeric chars
+    const cleaned = value.replace(',', '.')
+    if (cleaned === '.') return '0.'
+    return cleaned
+}
+
+export function isValidDecimalInput(value: string): boolean {
+    // Allows digits and at most one dot or comma
+    return /^\d*[.,]?\d*$/.test(value)
+}

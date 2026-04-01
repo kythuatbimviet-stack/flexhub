@@ -155,6 +155,8 @@ export function WeightHistoryPanel({ clientId, clientName, open, onOpenChange }:
             // Refetch data
             queryClient.invalidateQueries({ queryKey: ['client-weight-history'] })
             queryClient.invalidateQueries({ queryKey: ['client-training-logs'] })
+            queryClient.invalidateQueries({ queryKey: ['training-logs'] })
+            queryClient.invalidateQueries({ queryKey: ['training-logs-report'] })
             setIsDeleteOpen(false)
         } catch (error: any) {
             toast.error(error.message || 'Lỗi khi xóa dữ liệu')
@@ -935,6 +937,8 @@ export function WeightHistoryPanel({ clientId, clientName, open, onOpenChange }:
                     record={editingTraining}
                     onSuccess={() => {
                         queryClient.invalidateQueries({ queryKey: ['client-training-logs'] })
+                        queryClient.invalidateQueries({ queryKey: ['training-logs'] })
+                        queryClient.invalidateQueries({ queryKey: ['training-logs-report'] })
                     }}
                 />
             )}

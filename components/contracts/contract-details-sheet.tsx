@@ -82,7 +82,7 @@ import { uploadSignature } from '@/app/actions/storage'
 import { SignatureField } from '@/components/ui/signature-field'
 import { fetchConfigParams, ConfigItem, fetchContractConfigs } from '@/app/actions/config-params'
 import { fetchMemberships } from '@/app/actions/memberships'
-import { cn, numberToVietnameseWords, getVietQRUrl } from '@/lib/utils'
+import { cn, numberToVietnameseWords, getVietQRUrl, formatDecimalForDisplay, parseDecimalInput, isValidDecimalInput } from '@/lib/utils'
 import { createClient } from '@/lib/supabase'
 import { FinalizeContractDialog } from './finalize-contract-dialog'
 import { ContractClosureDialog } from './contract-closure-dialog'
@@ -113,7 +113,7 @@ const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEd
             return Number(val).toLocaleString('vi-VN')
         }
         if (['initial_weight', 'initial_height'].includes(name) && val != null) {
-            return val.toString().replace('.', ',')
+            return formatDecimalForDisplay(val)
         }
         return val
     }
@@ -124,9 +124,9 @@ const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEd
             const rawValue = e.target.value.replace(/\D/g, '')
             onChange(name, rawValue)
         } else if (['initial_weight', 'initial_height'].includes(name)) {
-            const val = e.target.value.replace(',', '.')
-            if (/^\d*\.?\d*$/.test(val)) {
-                onChange(name, val)
+            const val = e.target.value
+            if (isValidDecimalInput(val)) {
+                onChange(name, parseDecimalInput(val))
             }
         } else {
             onChange(e)
@@ -1194,8 +1194,8 @@ export function ContractDetailsSheet({
                         <div className="space-y-5">
                             <ContractDetailRow label="Bệnh lý" value={formData.medical_condition} name="medical_condition" icon={FileText} {...sharedRowProps} />
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                <ContractDetailRow label="Chiều cao (cm)" value={formData.initial_height} name="initial_height" type="number" icon={Hash} {...sharedRowProps} />
-                                <ContractDetailRow label="Cân nặng (kg)" value={formData.initial_weight} name="initial_weight" type="number" icon={Hash} {...sharedRowProps} />
+                                <ContractDetailRow label="Chiều cao (cm)" value={formData.initial_height} name="initial_height" type="text" icon={Hash} {...sharedRowProps} />
+                                <ContractDetailRow label="Cân nặng (kg)" value={formData.initial_weight} name="initial_weight" type="text" icon={Hash} {...sharedRowProps} />
                             </div>
                         </div>
                     </ContractCardSection>

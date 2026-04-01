@@ -30,7 +30,7 @@ import {
     User,
     Package,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatDecimalForDisplay, parseDecimalInput, isValidDecimalInput } from '@/lib/utils'
 import { closeContract } from '@/app/actions/contracts'
 
 // ─── Types ───────────────────────────────────────────────────
@@ -148,7 +148,7 @@ export function ContractClosureDialog({
     }, [open])
 
     const initialWeight = contract?.initial_weight ? Number(contract.initial_weight) : null
-    const finalWeight = finalWeightInput ? parseFloat(finalWeightInput) : null
+    const finalWeight = finalWeightInput ? parseFloat(parseDecimalInput(finalWeightInput)) : null
     const weightChange =
         initialWeight != null && finalWeight != null ? initialWeight - finalWeight : null
 
@@ -300,14 +300,15 @@ export function ContractClosureDialog({
                                 </Label>
                                 <div className="relative">
                                     <Input
-                                        type="number"
-                                        placeholder="Ví dụ: 65.5"
+                                        type="text"
+                                        placeholder="Ví dụ: 65,5"
                                         value={finalWeightInput}
-                                        onChange={(e) => setFinalWeightInput(e.target.value)}
+                                        onChange={(e) => {
+                                            if (isValidDecimalInput(e.target.value)) {
+                                                setFinalWeightInput(e.target.value)
+                                            }
+                                        }}
                                         className="h-12 rounded-xl border-gray-200 dark:border-gray-700 text-base pr-12 focus:ring-2 focus:ring-red-500/20"
-                                        step="0.1"
-                                        min="30"
-                                        max="200"
                                     />
                                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">
                                         kg

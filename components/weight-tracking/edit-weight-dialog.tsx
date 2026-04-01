@@ -39,6 +39,7 @@ import {
     SelectValue
 } from '@/components/ui/select'
 import { format } from 'date-fns'
+import { cn, formatDecimalForDisplay, parseDecimalInput, isValidDecimalInput } from '@/lib/utils'
 
 const weightSchema = z.object({
     id: z.string().optional(),
@@ -248,7 +249,17 @@ export function EditWeightDialog({ open, onOpenChange, record, onSuccess, client
                                         <FormControl>
                                             <div className="relative">
                                                 <Scale className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                                <Input type="number" step="0.1" placeholder="65.0" {...field} className="pl-10 rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 h-11" />
+                                                <Input 
+                                                    type="text" 
+                                                    placeholder="65,0" 
+                                                    value={formatDecimalForDisplay(field.value)}
+                                                    onChange={(e) => {
+                                                        if (isValidDecimalInput(e.target.value)) {
+                                                            field.onChange(parseDecimalInput(e.target.value))
+                                                        }
+                                                    }}
+                                                    className="pl-10 rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 h-11" 
+                                                />
                                             </div>
                                         </FormControl>
                                         <FormMessage />

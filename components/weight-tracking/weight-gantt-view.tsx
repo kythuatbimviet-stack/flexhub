@@ -148,6 +148,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
             const res = await upsertTrainingStatus(selectedClientId, dateStr, status)
             if (res.success) {
                 queryClient.invalidateQueries({ queryKey: ['training-logs'] })
+                queryClient.invalidateQueries({ queryKey: ['client-training-logs', selectedClientId] })
+                queryClient.invalidateQueries({ queryKey: ['training-logs-report'] })
                 toast.success('Đã cập nhật trạng thái tập luyện')
             } else {
                 toast.error(res.error || 'Lỗi khi cập nhật')

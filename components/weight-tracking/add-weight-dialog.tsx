@@ -53,7 +53,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { format, differenceInDays } from 'date-fns'
-import { cn } from '@/lib/utils'
+import { cn, formatDecimalForDisplay, parseDecimalInput, isValidDecimalInput } from '@/lib/utils'
 
 const weightSchema = z.object({
     id: z.string().optional(),
@@ -350,7 +350,17 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                                         <FormItem>
                                             <FormLabel className="text-[13px] font-medium text-black dark:text-white mb-2">Cân nặng thực tế</FormLabel>
                                             <FormControl>
-                                                <Input type="number" step="0.1" placeholder="Số kg..." {...field} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-14 text-[16px] font-semibold text-emerald-600 dark:text-emerald-400 transition-all focus:ring-2 focus:ring-emerald-500/10 px-4" />
+                                                <Input 
+                                                    type="text" 
+                                                    placeholder="Số kg..." 
+                                                    value={formatDecimalForDisplay(field.value)}
+                                                    onChange={(e) => {
+                                                        if (isValidDecimalInput(e.target.value)) {
+                                                            field.onChange(parseDecimalInput(e.target.value))
+                                                        }
+                                                    }}
+                                                    className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-14 text-[16px] font-semibold text-emerald-600 dark:text-emerald-400 transition-all focus:ring-2 focus:ring-emerald-500/10 px-4" 
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -364,7 +374,17 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                                         <FormItem>
                                             <FormLabel className="text-[13px] font-medium text-black dark:text-white mb-2">Cân nặng cần đạt</FormLabel>
                                             <FormControl>
-                                                <Input type="number" step="0.1" placeholder="Số kg..." {...field} value={field.value || ''} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-14 text-[16px] font-semibold text-black dark:text-white transition-all focus:ring-2 focus:ring-blue-500/10 px-4" />
+                                                <Input 
+                                                    type="text" 
+                                                    placeholder="Số kg..." 
+                                                    value={formatDecimalForDisplay(field.value)}
+                                                    onChange={(e) => {
+                                                        if (isValidDecimalInput(e.target.value)) {
+                                                            field.onChange(parseDecimalInput(e.target.value))
+                                                        }
+                                                    }}
+                                                    className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-14 text-[16px] font-semibold text-black dark:text-white transition-all focus:ring-2 focus:ring-blue-500/10 px-4" 
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

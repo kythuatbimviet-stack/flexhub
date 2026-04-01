@@ -32,7 +32,8 @@ import {
     BanknoteArrowUp,
     Tags,
     Home,
-    Cloud
+    Cloud,
+    HeartHandshake
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { usePermissions } from '@/hooks/use-permissions'
@@ -50,6 +51,7 @@ const mainNavigation = [
     { name: 'Khách hàng', href: '/clients', icon: Users },
     { name: 'Hợp đồng', href: '/contracts', icon: FileText },
     { name: 'Tiến trình thay đổi', href: '/weight-tracking', icon: Activity },
+    { name: 'Tần suất tập luyện', href: '/training-logs', icon: HeartHandshake },
     { name: 'Zalo', href: '/zalo-users', icon: UserStar },
 ]
 
