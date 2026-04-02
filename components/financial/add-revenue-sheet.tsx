@@ -218,7 +218,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                             <Plus className="w-4.5 h-4.5 text-emerald-600" />
                         </div>
                         <div className="flex flex-col text-left">
-                            <SheetTitle className="text-sm font-bold text-slate-900 leading-tight">
+                            <SheetTitle className="text-sm font-semibold text-slate-900 leading-tight">
                                 Ghi nhận thu
                             </SheetTitle>
                             <SheetDescription className="text-[10px] font-medium text-slate-500 hidden sm:block">
@@ -231,7 +231,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="sm:hidden font-bold text-[12px] text-slate-500 px-2 h-8"
+                            className="sm:hidden font-semibold text-[12px] text-slate-500 px-2 h-8"
                             onClick={() => setOpen(false)}
                             disabled={loading}
                         >
@@ -241,7 +241,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                             form="add-revenue-form"
                             type="submit"
                             disabled={loading}
-                            className="sm:hidden bg-emerald-600 text-white font-bold text-[12px] px-3 h-8 rounded-lg shadow-sm"
+                            className="sm:hidden bg-emerald-600 text-white font-semibold text-[12px] px-3 h-8 rounded-lg shadow-sm"
                         >
                             {loading ? '...' : 'Lưu'}
                         </Button>
@@ -267,7 +267,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                     <div className="w-6 h-6 rounded-md bg-purple-50 flex items-center justify-center">
                                         <Building2 className="w-3.5 h-3.5 text-purple-600" />
                                     </div>
-                                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-purple-600">
+                                    <h3 className="text-[12px] font-semibold text-purple-600">
                                         Thông tin liên quan
                                     </h3>
                                 </div>
@@ -284,11 +284,11 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                                         onCheckedChange={(checked) => setFilterHasContract(checked as boolean)}
                                                         className="h-4 w-4 rounded-md border-emerald-300 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-none text-white shrink-0"
                                                     />
-                                                    <label htmlFor="filter-contracts" className="text-[11px] font-bold text-emerald-700 cursor-pointer select-none uppercase tracking-tight">
+                                                    <label htmlFor="filter-contracts" className="text-[11px] font-semibold text-emerald-700 cursor-pointer select-none">
                                                         Chỉ hiện khách có hợp đồng
                                                     </label>
                                                 </div>
-                                                <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Khách hàng (Tùy chọn)</FormLabel>
+                                                <FormLabel className="text-[11px] font-semibold text-slate-900">Khách hàng (Tùy chọn)</FormLabel>
                                             </div>
                                             <Select
                                                 onValueChange={(val) => {
@@ -335,7 +335,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                     name="contract_id"
                                     render={({ field }) => (
                                         <FormItem className="space-y-1">
-                                            <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Hợp đồng liên kết</FormLabel>
+                                            <FormLabel className="text-[11px] font-semibold text-slate-900">Hợp đồng liên kết</FormLabel>
                                             <Select
                                                 onValueChange={field.onChange}
                                                 value={field.value || undefined}
@@ -370,7 +370,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                             name="debt_id"
                                             render={({ field }) => (
                                                 <FormItem className="space-y-1">
-                                                    <FormLabel className="text-[10px] font-semibold text-amber-600 uppercase tracking-wider">Chọn Hồ sơ Công nợ</FormLabel>
+                                                    <FormLabel className="text-[11px] font-semibold text-amber-600">Chọn Hồ sơ Công nợ</FormLabel>
                                                     <Select
                                                         onValueChange={(val) => {
                                                             field.onChange(val)
@@ -406,7 +406,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                                 name="installment_id"
                                                 render={({ field }) => (
                                                     <FormItem className="space-y-1">
-                                                        <FormLabel className="text-[10px] font-semibold text-amber-600 uppercase tracking-wider">Chọn đợt thanh toán</FormLabel>
+                                                        <FormLabel className="text-[11px] font-semibold text-amber-600">Chọn đợt thanh toán</FormLabel>
                                                         <Select
                                                             onValueChange={field.onChange}
                                                             value={field.value || undefined}
@@ -439,7 +439,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                     name="branch_id"
                                     render={({ field }) => (
                                         <FormItem className="space-y-1">
-                                            <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Chi nhánh</FormLabel>
+                                            <FormLabel className="text-[11px] font-semibold text-slate-900">Chi nhánh</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value}>
                                                 <FormControl>
                                                     <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full">
@@ -461,7 +461,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                     name="description"
                                     render={({ field }) => (
                                         <FormItem className="space-y-1">
-                                            <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Ghi chú / Diễn giải</FormLabel>
+                                            <FormLabel className="text-[11px] font-semibold text-slate-900">Ghi chú / Diễn giải</FormLabel>
                                             <FormControl>
                                                 <Textarea
                                                     placeholder="Nhập ghi chú cho khoản thu này..."
@@ -481,7 +481,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                     <div className="w-6 h-6 rounded-md bg-blue-50 flex items-center justify-center">
                                         <Tag className="w-3.5 h-3.5 text-blue-600" />
                                     </div>
-                                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-blue-600">
+                                    <h3 className="text-[12px] font-semibold text-blue-600">
                                         Phân loại khoản thu
                                     </h3>
                                 </div>
@@ -491,7 +491,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                         name="category_id"
                                         render={({ field }) => (
                                             <FormItem className="space-y-1">
-                                                <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Danh mục</FormLabel>
+                                                <FormLabel className="text-[11px] font-semibold text-slate-900">Danh mục</FormLabel>
                                                 <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl>
                                                         <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full sm:w-[180px]">
@@ -513,7 +513,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                         name="payment_method"
                                         render={({ field }) => (
                                             <FormItem className="space-y-1">
-                                                <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Hình thức</FormLabel>
+                                                <FormLabel className="text-[11px] font-semibold text-slate-900">Hình thức</FormLabel>
                                                 <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl>
                                                         <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full sm:w-[180px]">
@@ -539,7 +539,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                     <div className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center">
                                         <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
                                     </div>
-                                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-emerald-600">
+                                    <h3 className="text-[12px] font-semibold text-emerald-600">
                                         Số tiền
                                     </h3>
                                 </div>
@@ -548,7 +548,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                     name="amount"
                                     render={({ field }) => (
                                         <FormItem className="space-y-1">
-                                            <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Số tiền (VND)</FormLabel>
+                                            <FormLabel className="text-[11px] font-semibold text-slate-900">Số tiền (VND)</FormLabel>
                                             <FormControl>
                                                 <div className="relative">
                                                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
@@ -575,7 +575,7 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                     name="recorded_at"
                                     render={({ field }) => (
                                         <FormItem className="space-y-1">
-                                            <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Ngày ghi nhận</FormLabel>
+                                            <FormLabel className="text-[11px] font-semibold text-slate-900">Ngày ghi nhận</FormLabel>
                                             <FormControl>
                                                 <div className="relative">
                                                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />

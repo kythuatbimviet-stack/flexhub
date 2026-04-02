@@ -52,7 +52,7 @@ const CardSection = ({ title, icon: Icon, children }: any) => (
             <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
                 <Icon className="w-4 h-4 text-rose-600 dark:text-rose-400" />
             </div>
-            <h3 className="text-[12px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-widest">{title}</h3>
+            <h3 className="text-[12px] font-semibold text-rose-600 dark:text-rose-400">{title}</h3>
         </div>
         <div className="p-5 space-y-5">
             {children}
@@ -61,9 +61,9 @@ const CardSection = ({ title, icon: Icon, children }: any) => (
 )
 
 const DetailRow = ({ label, value, name, type = "text", icon: Icon, isEditing, formData, onChange }: any) => (
-    <div className="space-y-1.5 font-inter">
-        <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
-            {Icon && <Icon className="w-3 h-3" />}
+    <div className="space-y-1.5 font-inter text-left">
+        <Label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 flex items-center gap-2 tracking-tight">
+            {Icon && <Icon className="w-3.5 h-3.5 text-slate-400" />}
             {label}
         </Label>
         {isEditing ? (
@@ -84,7 +84,7 @@ const DetailRow = ({ label, value, name, type = "text", icon: Icon, isEditing, f
                 />
             )
         ) : (
-            <div className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+            <div className="text-[15px] font-medium text-slate-900 dark:text-white min-h-[20px]">
                 {value || <span className="text-slate-300 italic font-normal text-sm">Chưa cập nhật</span>}
             </div>
         )}
@@ -188,7 +188,7 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                             <Banknote className="w-5 h-5" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">Chi tiết khoản chi</span>
+                            <span className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">Chi tiết khoản chi</span>
                             <span className="text-[11px] text-slate-500 dark:text-slate-400">ID: {expense.id.split('-')[0]}</span>
                         </div>
                     </div>
@@ -245,8 +245,8 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                                 <Banknote className="w-8 h-8" />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                                    {new Intl.NumberFormat('vi-VN').format(formData.amount)}<span className="text-lg ml-1 font-bold text-slate-400 uppercase">đ</span>
+                                <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                                    {new Intl.NumberFormat('vi-VN').format(formData.amount)}<span className="text-lg ml-1 font-medium text-slate-400">đ</span>
                                 </h1>
                                 <p className="text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
                                     <Calendar className="w-3.5 h-3.5" />
@@ -260,9 +260,9 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                         <div className="grid grid-cols-2 gap-5">
                             <DetailRow label="Số tiền" value={new Intl.NumberFormat('vi-VN').format(formData.amount) + ' đ'} name="amount" type="number" icon={Banknote} isEditing={isEditing} formData={formData} onChange={handleChange} />
 
-                            <div className="space-y-1.5 font-inter">
-                                <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                    <Tag className="w-3 h-3" />
+                            <div className="space-y-1.5 font-inter text-left">
+                                <Label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 flex items-center gap-2 tracking-tight">
+                                    <Tag className="w-3.5 h-3.5 text-slate-400" />
                                     Danh mục
                                 </Label>
                                 {isEditing ? (
@@ -280,7 +280,7 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                                         </SelectContent>
                                     </Select>
                                 ) : (
-                                    <div className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                                    <div className="text-[15px] font-medium text-slate-900 dark:text-white">
                                         {formData.financial_categories?.name || 'Phổ thông'}
                                     </div>
                                 )}
@@ -288,9 +288,9 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
 
                             <DetailRow label="Ngày ghi nhận" value={formData.recorded_at ? new Date(formData.recorded_at).toLocaleDateString('vi-VN') : '-'} name="recorded_at" type="date" icon={Calendar} isEditing={isEditing} formData={formData} onChange={handleChange} />
 
-                            <div className="space-y-1.5 font-inter">
-                                <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                    <CreditCard className="w-3 h-3" />
+                            <div className="space-y-1.5 font-inter text-left">
+                                <Label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 flex items-center gap-2 tracking-tight">
+                                    <CreditCard className="w-3.5 h-3.5 text-slate-400" />
                                     Thanh toán
                                 </Label>
                                 {isEditing ? (
@@ -308,7 +308,7 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                                         </SelectContent>
                                     </Select>
                                 ) : (
-                                    <div className="text-[15px] font-medium text-slate-700 dark:text-slate-200 font-bold text-rose-600">
+                                    <div className="text-[15px] font-semibold text-rose-600 dark:text-rose-400">
                                         {formData.payment_method}
                                     </div>
                                 )}
@@ -318,9 +318,9 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
 
                     <CardSection title="Đối tượng & Chi nhánh" icon={Building2}>
                         <div className="space-y-5">
-                            <div className="space-y-1.5 font-inter">
-                                <Label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                    <Building2 className="w-3 h-3" />
+                             <div className="space-y-1.5 font-inter text-left">
+                                <Label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 flex items-center gap-2 tracking-tight">
+                                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
                                     Chi nhánh
                                 </Label>
                                 {isEditing ? (
@@ -338,7 +338,7 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                                         </SelectContent>
                                     </Select>
                                 ) : (
-                                    <div className="text-[15px] font-medium text-slate-700 dark:text-slate-200">
+                                    <div className="text-[15px] font-medium text-slate-900 dark:text-white">
                                         {formData.branches?.name || 'Toàn hệ thống'}
                                     </div>
                                 )}
@@ -356,7 +356,7 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                     <Button
                         variant="ghost"
                         onClick={() => onOpenChange(false)}
-                        className="rounded-xl h-11 px-6 font-bold text-[13px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-inter"
+                        className="rounded-xl h-11 px-6 font-semibold text-[13px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-inter"
                         disabled={loading}
                     >
                         Đóng
@@ -367,17 +367,16 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                             <Button
                                 variant="outline"
                                 onClick={handleDelete}
-                                className="rounded-xl h-11 px-4 font-bold text-[13px] border-red-50 text-red-500 hover:bg-red-50 hover:text-red-600 dark:border-red-900/30 dark:hover:bg-red-950/20 transition-all font-inter border-2"
+                                className="rounded-xl h-11 px-4 font-semibold text-[13px] border-red-50 text-red-500 hover:bg-red-50 hover:text-red-600 dark:border-red-900/30 dark:hover:bg-red-950/20 transition-all font-inter border-2"
                                 disabled={loading}
                             >
                                 <Trash2 className="w-4 h-4" />
                             </Button>
                         )}
-
                         {isEditing ? (
                             <Button
                                 onClick={handleSave}
-                                className="rounded-xl h-11 px-8 font-bold text-[13px] bg-rose-600 text-white hover:bg-rose-700 shadow-lg shadow-rose-100 dark:shadow-rose-900/20 transition-all font-inter active:scale-95"
+                                className="rounded-xl h-11 px-8 font-semibold text-[13px] bg-rose-600 text-white hover:bg-rose-700 shadow-lg shadow-rose-100 dark:shadow-rose-900/20 transition-all font-inter active:scale-95"
                                 disabled={loading}
                             >
                                 <Save className="w-4 h-4 mr-2" />
@@ -386,7 +385,7 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                         ) : (
                             <Button
                                 onClick={() => setIsEditing(true)}
-                                className="rounded-xl h-11 px-10 font-bold text-[13px] bg-rose-600 text-white hover:bg-rose-700 shadow-lg shadow-rose-100 dark:shadow-rose-900/20 transition-all font-inter active:scale-95"
+                                className="rounded-xl h-11 px-10 font-semibold text-[13px] bg-rose-600 text-white hover:bg-rose-700 shadow-lg shadow-rose-100 dark:shadow-rose-900/20 transition-all font-inter active:scale-95"
                                 disabled={loading}
                             >
                                 <Edit2 className="w-4 h-4 mr-2" />

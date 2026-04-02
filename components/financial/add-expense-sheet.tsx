@@ -149,7 +149,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                     <Banknote className="w-4.5 h-4.5" />
                                 </div>
                                 <div className="flex flex-col text-left">
-                                    <SheetTitle className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                                    <SheetTitle className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">
                                         Ghi nhận chi
                                     </SheetTitle>
                                     <SheetDescription className="text-[10px] text-slate-500 dark:text-slate-400 capitalize hidden sm:block">Thêm giao dịch mới</SheetDescription>
@@ -161,7 +161,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setOpen(false)}
-                                    className="sm:hidden font-bold text-[12px] text-slate-500 px-2 h-8"
+                                    className="sm:hidden font-semibold text-[12px] text-slate-500 px-2 h-8"
                                     disabled={loading}
                                 >
                                     Hủy
@@ -170,7 +170,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                     form="add-expense-form"
                                     type="submit"
                                     disabled={loading}
-                                    className="sm:hidden bg-rose-600 text-white font-bold text-[12px] px-3 h-8 rounded-lg shadow-sm"
+                                    className="sm:hidden bg-rose-600 text-white font-semibold text-[12px] px-3 h-8 rounded-lg shadow-sm"
                                 >
                                     {loading ? '...' : 'Lưu'}
                                 </Button>
@@ -192,11 +192,11 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
 
                                 {/* Card Section: Thông tin cơ bản */}
                                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
-                                    <div className="flex items-center gap-2 mb-2">
+                                    <div className="flex items-center gap-2 mb-2 text-left">
                                         <div className="w-6 h-6 rounded-md bg-rose-50 flex items-center justify-center">
                                             <Banknote className="w-3.5 h-3.5 text-rose-600" />
                                         </div>
-                                        <h3 className="text-[12px] font-bold uppercase tracking-widest text-rose-600">
+                                        <h3 className="text-[12px] font-semibold text-rose-600">
                                             Thông tin giao dịch
                                         </h3>
                                     </div>
@@ -206,8 +206,8 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                             control={form.control}
                                             name="amount"
                                             render={({ field }) => (
-                                                <FormItem className="space-y-1">
-                                                    <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Số tiền (VNĐ)</FormLabel>
+                                                <FormItem className="space-y-1 text-left">
+                                                    <FormLabel className="text-[11px] font-semibold text-slate-900 dark:text-slate-300">Số tiền (VNĐ)</FormLabel>
                                                     <FormControl>
                                                         <div className="relative">
                                                             <Input
@@ -217,9 +217,9 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                                                     const formatted = formatAmount(e.target.value)
                                                                     field.onChange(formatted)
                                                                 }}
-                                                                className="rounded-xl border-slate-200 bg-white h-11 text-[18px] font-black text-rose-600 focus:ring-rose-500 pr-10"
+                                                                className="rounded-xl border-slate-200 bg-white h-11 text-[18px] font-bold text-rose-600 focus:ring-rose-500 pr-10"
                                                             />
-                                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-300 uppercase">vnđ</div>
+                                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-300">vnđ</div>
                                                         </div>
                                                     </FormControl>
                                                     <FormMessage />
@@ -231,8 +231,8 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                             control={form.control}
                                             name="recorded_at"
                                             render={({ field }) => (
-                                                <FormItem className="space-y-1">
-                                                    <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Ngày ghi nhận</FormLabel>
+                                                <FormItem className="space-y-1 text-left">
+                                                    <FormLabel className="text-[11px] font-semibold text-slate-900 dark:text-slate-300">Ngày ghi nhận</FormLabel>
                                                     <FormControl>
                                                         <Input type="date" {...field} className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700" />
                                                     </FormControl>
@@ -247,8 +247,8 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                             control={form.control}
                                             name="branch_id"
                                             render={({ field }) => (
-                                                <FormItem className="space-y-1">
-                                                    <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Chi nhánh</FormLabel>
+                                                <FormItem className="space-y-1 text-left">
+                                                    <FormLabel className="text-[11px] font-semibold text-slate-900 dark:text-slate-300">Chi nhánh</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl>
                                                             <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full">
@@ -268,13 +268,12 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                     </div>
                                 </div>
 
-                                {/* Card Section: Phân loại khoản chi */}
                                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
-                                    <div className="flex items-center gap-2 mb-2">
+                                    <div className="flex items-center gap-2 mb-2 text-left">
                                         <div className="w-6 h-6 rounded-md bg-blue-50 flex items-center justify-center">
                                             <Tag className="w-3.5 h-3.5 text-blue-600" />
                                         </div>
-                                        <h3 className="text-[12px] font-bold uppercase tracking-widest text-blue-600">
+                                        <h3 className="text-[12px] font-semibold text-blue-600">
                                             Phân loại & Thanh toán
                                         </h3>
                                     </div>
@@ -283,8 +282,8 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                             control={form.control}
                                             name="category_id"
                                             render={({ field }) => (
-                                                <FormItem className="space-y-1">
-                                                    <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Danh mục</FormLabel>
+                                                <FormItem className="space-y-1 text-left">
+                                                    <FormLabel className="text-[11px] font-semibold text-slate-900 dark:text-slate-300">Danh mục</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl>
                                                             <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full">
@@ -297,7 +296,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                                             ) : categoriesError ? (
                                                                 <SelectItem value="error" disabled>Lỗi: {(categoriesError as Error).message}</SelectItem>
                                                             ) : !categories || categories.length === 0 ? (
-                                                                <SelectItem value="none" disabled>Trống: Hãy kiểm tra RLS policy</SelectItem>
+                                                                <SelectItem value="none" disabled>Trống</SelectItem>
                                                             ) : (
                                                                 categories.map((cat: any) => (
                                                                     <SelectItem key={cat.id} value={String(cat.nam)}>{cat.nam}</SelectItem>
@@ -313,8 +312,8 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                             control={form.control}
                                             name="payment_method"
                                             render={({ field }) => (
-                                                <FormItem className="space-y-1">
-                                                    <FormLabel className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Hình thức</FormLabel>
+                                                <FormItem className="space-y-1 text-left">
+                                                    <FormLabel className="text-[11px] font-semibold text-slate-900 dark:text-slate-300">Hình thức</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl>
                                                             <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full">
@@ -334,13 +333,12 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                     </div>
                                 </div>
 
-                                {/* Card Section: Ghi chú */}
                                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
-                                    <div className="flex items-center gap-2 mb-2">
+                                    <div className="flex items-center gap-2 mb-2 text-left">
                                         <div className="w-6 h-6 rounded-md bg-amber-50 flex items-center justify-center">
                                             <StickyNote className="w-3.5 h-3.5 text-amber-600" />
                                         </div>
-                                        <h3 className="text-[12px] font-bold uppercase tracking-widest text-amber-600">
+                                        <h3 className="text-[12px] font-semibold text-amber-600">
                                             Ghi chú / Diễn giải
                                         </h3>
                                     </div>
@@ -365,12 +363,11 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                         </Form>
                     </div>
 
-                    {/* Footer - Desktop Only */}
                     <div className="hidden sm:flex bg-white dark:bg-gray-950 border-t border-slate-100 dark:border-slate-800 p-4 items-center justify-between gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0 z-20">
                         <Button
                             variant="ghost"
                             onClick={() => setOpen(false)}
-                            className="rounded-xl h-11 px-6 font-bold text-[13px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-inter"
+                            className="rounded-xl h-11 px-6 font-semibold text-[13px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-inter"
                             disabled={loading}
                         >
                             Hủy bỏ
@@ -380,7 +377,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                             form="add-expense-form"
                             type="submit"
                             disabled={loading}
-                            className="rounded-xl h-11 px-10 font-bold text-[13px] bg-rose-600 text-white hover:bg-rose-700 shadow-lg shadow-rose-100 dark:shadow-rose-900/20 transition-all font-inter active:scale-95 flex-1 sm:flex-none"
+                            className="rounded-xl h-11 px-10 font-semibold text-[13px] bg-rose-600 text-white hover:bg-rose-700 shadow-lg shadow-rose-100 dark:shadow-rose-900/20 transition-all font-inter active:scale-95 flex-1 sm:flex-none"
                         >
                             {loading ? 'Đang lưu...' : 'Ghi nhận khoản chi'}
                         </Button>

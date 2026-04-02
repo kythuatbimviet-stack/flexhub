@@ -201,6 +201,7 @@ export async function fetchContractsLite() {
                 legal_representative, representative_phone, center_address,
                 closure_status, closure_reason, closed_at,
                 total_sessions, package_price, discounted_price, package_duration, quantity,
+                trainer_phone, center_representative, payment_notes,
                 clients (member_name, phone, dob, avatar_url, email),
                 branches(name)
             `)

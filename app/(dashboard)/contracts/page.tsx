@@ -25,7 +25,8 @@ import {
     ChevronUp,
     ChevronDown,
     LayoutGrid,
-    ExternalLink
+    ExternalLink,
+    Phone
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -216,7 +217,7 @@ export default function ContractsPage() {
     const { permissions, user: currentUser, isLoading: isLoadingPermissions } = usePermissions()
 
     const SortPopover = () => {
-        const [localSort, setLocalSort] = React.useState(sortConfig || { key: 'updated_at', direction: 'desc' })
+        const [localSort, setLocalSort] = React.useState<{ key: string; direction: 'asc' | 'desc' }>(sortConfig || { key: 'updated_at', direction: 'desc' })
 
         const fields = [
             { label: 'Ngày cập nhật', value: 'updated_at' },
@@ -931,38 +932,43 @@ export default function ContractsPage() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="flex flex-col text-sm text-gray-600 dark:text-gray-100">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Package className="w-3 h-3 text-gray-400 dark:text-gray-300" />
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="text-[14px] font-medium text-slate-900 dark:text-white">
                                                             {contract.package_name || 'Chưa chọn gói'}
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-300 text-[11px]">
-                                                            <Clock className="w-3 h-3" />
-                                                            {contract.contract_type || 'Dịch vụ'}
-                                                        </div>
+                                                        </span>
+                                                        <span className="text-[12px] text-slate-600 dark:text-slate-300">
+                                                            {contract.center_representative || '-'}
+                                                        </span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="flex flex-col text-sm text-gray-600 dark:text-gray-100">
-                                                        <span className="text-sm font-medium text-red-600">
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="text-[14px] font-medium text-slate-900 dark:text-white">
                                                             {contract.total_amount ? Number(contract.total_amount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
                                                         </span>
-                                                        <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-300 text-[11px]">
-                                                            <CreditCard className="w-3 h-3" />
-                                                            {contract.payment_method || 'N/A'}
-                                                        </div>
+                                                        <span className="text-[12px] text-slate-600 dark:text-slate-300">
+                                                            {contract.payment_method || 'Chưa rõ'}
+                                                        </span>
+                                                        {contract.payment_notes && (
+                                                            <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[160px]">
+                                                                {contract.payment_notes}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="flex flex-col text-sm text-gray-600 dark:text-gray-300">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Building2 className="w-3 h-3 text-gray-400" />
-                                                            {contract.branches?.name || 'Văn phòng'}
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
-                                                            <User className="w-3 h-3" />
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="text-[14px] font-medium text-slate-900 dark:text-white">
+                                                            {contract.facility_name || contract.branches?.name || 'Văn phòng'}
+                                                        </span>
+                                                        <span className="text-[12px] text-slate-600 dark:text-slate-300">
                                                             {contract.trainer_name || 'Chưa có PT'}
-                                                        </div>
+                                                        </span>
+                                                        {contract.trainer_phone && (
+                                                            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                                                {contract.trainer_phone}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>

@@ -195,9 +195,11 @@ export function ContractDetailsSheet({
     const isCreateMode = !contract
     const [isEditing, setIsEditing] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
+    const [isLoadingFullData, setIsLoadingFullData] = React.useState(false)
     const [formData, setFormData] = React.useState<any>({})
     const { permissions, user: currentUser, isLoading: permsLoading } = usePermissions()
     const avatarInputRef = React.useRef<HTMLInputElement>(null)
+    const prevContractIdRef = React.useRef<string | null>(null)
     const [generatingId, setGeneratingId] = React.useState(false)
 
     const hasAccess = React.useMemo(() => {
@@ -295,23 +297,36 @@ export function ContractDetailsSheet({
 
             // Nạp dữ liệu có sẵn ngay lập tức (dữ liệu lite từ danh sách)
             initializeWithData(contract)
-            setIsEditing(false)
+
+            // Chỉ reset về view mode khi mở hợp đồng MỚI (tránh re-fire do clients/branches load xong)
+            const isNewContract = prevContractIdRef.current !== contract.id
+            if (isNewContract) {
+                setIsEditing(false)
+                prevContractIdRef.current = contract.id
+            }
 
             // Nếu đã là full data, không cần fetch thêm
             if (hasFullData) {
-                setLoading(false)
+                setIsLoadingFullData(false)
                 return
             }
 
-            // Nếu là lite data, fetch full data ngầm mà không chặn UI (không dùng setLoading(true))
+            // Nếu là lite data, fetch full data ngầm mà không chặn UI
+            setIsLoadingFullData(true)
             const getFullContract = async () => {
                 try {
                     const res = await fetchContractById(contract.id)
                     if (res.success && res.data) {
-                        initializeWithData(res.data)
+                        // Chỉ cập nhật formData nếu user KHÔNG đang chỉnh sửa
+                        setIsEditing(prev => {
+                            if (!prev) initializeWithData(res.data)
+                            return prev
+                        })
                     }
                 } catch (error) {
                     console.error('Error fetching full contract:', error)
+                } finally {
+                    setIsLoadingFullData(false)
                 }
             }
             getFullContract()
@@ -556,7 +571,6 @@ export function ContractDetailsSheet({
                 if (!isNaN(startDate.getTime())) {
                     const endDate = addDays(startDate, duration * qty)
                     newData.end_date = format(endDate, 'yyyy-MM-dd')
-                    newData.total_sessions = (qty * duration).toString()
                 }
             }
 
@@ -921,14 +935,26 @@ export function ContractDetailsSheet({
                             <div className="flex items-center gap-1">
                                 {!isCreateMode && (
                                     <>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => setIsEditing(true)}
-                                            className="h-9 w-9 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-                                        >
-                                            <Edit3 className="w-4 h-4" />
-                                        </Button>
+                                        {isLoadingFullData ? (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                disabled
+                                                className="h-9 w-9 rounded-xl text-slate-300 dark:text-slate-600"
+                                                title="Đang tải dữ liệu..."
+                                            >
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setIsEditing(true)}
+                                                className="h-9 w-9 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                            >
+                                                <Edit3 className="w-4 h-4" />
+                                            </Button>
+                                        )}
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
@@ -938,7 +964,7 @@ export function ContractDetailsSheet({
                                             <DropdownMenuContent align="end" className="w-56 rounded-2xl border-slate-100 dark:border-slate-800 shadow-xl p-1.5 ">
                                                 <DropdownMenuItem onClick={handleGenerateDocPDF} disabled={generatingPdf} className="gap-2.5 py-2.5 rounded-xl focus:bg-slate-50 dark:focus:bg-slate-900 cursor-pointer">
                                                     <FileText className="w-4 h-4 text-blue-500" />
-                                                    <span className="font-medium text-sm">{generatingPdf ? 'Đang chuẩn bị...' : 'Tải File Word (GDoc)'}</span>
+                                                    <span className="font-medium text-sm">{generatingPdf ? 'Đang chuẩn bị...' : 'Xuất lại hợp đồng'}</span>
                                                 </DropdownMenuItem>
                                                 {formData.contract_file_url && formData.contract_file_url !== 'create_contract' && (
                                                     <DropdownMenuItem onClick={() => window.open(`/contracts/preview-gdoc/${encodeURIComponent(formData.id)}`, '_blank')} className="gap-2.5 py-2.5 rounded-xl focus:bg-slate-50 dark:focus:bg-slate-900 cursor-pointer">
@@ -1060,7 +1086,7 @@ export function ContractDetailsSheet({
                                     )}
 
                                     <div className="px-3 py-1 rounded-full text-[10px] font-medium tracking-tight bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30">
-                                        {branches?.find((b: any) => b.id === formData.branch_id)?.name || formData.branches?.name || 'Chi nhánh'}
+                                        {formData.facility_name || branches?.find((b: any) => b.id === formData.branch_id)?.name || formData.branches?.name || 'Chi nhánh'}
                                     </div>
                                 </div>
                             </div>
@@ -1421,21 +1447,6 @@ export function ContractDetailsSheet({
                     {/* Section: Thanh toán */}
                     <ContractCardSection title="THANH TOÁN" icon={CreditCard}>
                         <div className="space-y-5">
-                            <ContractDetailRow label="Hình thức" value={formData.payment_method} name="payment_method" icon={CreditCard} {...sharedRowProps}>
-                                <Select
-                                    value={formData.payment_method}
-                                    onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, payment_method: val }))}
-                                >
-                                    <SelectTrigger className="w-full rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 h-10 text-sm">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                        <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
-                                        <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
-                                        <SelectItem value="TM+CK">TM+CK</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </ContractDetailRow>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Giá gói (niêm yết)" value={formData.package_price} name="package_price" type="number" icon={CreditCard} {...sharedRowProps} />
                                 <div className="space-y-1.5">
@@ -1459,29 +1470,7 @@ export function ContractDetailsSheet({
                             </div>
                             <ContractDetailRow label="Ghi chú thanh toán" value={formData.payment_notes} name="payment_notes" icon={FileText} {...sharedRowProps} />
 
-                            {formData.account_number && (
-                                <div className="mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-                                    <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-tight mb-3 block uppercase">Mã QR Thanh toán (VietQR)</Label>
-                                    <div className="flex flex-col items-center gap-3">
-                                        {formData.qr_payment_url ? (
-                                            <>
-                                                <img
-                                                    src={formData.qr_payment_url}
-                                                    alt="VietQR Payment"
-                                                    className="w-48 h-48 rounded-xl shadow-lg bg-white p-2"
-                                                />
-                                                <p className="text-[10px] text-slate-400 text-center max-w-[200px]">
-                                                    Quét mã để thanh toán tự động với đầy đủ số tiền và nội dung
-                                                </p>
-                                            </>
-                                        ) : (
-                                            <p className="text-xs text-slate-400 italic py-8">
-                                                {!formData.account_number ? "Chưa có số tài khoản chi nhánh" : "Đang tạo mã thanh toán..."}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
+
                         </div>
                     </ContractCardSection>
 
@@ -1740,10 +1729,14 @@ export function ContractDetailsSheet({
                                     <Button
                                         onClick={() => setIsEditing(true)}
                                         className="rounded-xl h-11 px-8 font-bold text-[13px] bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 transition-all font-inter active:scale-95"
-                                        disabled={loading}
+                                        disabled={loading || isLoadingFullData}
                                     >
-                                        <Edit2 className="w-4 h-4 mr-2" />
-                                        Sửa
+                                        {isLoadingFullData ? (
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        ) : (
+                                            <Edit2 className="w-4 h-4 mr-2" />
+                                        )}
+                                        {isLoadingFullData ? 'Đang tải...' : 'Sửa'}
                                     </Button>
                                 )}
                             </div>

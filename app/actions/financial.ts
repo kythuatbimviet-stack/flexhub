@@ -351,7 +351,13 @@ export async function bulkDeleteExpense(ids: string[]) {
 
 // --- Cash Flow ---
 
-export async function fetchCashFlowData() {
+export async function fetchCashFlowData(filters?: {
+    startDate?: string
+    endDate?: string
+    branchId?: string
+    paymentMethod?: string
+    customerId?: string
+}) {
     const supabase = await createClient()
     try {
         const accessInfo = await getAccessFilter()
@@ -366,7 +372,10 @@ export async function fetchCashFlowData() {
                 branch_id, 
                 description, 
                 payment_method,
-                branches (name)
+                customer_id,
+                contract_id,
+                branches (name),
+                clients (member_name)
             `)
         
         let eQuery = supabase
@@ -387,9 +396,30 @@ export async function fetchCashFlowData() {
             eQuery = eQuery.in('branch_id', accessInfo.access.allowedBranchIds)
         }
 
+        // Apply filters
+        if (filters?.startDate) {
+            rQuery = rQuery.gte('recorded_at', filters.startDate)
+            eQuery = eQuery.gte('recorded_at', filters.startDate)
+        }
+        if (filters?.endDate) {
+            rQuery = rQuery.lte('recorded_at', filters.endDate + 'T23:59:59')
+            eQuery = eQuery.lte('recorded_at', filters.endDate + 'T23:59:59')
+        }
+        if (filters?.branchId && filters.branchId !== 'all') {
+            rQuery = rQuery.eq('branch_id', filters.branchId)
+            eQuery = eQuery.eq('branch_id', filters.branchId)
+        }
+        if (filters?.paymentMethod && filters.paymentMethod !== 'all') {
+            rQuery = rQuery.eq('payment_method', filters.paymentMethod)
+            eQuery = eQuery.eq('payment_method', filters.paymentMethod)
+        }
+        if (filters?.customerId && filters.customerId !== 'all') {
+            rQuery = rQuery.eq('customer_id', filters.customerId)
+        }
+
         const [{ data: revenue, error: rError }, { data: expense, error: eError }] = await Promise.all([
-            rQuery,
-            eQuery
+            rQuery.order('recorded_at', { ascending: false }),
+            eQuery.order('recorded_at', { ascending: false })
         ])
 
         if (rError) throw rError
