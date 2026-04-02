@@ -222,7 +222,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                 address: '',
                 zalo_id: '',
                 facebook_id: '',
-                status: 'Chốt đăng kí',
+                status: 'Đã khảo sát',
                 assigned_pt: currentUser?.email || '',
                 pt_name: currentUser?.name || '',
                 dob: '',

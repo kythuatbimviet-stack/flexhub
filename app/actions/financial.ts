@@ -17,7 +17,11 @@ const getAccessFilter = cache(async () => {
         .maybeSingle()
 
     if (!profile) return null
-    return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
+    return { 
+        user: profile as UserProfile, 
+        authId: authUser.id,
+        access: getAccessControl(profile as UserProfile) 
+    }
 })
 
 // --- Categories ---
@@ -83,7 +87,7 @@ export async function createRevenue(data: any) {
 
         const { data: result, error } = await supabase
             .from('revenue')
-            .insert([{ ...data, recorded_by: accessInfo.user.id }])
+            .insert([{ ...data, recorded_by: accessInfo.authId }])
             .select()
             .single()
 
@@ -135,8 +139,10 @@ export async function createRevenue(data: any) {
 export async function bulkCreateRevenue(revenues: any[]) {
     const supabase = await createClient()
     try {
-        const { data: userData } = await supabase.auth.getUser()
-        const revenuesWithUser = revenues.map(r => ({ ...r, recorded_by: userData.user?.id }))
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        const revenuesWithUser = revenues.map(r => ({ ...r, recorded_by: accessInfo.authId }))
         const { data, error } = await supabase
             .from('revenue')
             .insert(revenuesWithUser)
@@ -262,7 +268,7 @@ export async function createExpense(data: any) {
 
         const { data: result, error } = await supabase
             .from('expense')
-            .insert([{ ...data, recorded_by: accessInfo.user.id }])
+            .insert([{ ...data, recorded_by: accessInfo.authId }])
             .select()
 
         if (error) throw error
@@ -278,8 +284,10 @@ export async function createExpense(data: any) {
 export async function bulkCreateExpense(expenses: any[]) {
     const supabase = await createClient()
     try {
-        const { data: userData } = await supabase.auth.getUser()
-        const expensesWithUser = expenses.map(e => ({ ...e, recorded_by: userData.user?.id }))
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        const expensesWithUser = expenses.map(e => ({ ...e, recorded_by: accessInfo.authId }))
         const { data, error } = await supabase
             .from('expense')
             .insert(expensesWithUser)

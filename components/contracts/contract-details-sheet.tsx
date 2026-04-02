@@ -1013,34 +1013,52 @@ export function ContractDetailsSheet({
                                     {formData.member_name || (isCreateMode ? 'Hội viên mới' : '')}
                                 </p>
                                 <div className="flex flex-wrap items-center gap-2 mt-3">
-                                    <div className={cn(
-                                        "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium tracking-tight",
-                                        (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-50 text-amber-600 border border-amber-100 dark:bg-amber-950/20 dark:border-amber-900/30" :
-                                            (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" :
-                                                "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
-                                    )}>
-                                        <div className={cn("w-1.5 h-1.5 rounded-full",
-                                            (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-500" :
-                                                (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-500" :
-                                                    "bg-slate-400"
-                                        )} />
-                                        {formData.status || defaultStatus}
-                                    </div>
-                                    {formData.client_status && (
+                                    {isEditing ? (
+                                        <Select
+                                            value={formData.status || defaultStatus}
+                                            onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, status: val }))}
+                                        >
+                                            <SelectTrigger className="h-7 px-3 text-[10px] font-medium rounded-full border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm focus:ring-1 focus:ring-blue-500 min-w-[120px]">
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className={cn("w-1.5 h-1.5 rounded-full shrink-0",
+                                                        (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-500" :
+                                                            (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-500" :
+                                                                "bg-slate-400"
+                                                    )} />
+                                                    <SelectValue placeholder="Trạng thái" />
+                                                </div>
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800 shadow-xl p-1">
+                                                {statuses.map(s => (
+                                                    <SelectItem key={s.id} value={s.nam} className="text-xs rounded-lg py-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={cn("w-1.5 h-1.5 rounded-full",
+                                                                s.nam === 'Chờ ký HĐ' ? "bg-amber-500" :
+                                                                    s.nam === 'Đã ký HĐ' ? "bg-emerald-500" :
+                                                                        "bg-slate-400"
+                                                            )} />
+                                                            {s.nam}
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
                                         <div className={cn(
-                                            "flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border",
-                                            {
-                                                "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30": formData.client_status === 'Đã khảo sát',
-                                                "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900": formData.client_status === 'Đang tập thử',
-                                                "bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-950/20 dark:border-purple-900/30": formData.client_status === 'Đang tư vấn',
-                                                "bg-red-50 text-red-600 border-red-100 dark:bg-red-950/20 dark:border-red-900/30": formData.client_status === 'Tư vấn không tham gia',
-                                                "bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-950/20 dark:border-orange-900/30": formData.client_status === 'Không tham gia',
-                                                "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30": ['Chốt đăng ký', 'CHỐT ĐĂNG KÝ', 'CHỐT ĐĂNG KÍ'].includes(formData.client_status),
-                                            }
+                                            "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium tracking-tight",
+                                            (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-50 text-amber-600 border border-amber-100 dark:bg-amber-950/20 dark:border-amber-900/30" :
+                                                (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" :
+                                                    "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
                                         )}>
-                                            {formData.client_status}
+                                            <div className={cn("w-1.5 h-1.5 rounded-full",
+                                                (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-500" :
+                                                    (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-500" :
+                                                        "bg-slate-400"
+                                            )} />
+                                            {formData.status || defaultStatus}
                                         </div>
                                     )}
+
                                     <div className="px-3 py-1 rounded-full text-[10px] font-medium tracking-tight bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30">
                                         {branches?.find((b: any) => b.id === formData.branch_id)?.name || formData.branches?.name || 'Chi nhánh'}
                                     </div>
@@ -1414,7 +1432,7 @@ export function ContractDetailsSheet({
                                     <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
                                         <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
                                         <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
-                                        <SelectItem value="Chuyển khoản">TM+CK</SelectItem>
+                                        <SelectItem value="TM+CK">TM+CK</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </ContractDetailRow>
