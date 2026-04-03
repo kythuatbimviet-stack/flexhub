@@ -480,7 +480,7 @@ export default function ReportsPage() {
                                 </div>
                             </div>
                             <div className="space-y-5">
-                                {branchPersonnel?.pts
+                                {([...(branchPersonnel?.pts || [])])
                                     .sort((a: any, b: any) => b.maxWeightLoss - a.maxWeightLoss)
                                     .slice(0, 6)
                                     .map((pt: any, i: number) => (
