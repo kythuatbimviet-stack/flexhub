@@ -30,9 +30,14 @@ export async function fetchDebts() {
             .from('debts')
             .select(`
                 *,
-                contracts (id, contract_name, package_name),
-                clients (id, member_name, phone),
-                branches (name)
+                contracts (id, contract_name, package_name, status, start_date, end_date, total_amount),
+                clients (id, member_name, phone, avatar_url, email, dob, initial_height, initial_weight),
+                branches (name),
+                debt_installments (
+                    amount,
+                    status,
+                    revenue:revenue_id (payment_method)
+                )
             `)
             .order('created_at', { ascending: false })
 
@@ -61,7 +66,7 @@ export async function fetchDebtsByCustomer(customerId: string) {
             .from('debts')
             .select(`
                 *,
-                contracts (id, contract_name, package_name),
+                contracts (id, contract_name, package_name, status, start_date, end_date, total_amount),
                 branches (name)
             `)
             .eq('client_id', customerId)
@@ -92,7 +97,10 @@ export async function fetchDebtDetails(debtId: string) {
 
         const { data: installments, error: instError } = await supabase
             .from('debt_installments')
-            .select('*')
+            .select(`
+                *,
+                revenue:revenue_id (payment_method)
+            `)
             .eq('debt_id', debtId)
             .order('installment_number', { ascending: true })
 

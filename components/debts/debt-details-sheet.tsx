@@ -23,7 +23,8 @@ import {
     Plus,
     Trash2,
     ArrowUpRight,
-    Pencil
+    Pencil,
+    HandCoins
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchDebtDetails, payInstallment, deleteDebt, updateDebtInstallment, deleteDebtInstallment, createDebtInstallment } from '@/app/actions/debts'
@@ -127,13 +128,13 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
                 <div className="shrink-0 flex flex-row items-center justify-between px-4 py-3 bg-white dark:bg-gray-950 border-b border-slate-100 dark:border-slate-800">
                     <SheetHeader className="flex flex-row items-center gap-3 space-y-0 text-left">
                         <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
-                            <HandCoinsIcon className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                            <HandCoins className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                         </div>
                         <div>
-                            <SheetTitle className="text-[15px] font-bold text-slate-900 dark:text-white line-clamp-1">
+                            <SheetTitle className="text-[15px] font-semibold text-slate-900 dark:text-white line-clamp-1">
                                 {debt?.clients?.member_name || 'Chi tiết công nợ'}
                             </SheetTitle>
-                            <SheetDescription className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                            <SheetDescription className="text-[11px] font-medium text-slate-400 dark:text-slate-500 tracking-wider">
                                 ID: {debt?.id?.split('-')[0]}
                             </SheetDescription>
                         </div>
@@ -163,31 +164,31 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
                                         <div className="w-6 h-6 rounded-md bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
                                             <DollarSign className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                                         </div>
-                                        <h3 className="text-[12px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                                        <h3 className="text-[12px] font-semibold tracking-widest text-amber-600 dark:text-amber-400">
                                             Tổng quan công nợ
                                         </h3>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Tổng nợ ban đầu</p>
+                                            <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 tracking-wider">Tổng nợ ban đầu</p>
                                             <p className="text-[18px] font-bold text-slate-900 dark:text-white">{Number(details.data.total_amount).toLocaleString()} ₫</p>
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Trạng thái</p>
+                                            <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 tracking-wider">Trạng thái</p>
                                             <span className={cn(
-                                                "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide",
+                                                "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide",
                                                 details.data.status === 'Đã thanh toán' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400"
                                             )}>
                                                 {details.data.status}
                                             </span>
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Đã thanh toán</p>
+                                            <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 tracking-wider">Đã thanh toán</p>
                                             <p className="text-[16px] font-bold text-emerald-600 dark:text-emerald-400">{Number(details.data.paid_amount).toLocaleString()} ₫</p>
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Còn nợ lại</p>
+                                            <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 tracking-wider">Còn nợ lại</p>
                                             <p className="text-[16px] font-bold text-red-600 dark:text-red-400">{Number(details.data.remaining_amount).toLocaleString()} ₫</p>
                                         </div>
                                     </div>
@@ -199,7 +200,7 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
                                         <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
                                             <User className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                                         </div>
-                                        <h3 className="text-[12px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
+                                        <h3 className="text-[12px] font-semibold tracking-widest text-blue-600 dark:text-blue-400">
                                             Thông tin liên quan
                                         </h3>
                                     </div>
@@ -207,7 +208,7 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 font-bold text-xs uppercase border border-slate-100 dark:border-slate-700">
+                                                <div className="w-9 h-9 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 font-bold text-xs border border-slate-100 dark:border-slate-700">
                                                     {details.data.clients?.member_name?.charAt(0)}
                                                 </div>
                                                 <div>
@@ -222,13 +223,13 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
 
                                         <div className="pt-2 grid grid-cols-2 gap-4 border-t border-slate-50 dark:border-slate-800">
                                             <div className="space-y-1">
-                                                <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                                <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 tracking-wider flex items-center gap-1.5">
                                                     <FileText className="w-3 h-3" /> Hợp đồng
                                                 </p>
                                                 <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">{details.data.contract_id}</p>
                                             </div>
                                             <div className="space-y-1">
-                                                <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                                <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 tracking-wider flex items-center gap-1.5">
                                                     <Building2 className="w-3 h-3" /> Chi nhánh
                                                 </p>
                                                 <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">{details.data.branches?.name}</p>
@@ -244,7 +245,7 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
                                             <div className="w-6 h-6 rounded-md bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
                                                 <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                                             </div>
-                                            <h3 className="text-[12px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                                            <h3 className="text-[12px] font-semibold tracking-widest text-emerald-600 dark:text-emerald-400">
                                                 Lịch hẹn thanh toán
                                             </h3>
                                         </div>
@@ -273,7 +274,7 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
 
                                                 <div className="flex items-center justify-between mb-2">
                                                     <div className="flex flex-col">
-                                                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">Đợt số {inst.installment_number || idx + 1}</span>
+                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 tracking-tighter">Đợt số {inst.installment_number || idx + 1}</span>
                                                         <span className="text-[14px] font-bold text-slate-900 dark:text-white">{Number(inst.amount).toLocaleString()} ₫</span>
                                                     </div>
                                                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -301,12 +302,24 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
                                                             </>
                                                         )}
                                                     </div>
-                                                    <span className={cn(
-                                                        "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest",
-                                                        inst.status === 'Đã thanh toán' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400"
-                                                    )}>
-                                                        {inst.status}
-                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        {inst.status === 'Đã thanh toán' && inst.revenue?.payment_method && (
+                                                            <span className={cn(
+                                                                "px-2 py-0.5 rounded-md text-[9px] font-bold tracking-wider border",
+                                                                inst.revenue.payment_method === 'Tiền mặt' 
+                                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900" 
+                                                                    : "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/20 dark:border-blue-900"
+                                                            )}>
+                                                                {inst.revenue.payment_method}
+                                                            </span>
+                                                        )}
+                                                        <span className={cn(
+                                                            "px-2 py-0.5 rounded-full text-[9px] font-bold tracking-widest",
+                                                            inst.status === 'Đã thanh toán' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400"
+                                                        )}>
+                                                            {inst.status}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
                                                 <div className="flex items-center justify-between gap-4 mt-3 pt-3 border-t border-slate-50 dark:border-slate-800">
@@ -369,7 +382,7 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
                     <Button
                         variant="outline"
                         onClick={() => onOpenChange(false)}
-                        className="rounded-xl px-6 h-11 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 font-bold text-xs uppercase"
+                        className="rounded-xl px-6 h-11 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 font-bold text-xs"
                     >
                         Đóng
                     </Button>
@@ -389,26 +402,5 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
                 />
             </SheetContent>
         </Sheet>
-    )
-}
-
-function HandCoinsIcon(props: any) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17" />
-            <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.8-2.8L13 15" />
-            <circle cx="18" cy="5" r="3" />
-        </svg>
     )
 }
