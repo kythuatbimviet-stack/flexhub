@@ -1128,8 +1128,8 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                                 <div className={cn(
                                                                     "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight",
                                                                     contract.status === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400" :
-                                                                        contract.status === 'Hết hạn' ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400" :
-                                                                            "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                                                                    contract.status === 'Hết hạn HĐ' ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400" :
+                                                                    "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                                                                 )}>
                                                                     {contract.status}
                                                                 </div>

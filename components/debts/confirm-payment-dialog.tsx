@@ -11,13 +11,20 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Calendar as CalendarIcon, DollarSign, Loader2 } from 'lucide-react'
+import { Calendar as CalendarIcon, DollarSign, Loader2, CreditCard } from 'lucide-react'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
 import { format } from 'date-fns'
 
 interface ConfirmPaymentDialogProps {
     isOpen: boolean
     onClose: () => void
-    onConfirm: (data: { amount: number, date: string }) => Promise<void>
+    onConfirm: (data: { amount: number, date: string, paymentMethod: string }) => Promise<void>
     installment: any
 }
 
@@ -29,19 +36,21 @@ export function ConfirmPaymentDialog({
 }: ConfirmPaymentDialogProps) {
     const [amount, setAmount] = React.useState<number>(0)
     const [date, setDate] = React.useState<string>(format(new Date(), 'yyyy-MM-dd'))
+    const [paymentMethod, setPaymentMethod] = React.useState<string>('Chuyển khoản')
     const [loading, setLoading] = React.useState(false)
 
     React.useEffect(() => {
         if (installment && isOpen) {
             setAmount(Number(installment.amount))
             setDate(format(new Date(), 'yyyy-MM-dd'))
+            setPaymentMethod('Chuyển khoản')
         }
     }, [installment, isOpen])
 
     const handleConfirm = async () => {
         setLoading(true)
         try {
-            await onConfirm({ amount, date })
+            await onConfirm({ amount, date, paymentMethod })
             onClose()
         } catch (error) {
             console.error('Payment confirmation error:', error)
@@ -101,6 +110,27 @@ export function ConfirmPaymentDialog({
                                 onChange={(e) => setDate(e.target.value)}
                                 className="h-12 pl-11 pr-4 rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all text-[15px] font-medium text-slate-900 dark:text-white"
                             />
+                        </div>
+                    </div>
+
+                    {/* Payment Method Field */}
+                    <div className="space-y-2">
+                        <Label htmlFor="paymentMethod" className="text-[12px] font-medium text-slate-400 dark:text-slate-500 ml-1">
+                            Phương thức thanh toán
+                        </Label>
+                        <div className="relative group">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10">
+                                <CreditCard className="w-4 h-4" />
+                            </div>
+                            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                                <SelectTrigger className="h-12 pl-11 pr-4 rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all text-[15px] font-medium text-slate-900 dark:text-white shadow-none outline-none">
+                                    <SelectValue placeholder="Chọn phương thức" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                    <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
+                                    <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                 </div>

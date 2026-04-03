@@ -137,6 +137,15 @@ export function WeightHistoryPanel({ clientId, clientName, open, onOpenChange }:
     const [isDeleteOpen, setIsDeleteOpen] = React.useState(false)
     const [isDeleting, setIsDeleting] = React.useState(false)
 
+    // Reset filters when clientId or open state changes to ensure data consistency
+    React.useEffect(() => {
+        if (open) {
+            setStatusFilter('ALL')
+            setDateFrom('')
+            setDateTo('')
+        }
+    }, [open, clientId])
+
     const handleDelete = async () => {
         if (!deleteTarget) return
         setIsDeleting(true)
@@ -829,8 +838,8 @@ export function WeightHistoryPanel({ clientId, clientName, open, onOpenChange }:
                                                 ))
                                             ) : (
                                                 <tr>
-                                                    <td colSpan={3} className="px-6 py-12 text-center text-slate-400 text-sm italic font-medium">
-                                                        Không có dữ liệu trong khoảng này
+                                                    <td colSpan={4} className="px-6 py-16 text-center text-slate-400 dark:text-slate-500 text-sm italic font-medium">
+                                                        Chưa có dữ liệu tập luyện trong khoảng này
                                                     </td>
                                                 </tr>
                                             )}

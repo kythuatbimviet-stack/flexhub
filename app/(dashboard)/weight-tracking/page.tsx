@@ -607,38 +607,34 @@ export default function WeightTrackingPage() {
                                                     </TableCell>
                                                     <TableCell className="py-3">
                                                         <div className="flex flex-col">
-                                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                                                {group.clientName}
-                                                            </span>
-                                                            <span className="text-[10px] text-gray-400 font-medium">
-                                                                {group.allRecords.length} lượt đo
-                                                            </span>
+                                                            <span className="text-[14px] font-bold text-gray-900 dark:text-white">{group.clientName}</span>
+                                                            <span className="text-[11px] text-gray-400">{group.allRecords.length} lượt đo</span>
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="text-center">
+                                                    <TableCell className="text-center py-3">
                                                         <div className="flex flex-col items-center">
-                                                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{group.earliest.weight} kg</span>
-                                                            <span className="text-[10px] text-gray-400">{format(new Date(group.earliest.measurement_date), 'dd/MM/yyyy')}</span>
+                                                            <span className="text-[13px] font-bold text-gray-700 dark:text-gray-300">{group.earliest ? `${group.earliest.weight} kg` : '-'}</span>
+                                                            {group.earliest && <span className="text-[10px] text-gray-400">{format(new Date(group.earliest.measurement_date), 'dd/MM/yyyy')}</span>}
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="text-center">
+                                                    <TableCell className="text-center py-3">
                                                         <div className="flex flex-col items-center">
-                                                            <span className="text-sm font-bold text-gray-900 dark:text-white">{group.latest.weight} kg</span>
-                                                            <span className="text-[10px] text-gray-400">{format(new Date(group.latest.measurement_date), 'dd/MM/yyyy')}</span>
+                                                            <span className="text-[13px] font-bold text-gray-900 dark:text-white">{group.latest ? `${group.latest.weight} kg` : '-'}</span>
+                                                            {group.latest && <span className="text-[10px] text-gray-400">{format(new Date(group.latest.measurement_date), 'dd/MM/yyyy')}</span>}
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="text-center">
-                                                        <div className={cn(
-                                                            "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold",
-                                                            group.diff > 0 ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30" :
-                                                                group.diff < 0 ? "bg-red-50 text-red-600 dark:bg-red-950/30" :
-                                                                    "bg-gray-100 text-gray-600 dark:bg-gray-800"
-                                                        )}>
-                                                            {group.diff > 0 ? <ArrowUpRight className="w-3 h-3 mr-0.5" /> : group.diff < 0 ? <ArrowDownRight className="w-3 h-3 mr-0.5" /> : null}
-                                                            {group.diff > 0 ? '+' : ''}{group.diff.toFixed(1)} kg
-                                                        </div>
+                                                    <TableCell className="text-center py-3">
+                                                        {group.latest && group.earliest ? (
+                                                            <div className={cn(
+                                                                "inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-bold",
+                                                                group.diff > 0 ? "bg-red-50 text-red-600" : group.diff < 0 ? "bg-emerald-50 text-emerald-600" : "bg-gray-50 text-gray-600"
+                                                            )}>
+                                                                {group.diff > 0 ? <ArrowUpRight className="w-3 h-3 mr-0.5" /> : group.diff < 0 ? <ArrowDownRight className="w-3 h-3 mr-0.5" /> : null}
+                                                                {group.diff > 0 ? `+${group.diff.toFixed(1)} kg` : `${group.diff.toFixed(1)} kg`}
+                                                            </div>
+                                                        ) : '-'}
                                                     </TableCell>
-                                                    <TableCell className="text-right pr-8">
+                                                    <TableCell className="text-right py-3 pr-6">
                                                         <div className="flex justify-end gap-1">
                                                             {/* Placeholder for expansion indicator or actions if needed at group level */}
                                                         </div>

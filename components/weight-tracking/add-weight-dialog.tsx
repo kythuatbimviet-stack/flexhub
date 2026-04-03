@@ -6,14 +6,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { toast } from 'sonner'
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog'
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+    SheetTrigger,
+} from '@/components/ui/sheet'
 import { useQuery } from '@tanstack/react-query'
 import {
     Form,
@@ -40,7 +39,8 @@ import {
     Activity,
     FileText,
     ClipboardList,
-    Search
+    Search,
+    X
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createWeightRecord, fetchLatestWeightRecordByClientId } from '@/app/actions/weight-tracking'
@@ -209,9 +209,9 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Sheet open={open} onOpenChange={setOpen}>
             {onOpenChange === undefined && (
-                <DialogTrigger asChild>
+                <SheetTrigger asChild>
                     {triggerOverride || (
                         <Button
                             className={cn(
@@ -224,22 +224,42 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                             {initialClientId ? 'Cập nhật cân nặng' : 'Thêm mới'}
                         </Button>
                     )}
-                </DialogTrigger>
+                </SheetTrigger>
             )}
-            <DialogContent className="max-w-xl rounded-[24px] border-none shadow-2xl bg-white dark:bg-slate-950 p-0 overflow-hidden font-inter">
-                <DialogHeader className="px-8 pt-8 pb-4">
-                    <DialogTitle className="text-2xl font-semibold text-black dark:text-white flex items-center gap-3">
-                        <Activity className="w-6 h-6 text-red-500" />
-                        Thêm bản ghi cân nặng
-                    </DialogTitle>
-                    <DialogDescription className="text-[14px] text-slate-800 dark:text-slate-200 font-medium">
-                        Cập nhật và theo dõi thay đổi chỉ số của khách hàng.
-                    </DialogDescription>
-                </DialogHeader>
+            <SheetContent 
+                side="right" 
+                showCloseButton={false}
+                className="w-full sm:max-w-[540px] border-none shadow-2xl p-0 flex flex-col h-full bg-slate-50 dark:bg-gray-950 font-inter overflow-hidden gap-0"
+            >
+                {/* Sticky Header */}
+                <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-6 py-4 flex items-center justify-between shrink-0">
+                    <SheetHeader className="flex flex-row items-center gap-3 space-y-0 text-left">
+                        <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600">
+                            <Activity className="w-5 h-5" />
+                        </div>
+                        <div className="flex flex-col">
+                            <SheetTitle className="text-lg font-bold text-slate-900 dark:text-white leading-tight uppercase">
+                                Thêm bản ghi cân nặng
+                            </SheetTitle>
+                            <SheetDescription className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                Cập nhật và theo dõi thay đổi chỉ số của khách hàng.
+                            </SheetDescription>
+                        </div>
+                    </SheetHeader>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setOpen(false)}
+                        className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                        <X className="w-5 h-5 text-slate-400" />
+                    </Button>
+                </div>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-8 pb-8">
-                        <div className="flex flex-col gap-6">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
+                        <ScrollArea className="flex-1">
+                            <div className="p-6 space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
@@ -492,28 +512,30 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                                     )}
                                 />
                             </div>
-                        </div>
+                            </div>
+                        </ScrollArea>
 
-                        <DialogFooter className="pt-8 gap-3">
+                        {/* Sticky Footer */}
+                        <div className="sticky bottom-0 bg-white dark:bg-gray-950 border-t border-slate-100 dark:border-slate-800 p-4 flex items-center justify-between gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0">
                             <Button
                                 type="button"
                                 variant="ghost"
                                 onClick={() => setOpen(false)}
-                                className="rounded-xl px-8 h-12 text-[14px] font-semibold text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                className="rounded-xl px-6 h-11 text-[13px] font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
                             >
                                 Hủy
                             </Button>
                             <Button
                                 type="submit"
                                 disabled={loading}
-                                className="rounded-xl px-10 h-12 bg-black dark:bg-white text-white dark:text-black hover:bg-slate-900 dark:hover:bg-slate-100 transition-all font-semibold text-[14px] shadow-lg shadow-black/5"
+                                className="rounded-xl px-10 h-11 bg-black dark:bg-white text-white dark:text-black hover:bg-slate-900 dark:hover:bg-slate-100 transition-all font-bold text-[13px] shadow-lg shadow-black/5 active:scale-95"
                             >
                                 {loading ? "Đang xử lý..." : "Lưu bản ghi"}
                             </Button>
-                        </DialogFooter>
+                        </div>
                     </form>
                 </Form>
-            </DialogContent>
-        </Dialog>
+            </SheetContent>
+        </Sheet>
     )
 }

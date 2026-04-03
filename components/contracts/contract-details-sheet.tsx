@@ -1048,8 +1048,9 @@ export function ContractDetailsSheet({
                                                 <div className="flex items-center gap-1.5">
                                                     <div className={cn("w-1.5 h-1.5 rounded-full shrink-0",
                                                         (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-500" :
-                                                            (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-500" :
-                                                                "bg-slate-400"
+                                                        (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-500" :
+                                                        (formData.status || defaultStatus) === 'Hết hạn HĐ' ? "bg-rose-500" :
+                                                        "bg-slate-400"
                                                     )} />
                                                     <SelectValue placeholder="Trạng thái" />
                                                 </div>
@@ -1060,8 +1061,9 @@ export function ContractDetailsSheet({
                                                         <div className="flex items-center gap-2">
                                                             <div className={cn("w-1.5 h-1.5 rounded-full",
                                                                 s.nam === 'Chờ ký HĐ' ? "bg-amber-500" :
-                                                                    s.nam === 'Đã ký HĐ' ? "bg-emerald-500" :
-                                                                        "bg-slate-400"
+                                                                s.nam === 'Đã ký HĐ' ? "bg-emerald-500" :
+                                                                s.nam === 'Hết hạn HĐ' ? "bg-rose-500" :
+                                                                "bg-slate-400"
                                                             )} />
                                                             {s.nam}
                                                         </div>
@@ -1073,12 +1075,12 @@ export function ContractDetailsSheet({
                                         <div className={cn(
                                             "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium tracking-tight",
                                             (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-50 text-amber-600 border border-amber-100 dark:bg-amber-950/20 dark:border-amber-900/30" :
-                                                (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" :
-                                                    "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
+                                            (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" :
+                                            (formData.status || defaultStatus) === 'Hết hạn HĐ' ? "bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30" :
+                                            "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
                                         )}>
                                             <div className={cn("w-1.5 h-1.5 rounded-full",
                                                 (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-500" :
-                                                    (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-500" :
                                                         "bg-slate-400"
                                             )} />
                                             {formData.status || defaultStatus}

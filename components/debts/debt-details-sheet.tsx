@@ -54,7 +54,7 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
     const [selectedInstallment, setSelectedInstallment] = React.useState<any>(null)
     const [installmentToEdit, setInstallmentToEdit] = React.useState<any>(null)
 
-    const handleConfirmPayment = async (data: { amount: number, date: string }) => {
+    const handleConfirmPayment = async (data: { amount: number, date: string, paymentMethod: string }) => {
         if (!selectedInstallment) return
 
         const revenueData = {
@@ -64,7 +64,7 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
             customer_id: details?.data?.client_id,
             contract_id: details?.data?.contract_id,
             description: `Thanh toán công nợ đợt cho HĐ ${details?.data?.contract_id}`,
-            payment_method: 'Chuyển khoản', // Default to Transfer for installments
+            payment_method: data.paymentMethod,
             recorded_at: data.date,
             debt_id: details?.data?.id,
             installment_id: selectedInstallment.id

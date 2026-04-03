@@ -112,7 +112,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
     const getGridTemplate = () => {
         let cols = ['40px'] // STT
         if (visibleColumns.pt) cols.push('80px')
-        cols.push('220px') // Khách hàng
+        cols.push('180px') // Khách hàng
         if (visibleColumns.time) cols.push('140px')
         if (visibleColumns.package) cols.push('100px')
         if (visibleColumns.branch) cols.push('100px')
@@ -121,7 +121,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
     }
 
     const getLeftPaneWidth = () => {
-        let width = 40 + 220 + 80 // STT, Khách hàng, Criteria
+        let width = 40 + 180 + 80 // STT, Khách hàng, Criteria
         if (visibleColumns.pt) width += 80
         if (visibleColumns.time) width += 140
         if (visibleColumns.package) width += 100

@@ -29,6 +29,7 @@ import {
     FileDown,
     MoreHorizontal,
     Banknote,
+    DollarSign,
     Filter,
     Calendar,
     ArrowUpDown,
@@ -60,6 +61,11 @@ export default function ExpensePage() {
     const [viewingExpense, setViewingExpense] = React.useState<any>(null)
     const [detailSheetOpen, setDetailSheetOpen] = React.useState(false)
     const [showMobileFilters, setShowMobileFilters] = React.useState(false)
+
+    // Date Filters
+    const [quickDateFilter, setQuickDateFilter] = React.useState('all')
+    const [startDate, setStartDate] = React.useState('')
+    const [endDate, setEndDate] = React.useState('')
 
     const queryClient = useQueryClient()
     const { data: expenseData, refetch: originalRefetch } = useQuery({
@@ -94,6 +100,46 @@ export default function ExpensePage() {
         },
     })
 
+    const handleQuickDateChange = (value: string) => {
+        setQuickDateFilter(value)
+        if (value === 'all') {
+            setStartDate('')
+            setEndDate('')
+            return
+        }
+
+        const now = new Date()
+        let start = new Date()
+        let end = new Date()
+
+        switch (value) {
+            case 'this-week':
+                const day = now.getDay()
+                const diff = now.getDate() - day + (day === 0 ? -6 : 1)
+                start = new Date(now.setDate(diff))
+                end = new Date(now.setDate(diff + 6))
+                break
+            case 'last-week':
+                const lastWeekNow = new Date()
+                const lastWeekDay = lastWeekNow.getDay()
+                const lastWeekDiff = lastWeekNow.getDate() - lastWeekDay - 6
+                start = new Date(lastWeekNow.setDate(lastWeekDiff))
+                end = new Date(lastWeekNow.setDate(lastWeekDiff + 6))
+                break
+            case 'this-month':
+                start = new Date(now.getFullYear(), now.getMonth(), 1)
+                end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+                break
+            case 'last-month':
+                start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+                end = new Date(now.getFullYear(), now.getMonth(), 0)
+                break
+        }
+
+        setStartDate(start.toISOString().split('T')[0])
+        setEndDate(end.toISOString().split('T')[0])
+    }
+
     const filteredExpense = React.useMemo(() => {
         if (!expenseData) return []
         return expenseData.filter((item: any) => {
@@ -103,12 +149,22 @@ export default function ExpensePage() {
             const matchesBranch = branchFilter === 'all' || item.branch_id === branchFilter
             const matchesCategory = categoryFilter === 'all' || item.category_id === categoryFilter
             const matchesPaymentMethod = paymentMethodFilter === 'all' || item.payment_method === paymentMethodFilter
-            return matchesSearch && matchesBranch && matchesCategory && matchesPaymentMethod
-        })
-    }, [expenseData, searchQuery, branchFilter, categoryFilter, paymentMethodFilter])
+            
+            const itemDate = item.recorded_at?.split('T')[0]
+            const matchesStartDate = !startDate || (itemDate && itemDate >= startDate)
+            const matchesEndDate = !endDate || (itemDate && itemDate <= endDate)
 
-    const totalAmount = React.useMemo(() => {
-        return filteredExpense.reduce((sum: number, item: any) => sum + item.amount, 0)
+            return matchesSearch && matchesBranch && matchesCategory && matchesPaymentMethod && matchesStartDate && matchesEndDate
+        })
+    }, [expenseData, searchQuery, branchFilter, categoryFilter, paymentMethodFilter, startDate, endDate])
+
+    const stats = React.useMemo(() => {
+        return filteredExpense.reduce((acc: any, item: any) => {
+            acc.total += item.amount
+            if (item.payment_method === 'Tiền mặt') acc.cash += item.amount
+            if (item.payment_method === 'Chuyển khoản') acc.transfer += item.amount
+            return acc
+        }, { total: 0, cash: 0, transfer: 0 })
     }, [filteredExpense])
 
     const handleExportExcel = () => {
@@ -166,6 +222,9 @@ export default function ExpensePage() {
         setBranchFilter('all')
         setCategoryFilter('all')
         setPaymentMethodFilter('all')
+        setQuickDateFilter('all')
+        setStartDate('')
+        setEndDate('')
     }
 
     return (
@@ -200,11 +259,33 @@ export default function ExpensePage() {
                         <Banknote className="w-12 h-12 text-rose-600" />
                     </div>
                     <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tổng chi phí</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tổng chi phí (Lọc)</p>
                         <div className="text-2xl font-black text-rose-600">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalAmount)}
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.total)}
                         </div>
                         <p className="text-[11px] text-gray-500 font-medium">Từ {filteredExpense.length} giao dịch</p>
+                    </div>
+                </Card>
+                <Card className="rounded-2xl border-none shadow-sm bg-white dark:bg-gray-900 overflow-hidden relative group p-5">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 transition-transform group-hover:scale-110">
+                        <DollarSign className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tiền mặt</p>
+                        <div className="text-2xl font-black text-blue-600">
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.cash || 0)}
+                        </div>
+                    </div>
+                </Card>
+                <Card className="rounded-2xl border-none shadow-sm bg-white dark:bg-gray-900 overflow-hidden relative group p-5">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 transition-transform group-hover:scale-110">
+                        <DollarSign className="w-12 h-12 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Chuyển khoản</p>
+                        <div className="text-2xl font-black text-purple-600">
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.transfer || 0)}
+                        </div>
                     </div>
                 </Card>
             </div>
@@ -256,42 +337,83 @@ export default function ExpensePage() {
                                     exit={{ height: 0, opacity: 0 }}
                                     className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2"
                                 >
-                                    <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
-                                        <Select value={branchFilter} onValueChange={setBranchFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs sm:text-sm lg:w-44 px-3">
-                                                <SelectValue placeholder="Chi nhánh" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                <SelectItem value="all">Tất cả chi nhánh</SelectItem>
-                                                {branches?.map((branch: any) => (
-                                                    <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                    <div className="flex flex-col lg:flex-row gap-2 items-stretch lg:items-center pt-2 lg:pt-0">
+                                        <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center">
+                                            <Select value={branchFilter} onValueChange={setBranchFilter}>
+                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs sm:text-sm lg:w-40 px-3">
+                                                    <SelectValue placeholder="Chi nhánh" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                    <SelectItem value="all">Tất cả chi nhánh</SelectItem>
+                                                    {branches?.map((branch: any) => (
+                                                        <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
 
-                                        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs sm:text-sm lg:w-44 px-3">
-                                                <SelectValue placeholder="Danh mục" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                <SelectItem value="all">Tất cả danh mục</SelectItem>
-                                                {categories?.map((cat: any) => (
-                                                    <SelectItem key={cat.id} value={cat.nam}>{cat.nam}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs sm:text-sm lg:w-40 px-3">
+                                                    <SelectValue placeholder="Danh mục" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                    <SelectItem value="all">Tất cả danh mục</SelectItem>
+                                                    {categories?.map((cat: any) => (
+                                                        <SelectItem key={cat.id} value={cat.nam}>{cat.nam}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
 
-                                        <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs sm:text-sm lg:w-40 px-3">
-                                                <SelectValue placeholder="Hình thức" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                <SelectItem value="all">Tất cả hình thức</SelectItem>
-                                                {['Tiền mặt', 'Chuyển khoản', 'Thẻ'].map(m => (
-                                                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="grid grid-cols-1 lg:flex lg:flex-row gap-2 items-center">
+                                            <div className="flex items-center gap-2">
+                                                <Select value={quickDateFilter} onValueChange={handleQuickDateChange}>
+                                                    <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs sm:text-sm lg:w-40 px-3">
+                                                        <SelectValue placeholder="Thời gian" />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                        <SelectItem value="all">Tất cả thời gian</SelectItem>
+                                                        <SelectItem value="this-week">Tuần này</SelectItem>
+                                                        <SelectItem value="last-week">Tuần trước</SelectItem>
+                                                        <SelectItem value="this-month">Tháng này</SelectItem>
+                                                        <SelectItem value="last-month">Tháng trước</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+
+                                                <div className="flex items-center gap-1.5 flex-1">
+                                                    <Input
+                                                        type="date"
+                                                        value={startDate}
+                                                        onChange={(e) => {
+                                                            setStartDate(e.target.value)
+                                                            setQuickDateFilter('')
+                                                        }}
+                                                        className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs px-2 lg:w-[130px]"
+                                                    />
+                                                    <span className="text-gray-400 text-xs">-</span>
+                                                    <Input
+                                                        type="date"
+                                                        value={endDate}
+                                                        onChange={(e) => {
+                                                            setEndDate(e.target.value)
+                                                            setQuickDateFilter('')
+                                                        }}
+                                                        className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs px-2 lg:w-[130px]"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs sm:text-sm lg:w-40 px-3">
+                                                    <SelectValue placeholder="Hình thức" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                    <SelectItem value="all">Tất cả hình thức</SelectItem>
+                                                    {['Tiền mặt', 'Chuyển khoản', 'Thẻ'].map(m => (
+                                                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
                                 </motion.div>
                             )}
@@ -364,7 +486,7 @@ export default function ExpensePage() {
                                             <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
                                                 {new Date(item.recorded_at).toLocaleDateString('vi-VN')}
                                             </span>
-                                            <span className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter mt-0.5">Ghi nhận</span>
+                                            <span className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter mt-0.5">ID: {item.id.split('-')[0]}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell className="py-3">

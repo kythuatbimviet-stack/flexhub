@@ -1051,10 +1051,8 @@ export async function closeContract(
             updates.weight_change = closureData.weight_change
         }
 
-        // Chỉ cập nhật status chính khi Tạm nghỉ hoặc Nghỉ hẳn
-        if (closureData.closure_status === 'Tạm nghỉ' || closureData.closure_status === 'Nghỉ hẳn') {
-            updates.status = 'Kết thúc hợp đồng'
-        }
+        // Sau khi xử lý xong, luôn chuyển trạng thái HĐ về "Hết hạn HĐ"
+        updates.status = 'Hết hạn HĐ'
 
         const { data, error } = await supabase
             .from('contracts')

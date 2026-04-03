@@ -62,11 +62,11 @@ export function TrainingLogStats({ stats }: StatsProps) {
                             <item.icon className="w-6 h-6" />
                         </div>
                         <div className="min-w-0">
-                            <p className="text-[12px] font-medium text-gray-500 mb-0.5 leading-none">
+                            <p className="text-[12px] font-medium text-slate-900 mb-0.5 leading-none">
                                 {item.label}
                             </p>
                             <div className="flex items-baseline gap-2">
-                                <h3 className="text-2xl font-semibold text-black tracking-tight">
+                                <h3 className="text-2xl font-medium text-black tracking-tight">
                                     {item.value}
                                 </h3>
                                 {item.percent !== undefined && (

@@ -645,11 +645,13 @@ export default function ContractsPage() {
                     {contractStatuses.map((s: any) => {
                         const statusColors: any = {
                             'Đang tập': { active: 'bg-emerald-50 text-emerald-700 border-emerald-200', inactive: 'bg-emerald-50/30 text-emerald-600/70 border-emerald-100/50', badge: 'bg-emerald-500 text-white' },
-                            'Chờ ký': { active: 'bg-slate-100 text-slate-700 border-slate-300', inactive: 'bg-slate-50/50 text-slate-500 border-slate-100', badge: 'bg-slate-400 text-white' },
-                            'Hết hạn': { active: 'bg-rose-50 text-rose-700 border-rose-200', inactive: 'bg-rose-50/30 text-rose-600/70 border-rose-100/50', badge: 'bg-rose-500 text-white' },
+                            'Chờ ký HĐ': { active: 'bg-slate-100 text-slate-700 border-slate-300', inactive: 'bg-slate-50/50 text-slate-500 border-slate-100', badge: 'bg-slate-400 text-white' },
+                            'Hết hạn HĐ': { active: 'bg-rose-50 text-rose-700 border-rose-200', inactive: 'bg-rose-50/30 text-rose-600/70 border-rose-100/50', badge: 'bg-rose-500 text-white' },
                             'Hoàn thành': { active: 'bg-blue-50 text-blue-700 border-blue-200', inactive: 'bg-blue-50/30 text-blue-600/70 border-blue-100/50', badge: 'bg-blue-500 text-white' },
-                            'Hủy': { active: 'bg-neutral-100 text-neutral-700 border-neutral-300', inactive: 'bg-neutral-50/50 text-neutral-500 border-neutral-100', badge: 'bg-neutral-400 text-white' },
-                            'Gia hạn': { active: 'bg-amber-50 text-amber-700 border-amber-200', inactive: 'bg-amber-50/30 text-amber-600/70 border-amber-100/50', badge: 'bg-amber-500 text-white' }
+                            'Huỷ HĐ': { active: 'bg-neutral-100 text-neutral-700 border-neutral-300', inactive: 'bg-neutral-50/50 text-neutral-500 border-neutral-100', badge: 'bg-neutral-400 text-white' },
+                            'Đã ký HĐ': { active: 'bg-emerald-50 text-emerald-700 border-emerald-200', inactive: 'bg-emerald-50/30 text-emerald-600/70 border-emerald-100/50', badge: 'bg-emerald-500 text-white' },
+                            'Bảo lưu': { active: 'bg-amber-50 text-amber-700 border-amber-200', inactive: 'bg-amber-50/30 text-amber-600/70 border-amber-100/50', badge: 'bg-amber-500 text-white' },
+                            'Đợi kích hoạt HĐ': { active: 'bg-blue-50 text-blue-700 border-blue-200', inactive: 'bg-blue-50/30 text-blue-600/70 border-blue-100/50', badge: 'bg-blue-500 text-white' }
                         }
                         const colors = statusColors[s.nam] || { active: 'bg-white text-red-600 border-red-200', inactive: 'bg-white/50 text-gray-500 border-gray-100', badge: 'bg-red-500 text-white' }
 
@@ -991,11 +993,13 @@ export default function ContractsPage() {
                                                         "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap",
                                                         contract.status === 'Chờ ký HĐ' ? "bg-amber-50 text-amber-600 border-amber-100" :
                                                         contract.status === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                                                        contract.status === 'Hết hạn HĐ' ? "bg-rose-50 text-rose-600 border-rose-100" :
                                                         "bg-gray-50 text-gray-600 border-gray-100"
                                                     )}>
                                                         <div className={cn("w-1 h-1 rounded-full", 
                                                             contract.status === 'Chờ ký HĐ' ? "bg-amber-500" :
                                                             contract.status === 'Đã ký HĐ' ? "bg-emerald-500" :
+                                                            contract.status === 'Hết hạn HĐ' ? "bg-rose-500" :
                                                             "bg-gray-400"
                                                         )} />
                                                         {contract.status}

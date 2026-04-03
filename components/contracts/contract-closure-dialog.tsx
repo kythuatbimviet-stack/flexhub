@@ -183,8 +183,8 @@ export function ContractClosureDialog({
             if (result.success) {
                 const msg =
                     closureStatus === 'Renew'
-                        ? 'Đã đánh dấu hợp đồng sẽ được gia hạn!'
-                        : `Đã kết thúc hợp đồng (${closureStatus})`
+                        ? 'Đã xử lý Gia hạn và chuyển trạng thái hợp đồng về "Hết hạn HĐ"!'
+                        : `Đã xử lý ${closureStatus} và chuyển trạng thái hợp đồng về "Hết hạn HĐ"!`
                 toast.success(msg)
                 onSuccess()
                 onOpenChange(false)

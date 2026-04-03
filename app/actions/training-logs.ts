@@ -46,7 +46,7 @@ export async function fetchTrainingLogsReport({
             .from('training_logs')
             .select(`
                 *,
-                client:clients (
+                client:clients!inner (
                     member_name,
                     branch_id,
                     pt_name

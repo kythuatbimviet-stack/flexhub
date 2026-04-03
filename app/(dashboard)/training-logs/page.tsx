@@ -3,7 +3,6 @@
 import * as React from 'react'
 import { HeartHandshake, ClipboardList, Filter, LayoutGrid } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TrainingLogStats } from '@/components/training-logs/training-log-stats'
 import { TrainingLogFilters } from '@/components/training-logs/training-log-filters'
 import { TrainingLogTable } from '@/components/training-logs/training-log-table'
@@ -12,13 +11,15 @@ import { fetchBranches } from '@/app/actions/branches'
 import { fetchClientFilterOptions } from '@/app/actions/clients'
 import { usePermissions } from '@/hooks/use-permissions'
 import { cn } from '@/lib/utils'
+import { format } from 'date-fns'
 
 export default function TrainingLogsPage() {
     const { permissions, isLoading: isLoadingPermissions } = usePermissions()
     
     const [branchFilter, setBranchFilter] = React.useState('all')
     const [ptFilter, setPtFilter] = React.useState('all')
-    const [statusFilter, setStatusFilter] = React.useState('all')
+    const [startDate, setStartDate] = React.useState(format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'))
+    const [endDate, setEndDate] = React.useState(format(new Date(), 'yyyy-MM-dd'))
     const [clientSearch, setClientSearch] = React.useState('')
     const [debouncedClientSearch, setDebouncedClientSearch] = React.useState('')
 
@@ -48,11 +49,12 @@ export default function TrainingLogsPage() {
 
     // Main data query
     const { data: reportResult, isLoading, isFetching } = useQuery({
-        queryKey: ['training-logs-report', branchFilter, ptFilter, statusFilter, debouncedClientSearch],
+        queryKey: ['training-logs-report', branchFilter, ptFilter, debouncedClientSearch, startDate, endDate],
         queryFn: () => fetchTrainingLogsReport({
+            startDate: startDate,
+            endDate: endDate,
             branchId: branchFilter === 'all' ? undefined : branchFilter,
             ptName: ptFilter === 'all' ? undefined : ptFilter,
-            status: statusFilter === 'all' ? undefined : statusFilter,
             clientSearch: debouncedClientSearch || undefined
         })
     })
@@ -60,10 +62,33 @@ export default function TrainingLogsPage() {
     const reportData = reportResult?.data || []
     const stats = reportResult?.stats || { total: 0, y: 0, n: 0, td: 0 }
 
+    const groupedData = React.useMemo(() => {
+        const groups: { [key: string]: any } = {}
+        reportData.forEach((log: any) => {
+            const clientId = log.client_id
+            if (!groups[clientId]) {
+                groups[clientId] = {
+                    clientId,
+                    client: log.client,
+                    logs: [],
+                    stats: { y: 0, n: 0, td: 0 }
+                }
+            }
+            groups[clientId].logs.push(log)
+            if (log.status === 'Y') groups[clientId].stats.y++
+            if (log.status === 'N') groups[clientId].stats.n++
+            if (log.status === 'TĐ') groups[clientId].stats.td++
+        })
+        return Object.values(groups).sort((a: any, b: any) => 
+            (a.client?.member_name || '').localeCompare(b.client?.member_name || '')
+        )
+    }, [reportData])
+
     const handleClearFilters = () => {
         setBranchFilter('all')
         setPtFilter('all')
-        setStatusFilter('all')
+        setStartDate(format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'))
+        setEndDate(format(new Date(), 'yyyy-MM-dd'))
         setClientSearch('')
     }
 
@@ -79,7 +104,7 @@ export default function TrainingLogsPage() {
                     </div>
                     <div>
                         <h1 className="text-3xl font-medium text-black dark:text-gray-100 tracking-tight">Tần suất tập luyện</h1>
-                        <p className="text-[13px] text-gray-500 font-medium leading-none mt-1">Báo cáo chi tiết việc đi tập của hội viên.</p>
+                        <p className="text-[13px] text-slate-600 font-medium leading-none mt-1">Báo cáo chi tiết việc đi tập của hội viên.</p>
                     </div>
                 </div>
             </div>
@@ -96,6 +121,10 @@ export default function TrainingLogsPage() {
                     setBranchFilter={setBranchFilter}
                     ptFilter={ptFilter}
                     setPtFilter={setPtFilter}
+                    startDate={startDate}
+                    setStartDate={setStartDate}
+                    endDate={endDate}
+                    setEndDate={setEndDate}
                     clientSearch={clientSearch}
                     setClientSearch={setClientSearch}
                     onClear={handleClearFilters}
@@ -104,36 +133,17 @@ export default function TrainingLogsPage() {
             </div>
 
             {/* Content Section */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between px-1">
-                    <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-auto">
-                        <TabsList className="bg-gray-100/50 dark:bg-gray-800/50 p-1 h-9 rounded-xl border border-gray-100 dark:border-gray-800">
-                            <TabsTrigger value="all" className="rounded-lg text-[12px] font-medium px-4 h-7 data-[state=active]:bg-white data-[state=active]:text-red-600 data-[state=active]:shadow-sm">
-                                Tất cả ({stats.total})
-                            </TabsTrigger>
-                            <TabsTrigger value="Y" className="rounded-lg text-[12px] font-medium px-4 h-7 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:shadow-sm">
-                                Tập với PT ({stats.y})
-                            </TabsTrigger>
-                            <TabsTrigger value="N" className="rounded-lg text-[12px] font-medium px-4 h-7 data-[state=active]:bg-red-50 data-[state=active]:text-red-700 data-[state=active]:shadow-sm">
-                                Nghỉ tập ({stats.n})
-                            </TabsTrigger>
-                            <TabsTrigger value="TĐ" className="rounded-lg text-[12px] font-medium px-4 h-7 data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 data-[state=active]:shadow-sm">
-                                Tự tập ({stats.td})
-                            </TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-
-                    <div className={cn(
-                        "flex items-center gap-2 text-[11px] font-medium transition-all duration-300",
-                        isFetching ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4 pointer-events-none"
-                    )}>
-                        <div className="w-4 h-4 border-2 border-red-600/20 border-t-red-600 rounded-full animate-spin" />
-                        <span className="text-gray-400">Đang cập nhật dữ liệu...</span>
-                    </div>
+            <div className="space-y-1">
+                <div className={cn(
+                    "flex items-center justify-end gap-2 text-[11px] font-medium transition-all duration-300 px-1 overflow-hidden",
+                    isFetching ? "h-6 opacity-100 translate-x-0" : "h-0 opacity-0 translate-x-4 pointer-events-none"
+                )}>
+                    <div className="w-4 h-4 border-2 border-red-600/20 border-t-red-600 rounded-full animate-spin" />
+                    <span className="text-slate-900">Đang cập nhật dữ liệu...</span>
                 </div>
 
                 <TrainingLogTable 
-                    data={reportData} 
+                    data={groupedData} 
                     isLoading={isLoading} 
                     branches={branches}
                 />
