@@ -53,6 +53,7 @@ import { AddWeightDialog } from './add-weight-dialog'
 import { WeightDetailsSheet } from './weight-details-sheet'
 import { WeightHistoryPanel } from './weight-history-panel'
 import { fetchTrainingLogs, upsertTrainingStatus } from '@/app/actions/weight-tracking'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 interface WeightGanttViewProps {
     records: any[]
@@ -62,6 +63,7 @@ interface WeightGanttViewProps {
 }
 
 export function WeightGanttView({ records, clients, contracts, onSuccess }: WeightGanttViewProps) {
+    const isMobile = useIsMobile()
     const queryClient = useQueryClient()
     const [startDate, setStartDate] = React.useState<string>(format(startOfMonth(new Date()), 'yyyy-MM-01'))
     const [endDate, setEndDate] = React.useState<string>(format(endOfMonth(addDays(new Date(), 30)), 'yyyy-MM-dd'))
@@ -110,6 +112,9 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
     }
 
     const getGridTemplate = () => {
+        if (isMobile) {
+            return '120px' // Only Client name
+        }
         let cols = ['40px'] // STT
         if (visibleColumns.pt) cols.push('80px')
         cols.push('180px') // Khách hàng
@@ -121,6 +126,9 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
     }
 
     const getLeftPaneWidth = () => {
+        if (isMobile) {
+            return '120px' // Only client name column
+        }
         let width = 40 + 180 + 80 // STT, Khách hàng, Criteria
         if (visibleColumns.pt) width += 80
         if (visibleColumns.time) width += 140
@@ -305,211 +313,307 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
     return (
         <div className="flex flex-col h-full gap-1 font-inter bg-white dark:bg-slate-950/20 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
             {/* Top Toolbar */}
-            <div className="flex items-center justify-between px-4 py-2 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-3">
-                    <div className="relative">
+            <div className={cn(
+                "flex items-center justify-between px-4 py-2 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800",
+                isMobile && "flex-col gap-3 py-3"
+            )}>
+                <div className={cn("flex items-center gap-3", isMobile && "w-full flex-col")}>
+                    <div className={cn("relative", isMobile && "w-full")}>
                         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                         <Input
                             placeholder="Tìm khách hàng..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="h-9 w-48 pl-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs focus-visible:ring-1 focus-visible:ring-blue-500"
+                            className={cn(
+                                "h-9 pl-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs focus-visible:ring-1 focus-visible:ring-blue-500",
+                                isMobile ? "w-full" : "w-48"
+                            )}
                         />
                     </div>
 
-                    <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1">
-                        <Calendar className="w-4 h-4 text-slate-400" />
-                        <Input
-                            type="date"
-                            value={startDate}
-                            onChange={e => setStartDate(e.target.value)}
-                            className="h-7 w-32 border-none bg-transparent shadow-none p-0 text-xs focus-visible:ring-0"
-                        />
+                    <div className={cn(
+                        "flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1",
+                        isMobile && "w-full justify-between"
+                    )}>
+                        <div className="flex items-center gap-2 flex-1">
+                            <Calendar className="w-4 h-4 text-slate-400" />
+                            <Input
+                                type="date"
+                                value={startDate}
+                                onChange={e => setStartDate(e.target.value)}
+                                className="h-7 w-28 border-none bg-transparent shadow-none p-0 text-xs focus-visible:ring-0"
+                            />
+                        </div>
                         <span className="text-slate-300">|</span>
-                        <Input
-                            type="date"
-                            value={endDate}
-                            onChange={e => setEndDate(e.target.value)}
-                            className="h-7 w-32 border-none bg-transparent shadow-none p-0 text-xs focus-visible:ring-0"
-                        />
+                        <div className="flex items-center gap-2 flex-1 justify-end">
+                            <Input
+                                type="date"
+                                value={endDate}
+                                onChange={e => setEndDate(e.target.value)}
+                                className="h-7 w-28 border-none bg-transparent shadow-none p-0 text-xs focus-visible:ring-0 text-right"
+                            />
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <Select value={filterBranch} onValueChange={setFilterBranch}>
-                            <SelectTrigger className="h-9 w-48 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                    <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                    <SelectValue placeholder="Chi nhánh" />
+                    {isMobile ? (
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" size="sm" className="h-9 gap-2 text-xs border-slate-200 bg-white dark:bg-slate-800">
+                                    <Filter className="w-3.5 h-3.5" />
+                                    <span>Bộ lọc & Hiển thị</span>
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-64 p-4 space-y-4" align="start">
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hội viên</h4>
+                                    <Input
+                                        placeholder="Tìm khách hàng..."
+                                        value={searchTerm}
+                                        onChange={e => setSearchTerm(e.target.value)}
+                                        className="h-9 text-xs"
+                                    />
                                 </div>
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                <SelectItem value="all">Tất cả chi nhánh</SelectItem>
-                                {branchOptions.map(opt => (
-                                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        <Select value={filterPT} onValueChange={setFilterPT}>
-                            <SelectTrigger className="h-9 w-48 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                    <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                    <SelectValue placeholder="PT" />
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lọc theo</h4>
+                                    <div className="flex flex-col gap-2">
+                                        <Select value={filterBranch} onValueChange={setFilterBranch}>
+                                            <SelectTrigger className="h-9 text-xs">
+                                                <SelectValue placeholder="Chi nhánh" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Tất cả chi nhánh</SelectItem>
+                                                {branchOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <Select value={filterPT} onValueChange={setFilterPT}>
+                                            <SelectTrigger className="h-9 text-xs">
+                                                <SelectValue placeholder="PT" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Tất cả PT</SelectItem>
+                                                {ptOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <Select value={filterPackage} onValueChange={setFilterPackage}>
+                                            <SelectTrigger className="h-9 text-xs">
+                                                <SelectValue placeholder="Gói tập" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Tất cả gói tập</SelectItem>
+                                                {packageOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                <SelectItem value="all">Tất cả PT</SelectItem>
-                                {ptOptions.map(opt => (
-                                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        <Select value={filterPackage} onValueChange={setFilterPackage}>
-                            <SelectTrigger className="h-9 w-56 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                    <Package className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                    <SelectValue placeholder="Gói tập" />
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiêu chí hiển thị</h4>
+                                    <div className="flex flex-col gap-2.5">
+                                        <div className="flex items-center gap-2" onClick={() => toggleCriteria('target', !showTarget)}>
+                                            <Checkbox checked={showTarget} className="w-4 h-4" />
+                                            <span className="text-xs font-medium">Cân cần đạt</span>
+                                        </div>
+                                        <div className="flex items-center gap-2" onClick={() => toggleCriteria('actual', !showActual)}>
+                                            <Checkbox checked={showActual} className="w-4 h-4" />
+                                            <span className="text-xs font-medium">Cân thực tế</span>
+                                        </div>
+                                        <div className="flex items-center gap-2" onClick={() => toggleCriteria('training', !showTraining)}>
+                                            <Checkbox checked={showTraining} className="w-4 h-4" />
+                                            <span className="text-xs font-medium">Tần suất tập</span>
+                                        </div>
+                                    </div>
                                 </div>
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                <SelectItem value="all">Tất cả gói tập</SelectItem>
-                                {packageOptions.map(opt => (
-                                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                                <Button 
+                                    variant="ghost" 
+                                    className="w-full h-9 text-xs text-red-500 hover:text-red-600 hover:bg-red-50"
+                                    onClick={handleResetFilters}
+                                >
+                                    <RotateCcw className="w-3.5 h-3.5 mr-2" />
+                                    Đặt lại bộ lọc
+                                </Button>
+                            </PopoverContent>
+                        </Popover>
+                    ) : (
+                        <>
+                            <Select value={filterBranch} onValueChange={setFilterBranch}>
+                                <SelectTrigger className={cn("h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none shrink-0", isMobile ? "w-32" : "w-48")}>
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                        <SelectValue placeholder="Chi nhánh" />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                    <SelectItem value="all">Tất cả chi nhánh</SelectItem>
+                                    {branchOptions.map(opt => (
+                                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
 
-                        {(filterBranch !== "all" || filterPT !== "all" || filterPackage !== "all" || searchTerm !== "") && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleResetFilters}
-                                className="h-9 w-9 p-0 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                                title="Đặt lại bộ lọc"
-                            >
-                                <RotateCcw className="w-4 h-4" />
-                            </Button>
-                        )}
-                    </div>
+                            <Select value={filterPT} onValueChange={setFilterPT}>
+                                <SelectTrigger className={cn("h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none shrink-0", isMobile ? "w-32" : "w-48")}>
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                        <SelectValue placeholder="PT" />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                    <SelectItem value="all">Tất cả PT</SelectItem>
+                                    {ptOptions.map(opt => (
+                                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            <Select value={filterPackage} onValueChange={setFilterPackage}>
+                                <SelectTrigger className={cn("h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none shrink-0", isMobile ? "w-32" : "w-56")}>
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <Package className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                        <SelectValue placeholder="Gói tập" />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                    <SelectItem value="all">Tất cả gói tập</SelectItem>
+                                    {packageOptions.map(opt => (
+                                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            {(filterBranch !== "all" || filterPT !== "all" || filterPackage !== "all" || searchTerm !== "") && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleResetFilters}
+                                    className="h-9 w-9 p-0 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shrink-0"
+                                    title="Đặt lại bộ lọc"
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                </Button>
+                            )}
+                        </>
+                    )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <AnimatePresence>
-                        {selectedClientId && selectedDate && (
-                            <motion.div 
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 20 }}
-                                className="flex items-center gap-1.5 mr-2 pr-4 border-r border-slate-200 dark:border-slate-800"
-                            >
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Tần suất:</span>
-                                <TooltipProvider>
-                                    <div className="flex items-center gap-1.5">
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button 
-                                                    size="sm" 
-                                                    className="h-8 w-8 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
-                                                    onClick={() => handleUpdateStatus('Y')}
-                                                >
-                                                    Y
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent className="bg-emerald-600 text-white border-none text-[11px] font-medium">
-                                                Y (Tập): Hiển thị màu xanh
-                                            </TooltipContent>
-                                        </Tooltip>
-
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button 
-                                                    size="sm" 
-                                                    className="h-8 w-8 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
-                                                    onClick={() => handleUpdateStatus('N')}
-                                                >
-                                                    N
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent className="bg-rose-600 text-white border-none text-[11px] font-medium">
-                                                N (Nghỉ): Hiển thị màu đỏ
-                                            </TooltipContent>
-                                        </Tooltip>
-
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button 
-                                                    size="sm" 
-                                                    className="h-8 w-10 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
-                                                    onClick={() => handleUpdateStatus('TĐ')}
-                                                >
-                                                    TĐ
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent className="bg-amber-600 text-white border-none text-[11px] font-medium">
-                                                TĐ (Tự tập): Hiển thị màu cam
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </div>
-                                </TooltipProvider>
-                                <Button 
-                                    variant="ghost"
-                                    size="sm" 
-                                    className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-500 p-0"
-                                    onClick={() => handleUpdateStatus(null)}
-                                    title="Xóa trạng thái"
-                                >
-                                    <RotateCcw className="w-3.5 h-3.5" />
-                                </Button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={!selectedClientId || !selectedDate}
-                        onClick={() => handleOpenEdit(selectedClientId!, selectedDate || undefined)}
-                        className="h-8 gap-2 text-xs border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 transition-all"
-                    >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>Chỉnh sửa</span>
-                    </Button>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-8 gap-2 text-xs border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
-                                <Settings2 className="w-3.5 h-3.5" />
-                                <span>Tùy chỉnh cột</span>
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-56 p-2" align="end">
-                            <div className="space-y-1">
-                                <h4 className="px-2 py-1.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Cột hiển thị</h4>
-                                {Object.entries({
-                                    pt: "PT",
-                                    time: "Thời gian tập",
-                                    package: "Loại gói",
-                                    branch: "Chi nhánh"
-                                }).map(([key, label]) => (
-                                    <div
-                                        key={key}
-                                        className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-md cursor-pointer group"
-                                        onClick={() => toggleColumn(key as any)}
+                <div className={cn("flex items-center gap-2", isMobile && "w-full justify-between border-t border-slate-100 dark:border-slate-800 pt-2")}>
+                    {!isMobile && (
+                        <>
+                            <AnimatePresence>
+                                {selectedClientId && selectedDate && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 20 }}
+                                        className="flex items-center gap-1.5 mr-2 pr-4 border-r border-slate-200 dark:border-slate-800"
                                     >
-                                        <div className={cn(
-                                            "w-4 h-4 rounded border flex items-center justify-center transition-colors",
-                                            visibleColumns[key as keyof typeof visibleColumns]
-                                                ? "bg-blue-600 border-blue-600 text-white"
-                                                : "border-slate-300 dark:border-slate-700"
-                                        )}>
-                                            {visibleColumns[key as keyof typeof visibleColumns] && <Check className="w-3 h-3" />}
-                                        </div>
-                                        <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{label}</span>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Tần suất:</span>
+                                        <TooltipProvider>
+                                            <div className="flex items-center gap-1.5">
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button 
+                                                            size="sm" 
+                                                            className="h-8 w-8 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
+                                                            onClick={() => handleUpdateStatus('Y')}
+                                                        >
+                                                            Y
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent className="bg-emerald-600 text-white border-none text-[11px] font-medium">
+                                                        Y (Tập): Hiển thị màu xanh
+                                                    </TooltipContent>
+                                                </Tooltip>
+
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button 
+                                                            size="sm" 
+                                                            className="h-8 w-8 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
+                                                            onClick={() => handleUpdateStatus('N')}
+                                                        >
+                                                            N
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent className="bg-rose-600 text-white border-none text-[11px] font-medium">
+                                                        N (Nghỉ): Hiển thị màu đỏ
+                                                    </TooltipContent>
+                                                </Tooltip>
+
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button 
+                                                            size="sm" 
+                                                            className="h-8 w-10 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
+                                                            onClick={() => handleUpdateStatus('TĐ')}
+                                                        >
+                                                            T
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent className="bg-amber-600 text-white border-none text-[11px] font-medium">
+                                                        TT (Tự tập): Hiển thị màu cam
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </div>
+                                        </TooltipProvider>
+                                        <Button 
+                                            variant="ghost"
+                                            size="sm" 
+                                            className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-500 p-0"
+                                            onClick={() => handleUpdateStatus(null)}
+                                            title="Xóa trạng thái"
+                                        >
+                                            <RotateCcw className="w-3.5 h-3.5" />
+                                        </Button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={!selectedClientId || !selectedDate}
+                                onClick={() => handleOpenEdit(selectedClientId!, selectedDate || undefined)}
+                                className="h-8 gap-2 text-xs border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 transition-all"
+                            >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                <span>Chỉnh sửa</span>
+                            </Button>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" size="sm" className="h-8 gap-2 text-xs border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                                        <Settings2 className="w-3.5 h-3.5" />
+                                        <span>Tùy chỉnh cột</span>
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-56 p-2" align="end">
+                                    <div className="space-y-1">
+                                        <h4 className="px-2 py-1.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Cột hiển thị</h4>
+                                        {Object.entries({
+                                            pt: "PT",
+                                            time: "Thời gian tập",
+                                            package: "Loại gói",
+                                            branch: "Chi nhánh"
+                                        }).map(([key, label]) => (
+                                            <div
+                                                key={key}
+                                                className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-md cursor-pointer group"
+                                                onClick={() => toggleColumn(key as any)}
+                                            >
+                                                <div className={cn(
+                                                    "w-4 h-4 rounded border flex items-center justify-center transition-colors",
+                                                    visibleColumns[key as keyof typeof visibleColumns]
+                                                        ? "bg-blue-600 border-blue-600 text-white"
+                                                        : "border-slate-300 dark:border-slate-700"
+                                                )}>
+                                                    {visibleColumns[key as keyof typeof visibleColumns] && <Check className="w-3 h-3" />}
+                                                </div>
+                                                <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{label}</span>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
-                        </PopoverContent>
-                    </Popover>
+                                </PopoverContent>
+                            </Popover>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -557,13 +661,13 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                 className="sticky left-0 z-50 bg-slate-50 dark:bg-slate-800/50 border-b border-r border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-500 uppercase h-12 items-center shrink-0"
                                 style={{ display: 'grid', gridTemplateColumns: getGridTemplate(), width: getLeftPaneWidth() }}
                             >
-                                <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">STT</div>
-                                {visibleColumns.pt && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">PT</div>}
+                                {!isMobile && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">STT</div>}
+                                {visibleColumns.pt && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">PT</div>}
                                 <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center px-2">Khách hàng</div>
-                                {visibleColumns.time && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">Thời gian tập</div>}
-                                {visibleColumns.package && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">Loại gói</div>}
-                                {visibleColumns.branch && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">Chi nhánh</div>}
-                                <div className="h-full flex items-center justify-center">Tiêu chí</div>
+                                {visibleColumns.time && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">Thời gian tập</div>}
+                                {visibleColumns.package && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">Loại gói</div>}
+                                {visibleColumns.branch && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">Chi nhánh</div>}
+                                {!isMobile && <div className="h-full flex items-center justify-center text-center px-1">Tiêu chí</div>}
                             </div>
                             <div className="flex h-12 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
                                 {days.map((day, i) => {
@@ -607,86 +711,90 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                             return (
                                 <div key={client.id} className="flex group transition-colors duration-200">
                                     {/* Left Content (Sticky Column) */}
-                                    <div
-                                        className={cn(
-                                            "sticky left-0 z-30 border-r border-b border-slate-200 dark:border-slate-800 shrink-0 font-inter transition-colors duration-200",
-                                            isSelected ? "bg-blue-600/15 dark:bg-blue-600/25" : "bg-white dark:bg-slate-950 group-hover:bg-slate-50 dark:group-hover:bg-slate-900/50"
-                                        )}
-                                        style={{ display: 'grid', gridTemplateColumns: getGridTemplate(), width: getLeftPaneWidth(), minHeight: `${visibleCount * 32}px` }}
-                                        onClick={() => handleRowClick(client.id)}
-                                    >
-                                        <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-xs text-slate-400 dark:text-slate-300 font-medium">{idx + 1}</div>
-                                        {visibleColumns.pt && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-500 dark:text-slate-300 text-center px-2">{contract?.trainer_name || '-'}</div>}
-                                        <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-start justify-center px-4 py-2 gap-1.5 overflow-hidden">
-                                            <div 
-                                                className="font-bold text-xs text-slate-900 dark:text-blue-400 truncate w-full cursor-pointer hover:text-blue-600 dark:hover:text-blue-300 hover:underline transition-all"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleClientNameClick(client);
-                                                }}
-                                            >
-                                                {client.member_name}
-                                            </div>
-                                            <div className="flex flex-col gap-0.5 w-full">
-                                                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-300 whitespace-nowrap">
-                                                    <span className="font-medium">SĐT:</span>
-                                                    <span>{contract?.phone || '-'}</span>
+                                        <div
+                                            className={cn(
+                                                "sticky left-0 z-30 border-r border-b border-slate-200 dark:border-slate-800 shrink-0 font-inter transition-all duration-200 overflow-hidden",
+                                                isSelected ? "bg-blue-600/15 dark:bg-blue-600/25" : "bg-white dark:bg-slate-950 group-hover:bg-slate-50 dark:group-hover:bg-slate-900/50"
+                                            )}
+                                            style={{ display: 'grid', gridTemplateColumns: getGridTemplate(), width: getLeftPaneWidth(), minHeight: `${visibleCount * 32}px` }}
+                                            onClick={() => handleRowClick(client.id)}
+                                        >
+                                            {!isMobile && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-xs text-slate-400 dark:text-slate-300 font-medium">{idx + 1}</div>}
+                                            {visibleColumns.pt && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-500 dark:text-slate-300 text-center px-2">{contract?.trainer_name || '-'}</div>}
+                                            <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-start justify-center px-2 sm:px-4 py-2 gap-1.5 overflow-hidden">
+                                                <div 
+                                                    className="font-bold text-[11px] sm:text-xs text-slate-900 dark:text-blue-400 truncate w-full cursor-pointer hover:text-blue-600 dark:hover:text-blue-300 hover:underline transition-all"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleClientNameClick(client);
+                                                    }}
+                                                >
+                                                    {client.member_name}
                                                 </div>
-                                                <div className="flex items-center gap-3 text-[10px] text-slate-500 dark:text-slate-300">
-                                                    <div className="flex items-center gap-1">
-                                                        <span className="font-medium">W:</span>
-                                                        <span>{contract?.initial_weight ? `${contract.initial_weight}kg` : '-'}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <span className="font-medium">T:</span>
-                                                        <span>{contract?.target_weight ? `${contract.target_weight}kg` : '-'}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {visibleColumns.time && (
-                                            <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-[10px] text-slate-500 dark:text-slate-300 gap-0.5">
-                                                <span>{contract?.start_date ? format(new Date(contract.start_date), 'dd/MM/yyyy') : '-'}</span>
-                                                <div className="flex items-center gap-1">
-                                                    <span className="text-slate-300 dark:text-slate-600">|</span>
-                                                    {contract?.end_date && (
-                                                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-red-50 text-red-600 dark:bg-red-900/30">
-                                                            {differenceInDays(new Date(contract.end_date), new Date()) > 0 
-                                                                ? `Còn ${differenceInDays(new Date(contract.end_date), new Date())} ngày` 
-                                                                : "Hết hạn"}
-                                                        </span>
+                                                <div className="flex flex-col gap-0.5 w-full">
+                                                    {!isMobile && (
+                                                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-300 whitespace-nowrap">
+                                                            <span className="font-medium">SĐT:</span>
+                                                            <span>{contract?.phone || '-'}</span>
+                                                        </div>
                                                     )}
-                                                    <span className="text-slate-300 dark:text-slate-600">|</span>
-                                                </div>
-                                                <span>{contract?.end_date ? format(new Date(contract.end_date), 'dd/MM/yyyy') : '-'}</span>
-                                            </div>
-                                        )}
-                                        {visibleColumns.package && (
-                                            <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-[10px] text-slate-500 dark:text-slate-200 text-center px-2 gap-0.5">
-                                                <div className="line-clamp-1 font-medium">{contract?.package_name || '-'}</div>
-                                                {contract?.total_amount && (
-                                                    <div className="font-bold text-blue-600 dark:text-blue-400">
-                                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(contract.total_amount)}
+                                                    <div className="flex items-center gap-2 sm:gap-3 text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-300">
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="font-medium">W:</span>
+                                                            <span>{contract?.initial_weight ? `${contract.initial_weight}kg` : '-'}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="font-medium">T:</span>
+                                                            <span>{contract?.target_weight ? `${contract.target_weight}kg` : '-'}</span>
+                                                        </div>
                                                     </div>
-                                                )}
+                                                </div>
                                             </div>
-                                        )}
-                                        {visibleColumns.branch && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-500 dark:text-slate-300 text-center px-2">{contract?.branches?.name || '-'}</div>}
-                                        <div className={cn(
-                                            "flex flex-col text-[9px] font-bold uppercase gap-0 p-0 overflow-hidden",
-                                            isSelected ? "bg-transparent" : "bg-white dark:bg-slate-900"
-                                        )}>
-                                            {showTarget && (
-                                                <div className="h-8 flex items-center justify-center border-b border-blue-100 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1">Cần đạt</div>
+                                            {visibleColumns.time && !isMobile && (
+                                                <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-[10px] text-slate-500 dark:text-slate-300 gap-0.5">
+                                                    <span>{contract?.start_date ? format(new Date(contract.start_date), 'dd/MM/yyyy') : '-'}</span>
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-slate-300 dark:text-slate-600">|</span>
+                                                        {contract?.end_date && (
+                                                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-red-50 text-red-600 dark:bg-red-900/30">
+                                                                {differenceInDays(new Date(contract.end_date), new Date()) > 0 
+                                                                    ? `Còn ${differenceInDays(new Date(contract.end_date), new Date())} ngày` 
+                                                                    : "Hết hạn"}
+                                                            </span>
+                                                        )}
+                                                        <span className="text-slate-300 dark:text-slate-600">|</span>
+                                                    </div>
+                                                    <span>{contract?.end_date ? format(new Date(contract.end_date), 'dd/MM/yyyy') : '-'}</span>
+                                                </div>
                                             )}
-                                            {showActual && (
-                                                <div className="h-8 flex items-center justify-center border-b border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-1">Thực tế</div>
+                                            {visibleColumns.package && !isMobile && (
+                                                <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-[10px] text-slate-500 dark:text-slate-200 text-center px-2 gap-0.5">
+                                                    <div className="line-clamp-1 font-medium">{contract?.package_name || '-'}</div>
+                                                    {contract?.total_amount && (
+                                                        <div className="font-bold text-blue-600 dark:text-blue-400">
+                                                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(contract.total_amount)}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             )}
-                                            {showTraining && (
-                                                <div className="h-8 flex items-center justify-center border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 px-1">Tần suất</div>
+                                            {visibleColumns.branch && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-500 dark:text-slate-300 text-center px-2">{contract?.branches?.name || '-'}</div>}
+                                            {!isMobile && (
+                                                <div className={cn(
+                                                    "flex flex-col text-[9px] font-bold uppercase gap-0 p-0 overflow-hidden",
+                                                    isSelected ? "bg-transparent" : "bg-white dark:bg-slate-900"
+                                                )}>
+                                                    {showTarget && (
+                                                        <div className="h-8 flex items-center justify-center border-b border-blue-100 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1 text-center leading-none">Cần đạt</div>
+                                                    )}
+                                                    {showActual && (
+                                                        <div className="h-8 flex items-center justify-center border-b border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-1 text-center leading-none">Thực tế</div>
+                                                    )}
+                                                    {showTraining && (
+                                                        <div className="h-8 flex items-center justify-center border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 px-1 text-center leading-none">Tập</div>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
-                                    </div>
 
                                     {/* Right Content (Timeline Row Data) */}
                                     <div
@@ -838,7 +946,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                                     log.status === 'N' && "bg-rose-500 text-white",
                                                                     log.status === 'TĐ' && "bg-amber-500 text-white",
                                                                 )}>
-                                                                    {log.status}
+                                                                    {log.status === 'TĐ' ? 'T' : log.status}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -862,47 +970,57 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
             </div>
 
             {/* Bottom Footer Area - Moved Checkboxes & Legend Here */}
-            <div className="mt-auto px-4 py-1.5 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-center gap-12">
+            <div className={cn(
+                "mt-auto px-4 py-2 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-center gap-6 sm:gap-12",
+                isMobile && "flex-col gap-4 py-3"
+            )}>
                 {/* Visibility Toggles */}
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2.5 cursor-pointer">
+                <div className={cn("flex items-center gap-4 sm:gap-6", isMobile && "flex-wrap justify-center")}>
+                    <div className="flex items-center gap-2 cursor-pointer">
                         <Checkbox
                             id="chk-target"
                             checked={showTarget}
                             onCheckedChange={(v) => toggleCriteria('target', !!v)}
                             className="w-4 h-4 border-slate-300"
                         />
-                        <label htmlFor="chk-target" className="text-xs font-semibold text-slate-600 dark:text-slate-400 cursor-pointer">Cân cần đạt</label>
+                        <label htmlFor="chk-target" className="text-[11px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 cursor-pointer">Cân cần đạt</label>
                     </div>
-                    <div className="flex items-center gap-2.5 cursor-pointer">
+                    <div className="flex items-center gap-2 cursor-pointer">
                         <Checkbox
                             id="chk-actual"
                             checked={showActual}
                             onCheckedChange={(v) => toggleCriteria('actual', !!v)}
                             className="w-4 h-4 border-slate-300"
                         />
-                        <label htmlFor="chk-actual" className="text-xs font-semibold text-slate-600 dark:text-slate-400 cursor-pointer">Cân thực tế</label>
+                        <label htmlFor="chk-actual" className="text-[11px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 cursor-pointer">Cân thực tế</label>
                     </div>
-                    <div className="flex items-center gap-2.5 cursor-pointer">
+                    <div className="flex items-center gap-2 cursor-pointer">
                         <Checkbox
                             id="chk-training"
                             checked={showTraining}
                             onCheckedChange={(v) => toggleCriteria('training', !!v)}
                             className="w-4 h-4 border-slate-300"
                         />
-                        <label htmlFor="chk-training" className="text-xs font-semibold text-slate-600 dark:text-slate-400 cursor-pointer">Tần suất tập</label>
+                        <label htmlFor="chk-training" className="text-[11px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 cursor-pointer">Tần suất tập</label>
                     </div>
                 </div>
 
                 {/* Legend */}
-                <div className="flex items-center gap-8 border-l border-slate-200 dark:border-slate-800 pl-12 h-6">
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                        <div className="w-2.5 h-2.5 rounded-full bg-blue-100 dark:bg-blue-900 border border-blue-400 shadow-sm" />
-                        <span>Cân cần đạt</span>
+                <div className={cn(
+                    "flex items-center gap-4 sm:gap-8 h-6",
+                    !isMobile && "border-l border-slate-200 dark:border-slate-800 pl-12"
+                )}>
+                    <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                        <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-blue-100 dark:bg-blue-900 border border-blue-400 shadow-sm" />
+                        <span>Cần đạt</span>
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-100 dark:bg-emerald-900 border border-emerald-400 shadow-sm" />
-                        <span>Cân thực tế</span>
+                    <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                        <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-100 dark:bg-emerald-900 border border-emerald-400 shadow-sm" />
+                        <span>Thực tế</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-400 shadow-sm" />
+                        <span>Tập luyện</span>
                     </div>
                 </div>
             </div>
@@ -940,6 +1058,84 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                 open={isHistoryOpen}
                 onOpenChange={setIsHistoryOpen}
             />
+
+            {/* Mobile Floating Action Bar */}
+            <AnimatePresence>
+                {isMobile && selectedClientId && (
+                    <motion.div
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 100, opacity: 0 }}
+                        className="fixed bottom-4 left-4 right-4 z-[100] bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-4 flex flex-col gap-3"
+                    >
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                            <div className="flex flex-col">
+                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[150px]">
+                                    {activeClients.find(c => c.id === selectedClientId)?.member_name}
+                                </span>
+                                <span className="text-[10px] text-slate-500">
+                                    {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'Chọn ô để thao tác'}
+                                </span>
+                            </div>
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => {
+                                    setSelectedClientId(null);
+                                    setSelectedDate(null);
+                                }}
+                                className="h-8 w-8 p-0 rounded-full text-slate-400"
+                            >
+                                <ChevronDown className="w-5 h-5" />
+                            </Button>
+                        </div>
+                        
+                        {selectedDate && (
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Button 
+                                        size="sm" 
+                                        onClick={() => handleUpdateStatus('Y')}
+                                        className="h-10 w-10 rounded-xl bg-emerald-500 text-white font-bold"
+                                    >
+                                        Y
+                                    </Button>
+                                    <Button 
+                                        size="sm" 
+                                        onClick={() => handleUpdateStatus('N')}
+                                        className="h-10 w-10 rounded-xl bg-rose-500 text-white font-bold"
+                                    >
+                                        N
+                                    </Button>
+                                    <Button 
+                                        size="sm" 
+                                        onClick={() => handleUpdateStatus('TĐ')}
+                                        className="h-10 w-10 rounded-xl bg-amber-500 text-white font-bold"
+                                    >
+                                        T
+                                    </Button>
+                                    <Button 
+                                        variant="outline"
+                                        size="sm" 
+                                        onClick={() => handleUpdateStatus(null)}
+                                        className="h-10 w-10 rounded-xl border-slate-200 text-slate-400"
+                                    >
+                                        <RotateCcw className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                                
+                                <Button
+                                    onClick={() => handleOpenEdit(selectedClientId, selectedDate)}
+                                    className="h-10 px-4 gap-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-lg shadow-blue-200 dark:shadow-none"
+                                >
+                                    <Edit3 className="w-4 h-4" />
+                                    <span>Ghi cân</span>
+                                </Button>
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
         </div>
     )
