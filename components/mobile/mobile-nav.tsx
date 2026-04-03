@@ -32,9 +32,9 @@ import { usePermissions } from '@/hooks/use-permissions'
 
 const mobileMainItems = [
     { name: 'Trang chủ', href: '/', icon: Home },
-    { name: 'Khách hàng', href: '/clients', icon: Users },
+    { name: 'KHÁCH HÀNG', href: '/clients', icon: Users },
     { name: 'Lộ trình', href: '/weight-tracking', icon: Activity },
-    { name: 'Hợp đồng', href: '/contracts', icon: FileText },
+    { name: 'HỢP ĐỒNG', href: '/contracts', icon: FileText },
 ]
 
 const secondaryNavigation = [

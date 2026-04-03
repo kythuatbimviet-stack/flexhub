@@ -132,7 +132,7 @@ const MemberSummaryPopover = ({ contract, onShowDetails }: { contract: any, onSh
                         </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col gap-0.5">
-                        <h4 className="text-[17px] font-bold text-slate-900 dark:text-white leading-tight">
+                        <h4 className="text-[17px] font-bold text-slate-900 dark:text-white leading-tight uppercase">
                             {contract.member_name}
                         </h4>
                         <span className="text-[14px] font-semibold text-rose-500 tracking-tight">
@@ -213,6 +213,8 @@ export default function ContractsPage() {
     const [ptFilter, setPtFilter] = React.useState('all')
     const [contractTypeFilter, setContractTypeFilter] = React.useState('all')
     const [isSortOpen, setIsSortOpen] = React.useState(false)
+    const [expandedCustomers, setExpandedCustomers] = React.useState<Set<string>>(new Set())
+    const [hoveredClientId, setHoveredClientId] = React.useState<string | null>(null)
 
     const { permissions, user: currentUser, isLoading: isLoadingPermissions } = usePermissions()
 
@@ -421,14 +423,54 @@ export default function ContractsPage() {
         return result
     }, [contracts, debouncedSearch, statusFilter, branchFilter, ptFilter, contractTypeFilter, sortConfig])
 
-    // ── Pagination (client-side) ──────────────────────────────────────────────
-    const totalCount = filteredContracts.length
+    // ── Grouping by Customer ─────────────────────────────────────────────────
+    const groupedContracts = React.useMemo(() => {
+        const groups: Record<string, {
+            clientId: string;
+            customerName: string;
+            avatarUrl: string;
+            phone: string;
+            contracts: any[];
+            totalAmount: number;
+        }> = {}
+
+        filteredContracts.forEach((c: any) => {
+            const cid = c.client_id || c.member_name || 'unknown'
+            if (!groups[cid]) {
+                groups[cid] = {
+                    clientId: cid,
+                    customerName: c.member_name || 'Không rõ',
+                    avatarUrl: c.avatar_url,
+                    phone: c.phone || '--',
+                    contracts: [],
+                    totalAmount: 0
+                }
+            }
+            groups[cid].contracts.push(c)
+            groups[cid].totalAmount += Number(c.total_amount || 0)
+        })
+
+        return Object.values(groups)
+    }, [filteredContracts])
+
+    // ── Pagination (client-side) — Based on Groups ──────────────────────────
+    const totalCount = groupedContracts.length
     const totalPages = pageSize === -1 ? 1 : Math.ceil(totalCount / pageSize)
-    const pagedContracts = React.useMemo(() => {
-        if (pageSize === -1) return filteredContracts
+    const pagedGroups = React.useMemo(() => {
+        if (pageSize === -1) return groupedContracts
         const from = (page - 1) * pageSize
-        return filteredContracts.slice(from, from + pageSize)
-    }, [filteredContracts, page, pageSize])
+        return groupedContracts.slice(from, from + pageSize)
+    }, [groupedContracts, page, pageSize])
+
+    const toggleExpand = (clientId: string) => {
+        const newExpanded = new Set(expandedCustomers)
+        if (newExpanded.has(clientId)) {
+            newExpanded.delete(clientId)
+        } else {
+            newExpanded.add(clientId)
+        }
+        setExpandedCustomers(newExpanded)
+    }
 
     // ── Filter option lists (full DB, not just current page) ─────────────────
     const ptOptions = React.useMemo(() =>
@@ -574,8 +616,10 @@ export default function ContractsPage() {
 
     const toggleRow = (id: string) =>
         setSelectedRows(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id])
-    const toggleAll = () =>
-        setSelectedRows(selectedRows.length === pagedContracts.length ? [] : pagedContracts.map((c: any) => c.id))
+    const toggleAll = () => {
+        const allIds = pagedGroups.flatMap(g => g.contracts.map(c => c.id))
+        setSelectedRows(selectedRows.length === allIds.length ? [] : allIds)
+    }
 
     return (
         <div className="space-y-1.5 font-inter pb-10">
@@ -588,7 +632,7 @@ export default function ContractsPage() {
                 <div className="space-y-1">
                     <h1 className="text-3xl font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
                         <FileText className="w-8 h-8 text-[#FD5771]" />
-                        Hợp đồng
+                        HỢP ĐỒNG
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-300 font-medium tracking-tight">Theo dõi và quản lý các hợp đồng dịch vụ của hội viên.</p>
                 </div>
@@ -758,7 +802,7 @@ export default function ContractsPage() {
                         <div className="flex flex-col sm:flex-row items-center justify-between px-3 py-3 border-t border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-800/10 gap-4 mt-1 rounded-b-xl">
                             <div className="flex items-center gap-4">
                                 <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
-                                    <span className="text-gray-900 dark:text-gray-100 font-black">{pagedContracts.length}</span> / {totalCount} hợp đồng
+                                    <span className="text-gray-900 dark:text-gray-100 font-black">{totalCount}</span> khách hàng
                                 </div>
                                 <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(parseInt(v))}>
                                     <SelectTrigger className="h-7 w-16 rounded-lg border-gray-100 dark:border-gray-800 text-[10px] font-bold focus:ring-red-500 bg-white dark:bg-gray-800">
@@ -813,48 +857,51 @@ export default function ContractsPage() {
                             <TableRow className="border-gray-50 dark:border-gray-800 hover:bg-transparent border-t-0">
                                 <TableHead className="w-12 pl-6 h-9">
                                     <Checkbox
-                                        checked={selectedRows.length === pagedContracts.length && pagedContracts.length > 0}
+                                        checked={(() => {
+                                            const allIds = pagedGroups.flatMap(g => g.contracts.map(c => c.id))
+                                            return allIds.length > 0 && selectedRows.length === allIds.length
+                                        })()}
                                         onCheckedChange={toggleAll}
                                         className="rounded-lg border-gray-300 dark:border-gray-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                                     />
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('member_name')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
+                                <TableHead onClick={() => handleSort('member_name')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
                                     <div className="flex items-center">
-                                        Hợp đồng & Hội viên 
+                                        HỢP ĐỒNG & HỘI VIÊN 
                                         <SortIcon columnKey="member_name" />
                                     </div>
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('package_name')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
+                                <TableHead onClick={() => handleSort('package_name')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
                                     <div className="flex items-center">
-                                        Dịch vụ & Gói tập 
+                                        DỊCH VỤ & GÓI TẬP 
                                         <SortIcon columnKey="package_name" />
                                     </div>
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('total_amount')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
+                                <TableHead onClick={() => handleSort('total_amount')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
                                     <div className="flex items-center">
-                                        Giá trị & Thanh toán 
+                                        GIÁ TRỊ & THANH TOÁN 
                                         <SortIcon columnKey="total_amount" />
                                     </div>
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('branch_id')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
+                                <TableHead onClick={() => handleSort('branch_id')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
                                     <div className="flex items-center">
-                                        Chi nhánh và PT 
+                                        CHI NHÁNH VÀ PT 
                                         <SortIcon columnKey="branch_id" />
                                     </div>
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('start_date')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
+                                <TableHead onClick={() => handleSort('start_date')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
                                     <div className="flex items-center">
-                                        Ngày hợp đồng 
+                                        NGÀY HỢP ĐỒNG 
                                         <SortIcon columnKey="start_date" />
                                     </div>
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('status')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
+                                <TableHead onClick={() => handleSort('status')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
                                     <div className="flex items-center">
-                                        Trạng thái
+                                        TRẠNG THÁI
                                         <SortIcon columnKey="status" />
                                     </div>
                                 </TableHead>
-                                <TableHead className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider">Tùy chọn</TableHead>
+                                <TableHead className="text-right pr-8 text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider">TÙY CHỌN</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -870,166 +917,212 @@ export default function ContractsPage() {
                                         <TableCell className="text-right pr-8"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                                     </TableRow>
                                 ))
-                            ) : pagedContracts.length === 0 ? (
+                            ) : pagedGroups.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-64 text-center">
+                                    <TableCell colSpan={8} className="h-64 text-center">
                                         <div className="flex flex-col items-center gap-4">
                                             <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-3xl flex items-center justify-center">
                                                 <FileText className="w-8 h-8 text-gray-200 dark:text-gray-700" />
                                             </div>
-                                            <p className="text-gray-400 text-sm font-medium">Thêm hợp đồng đầu tiên.</p>
+                                            <p className="text-gray-400 text-sm font-medium">Không tìm thấy hợp đồng.</p>
                                         </div>
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                    pagedContracts.map((contract: any) => {
-                                        const remainingDays = (() => {
-                                            if (!contract.end_date) return null
-                                            const end = new Date(contract.end_date)
-                                            const today = new Date()
-                                            today.setHours(0, 0, 0, 0)
-                                            const diff = end.getTime() - today.getTime()
-                                            return Math.ceil(diff / (1000 * 60 * 60 * 24))
-                                        })()
-
-                                        return (
-                                            <TableRow key={contract.id} onClick={(e) => handleRowClick(contract, e)}
-                                                className={cn('border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors',
-                                                    selectedRows.includes(contract.id) && 'bg-red-50/30 dark:bg-red-950/20')}>
-                                                <TableCell className="pl-6" onClick={(e) => e.stopPropagation()}>
-                                                    <Checkbox checked={selectedRows.includes(contract.id)}
-                                                        onCheckedChange={() => toggleRow(contract.id)} className="rounded-lg" />
-                                                </TableCell>
-                                                <TableCell className="py-2.5">
-                                                    <div className="flex items-start justify-between group">
-                                                        <div className="flex flex-col gap-0.5">
-                                                            <span className="text-[11px] font-bold text-rose-500 uppercase tracking-wider">
-                                                                {contract.id}
-                                                            </span>
-                                                            <span className="text-[14px] font-bold text-gray-900 dark:text-gray-100 leading-tight">
-                                                                {contract.member_name}
-                                                            </span>
-                                                            <span className="text-[12px] font-medium text-gray-400 dark:text-gray-300">
-                                                                {contract.phone}
-                                                            </span>
-                                                        </div>
-
-                                                        <Popover>
-                                                            <PopoverTrigger asChild>
-                                                                <button 
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-500"
-                                                                >
-                                                                    <ChevronDown className="w-4 h-4" />
-                                                                </button>
-                                                            </PopoverTrigger>
-                                                            <MemberSummaryPopover 
-                                                                contract={contract} 
-                                                                onShowDetails={() => {
-                                                                    setSelectedContract(contract); 
-                                                                    setIsDetailsOpen(true)
-                                                                }} 
-                                                            />
-                                                        </Popover>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <span className="text-[14px] font-medium text-slate-900 dark:text-white">
-                                                            {contract.package_name || 'Chưa chọn gói'}
-                                                        </span>
-                                                        <span className="text-[12px] text-slate-600 dark:text-slate-300">
-                                                            {contract.center_representative || '-'}
-                                                        </span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <span className="text-[14px] font-medium text-slate-900 dark:text-white">
-                                                            {contract.total_amount ? Number(contract.total_amount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
-                                                        </span>
-                                                        <span className="text-[12px] text-slate-600 dark:text-slate-300">
-                                                            {contract.payment_method || 'Chưa rõ'}
-                                                        </span>
-                                                        {contract.payment_notes && (
-                                                            <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[160px]">
-                                                                {contract.payment_notes}
-                                                            </span>
+                                pagedGroups.map((group: any) => {
+                                    const isExpanded = expandedCustomers.has(group.clientId)
+                                    return (
+                                        <React.Fragment key={group.clientId}>
+                                            <TableRow 
+                                                className={cn(
+                                                    "group border-gray-50 dark:border-gray-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer",
+                                                    isExpanded && "bg-slate-50/50 dark:bg-slate-800/50"
+                                                )}
+                                                onClick={() => toggleExpand(group.clientId)}
+                                            >
+                                                <TableCell className="w-12 pl-6 py-4">
+                                                    <div className="flex items-center">
+                                                        {isExpanded ? (
+                                                            <ChevronDown className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" />
+                                                        ) : (
+                                                            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" />
                                                         )}
                                                     </div>
                                                 </TableCell>
+                                                <TableCell className="py-4" colSpan={2}>
+                                                    <Popover open={hoveredClientId === group.clientId} onOpenChange={(open) => !open && setHoveredClientId(null)}>
+                                                        <PopoverTrigger asChild>
+                                                            <div 
+                                                                className="flex items-center gap-4 cursor-pointer outline-none group/client"
+                                                                onMouseEnter={() => setHoveredClientId(group.clientId)}
+                                                                onMouseLeave={() => setHoveredClientId(null)}
+                                                            >
+                                                                <Avatar className="w-10 h-10 border border-slate-100 dark:border-slate-800 shadow-sm rounded-xl group-hover/client:scale-105 transition-transform duration-300">
+                                                                    <AvatarImage src={group.avatarUrl} className="object-cover" />
+                                                                    <AvatarFallback className="bg-slate-50 text-slate-400">
+                                                                        <User className="w-5 h-5" />
+                                                                    </AvatarFallback>
+                                                                </Avatar>
+                                                                <div className="flex flex-col gap-0.5">
+                                                                    <h4 className="text-[15px] font-bold text-slate-900 dark:text-white leading-tight uppercase group-hover/client:text-red-600 transition-colors">
+                                                                        {group.customerName}
+                                                                    </h4>
+                                                                    <span className="text-[12px] font-semibold text-rose-500 tracking-tight">
+                                                                        {group.phone}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="p-1 opacity-0 group-hover/client:opacity-100 rounded-lg text-slate-300 transition-opacity">
+                                                                    <LayoutGrid className="w-4 h-4 ml-1" />
+                                                                </div>
+                                                            </div>
+                                                        </PopoverTrigger>
+                                                        <MemberSummaryPopover 
+                                                            contract={group.contracts[0]} 
+                                                            onShowDetails={() => {
+                                                                setSelectedContract(group.contracts[0]); 
+                                                                setIsDetailsOpen(true)
+                                                                setHoveredClientId(null)
+                                                            }} 
+                                                        />
+                                                    </Popover>
+                                                </TableCell>
                                                 <TableCell>
                                                     <div className="flex flex-col gap-0.5">
-                                                        <span className="text-[14px] font-medium text-slate-900 dark:text-white">
-                                                            {contract.facility_name || contract.branches?.name || 'Văn phòng'}
+                                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Số hợp đồng</span>
+                                                        <span className="text-[14px] font-bold text-slate-700 dark:text-slate-200">
+                                                            {group.contracts.length} HĐ
                                                         </span>
-                                                        <span className="text-[12px] text-slate-600 dark:text-slate-300">
-                                                            {contract.trainer_name || 'Chưa có PT'}
-                                                        </span>
-                                                        {contract.trainer_phone && (
-                                                            <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                                                                {contract.trainer_phone}
-                                                            </span>
-                                                        )}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col text-[11px] text-gray-400">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Calendar className="w-3 h-3" />
-                                                            <span>Ký: {contract.start_date ? new Date(contract.start_date).toLocaleDateString('vi-VN') : '-'}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Clock className="w-3 h-3" />
-                                                            <span>Hết: {contract.end_date ? new Date(contract.end_date).toLocaleDateString('vi-VN') : '-'}</span>
-                                                        </div>
-                                                        <div className={cn("mt-1 font-bold", remainingDays !== null && remainingDays <= 0 ? "text-red-500" : "text-blue-500")}>
-                                                            Còn: {remainingDays !== null ? (remainingDays > 0 ? `${remainingDays} ngày` : 'Hết hạn') : '-'}
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className={cn(
-                                                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap",
-                                                        contract.status === 'Chờ ký HĐ' ? "bg-amber-50 text-amber-600 border-amber-100" :
-                                                        contract.status === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                                                        contract.status === 'Hết hạn HĐ' ? "bg-rose-50 text-rose-600 border-rose-100" :
-                                                        "bg-gray-50 text-gray-600 border-gray-100"
-                                                    )}>
-                                                        <div className={cn("w-1 h-1 rounded-full", 
-                                                            contract.status === 'Chờ ký HĐ' ? "bg-amber-500" :
-                                                            contract.status === 'Đã ký HĐ' ? "bg-emerald-500" :
-                                                            contract.status === 'Hết hạn HĐ' ? "bg-rose-500" :
-                                                            "bg-gray-400"
-                                                        )} />
-                                                        {contract.status}
+                                                <TableCell colSpan={2}>
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tổng giá trị</span>
+                                                        <span className="text-[14px] font-bold text-red-600 dark:text-red-400">
+                                                            {group.totalAmount.toLocaleString('vi-VN')} ₫
+                                                        </span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right pr-8">
-                                                    <div className="flex items-center justify-end gap-1">
-                                                        {contract.contract_file_url && contract.contract_file_url !== 'create_contract' && contract.contract_file_url.startsWith('http') && (
-                                                            <Button variant="ghost" size="icon"
-                                                                onClick={(e) => { e.stopPropagation(); window.open(contract.contract_file_url, '_blank') }}
-                                                                title="Mở link hợp đồng"
-                                                                className="w-8 h-8 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 text-blue-600">
-                                                                <ExternalLink className="h-3.5 w-3.5" />
-                                                            </Button>
-                                                        )}
-                                                        <Button variant="ghost" size="icon"
-                                                            onClick={(e) => { e.stopPropagation(); setSelectedContract(contract); setIsDetailsOpen(true) }}
-                                                            className="w-8 h-8 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600">
-                                                            <Edit2 className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                        <Button variant="ghost" size="icon"
-                                                            onClick={(e) => { e.stopPropagation(); handleDelete(contract.id) }}
-                                                            className="w-8 h-8 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600">
-                                                            <Trash2 className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                    </div>
+                                                    <Button variant="ghost" className="text-red-500 font-bold text-xs h-8 rounded-lg hover:bg-red-50">
+                                                        {isExpanded ? 'Thu gọn' : 'Xem chi tiết'}
+                                                    </Button>
                                                 </TableCell>
                                             </TableRow>
-                                        )
-                                    })
+
+                                            <TableRow className="hover:bg-transparent border-0 p-0 h-0">
+                                                <TableCell colSpan={8} className="p-0 border-0">
+                                                    <AnimatePresence>
+                                                        {isExpanded && (
+                                                            <motion.div
+                                                                initial={{ height: 0, opacity: 0 }}
+                                                                animate={{ height: "auto", opacity: 1 }}
+                                                                exit={{ height: 0, opacity: 0 }}
+                                                                className="overflow-hidden bg-gray-50/30 dark:bg-gray-800/10"
+                                                            >
+                                                                <div className="p-2 sm:p-4 pl-12 bg-gray-50/20">
+                                                                    <div className="bg-white dark:bg-gray-950 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm">
+                                                                        <Table>
+                                                                            <TableBody>
+                                                                                {group.contracts.map((contract: any) => {
+                                                                                    const remainingDays = (() => {
+                                                                                        if (!contract.end_date) return null
+                                                                                        const end = new Date(contract.end_date)
+                                                                                        const today = new Date()
+                                                                                        today.setHours(0, 0, 0, 0)
+                                                                                        const diff = end.getTime() - today.getTime()
+                                                                                        return Math.ceil(diff / (1000 * 60 * 60 * 24))
+                                                                                    })()
+                                                                                    return (
+                                                                                        <TableRow key={contract.id} className="border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/10 cursor-pointer"
+                                                                                            onClick={(e) => handleRowClick(contract, e)}>
+                                                                                            <TableCell className="w-10">
+                                                                                                <div className="flex flex-col">
+                                                                                                    <span className="text-[12px] font-bold text-gray-500 dark:text-gray-400">
+                                                                                                        {contract.contract_type || ''}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            </TableCell>
+                                                                                            <TableCell>
+                                                                                                <div className="flex flex-col gap-0.5">
+                                                                                                    <span className="text-[13px] font-medium text-slate-900 dark:text-white">
+                                                                                                        {contract.package_name || 'Chưa chọn gói'}
+                                                                                                    </span>
+                                                                                                    <span className="text-[11px] text-slate-500 truncate max-w-[150px]">
+                                                                                                        Rep: {contract.center_representative || '-'}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            </TableCell>
+                                                                                            <TableCell>
+                                                                                                <div className="flex flex-col gap-0.5">
+                                                                                                    <span className="font-bold text-slate-900 dark:text-white text-[13px]">
+                                                                                                        {contract.total_amount ? Number(contract.total_amount).toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
+                                                                                                    </span>
+                                                                                                    <span className="text-[11px] text-slate-500">
+                                                                                                        {contract.payment_method || 'Chưa rõ'}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            </TableCell>
+                                                                                            <TableCell>
+                                                                                                <div className="flex flex-col gap-0.5">
+                                                                                                    <span className="text-[13px] font-medium text-slate-900 dark:text-white">
+                                                                                                        {contract.facility_name || contract.branches?.name || 'Văn phòng'}
+                                                                                                    </span>
+                                                                                                    <span className="text-[11px] text-slate-500">
+                                                                                                        PT: {contract.trainer_name || 'Chưa có PT'}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            </TableCell>
+                                                                                            <TableCell>
+                                                                                                <div className="flex flex-col text-[11px] text-gray-400">
+                                                                                                    <div className="flex items-center gap-1.5">
+                                                                                                        <Clock className="w-3 h-3" />
+                                                                                                        <span className={cn("font-bold", remainingDays !== null && remainingDays <= 0 ? "text-red-500" : "text-blue-500")}>
+                                                                                                            {remainingDays !== null ? (remainingDays > 0 ? `${remainingDays} ngày` : 'Hết hạn') : '-'}
+                                                                                                        </span>
+                                                                                                    </div>
+                                                                                                    <span>Hết: {contract.end_date ? new Date(contract.end_date).toLocaleDateString('vi-VN') : '-'}</span>
+                                                                                                </div>
+                                                                                            </TableCell>
+                                                                                            <TableCell>
+                                                                                                <div className={cn(
+                                                                                                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border whitespace-nowrap",
+                                                                                                    contract.status === 'Chờ ký HĐ' ? "bg-amber-50 text-amber-600 border-amber-100" :
+                                                                                                    contract.status === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                                                                                                    contract.status === 'Hết hạn HĐ' ? "bg-rose-50 text-rose-600 border-rose-100" :
+                                                                                                    "bg-gray-50 text-gray-600 border-gray-100"
+                                                                                                )}>
+                                                                                                    {contract.status}
+                                                                                                </div>
+                                                                                            </TableCell>
+                                                                                            <TableCell className="text-right pr-4">
+                                                                                                <div className="flex items-center justify-end gap-0.5">
+                                                                                                    <Button variant="ghost" size="icon"
+                                                                                                        onClick={(e) => { e.stopPropagation(); setSelectedContract(contract); setIsDetailsOpen(true) }}
+                                                                                                        className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-50">
+                                                                                                        <Edit2 className="h-3.5 w-3.5" />
+                                                                                                    </Button>
+                                                                                                    <Button variant="ghost" size="icon"
+                                                                                                        onClick={(e) => { e.stopPropagation(); handleDelete(contract.id) }}
+                                                                                                        className="w-7 h-7 rounded-lg text-rose-600 hover:bg-rose-50">
+                                                                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                                                                    </Button>
+                                                                                                </div>
+                                                                                            </TableCell>
+                                                                                        </TableRow>
+                                                                                    )
+                                                                                })}
+                                                                            </TableBody>
+                                                                        </Table>
+                                                                    </div>
+                                                                </div>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </TableCell>
+                                            </TableRow>
+                                        </React.Fragment>
+                                    )
+                                })
                             )}
                         </TableBody>
                     </Table>

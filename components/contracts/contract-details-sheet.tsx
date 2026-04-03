@@ -89,6 +89,7 @@ import { ContractClosureDialog } from './contract-closure-dialog'
 import { usePermissions } from '@/hooks/use-permissions'
 import { canAccessRecord } from '@/lib/permissions'
 import { TrendingDown, TrendingUp, Minus, ClipboardCheck, RefreshCw, PauseCircle, XCircle as XCircleIcon } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 
 // ─── Component con nằm NGOÀI component cha để tránh re-mount khi state thay đổi ───
 const ContractCardSection = ({ title, icon: Icon, children }: any) => (
@@ -239,35 +240,78 @@ export function ContractDetailsSheet({
         return statuses.find(s => s.is_default)?.nam || statuses[0]?.nam || 'Chờ ký HĐ'
     }, [statuses])
 
+    // ─── TanStack Query: Dữ liệu Danh mục & Cấu hình (Ưu tiên dùng chung cache) ───
+    const { data: branchesData = [] } = useQuery({
+        queryKey: ['branches'],
+        queryFn: async () => {
+            const res = await fetchBranches()
+            return res.success ? (res.data ?? []) : []
+        },
+        enabled: open,
+        staleTime: 3600000, // 1 hour
+    })
+    React.useEffect(() => { if (branchesData.length > 0) setBranches(branchesData) }, [branchesData])
+
+    const { data: configsData } = useQuery({
+        queryKey: ['contract-configs'],
+        queryFn: fetchContractConfigs,
+        enabled: open,
+        staleTime: 3600000,
+    })
     React.useEffect(() => {
-        if (open) {
-            const loadData = async () => {
-                const [branchesRes, contractConfigsRes, trainerTypeRes, usersRes, clientsRes, membershipsRes] = await Promise.all([
-                    fetchBranches(),
-                    fetchContractConfigs(),
-                    fetchConfigParams('config_contract_trainer_type'),
-                    fetchUsers(),
-                    fetchClients(),
-                    fetchMemberships()
-                ])
-                if (branchesRes.success) setBranches(branchesRes.data || [])
-                if (contractConfigsRes.success) {
-                    setStatuses(contractConfigsRes.data?.statuses || [])
-                    setContractSources(contractConfigsRes.data?.sources || [])
-                }
-                if (trainerTypeRes.success) setTrainerTypes(trainerTypeRes.data || [])
-                if (usersRes.success) setUsers(usersRes.data || [])
-                if (clientsRes.success) setClients(clientsRes.data || [])
-                if (membershipsRes.success) setPackages(membershipsRes.data || [])
-            }
-            loadData()
+        if (configsData?.success) {
+            setStatuses(configsData.data?.statuses || [])
+            setContractSources(configsData.data?.sources || [])
         }
-    }, [open])
+    }, [configsData])
+
+    const { data: trainerTypesData } = useQuery({
+        queryKey: ['config_contract_trainer_type'],
+        queryFn: () => fetchConfigParams('config_contract_trainer_type'),
+        enabled: open,
+        staleTime: 3600000,
+    })
+    React.useEffect(() => { if (trainerTypesData?.success) setTrainerTypes(trainerTypesData.data || []) }, [trainerTypesData])
+
+    const { data: usersData = [] } = useQuery({
+        queryKey: ['users-all'],
+        queryFn: async () => {
+            const res = await fetchUsers()
+            return res.success ? (res.data ?? []) : []
+        },
+        enabled: open,
+        staleTime: 600000, // 10 mins
+    })
+    React.useEffect(() => { if (usersData.length > 0) setUsers(usersData) }, [usersData])
+
+    const { data: membershipsData = [] } = useQuery({
+        queryKey: ['memberships-all'],
+        queryFn: async () => {
+            const res = await fetchMemberships()
+            return res.success ? (res.data ?? []) : []
+        },
+        enabled: open,
+        staleTime: 1800000, // 30 mins
+    })
+    React.useEffect(() => { if (membershipsData.length > 0) setPackages(membershipsData) }, [membershipsData])
+
+    // 🔴 CHỈ tải toàn bộ khách hàng khi: Đang tạo mới VÀ không có initialClient truyền vào (Trường hợp 2)
+    const { data: allClientsData = [] } = useQuery({
+        queryKey: ['clients-all'],
+        queryFn: async () => {
+            const res = await fetchClients()
+            return res.success ? (res.data ?? []) : []
+        },
+        enabled: open && isCreateMode && !initialClient,
+        staleTime: 300000, // 5 mins
+    })
+    React.useEffect(() => { if (allClientsData.length > 0) setClients(allClientsData) }, [allClientsData])
 
     React.useEffect(() => {
-        if (contract?.id && open) {
-            // Check if the contract object already has the necessary joined data (clients and branches)
-            // 'account_number' chỉ có trong fetchContractById (SELECT *), không có trong fetchContractsLite
+        if (!open) return
+
+        if (contract?.id) {
+            // VIEW/EDIT MODE: Load contract details
             const hasFullData = 'account_number' in contract
 
             const initializeWithData = (data: any) => {
@@ -295,29 +339,24 @@ export function ContractDetailsSheet({
                 })
             }
 
-            // Nạp dữ liệu có sẵn ngay lập tức (dữ liệu lite từ danh sách)
             initializeWithData(contract)
 
-            // Chỉ reset về view mode khi mở hợp đồng MỚI (tránh re-fire do clients/branches load xong)
             const isNewContract = prevContractIdRef.current !== contract.id
             if (isNewContract) {
                 setIsEditing(false)
                 prevContractIdRef.current = contract.id
             }
 
-            // Nếu đã là full data, không cần fetch thêm
             if (hasFullData) {
                 setIsLoadingFullData(false)
                 return
             }
 
-            // Nếu là lite data, fetch full data ngầm mà không chặn UI
             setIsLoadingFullData(true)
             const getFullContract = async () => {
                 try {
                     const res = await fetchContractById(contract.id)
                     if (res.success && res.data) {
-                        // Chỉ cập nhật formData nếu user KHÔNG đang chỉnh sửa
                         setIsEditing(prev => {
                             if (!prev) initializeWithData(res.data)
                             return prev
@@ -330,7 +369,8 @@ export function ContractDetailsSheet({
                 }
             }
             getFullContract()
-        } else if (open && isCreateMode) {
+        } else if (isCreateMode) {
+            // CREATE MODE: Initialize form
             const initCreateMode = async () => {
                 setIsEditing(true)
                 const initialData: any = {
@@ -342,15 +382,16 @@ export function ContractDetailsSheet({
                     package_type: 'Trực tiếp',
                 }
 
-                // Handle pre-filled client
+                // ⚡ ƯU TIÊN: Sử dụng ngay initialClient nếu có (Trường hợp 1)
                 const targetClient = initialClient || (initialClientId ? clients.find(c => c.id === initialClientId) : null)
+                
                 if (targetClient) {
                     initialData.client_id = targetClient.id
                     initialData.member_name = targetClient.member_name
                     initialData.phone = targetClient.phone || ''
                     initialData.email = targetClient.email || ''
-                    initialData.member_address = targetClient.address || '' // Lấy từ 'address' của Client
-                    initialData.id_number = targetClient.id_number || '' // Căn cước công dân
+                    initialData.member_address = targetClient.address || ''
+                    initialData.id_number = targetClient.id_number || ''
                     initialData.trainer_name = targetClient.pt_name || ''
                     initialData.dob = (targetClient.dob || targetClient.date_of_birth) ? (targetClient.dob || targetClient.date_of_birth).split('T')[0] : ''
                     initialData.avatar_url = targetClient.avatar_url || ''
@@ -364,7 +405,6 @@ export function ContractDetailsSheet({
                     initialData.source = targetClient.source || ''
                 }
 
-                // If we have a branch, generate ID
                 const branchId = initialData.branch_id || allowedBranches[0]?.id
                 if (branchId) {
                     initialData.branch_id = branchId
@@ -381,7 +421,7 @@ export function ContractDetailsSheet({
                         initialData.bank_name = branch.bank_name || ''
                         initialData.bank_code = branch.bank_code || ''
                     }
-                    // Generate ID and AWAIT it before setting formData to avoid race condition
+                    
                     setGeneratingId(true)
                     const idRes = await generateContractId(branchId)
                     if (idRes.success && idRes.data) {
@@ -394,7 +434,7 @@ export function ContractDetailsSheet({
             }
             initCreateMode()
         }
-    }, [contract, open, isCreateMode, initialClient, initialClientId, clients, branches, defaultStatus])
+    }, [contract, open, isCreateMode, initialClient, initialClientId, clients, branches, defaultStatus, allowedBranches])
 
     const filteredClients = React.useMemo(() => {
         if (!clientSearchTerm) return clients

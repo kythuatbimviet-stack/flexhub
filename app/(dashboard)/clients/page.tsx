@@ -35,6 +35,7 @@ import { fetchBranches } from '@/app/actions/branches'
 import { ContractDetailsSheet } from '@/components/contracts/contract-details-sheet'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
 import { useRouter } from 'next/navigation'
+import { format } from 'date-fns'
 import {
     Avatar,
     AvatarImage,
@@ -44,6 +45,120 @@ import { usePermissions } from '@/hooks/use-permissions'
 
 const ONE_HOUR = 3600000
 const FIVE_MINUTES = 5 * 60 * 1000
+
+const MemberSummaryPopover = ({ contract, onShowDetails }: { contract: any, onShowDetails: () => void }) => {
+    const age = React.useMemo(() => {
+        if (!contract.dob && !contract.date_of_birth) return null
+        try {
+            const birthDate = new Date(contract.dob || contract.date_of_birth)
+            if (isNaN(birthDate.getTime())) return null
+            const today = new Date()
+            let age = today.getFullYear() - birthDate.getFullYear()
+            const m = today.getMonth() - birthDate.getMonth()
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--
+            }
+            return age
+        } catch (e) {
+            return null
+        }
+    }, [contract.dob, contract.date_of_birth])
+
+    const weightLoss = React.useMemo(() => {
+        const initial_w = parseFloat(contract.initial_weight || contract.weight || '0')
+        const target_w = parseFloat(contract.target_weight || '0')
+        if (!isNaN(initial_w) && !isNaN(target_w) && initial_w > 0) {
+            return initial_w - target_w
+        }
+        return null
+    }, [contract.initial_weight, contract.weight, contract.target_weight])
+
+    const formattedDob = React.useMemo(() => {
+        if (!contract.dob && !contract.date_of_birth) return '--'
+        try {
+            const d = new Date(contract.dob || contract.date_of_birth)
+            if (isNaN(d.getTime())) return '--'
+            return format(d, 'dd/MM/yyyy')
+        } catch (e) {
+            return '--'
+        }
+    }, [contract.dob, contract.date_of_birth])
+
+    return (
+        <PopoverContent 
+            className="w-[320px] p-0 border-none shadow-2xl rounded-[24px] overflow-hidden bg-white dark:bg-gray-950 font-inter" 
+            onClick={(e) => e.stopPropagation()}
+        >
+            <div className="p-6 space-y-6">
+                <div className="flex items-center gap-4">
+                    <Avatar className="w-16 h-16 border-2 border-slate-50 dark:border-slate-800 shadow-sm rounded-2xl">
+                        <AvatarImage src={contract.avatar_url} className="object-cover" />
+                        <AvatarFallback className="bg-slate-100 text-slate-400">
+                            <Plus className="w-8 h-8" />
+                        </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col gap-0.5">
+                        <h4 className="text-[17px] font-bold text-slate-900 dark:text-white leading-tight uppercase">
+                            {contract.member_name}
+                        </h4>
+                        <span className="text-[14px] font-semibold text-rose-500 tracking-tight">
+                            {contract.phone}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="space-y-3.5">
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-slate-500 font-medium">Ngày sinh</span>
+                        <span className="text-slate-900 dark:text-slate-200 font-semibold uppercase">
+                            {formattedDob} 
+                            {age !== null ? ` (${age} tuổi)` : ''}
+                        </span>
+                    </div>
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-slate-500 font-medium">Chiều cao (cm)</span>
+                        <span className="text-slate-900 dark:text-slate-200 font-semibold">{contract.initial_height || contract.height || '--'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-slate-500 font-medium">Cân nặng ban đầu (kg)</span>
+                        <span className="text-slate-900 dark:text-slate-200 font-semibold">{contract.initial_weight || contract.weight || '--'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-slate-500 font-medium font-inter">Cân nặng dự kiến giảm (kg)</span>
+                        <span className="text-slate-900 dark:text-slate-200 font-semibold">
+                            {weightLoss !== null && weightLoss > 0 ? weightLoss : '--'}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="h-px bg-slate-100 dark:bg-slate-800 w-full" />
+
+                <div className="space-y-3.5">
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-slate-500 font-medium">Facebook cá nhân</span>
+                        <span className="text-slate-900 dark:text-slate-200 font-semibold">--</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-slate-500 font-medium">Email</span>
+                        <span className="text-blue-600 dark:text-blue-400 font-semibold hover:underline cursor-pointer truncate max-w-[180px]">
+                            {contract.email || '--'}
+                        </span>
+                    </div>
+                </div>
+
+                <Button 
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        onShowDetails()
+                    }}
+                    className="w-full h-12 rounded-xl bg-[#FD5771] hover:bg-[#e04d64] text-white font-bold text-[14px] transition-all active:scale-[0.98] shadow-lg shadow-red-100 dark:shadow-red-950/20"
+                >
+                    Xem chi tiết
+                </Button>
+            </div>
+        </PopoverContent>
+    )
+}
 
 export default function ClientsPage() {
     const queryClient = useQueryClient()
@@ -68,6 +183,7 @@ export default function ClientsPage() {
     const [showMobileFilters, setShowMobileFilters] = React.useState(false)
     const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'updated_at', direction: 'desc' })
     const [isSortOpen, setIsSortOpen] = React.useState(false)
+    const [hoveredClientId, setHoveredClientId] = React.useState<string | null>(null)
 
     // Debounce search
     React.useEffect(() => {
@@ -411,7 +527,7 @@ export default function ClientsPage() {
                 <div className="space-y-1">
                     <h1 className="text-3xl font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
                         <Users className="w-8 h-8 text-[#FD5771]" />
-                        Khách hàng
+                        KHÁCH HÀNG
                     </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Quản lý và theo dõi thông tin hội viên chi tiết.</p>
                 </div>
@@ -602,27 +718,27 @@ export default function ClientsPage() {
                                         className="rounded-lg border-gray-300 dark:border-gray-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                                     />
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('member_name')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider pl-6 cursor-pointer hover:text-red-600 transition-colors group">
-                                    <div className="flex items-center">Hội viên<SortIcon columnKey="member_name" /></div>
+                                <TableHead onClick={() => handleSort('member_name')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider pl-6 cursor-pointer hover:text-red-600 transition-colors group">
+                                    <div className="flex items-center">HỘI VIÊN & KHÁCH HÀNG<SortIcon columnKey="member_name" /></div>
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('phone')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden md:table-cell cursor-pointer hover:text-red-600 transition-colors group">
-                                    <div className="flex items-center">Liên hệ<SortIcon columnKey="phone" /></div>
+                                <TableHead onClick={() => handleSort('phone')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden md:table-cell cursor-pointer hover:text-red-600 transition-colors group">
+                                    <div className="flex items-center">LIÊN HỆ<SortIcon columnKey="phone" /></div>
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('branch_name')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden sm:table-cell cursor-pointer hover:text-red-600 transition-colors group">
-                                    <div className="flex items-center">PT & Chi nhánh<SortIcon columnKey="branch_name" /></div>
+                                <TableHead onClick={() => handleSort('branch_name')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden sm:table-cell cursor-pointer hover:text-red-600 transition-colors group">
+                                    <div className="flex items-center">PT & CHI NHÁNH<SortIcon columnKey="branch_name" /></div>
                                 </TableHead>
-                                <TableHead className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden lg:table-cell">Chỉ số & Mục tiêu</TableHead>
-                                <TableHead onClick={() => handleSort('created_at')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden xl:table-cell cursor-pointer hover:text-red-600 transition-colors group">
-                                    <div className="flex items-center">Ngày tạo<SortIcon columnKey="created_at" /></div>
+                                <TableHead className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden lg:table-cell">CHỈ SỐ & MỤC TIÊU</TableHead>
+                                <TableHead onClick={() => handleSort('created_at')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden xl:table-cell cursor-pointer hover:text-red-600 transition-colors group">
+                                    <div className="flex items-center">NGÀY TẠO<SortIcon columnKey="created_at" /></div>
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('updated_at')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden xl:table-cell cursor-pointer hover:text-red-600 transition-colors group">
-                                    <div className="flex items-center">Cập nhật<SortIcon columnKey="updated_at" /></div>
+                                <TableHead onClick={() => handleSort('updated_at')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden xl:table-cell cursor-pointer hover:text-red-600 transition-colors group">
+                                    <div className="flex items-center">CẬP NHẬT<SortIcon columnKey="updated_at" /></div>
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('status')} className="text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider cursor-pointer hover:text-red-600 transition-colors group">
-                                    <div className="flex items-center">Trạng thái<SortIcon columnKey="status" /></div>
+                                <TableHead onClick={() => handleSort('status')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider cursor-pointer hover:text-red-600 transition-colors group">
+                                    <div className="flex items-center">TRẠNG THÁI<SortIcon columnKey="status" /></div>
                                 </TableHead>
-                                <TableHead className="text-right pr-8 text-[11px] font-medium text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider">
-                                    Tùy chọn
+                                <TableHead className="text-right pr-8 text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider">
+                                    TÙY CHỌN
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
@@ -662,21 +778,37 @@ export default function ClientsPage() {
                                                 onCheckedChange={() => toggleRow(client.id)} className="rounded-lg" />
                                         </TableCell>
                                         <TableCell className="py-2">
-                                            <div className="flex items-center gap-3">
-                                                <Avatar className="h-9 w-9 border-2 border-white dark:border-gray-800 shadow-sm">
-                                                    <AvatarImage src={client.avatar_url} alt={client.member_name} className="object-cover" />
-                                                    <AvatarFallback className="bg-red-50 text-red-600 font-medium text-[10px]">
-                                                        {client.member_name?.charAt(0)}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-semibold text-black dark:text-gray-100 flex items-center gap-1.5 uppercase font-inter tracking-tight">
-                                                        {client.member_name}
-                                                        {client.status === 'Đang tập' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
-                                                    </span>
-                                                    <span className="text-[10px] text-red-600 dark:text-red-500 font-bold tracking-tight">{client.id}</span>
-                                                </div>
-                                            </div>
+                                            <Popover open={hoveredClientId === client.id} onOpenChange={(open) => !open && setHoveredClientId(null)}>
+                                                <PopoverTrigger asChild>
+                                                    <div 
+                                                        className="flex items-center gap-3 cursor-pointer outline-none group/client"
+                                                        onMouseEnter={() => setHoveredClientId(client.id)}
+                                                        onMouseLeave={() => setHoveredClientId(null)}
+                                                    >
+                                                        <Avatar className="h-9 w-9 border-2 border-white dark:border-gray-800 shadow-sm">
+                                                            <AvatarImage src={client.avatar_url} alt={client.member_name} className="object-cover" />
+                                                            <AvatarFallback className="bg-red-50 text-red-600 font-medium text-[10px]">
+                                                                {client.member_name?.charAt(0)}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-semibold text-black dark:text-gray-100 flex items-center gap-1.5 uppercase font-inter tracking-tight group-hover/client:text-red-600 transition-colors">
+                                                                {client.member_name}
+                                                                {client.status === 'Đang tập' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
+                                                            </span>
+                                                            <span className="text-[10px] text-red-600 dark:text-red-500 font-bold tracking-tight">{client.id}</span>
+                                                        </div>
+                                                    </div>
+                                                </PopoverTrigger>
+                                                <MemberSummaryPopover 
+                                                    contract={client} 
+                                                    onShowDetails={() => {
+                                                        setSelectedClient(client); 
+                                                        setIsDetailsOpen(true);
+                                                        setHoveredClientId(null);
+                                                    }} 
+                                                />
+                                            </Popover>
                                         </TableCell>
                                         <TableCell className="hidden md:table-cell">
                                             <div className="flex flex-col text-sm text-slate-800 dark:text-gray-300">
