@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { TrainingLogStats } from '@/components/training-logs/training-log-stats'
 import { TrainingLogFilters } from '@/components/training-logs/training-log-filters'
 import { TrainingLogTable } from '@/components/training-logs/training-log-table'
-import { fetchTrainingLogsReport } from '@/app/actions/training-logs'
+import { fetchTrainingLogsSummary, fetchTotalTrainingStats } from '@/app/actions/training-logs'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchClientFilterOptions } from '@/app/actions/clients'
 import { usePermissions } from '@/hooks/use-permissions'
@@ -22,14 +22,22 @@ export default function TrainingLogsPage() {
     const [endDate, setEndDate] = React.useState(format(new Date(), 'yyyy-MM-dd'))
     const [clientSearch, setClientSearch] = React.useState('')
     const [debouncedClientSearch, setDebouncedClientSearch] = React.useState('')
+    const [page, setPage] = React.useState(1)
+    const pageSize = 20
 
     // Debounce client search
     React.useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedClientSearch(clientSearch)
+            setPage(1) // Reset page on search
         }, 500)
         return () => clearTimeout(timer)
     }, [clientSearch])
+
+    // Reset page on other filters
+    React.useEffect(() => {
+        setPage(1)
+    }, [branchFilter, ptFilter, startDate, endDate])
 
     // Fetch branches for filter
     const { data: branches = [] } = useQuery({
@@ -47,10 +55,10 @@ export default function TrainingLogsPage() {
     })
     const pts = filterOptions?.data?.pts || []
 
-    // Main data query
-    const { data: reportResult, isLoading, isFetching } = useQuery({
-        queryKey: ['training-logs-report', branchFilter, ptFilter, debouncedClientSearch, startDate, endDate],
-        queryFn: () => fetchTrainingLogsReport({
+    // 1. Fetch Total Stats (Lightweight)
+    const { data: statsResult } = useQuery({
+        queryKey: ['training-logs-stats', branchFilter, ptFilter, debouncedClientSearch, startDate, endDate],
+        queryFn: () => fetchTotalTrainingStats({
             startDate: startDate,
             endDate: endDate,
             branchId: branchFilter === 'all' ? undefined : branchFilter,
@@ -59,30 +67,23 @@ export default function TrainingLogsPage() {
         })
     })
 
-    const reportData = reportResult?.data || []
-    const stats = reportResult?.stats || { total: 0, y: 0, n: 0, td: 0 }
-
-    const groupedData = React.useMemo(() => {
-        const groups: { [key: string]: any } = {}
-        reportData.forEach((log: any) => {
-            const clientId = log.client_id
-            if (!groups[clientId]) {
-                groups[clientId] = {
-                    clientId,
-                    client: log.client,
-                    logs: [],
-                    stats: { y: 0, n: 0, td: 0 }
-                }
-            }
-            groups[clientId].logs.push(log)
-            if (log.status === 'Y') groups[clientId].stats.y++
-            if (log.status === 'N') groups[clientId].stats.n++
-            if (log.status === 'TĐ') groups[clientId].stats.td++
+    // 2. Fetch Paginated Summary (Table)
+    const { data: summaryResult, isLoading, isFetching } = useQuery({
+        queryKey: ['training-logs-summary', branchFilter, ptFilter, debouncedClientSearch, startDate, endDate, page, pageSize],
+        queryFn: () => fetchTrainingLogsSummary({
+            startDate: startDate,
+            endDate: endDate,
+            branchId: branchFilter === 'all' ? undefined : branchFilter,
+            ptName: ptFilter === 'all' ? undefined : ptFilter,
+            clientSearch: debouncedClientSearch || undefined,
+            page,
+            pageSize
         })
-        return Object.values(groups).sort((a: any, b: any) => 
-            (a.client?.member_name || '').localeCompare(b.client?.member_name || '')
-        )
-    }, [reportData])
+    })
+
+    const reportData = summaryResult?.data || []
+    const totalCount = summaryResult?.total || 0
+    const stats = statsResult?.stats || { total: 0, y: 0, n: 0, td: 0 }
 
     const handleClearFilters = () => {
         setBranchFilter('all')
@@ -90,6 +91,7 @@ export default function TrainingLogsPage() {
         setStartDate(format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'))
         setEndDate(format(new Date(), 'yyyy-MM-dd'))
         setClientSearch('')
+        setPage(1)
     }
 
     if (isLoadingPermissions) return null
@@ -143,9 +145,15 @@ export default function TrainingLogsPage() {
                 </div>
 
                 <TrainingLogTable 
-                    data={groupedData} 
+                    data={reportData} 
                     isLoading={isLoading} 
                     branches={branches}
+                    total={totalCount}
+                    page={page}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    startDate={startDate}
+                    endDate={endDate}
                 />
             </div>
         </div>
