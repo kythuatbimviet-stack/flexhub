@@ -47,7 +47,7 @@ export function usePermissions() {
             queryClient.invalidateQueries({ queryKey: ['contracts-all'] })
             queryClient.invalidateQueries({ queryKey: ['revenue'] })
             queryClient.invalidateQueries({ queryKey: ['expense'] })
-            queryClient.invalidateQueries({ queryKey: ['debts'] })
+            queryClient.invalidateQueries({ queryKey: ['debts-all'] })
             queryClient.invalidateQueries({ queryKey: ['zalo-users-all'] })
             queryClient.invalidateQueries({ queryKey: ['client-filter-options'] })
             queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })

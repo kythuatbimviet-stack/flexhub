@@ -145,11 +145,15 @@ export default function DebtPage() {
         }
     }, [dateQuickFilter])
 
-    const { data: debts = [], isLoading } = useQuery<any[]>({
+    const { data: debts = [], isLoading, error } = useQuery<any[]>({
         queryKey: ['debts-all'],
         queryFn: async () => {
             const res = await fetchDebts()
-            return res.success ? (res.data ?? []) : []
+            if (!res.success) {
+                // Throw error instead of returning [] to let React Query handle error states
+                throw new Error(res.error || 'Unauthorized or failed to fetch debts')
+            }
+            return res.data ?? []
         },
         staleTime: THIRTY_MINUTES,
     })
@@ -197,16 +201,16 @@ export default function DebtPage() {
             if (branchFilter !== 'all' && d.branch_id !== branchFilter) return false
 
             // Payment Method filter
-            if (methodFilter !== 'all') {
-                const hasMethod = d.debt_installments?.some((inst: any) => 
+            if (methodFilter !== 'all' && d.debt_installments) {
+                const hasMethod = d.debt_installments.some((inst: any) => 
                     inst.status === 'Đã thanh toán' && inst.revenue?.payment_method === methodFilter
                 )
                 if (!hasMethod) return false
             }
 
             // Date Range Filter (applies to installments due_date)
-            if (dateRange) {
-                const hasInstallmentInRange = d.debt_installments?.some((inst: any) => {
+            if (dateRange && d.debt_installments) {
+                const hasInstallmentInRange = d.debt_installments.some((inst: any) => {
                     if (!inst.due_date) return false // Fix split bug
                     try {
                         const dueDate = parseISO(inst.due_date)
@@ -295,15 +299,15 @@ export default function DebtPage() {
             }
             if (branchFilter !== 'all' && d.branch_id !== branchFilter) return false
             
-            if (methodFilter !== 'all') {
-                const hasMethod = d.debt_installments?.some((inst: any) => 
+            if (methodFilter !== 'all' && d.debt_installments) {
+                const hasMethod = d.debt_installments.some((inst: any) => 
                     inst.status === 'Đã thanh toán' && inst.revenue?.payment_method === methodFilter
                 )
                 if (!hasMethod) return false
             }
 
-            if (dateRange) {
-                const hasInstallmentInRange = d.debt_installments?.some((inst: any) => {
+            if (dateRange && d.debt_installments) {
+                const hasInstallmentInRange = d.debt_installments.some((inst: any) => {
                     if (!inst.due_date) return false // Fix split bug
                     try {
                         const dueDate = parseISO(inst.due_date)
@@ -685,14 +689,20 @@ export default function DebtPage() {
                                         <TableCell className="text-right pr-8"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                                     </TableRow>
                                 ))
-                            ) : pagedGroups.length === 0 ? (
+                            ) : (pagedGroups.length === 0 || error) ? (
                                 <TableRow>
                                     <TableCell colSpan={7} className="h-64 text-center">
                                         <div className="flex flex-col items-center gap-4">
                                             <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-3xl flex items-center justify-center">
-                                                <HandCoins className="w-8 h-8 text-gray-200" />
+                                                {error ? (
+                                                    <BadgeCheck className="w-8 h-8 text-red-400" />
+                                                ) : (
+                                                    <HandCoins className="w-8 h-8 text-gray-200" />
+                                                )}
                                             </div>
-                                            <p className="text-gray-400 text-sm font-medium">Không tìm thấy dữ liệu công nợ nào.</p>
+                                            <p className="text-gray-400 text-sm font-medium">
+                                                {error instanceof Error ? `Lỗi: ${error.message}` : 'Không tìm thấy dữ liệu công nợ nào.'}
+                                            </p>
                                         </div>
                                     </TableCell>
                                 </TableRow>

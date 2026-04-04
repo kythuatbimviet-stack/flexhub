@@ -44,7 +44,7 @@ export function AppDataInitializer({ onProgress, onComplete }: AppDataProgressPr
         const backgroundTasks = [
             { key: ['revenue'],        fn: fetchRevenue,    msg: 'Khoản thu',      stale: FIVE_MINUTES },
             { key: ['expense'],        fn: fetchExpense,    msg: 'Khoản chi',      stale: FIVE_MINUTES },
-            { key: ['debts'],          fn: fetchDebts,      msg: 'Công nợ',        stale: FIVE_MINUTES },
+            { key: ['debts-all'],      fn: fetchDebts,      msg: 'Công nợ',        stale: FIVE_MINUTES },
             { key: ['zalo-users-all'], fn: fetchZaloUsers,  msg: 'Zalo',           stale: FIVE_MINUTES },
         ]
 
@@ -97,7 +97,7 @@ export function AppDataInitializer({ onProgress, onComplete }: AppDataProgressPr
             queryClient.invalidateQueries({ queryKey: ['contracts-all'] })
             queryClient.invalidateQueries({ queryKey: ['revenue'] })
             queryClient.invalidateQueries({ queryKey: ['expense'] })
-            queryClient.invalidateQueries({ queryKey: ['debts'] })
+            queryClient.invalidateQueries({ queryKey: ['debts-all'] })
             queryClient.invalidateQueries({ queryKey: ['zalo-users-all'] })
         }, TEN_MINUTES)
         return () => clearInterval(interval)

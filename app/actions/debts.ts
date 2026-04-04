@@ -10,18 +10,29 @@ const getAccessFilter = cache(async () => {
     const { data: { user: authUser } } = await supabase.auth.getUser()
     if (!authUser?.email) return null
 
-    const { data: profile } = await supabase
+    // Use Admin Client to bypass RLS on the 'users' table - we already have an authenticated session
+    const adminClient = await createAdminClient()
+    const { data: profile, error } = await adminClient
         .from('users')
         .select('*')
         .eq('email', authUser.email)
         .maybeSingle()
 
-    if (!profile) return null
+    if (error) {
+        console.error('[getAccessFilter] Error fetching user profile:', error)
+        return null
+    }
+
+    if (!profile) {
+        console.warn('[getAccessFilter] No profile found for email:', authUser.email)
+        return null
+    }
+    
     return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
 })
 
 export async function fetchDebts() {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     try {
         const accessInfo = await getAccessFilter()
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
@@ -30,37 +41,39 @@ export async function fetchDebts() {
             .from('debts')
             .select(`
                 *,
-                contracts (id, contract_name, package_name, status, start_date, end_date, total_amount),
-                clients (id, member_name, phone, avatar_url, email, dob, initial_height, initial_weight),
+                contracts (*),
+                clients (id, member_name, phone, avatar_url, email, dob, height, weight),
                 branches (name),
-                debt_installments (
-                    amount,
-                    status,
-                    revenue:revenue_id (payment_method)
-                )
+                debt_installments (*, revenue:revenue_id (payment_method))
             `)
             .order('created_at', { ascending: false })
 
         // Apply RBAC filters
         if (accessInfo.access.isStaffOnly) {
-            query = query.eq('created_by_email', accessInfo.user.email) // Note: assuming debts has created_by_email or similar
-            // If debts doesn't have it, we might need a join or another logic. 
-            // Usually, staff only see debts of their own clients.
+            const email = accessInfo.user.email
+            const name = accessInfo.user.name
+            query = query.or(`created_by_email.eq.${email},assigned_pt.eq.${email},trainer_name.ilike.%${name}%`, { foreignTable: 'contracts' })
         } else if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
             query = query.in('branch_id', accessInfo.access.allowedBranchIds)
         }
 
+
         const { data, error } = await query
 
-        if (error) throw error
+        if (error) {
+            console.error('[fetchDebts] Error fetching debts:', error)
+            throw error
+        }
         return { success: true, data }
     } catch (error: any) {
+        console.error('[fetchDebts] Exception in fetchDebts:', error)
         return { success: false, error: error.message }
     }
 }
 
+
 export async function fetchDebtsByCustomer(customerId: string) {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     try {
         const { data, error } = await supabase
             .from('debts')
@@ -80,7 +93,7 @@ export async function fetchDebtsByCustomer(customerId: string) {
 }
 
 export async function fetchDebtDetails(debtId: string) {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     try {
         const { data: debt, error: debtError } = await supabase
             .from('debts')
@@ -113,7 +126,7 @@ export async function fetchDebtDetails(debtId: string) {
 }
 
 export async function createDebtInstallments(debtId: string, installments: any[]) {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     try {
         const { data, error } = await supabase
             .from('debt_installments')
@@ -128,7 +141,7 @@ export async function createDebtInstallments(debtId: string, installments: any[]
 }
 
 export async function payInstallment(installmentId: string, revenueData: any) {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     try {
         // 1. Create Revenue record
         const { data: revenue, error: revError } = await supabase
@@ -189,7 +202,7 @@ export async function payInstallment(installmentId: string, revenueData: any) {
 }
 
 export async function updateDebtInstallment(id: string, data: any) {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     try {
         const { error } = await supabase
             .from('debt_installments')
@@ -205,7 +218,7 @@ export async function updateDebtInstallment(id: string, data: any) {
 }
 
 export async function deleteDebtInstallment(id: string) {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     try {
         const { error } = await supabase
             .from('debt_installments')
@@ -221,7 +234,7 @@ export async function deleteDebtInstallment(id: string) {
 }
 
 export async function createDebtInstallment(debtId: string, installment: any) {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     try {
         const { data, error } = await supabase
             .from('debt_installments')
@@ -238,7 +251,7 @@ export async function createDebtInstallment(debtId: string, installment: any) {
 }
 
 export async function deleteDebt(id: string) {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     try {
         const { error } = await supabase
             .from('debts')

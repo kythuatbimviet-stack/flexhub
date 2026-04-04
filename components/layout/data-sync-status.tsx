@@ -77,7 +77,7 @@ export function DataSyncStatus() {
                     targetLabel = 'dữ liệu Khoản chi'
                     break
                 case 'debts':
-                    targetKeys = [['debts']]
+                    targetKeys = [['debts-all']]
                     targetLabel = 'dữ liệu Công nợ'
                     break
                 case 'zalo-users':
@@ -107,7 +107,7 @@ export function DataSyncStatus() {
                     break
                 default:
                     // For other pages, just refresh the core business caches
-                    targetKeys = [['clients-all'], ['contracts-all'], ['revenue'], ['expense'], ['debts']]
+                    targetKeys = [['clients-all'], ['contracts-all'], ['revenue'], ['expense'], ['debts-all']]
                     targetLabel = 'dữ liệu nghiệp vụ'
             }
 

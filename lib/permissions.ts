@@ -1,5 +1,5 @@
 
-export type UserPosition = 'CEO' | 'Quản lý' | 'Quản lý chi nhánh' | 'Nhân viên'
+export type UserPosition = 'CEO' | 'Quản lý' | 'Quản lý chi nhánh' | 'Nhân viên' | 'Huấn luyện viên' | 'PT' | 'Kỹ thuật'
 
 export interface UserProfile {
     email: string
