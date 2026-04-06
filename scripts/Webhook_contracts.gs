@@ -195,14 +195,17 @@ function buildFullPlaceholders(contract) {
   data["{{email}}"] = cl.email || c.email || "";
   data["{{dob}}"] = formatDate(cl.dob || c.dob);
   data["{{initial_height}}"] = cl.height || cl.initial_height || c.initial_height || "";
-  data["{{initial_weight}}"] = cl.weight || cl.initial_weight || c.initial_weight || "";
+  data["{{initial_weight}}"] = c.initial_weight || cl.weight || "";
   data["{{id_number}}"] = cl.id_number || c.id_number || "";
   data["{{medical_condition}}"] = c.medical_condition || cl.medical_history || cl.medical_condition || "Không";
   data["{{address}}"] = cl.address || c.member_address || "";
 
   // --- PACKAGE CATEGORY ---
   data["{{package_name}}"] = c.package_name || "";
-  data["{{total_sessions}}"] = c.total_sessions || "";
+  // Calculate total sessions as duration * quantity for the PDF placeholder
+  const duration = Number(c.package_duration || 0);
+  const qty = Number(c.quantity || 0);
+  data["{{total_sessions}}"] = (duration > 0 && qty > 0) ? (duration * qty).toString() : (c.total_sessions || "");
   data["{{start_date}}"] = formatDate(c.start_date);
   data["{{end_date}}"] = formatDate(c.end_date);
   data["{{trainer_name}}"] = c.trainer_name || c.assigned_pt || ""; 

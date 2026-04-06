@@ -435,7 +435,7 @@ export default function ContractsPage() {
         }> = {}
 
         filteredContracts.forEach((c: any) => {
-            const cid = c.client_id || c.member_name || 'unknown'
+            const cid = c.client_id || (c.member_name ? `name-${c.member_name}-${c.phone || ''}` : 'unknown')
             if (!groups[cid]) {
                 groups[cid] = {
                     clientId: cid,
