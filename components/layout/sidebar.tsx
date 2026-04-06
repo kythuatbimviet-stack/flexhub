@@ -85,7 +85,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         window.location.href = '/login'
     }
 
-    if (isLoading) return null
+    // Render navigation immediately with default permissions/user
+    // if (isLoading) return null
 
     // Filter navigation based on permissions
     const visibleFinancial = permissions.isStaffOnly ? [] : financialNavigation

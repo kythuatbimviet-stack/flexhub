@@ -113,8 +113,9 @@ export default function DashboardPage() {
         return 'Chào buổi tối'
     }
 
-    // Show skeleton instead of blank screen while loading permissions
-    if (isLoading) return <DashboardSkeleton />
+    // No longer blocking — render immediately with default permissions/user
+    // skeleton will only show if specifically needed by sub-components or for a brief sync
+    // if (isLoading) return <DashboardSkeleton />
 
     const userName = user?.name || 'Admin'
     const isStaff = permissions.isStaffOnly
