@@ -86,6 +86,7 @@ import { cn, numberToVietnameseWords, getVietQRUrl, formatDecimalForDisplay, par
 import { createClient } from '@/lib/supabase'
 import { FinalizeContractDialog } from './finalize-contract-dialog'
 import { ContractClosureDialog } from './contract-closure-dialog'
+import { PaymentConfirmationDialog } from './payment-confirmation-dialog'
 import { usePermissions } from '@/hooks/use-permissions'
 import { canAccessRecord } from '@/lib/permissions'
 import { TrendingDown, TrendingUp, Minus, ClipboardCheck, RefreshCw, PauseCircle, XCircle as XCircleIcon } from 'lucide-react'
@@ -219,6 +220,7 @@ export function ContractDetailsSheet({
     const [ptOpen, setPtOpen] = React.useState(false)
     const [showFinalizeDialog, setShowFinalizeDialog] = React.useState(false)
     const [showClosureDialog, setShowClosureDialog] = React.useState(false)
+    const [showXNTTDialog, setShowXNTTDialog] = React.useState(false)
     const [generatingPdf, setGeneratingPdf] = React.useState(false)
     const [clients, setClients] = React.useState<any[]>([])
     const [clientSearchTerm, setClientSearchTerm] = React.useState('')
@@ -1012,6 +1014,10 @@ export function ContractDetailsSheet({
                                                         <span className="font-medium text-sm">Mở hợp đồng</span>
                                                     </DropdownMenuItem>
                                                 )}
+                                                <DropdownMenuItem onClick={() => setShowXNTTDialog(true)} className="gap-2.5 py-2.5 rounded-xl focus:bg-orange-50 dark:focus:bg-orange-950/20 cursor-pointer">
+                                                    <CreditCard className="w-4 h-4 text-orange-500" />
+                                                    <span className="font-medium text-sm">Gửi xác nhận TT</span>
+                                                </DropdownMenuItem>
                                                 <DropdownMenuSeparator className="my-1 bg-slate-100 dark:bg-slate-800" />
                                                 <DropdownMenuItem onClick={handleDelete} className="gap-2.5 py-2.5 rounded-xl text-red-600 focus:text-red-700 focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer">
                                                     <Trash2 className="w-4 h-4" />
@@ -1822,6 +1828,13 @@ export function ContractDetailsSheet({
                 />
 
             </SheetContent>
+
+            {/* XNTT Dialog */}
+            <PaymentConfirmationDialog
+                open={showXNTTDialog}
+                onOpenChange={setShowXNTTDialog}
+                contract={formData}
+            />
         </Sheet>
     )
 }

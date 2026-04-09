@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@400;500&display=swap');
+  body { margin:0; padding:0; background:#F4F2EF; font-family:'DM Sans',Arial,sans-serif; }
+</style>
+</head>
+<body>
+<div style="max-width:620px;margin:0 auto;padding:32px 16px 48px">
+
+  <!-- ===== HEADER ===== -->
+  <div style="text-align:center;margin-bottom:28px">
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;
+                color:#E8896A;letter-spacing:-0.3px;margin-bottom:4px">Eva's Fit</div>
+    <div style="font-size:12px;color:#6B6760;letter-spacing:1px;text-transform:uppercase">
+      Xác nhận thanh toán
+    </div>
+  </div>
+
+  <!-- ===== GREETING ===== -->
+  <div style="background:#FFFFFF;border-radius:14px;padding:24px 28px;
+              border:1px solid #E8E4DE;margin-bottom:16px">
+    <p style="font-family:'Playfair Display',Georgia,serif;font-size:20px;
+              color:#1C1A18;margin:0 0 12px">Xin chào {{ten}}! 👋</p>
+    <p style="font-size:14px;color:#6B6760;line-height:1.7;margin:0">
+      Eva's Fit xin xác nhận đã nhận được thanh toán từ bạn.
+      Vui lòng kiểm tra thông tin biên nhận bên dưới và lưu trữ để tham khảo khi cần.
+    </p>
+    <!-- Lời nhắn tùy chỉnh từ Dialog -->
+    <div style="margin-top:20px; padding:16px; background:#FAF8F5; border-radius:10px; border-left:4px solid #E8896A; font-style:italic; color:#1C1A18">
+      "{{custom_message}}"
+    </div>
+  </div>
+
+  <!-- ===== MAIN RECEIPT CARD ===== -->
+  <div style="background:#FFFFFF;border-radius:14px;overflow:hidden;
+              border:1px solid #E8E4DE;margin-bottom:16px">
+
+    <div style="background:#E8896A;padding:18px 24px;color:#FFFFFF">
+      <div style="font-family:'Playfair Display',Georgia,serif;font-size:18px;
+                  font-weight:600;letter-spacing:0.3px">
+        BIÊN NHẬN THANH TOÁN
+      </div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:2px">
+        Ngày đóng: {{ndong}} &nbsp;|&nbsp; Cơ sở: {{coso}}
+      </div>
+    </div>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+      <!-- Section Header -->
+      <tr><td colspan="2" style="background:#E8896A;padding:12px 16px;font-size:13px;color:#FFFFFF;font-weight:600;letter-spacing:0.8px;text-transform:uppercase">👥 Thông tin hội viên</td></tr>
+      <tr><td style="padding:10px 16px;font-size:12px;color:#6B6760;font-weight:600;border-bottom:1px solid #E8E4DE;width:40%">Tên hội viên</td><td style="padding:10px 16px;font-size:15px;color:#1C1A18;font-weight:500;border-bottom:1px solid #E8E4DE">{{ten}}</td></tr>
+      <tr><td style="padding:10px 16px;font-size:12px;color:#6B6760;font-weight:600;border-bottom:1px solid #E8E4DE">Số điện thoại</td><td style="padding:10px 16px;font-size:15px;color:#1C1A18;font-weight:500;border-bottom:1px solid #E8E4DE">{{sdt}}</td></tr>
+      
+      <!-- Section Header -->
+      <tr><td colspan="2" style="background:#E8896A;padding:12px 16px;font-size:13px;color:#FFFFFF;font-weight:600;letter-spacing:0.8px;text-transform:uppercase">🏋️ Thông tin gói tập</td></tr>
+      <tr><td style="padding:10px 16px;font-size:12px;color:#6B6760;font-weight:600;border-bottom:1px solid #E8E4DE">Gói tập</td><td style="padding:10px 16px;font-size:15px;color:#1C1A18;font-weight:500;border-bottom:1px solid #E8E4DE">{{goi}}</td></tr>
+      <tr><td style="padding:10px 16px;font-size:12px;color:#6B6760;font-weight:600;border-bottom:1px solid #E8E4DE">Thời hạn</td><td style="padding:10px 16px;font-size:15px;color:#1C1A18;font-weight:500;border-bottom:1px solid #E8E4DE">{{nbd}} - {{nkt}}</td></tr>
+    </table>
+
+    <div style="background:#E8896A;padding:18px 24px;color:#FFFFFF">
+      <table width="100%">
+        <tr>
+          <td style="font-size:13px;text-transform:uppercase;letter-spacing:0.8px;font-weight:600">Tổng giá trị</td>
+          <td style="font-family:'Playfair Display',Georgia,serif;font-size:24px;font-weight:600;text-align:right">{{tonggiatri}} đ</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <div style="text-align:center;padding-top:20px;border-top:1px solid #E8E4DE">
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:16px;color:#E8896A;margin-bottom:6px">Eva's Fit</div>
+    <div style="font-size:12px;color:#6B6760;line-height:1.8">
+      {{coso}}<br>
+      Email: evasfit@gmail.com
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

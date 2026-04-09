@@ -1072,3 +1072,203 @@ export async function closeContract(
         return { success: false, error: error.message }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// XNTT — XÁC NHẬN THANH TOÁN
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface PaymentConfirmationPayload {
+    coso: string
+    ten: string
+    sdt: string
+    email: string
+    diachi: string
+    ngaysinh: string
+    cmnd: string
+    nguon: string
+    goi: string
+    custom: string
+    tien1: string
+    httt1: string
+    tien2?: string
+    httt2?: string
+    tonggiatri: string
+    hlv: string
+    nbd: string
+    nkt: string
+    ndong: string
+    nguoithu: string
+    ghichu: string
+    custom_message?: string
+    contractId: string
+}
+
+function generatePaymentConfirmationHtml(d: PaymentConfirmationPayload): string {
+    const salmon = '#E8896A'
+    const salmonDk = '#993C1D'
+    const salmonBdr = '#F5C4B3'
+    const cream = '#FAF8F5'
+    const dark = '#1C1A18'
+    const gray = '#6B6760'
+    const border = '#E8E4DE'
+    const white = '#FFFFFF'
+
+    const row = (label: string, value: string | undefined) => {
+        const v = value || '—'
+        return `<tr>
+          <td style="padding:10px 16px;font-size:12px;color:${gray};font-weight:600;letter-spacing:0.6px;text-transform:uppercase;white-space:nowrap;border-bottom:1px solid ${border};width:40%">${label}</td>
+          <td style="padding:10px 16px;font-size:15px;color:${dark};font-weight:500;border-bottom:1px solid ${border}">${v}</td>
+        </tr>`
+    }
+
+    const sectionHeader = (title: string, icon: string) => `
+      <tr>
+        <td colspan="2" style="background:${salmon};padding:12px 16px;font-size:13px;color:${white};font-weight:600;letter-spacing:0.8px;text-transform:uppercase">
+          ${icon} ${title}
+        </td>
+      </tr>`
+
+    return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@400;500&display=swap');
+  body{margin:0;padding:0;background:#F4F2EF;font-family:'DM Sans',Arial,sans-serif;}
+</style>
+</head>
+<body>
+<div style="max-width:620px;margin:0 auto;padding:32px 16px 48px">
+  <div style="text-align:center;margin-bottom:28px">
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:26px;color:${salmon};letter-spacing:-0.3px;margin-bottom:4px">Eva's Fit</div>
+    <div style="font-size:12px;color:${gray};letter-spacing:1px;text-transform:uppercase">Xác nhận thanh toán</div>
+  </div>
+  <div style="background:${white};border-radius:14px;padding:24px 28px;border:1px solid ${border};margin-bottom:16px">
+    <p style="font-family:'Playfair Display',Georgia,serif;font-size:20px;color:${dark};margin:0 0 12px">Xin chào ${d.ten}!</p>
+    <p style="font-size:14px;color:${gray};line-height:1.7;margin:0">Eva's Fit xin xác nhận đã nhận được thanh toán từ bạn. Vui lòng kiểm tra thông tin biên nhận bên dưới và lưu trữ để tham khảo khi cần.</p>
+    ${d.custom_message ? `<div style="margin-top:20px;padding:16px;background:${cream};border-radius:10px;border-left:4px solid ${salmon};font-style:italic;color:${dark}">"${d.custom_message}"</div>` : ''}
+  </div>
+  <div style="background:${white};border-radius:14px;overflow:hidden;border:1px solid ${border};margin-bottom:16px">
+    <div style="background:${salmon};padding:18px 24px;color:${white}">
+      <div style="font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:600">BIÊN NHẬN THANH TOÁN</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:2px">Ngày đóng: ${d.ndong} &nbsp;|&nbsp; Cơ sở: ${d.coso}</div>
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+      ${sectionHeader('TH&#212;NG TIN H&#7896;I VI&#202;N', '&#9658;')}
+      ${row('Tên hội viên', d.ten)}
+      ${row('Số điện thoại', d.sdt)}
+      ${row('Gmail', d.email)}
+      ${row('Ngày sinh', d.ngaysinh)}
+      ${row('Địa chỉ', d.diachi)}
+      ${row('Số CMND/CCCD', d.cmnd)}
+      ${row('Nguồn', d.nguon)}
+      ${sectionHeader('TH&#212;NG TIN G&#211;I T&#7852;P', '&#9658;')}
+      ${row('Gói tập', d.goi)}
+      ${row('Lựa chọn', d.custom)}
+      ${row('Huấn luyện viên', d.hlv)}
+      ${row('Ngày bắt đầu', d.nbd)}
+      ${row('Ngày kết thúc', d.nkt)}
+      ${sectionHeader('CHI TI&#7870;T THANH TO&#193;N', '&#9658;')}
+      ${row('Lần 1 — Số tiền', d.tien1 ? d.tien1 + ' đ' : '—')}
+      ${row('Lần 1 — Hình thức', d.httt1)}
+      ${d.tien2 ? row('Lần 2 — Số tiền', d.tien2 + ' đ') : ''}
+      ${d.httt2 ? row('Lần 2 — Hình thức', d.httt2) : ''}
+      ${row('Ghi chú', d.ghichu)}
+    </table>
+    <div style="background:${salmon};padding:18px 24px;color:${white}">
+      <table width="100%"><tr>
+        <td style="font-size:13px;text-transform:uppercase;letter-spacing:0.8px;font-weight:600">Tổng giá trị hợp đồng</td>
+        <td style="font-family:'Playfair Display',Georgia,serif;font-size:24px;font-weight:600;text-align:right">${d.tonggiatri} đ</td>
+      </tr></table>
+    </div>
+    <div style="padding:14px 24px;background:${cream};font-size:13px;color:${gray};text-align:right">Người thu: <strong style="color:${dark}">${d.nguoithu}</strong></div>
+  </div>
+  <div style="background:${white};border-radius:14px;border:1.5px solid ${salmonBdr};padding:22px 24px;margin-bottom:16px">
+    <div style="font-size:12px;color:${salmonDk};font-weight:700;letter-spacing:0.9px;text-transform:uppercase;margin-bottom:14px">LƯU Ý QUAN TRỌNG</div>
+    <p style="font-size:13.5px;color:${gray};line-height:1.75;margin:0 0 10px">Tất cả các khoản thu đều <strong>không hoàn lại</strong>.</p>
+    <p style="font-size:13.5px;color:${gray};line-height:1.75;margin:0">Các khoản đặt cọc có giá trị sử dụng trong vòng <strong>14 ngày</strong> kể từ ngày thanh toán.</p>
+  </div>
+  <div style="text-align:center;padding-top:20px;border-top:1px solid ${border}">
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:16px;color:${salmon};margin-bottom:6px">Eva's Fit</div>
+    <div style="font-size:12px;color:${gray};line-height:1.8">${d.coso}<br>Email: evasfit@gmail.com</div>
+  </div>
+</div>
+</body>
+</html>`
+}
+
+/**
+ * Server Action: Gửi email Xác nhận Thanh toán (XNTT)
+ * Cơ chế: Ghi JSON {email, subject, htmlBody} vào cột sendemail_xntt
+ *         → Supabase Webhook kích hoạt GAS doPost() → GAS gửi email HTML
+ */
+export async function sendPaymentConfirmationAction(
+    payload: PaymentConfirmationPayload
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        const supabase = await createAdminClient()
+
+        // 1. Build HTML body từ form data
+        const htmlBody = generatePaymentConfirmationHtml(payload)
+
+        // 2. Build subject
+        const subject = `Xác nhận thanh toán - ${payload.ten} - Eva's Fit`
+
+        // 3. Đóng gói JSON payload cho GAS đọc
+        const xnttPayload = JSON.stringify({ email: payload.email, subject, htmlBody })
+
+        // 4. Ghi vào DB trong 1 lần update duy nhất → Supabase Webhook kích hoạt GAS
+        //    Bao gồm luôn is_receipt_sent để tránh gọi updateContractReceiptStatus
+        //    riêng (sẽ tạo thêm 1 DB update → webhook bắn 2 lần)
+        const { error: updateError } = await supabase
+            .from('contracts')
+            .update({
+                sendemail_xntt: xnttPayload,
+                payment_method: payload.httt1 || null,
+                payment_notes: payload.ghichu || null,
+                is_receipt_sent: true,
+                receipt_sent_at: new Date().toISOString(),
+            })
+            .eq('id', payload.contractId)
+
+        if (updateError) throw new Error(updateError.message)
+
+        revalidatePath('/contracts')
+        return { success: true }
+    } catch (error: any) {
+        console.error('sendPaymentConfirmationAction Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+/**
+ * Server Action: Cập nhật trạng thái đã gửi biên nhận
+ * Gọi từ Dialog sau khi sendPaymentConfirmationAction thành công
+ */
+export async function updateContractReceiptStatus(contractId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        const supabase = await createAdminClient()
+        const { error } = await supabase
+            .from('contracts')
+            .update({
+                is_receipt_sent: true,
+                receipt_sent_at: new Date().toISOString(),
+            })
+            .eq('id', contractId)
+
+        if (error) throw new Error(error.message)
+
+        revalidatePath('/contracts')
+        return { success: true }
+    } catch (error: any) {
+        console.error('updateContractReceiptStatus Error:', error)
+        return { success: false, error: error.message }
+    }
+}

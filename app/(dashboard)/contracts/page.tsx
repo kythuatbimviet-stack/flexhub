@@ -26,7 +26,8 @@ import {
     ChevronDown,
     LayoutGrid,
     ExternalLink,
-    Phone
+    Phone,
+    Send
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -58,6 +59,7 @@ import { fetchContracts, fetchContractsLite, bulkDeleteContracts } from '@/app/a
 
 import { ContractDetailsSheet } from '@/components/contracts/contract-details-sheet'
 import { ImportExcelContractDialog } from '@/components/contracts/import-excel-contract-dialog'
+import { PaymentConfirmationDialog } from '@/components/contracts/payment-confirmation-dialog'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchContractConfigs } from '@/app/actions/config-params'
 import {
@@ -206,6 +208,7 @@ export default function ContractsPage() {
     const [selectedContract, setSelectedContract] = React.useState<any | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = React.useState(false)
     const [showMobileFilters, setShowMobileFilters] = React.useState(false)
+    const [xnttContract, setXnttContract] = React.useState<any | null>(null)
 
     // Filter states
     const [statusFilter, setStatusFilter] = React.useState('all')
@@ -626,6 +629,11 @@ export default function ContractsPage() {
             <ContractDetailsSheet
                 contract={selectedContract} open={isDetailsOpen}
                 onOpenChange={setIsDetailsOpen} onSuccess={refetch}
+            />
+            <PaymentConfirmationDialog
+                open={!!xnttContract}
+                onOpenChange={(open) => { if (!open) setXnttContract(null) }}
+                contract={xnttContract}
             />
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-1">
@@ -1100,6 +1108,12 @@ export default function ContractsPage() {
                                                                                                         onClick={(e) => { e.stopPropagation(); setSelectedContract(contract); setIsDetailsOpen(true) }}
                                                                                                         className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-50">
                                                                                                         <Edit2 className="h-3.5 w-3.5" />
+                                                                                                    </Button>
+                                                                                                    <Button variant="ghost" size="icon"
+                                                                                                        onClick={(e) => { e.stopPropagation(); setXnttContract(contract) }}
+                                                                                                        className="w-7 h-7 rounded-lg text-orange-500 hover:bg-orange-50"
+                                                                                                        title="Gửi xác nhận thanh toán">
+                                                                                                        <Send className="h-3.5 w-3.5" />
                                                                                                     </Button>
                                                                                                     <Button variant="ghost" size="icon"
                                                                                                         onClick={(e) => { e.stopPropagation(); handleDelete(contract.id) }}
