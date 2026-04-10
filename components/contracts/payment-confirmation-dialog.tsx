@@ -25,6 +25,8 @@ import {
     PenTool,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useQuery } from '@tanstack/react-query'
+import { fetchUsers } from '@/app/actions/users'
 import { sendPaymentConfirmationAction } from '@/app/actions/contracts'
 import { format } from 'date-fns'
 
@@ -66,6 +68,17 @@ export function PaymentConfirmationDialog({
         custom_message: "Cảm ơn bạn đã tin tưởng và đồng hành cùng Eva's Fit! Hy vọng bạn sẽ có những trải nghiệm tập luyện tuyệt vời nhất.",
     })
 
+    // Fetch users để map email sang tên
+    const { data: users = [] } = useQuery({
+        queryKey: ['users-all'],
+        queryFn: async () => {
+            const res = await fetchUsers()
+            return res.success ? (res.data ?? []) : []
+        },
+        enabled: open,
+        staleTime: 600000,
+    })
+
     // Auto-fill khi dialog mở / contract thay đổi
     React.useEffect(() => {
         if (open && contract) {
@@ -73,6 +86,10 @@ export function PaymentConfirmationDialog({
                 if (!val) return ''
                 try { return format(new Date(val), 'dd/MM/yyyy') } catch { return '' }
             }
+
+            const creator = users.find((u: any) => u.email === contract.created_by_email)
+            const collectorName = creator ? creator.name : (contract.created_by_email || '')
+
             setFormData({
                 coso: contract.facility_name || contract.branches?.name || "Eva's Fit Nam Định",
                 ten: contract.member_name || contract.clients?.member_name || '',
@@ -93,13 +110,13 @@ export function PaymentConfirmationDialog({
                 nbd: safeDate(contract.start_date),
                 nkt: safeDate(contract.end_date),
                 ndong: safeDate(contract.signing_date) || format(new Date(), 'dd/MM/yyyy'),
-                nguoithu: contract.created_by_email || '',
+                nguoithu: collectorName,
                 ghichu: contract.payment_notes || '',
                 custom_message: "Cảm ơn bạn đã tin tưởng và đồng hành cùng Eva's Fit! Hy vọng bạn sẽ có những trải nghiệm tập luyện tuyệt vời nhất.",
             })
             setActiveTab('form')
         }
-    }, [open, contract])
+    }, [open, contract, users])
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
