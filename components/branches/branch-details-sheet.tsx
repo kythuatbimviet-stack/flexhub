@@ -146,7 +146,8 @@ export function BranchDetailsSheet({
             let finalFormData = { ...formData }
 
             if (formData.signature_center && formData.signature_center.startsWith('data:image')) {
-                const fileName = `branch_sig_${finalFormData.id}_${Date.now()}.png`
+                const safeId = (finalFormData.id || 'new').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+                const fileName = `branch_sig_${safeId}_${Date.now()}.png`
                 const uploadResult = await uploadSignature(formData.signature_center, fileName)
                 
                 if (uploadResult.success) {
@@ -160,7 +161,7 @@ export function BranchDetailsSheet({
 
             const payload = {
                 ...finalFormData,
-                account_number: finalFormData.account_number ? parseInt(finalFormData.account_number) : null
+                account_number: finalFormData.account_number ? finalFormData.account_number.toString() : null
             }
 
             if (branch) {
@@ -182,8 +183,9 @@ export function BranchDetailsSheet({
                     toast.error('Lỗi khi thêm chi nhánh: ' + result.error)
                 }
             }
-        } catch (error) {
-            toast.error('Đã xảy ra lỗi không xác định')
+        } catch (error: any) {
+            console.error('Save Branch Error:', error)
+            toast.error('Đã xảy ra lỗi: ' + (error.message || 'Không xác định'))
         } finally {
             setLoading(false)
         }
@@ -201,8 +203,8 @@ export function BranchDetailsSheet({
                 } else {
                     toast.error('Lỗi khi xóa: ' + result.error)
                 }
-            } catch (error) {
-                toast.error('Đã xảy ra lỗi không xác định')
+            } catch (error: any) {
+                toast.error('Đã xảy ra lỗi: ' + (error.message || 'Không xác định'))
             } finally {
                 setLoading(false)
             }

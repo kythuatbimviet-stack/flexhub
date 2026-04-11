@@ -54,11 +54,9 @@ export async function fetchRevenue() {
             .select(`
                 *,
                 branches (name),
-                clients (member_name, email),
-                xntt_history (status, created_at)
+                clients (member_name)
             `)
             .order('recorded_at', { ascending: false })
-            .order('created_at', { foreignTable: 'xntt_history', ascending: false })
 
         // Apply RBAC filters
         if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
