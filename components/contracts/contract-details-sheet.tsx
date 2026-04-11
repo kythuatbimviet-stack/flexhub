@@ -162,7 +162,7 @@ const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEd
             ) : (
                 <p className={cn(
                     "text-[15px] font-medium min-h-[20px] w-full break-words",
-                    name === 'id' ? "text-red-600 dark:text-red-500" : "text-slate-900 dark:text-slate-100"
+                    name === 'id' ? (value === '(Tự động)' ? "text-slate-400 font-normal italic" : "text-red-600 dark:text-red-500") : "text-slate-900 dark:text-slate-100"
                 )}>
                     {type === 'number' && value ? (
                         ['quantity', 'total_sessions', 'package_duration', 'initial_weight', 'initial_height'].includes(name)
@@ -424,12 +424,8 @@ export function ContractDetailsSheet({
                         initialData.bank_code = branch.bank_code || ''
                     }
                     
-                    setGeneratingId(true)
-                    const idRes = await generateContractId(branchId)
-                    if (idRes.success && idRes.data) {
-                        initialData.id = idRes.data
-                    }
-                    setGeneratingId(false)
+                    // Mã số sẽ tự động sinh khi lưu (save)
+                    initialData.id = '(Tự động)'
                 }
 
                 setFormData(initialData)
@@ -537,15 +533,12 @@ export function ContractDetailsSheet({
     }
 
     const handleBranchChange = async (branchId: string) => {
-        setGeneratingId(true)
-        const res = await generateContractId(branchId)
-        if (res.success) {
-            const branch = branches.find((b: any) => b.id === branchId)
-            setFormData((prev: any) => ({
-                ...prev,
-                branch_id: branchId,
-                id: res.data,
-                facility_name: branch?.name || '',
+        const branch = branches.find((b: any) => b.id === branchId)
+        setFormData((prev: any) => ({
+            ...prev,
+            branch_id: branchId,
+            id: isCreateMode ? '(Tự động)' : prev.id, // Giữ nguyên logic tự động khi đổi chi nhánh trong lúc tạo mới
+            facility_name: branch?.name || '',
                 address: branch?.address || '',
                 center_phone: branch?.center_phone || branch?.phone || '',
                 center_address: branch?.center_address || branch?.address || '',
@@ -562,8 +555,6 @@ export function ContractDetailsSheet({
                 package_duration: '',
                 end_date: ''
             }))
-        }
-        setGeneratingId(false)
     }
 
     const handlePackageChange = (packageId: string) => {
@@ -747,7 +738,8 @@ export function ContractDetailsSheet({
 
             // 1. Upload avata if changed (and it's a base64 string)
             if (formData.avatar_url && formData.avatar_url.startsWith('data:image')) {
-                const fileName = `avatar_${formData.client_id || 'new'}_${Date.now()}.png`
+                const safeId = (formData.id && formData.id !== '(Tự động)') ? formData.id : 'new'
+                const fileName = `avatar_${safeId}_${Date.now()}.png`
                 const uploadResult = await uploadSignature(formData.avatar_url, fileName)
 
                 if (uploadResult.success) {
@@ -774,7 +766,8 @@ export function ContractDetailsSheet({
 
             // 2. Chữ ký khách hàng
             if (formData.signature_url && formData.signature_url.startsWith('data:image')) {
-                const fileName = `client_sig_${formData.id || 'new'}_${Date.now()}.png`
+                const safeId = (formData.id && formData.id !== '(Tự động)') ? formData.id : 'new'
+                const fileName = `client_sig_${safeId}_${Date.now()}.png`
                 const uploadResult = await uploadSignature(formData.signature_url, fileName)
 
                 if (uploadResult.success) {

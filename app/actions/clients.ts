@@ -338,6 +338,17 @@ export async function createClient(client: any) {
             delete (client as any).avata_url
         }
 
+        // Cấp mã nếu là tự động
+        if (!client.id || client.id === '(Tự động)') {
+            const { data: newId, error: rpcError } = await adminClient.rpc('fn_generate_next_id', {
+                p_branch_id: client.branch_id,
+                p_type: 'client',
+                p_prefix: 'EF'
+            })
+            if (rpcError) throw new Error('Lỗi cấp phát mã khách hàng: ' + rpcError.message)
+            client.id = newId
+        }
+
         const { data, error } = await adminClient
             .from('clients')
             .insert(client)
@@ -356,56 +367,8 @@ export async function createClient(client: any) {
 }
 
 export async function generateClientId(clientBranchId?: string | null) {
-    try {
-        // [SEC] Auth check before accessing admin client
-        const accessInfo = await getAccessFilter()
-        if (!accessInfo) return { success: false, error: 'Unauthorized' }
-
-        const adminClient = await createAdminClient()
-        const now = new Date()
-        const year = now.getFullYear().toString().slice(-2)      // e.g. "26"
-        const month = String(now.getMonth() + 1).padStart(2, '0') // e.g. "03"
-
-        let branchCode = '00'
-
-        // Preference 1: Explicitly provided branch ID from the client (e.g., from user profile hook)
-        if (clientBranchId) {
-            branchCode = String(clientBranchId).toUpperCase()
-        } else if (accessInfo.user.branch_id) {
-            // Preference 2: Use branch_id from authenticated user profile
-            branchCode = String(accessInfo.user.branch_id).toUpperCase()
-        }
-
-        // Build prefix: EF-[BranchCode]-[YYMM]-
-        const prefix = `EF-${branchCode}-${year}${month}`
-
-        // Find the latest ID with this prefix to get the highest sequence number
-        const { data: latest } = await adminClient
-            .from('clients')
-            .select('id')
-            .like('id', `${prefix}%`)
-            .order('id', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-
-        let nextSeq = 1
-        if (latest && latest.id) {
-            const match = latest.id.match(/\d{3}$/)
-            if (match) {
-                const currentSeq = parseInt(match[0], 10)
-                if (!isNaN(currentSeq)) {
-                    nextSeq = currentSeq + 1
-                }
-            }
-        }
-
-        const newId = `${prefix}${String(nextSeq).padStart(3, '0')}`
-
-        return { success: true, data: newId }
-    } catch (error: any) {
-        console.error('Generate Client ID Error:', error)
-        return { success: false, error: error.message }
-    }
+    // Trả về placeholder, mã thật sẽ được cấp khi lưu xuống database
+    return { success: true, data: '(Tự động)' }
 }
 
 /**

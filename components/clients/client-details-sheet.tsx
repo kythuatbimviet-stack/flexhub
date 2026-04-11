@@ -172,7 +172,7 @@ const ClientInfoRow = ({ label, value, name, type = "text", options, isEditing, 
                     </div>
                 )
             ) : (
-                <p className={cn("text-[15px] font-medium", name === 'id' ? "text-red-600 dark:text-red-500 font-bold" : "text-slate-700 dark:text-slate-200")}>
+                <p className={cn("text-[15px] font-medium", name === 'id' ? (value === '(Tự động)' ? "text-slate-400 font-normal italic" : "text-red-600 dark:text-red-500 font-bold") : "text-slate-700 dark:text-slate-200")}>
                     {type === 'select' && options
                         ? (options.find((o: any) => (typeof o === 'object' ? o.value : o) === value)?.label || options.find((o: any) => (typeof o === 'object' ? o.value : o) === value)?.value || value || <span className="text-slate-400 font-normal text-sm">Chưa cập nhật</span>)
                         : (value || <span className="text-slate-400 font-normal text-sm">Chưa cập nhật</span>)}
@@ -215,7 +215,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
         } else if (open) {
             // Initialize for Create Mode
             setFormData({
-                id: '',
+                id: '(Tự động)',
                 member_name: '',
                 phone: '',
                 email: '',
@@ -246,17 +246,12 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
         }
     }, [client, open, currentUser])
 
-    // Auto-generate ID in create mode
+    // Tự động gán mã placeholder khi tạo mới (mã thật sẽ được cấp tại server khi lưu)
     React.useEffect(() => {
-        if (isCreateMode && open && formData && !formData.id && !generatingId) {
-            setGeneratingId(true)
-            generateClientId(formData.branch_id).then((res) => {
-                if (res.success && res.data) {
-                    setFormData((prev: any) => ({ ...prev, id: res.data }))
-                }
-            }).finally(() => setGeneratingId(false))
+        if (isCreateMode && open && formData && (formData.id === '' || !formData.id)) {
+            setFormData((prev: any) => ({ ...prev, id: '(Tự động)' }))
         }
-    }, [isCreateMode, open, formData?.branch_id, generatingId])
+    }, [isCreateMode, open])
 
     const { data: branches = [] } = useQuery<any[]>({
         queryKey: ['branches'],
@@ -378,7 +373,8 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
 
             // 1. Upload avatar if changed (detected as base64)
             if (formData.avatar_url && formData.avatar_url.startsWith('data:image')) {
-                const fileName = `avatar_${formData.id || 'new'}_${Date.now()}.png`
+                const safeId = (formData.id && formData.id !== '(Tự động)') ? formData.id : 'new'
+                const fileName = `avatar_${safeId}_${Date.now()}.png`
                 const uploadResult = await uploadSignature(formData.avatar_url, fileName)
 
                 if (uploadResult.success) {
@@ -757,7 +753,14 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                     <ClientCardSection title="THÔNG TIN CƠ BẢN" icon={User}>
                                         <div className="space-y-5">
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                                <ClientInfoRow label="Mã khách hàng" value={formData.id} name="id" placeholder={generatingId ? "Đang tạo mã..." : "Mã KH"} readOnly={true} {...sharedRowProps} />
+                                                <ClientInfoRow 
+                                                    label="Mã khách hàng" 
+                                                    value={formData.id} 
+                                                    name="id" 
+                                                    placeholder={formData.id === '(Tự động)' ? "(Tự động)" : "Mã KH"} 
+                                                    readOnly={true} 
+                                                    {...sharedRowProps} 
+                                                />
                                                 <ClientInfoRow label="Họ và tên hội viên" value={formData.member_name} name="member_name" {...sharedRowProps} />
                                             </div>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

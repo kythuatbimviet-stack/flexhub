@@ -81,7 +81,17 @@ import * as XLSX from 'xlsx'
 
 const TEN_MINUTES = 10 * 60 * 1000
 
-const MemberSummaryPopover = ({ contract, onShowDetails }: { contract: any, onShowDetails: () => void }) => {
+const MemberSummaryPopover = ({ 
+    contract, 
+    onShowDetails, 
+    onMouseEnter, 
+    onMouseLeave 
+}: { 
+    contract: any, 
+    onShowDetails: () => void,
+    onMouseEnter?: () => void,
+    onMouseLeave?: () => void
+}) => {
     const age = React.useMemo(() => {
         if (!contract.dob) return null
         try {
@@ -123,6 +133,8 @@ const MemberSummaryPopover = ({ contract, onShowDetails }: { contract: any, onSh
         <PopoverContent 
             className="w-[320px] p-0 border-none shadow-2xl rounded-[24px] overflow-hidden bg-white dark:bg-gray-950 font-inter" 
             onClick={(e) => e.stopPropagation()}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
         >
             <div className="p-6 space-y-6">
                 {/* Header: Avatar, Name & Phone */}
@@ -218,6 +230,18 @@ export default function ContractsPage() {
     const [isSortOpen, setIsSortOpen] = React.useState(false)
     const [expandedCustomers, setExpandedCustomers] = React.useState<Set<string>>(new Set())
     const [hoveredClientId, setHoveredClientId] = React.useState<string | null>(null)
+    const closeTimeoutRef = React.useRef<any>(null)
+
+    const handleMemberMouseEnter = (clientId: string) => {
+        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current)
+        setHoveredClientId(clientId)
+    }
+
+    const handleMemberMouseLeave = () => {
+        closeTimeoutRef.current = setTimeout(() => {
+            setHoveredClientId(null)
+        }, 300)
+    }
 
     const { permissions, user: currentUser, isLoading: isLoadingPermissions } = usePermissions()
 
@@ -958,12 +982,12 @@ export default function ContractsPage() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="py-4" colSpan={2}>
-                                                    <Popover open={hoveredClientId === group.clientId} onOpenChange={(open) => !open && setHoveredClientId(null)}>
+                                                    <Popover open={hoveredClientId === group.clientId} onOpenChange={(open) => !open && handleMemberMouseLeave()}>
                                                         <PopoverTrigger asChild>
                                                             <div 
                                                                 className="flex items-center gap-4 cursor-pointer outline-none group/client"
-                                                                onMouseEnter={() => setHoveredClientId(group.clientId)}
-                                                                onMouseLeave={() => setHoveredClientId(null)}
+                                                                onMouseEnter={() => handleMemberMouseEnter(group.clientId)}
+                                                                onMouseLeave={handleMemberMouseLeave}
                                                             >
                                                                 <Avatar className="w-10 h-10 border border-slate-100 dark:border-slate-800 shadow-sm rounded-xl group-hover/client:scale-105 transition-transform duration-300">
                                                                     <AvatarImage src={group.avatarUrl} className="object-cover" />
@@ -986,6 +1010,8 @@ export default function ContractsPage() {
                                                         </PopoverTrigger>
                                                         <MemberSummaryPopover 
                                                             contract={group.contracts[0]} 
+                                                            onMouseEnter={() => handleMemberMouseEnter(group.clientId)}
+                                                            onMouseLeave={handleMemberMouseLeave}
                                                             onShowDetails={() => {
                                                                 setSelectedContract(group.contracts[0]); 
                                                                 setIsDetailsOpen(true)
