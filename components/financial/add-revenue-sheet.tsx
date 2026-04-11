@@ -16,9 +16,12 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchClients } from '@/app/actions/clients'
-import { fetchContracts } from '@/app/actions/contracts'
-import { createRevenue } from '@/app/actions/financial'
+import { createClient } from '@/lib/supabase'
+import { createRevenue, fetchFinancialCategories } from '@/app/actions/financial'
 import { fetchDebtsByCustomer, fetchDebtDetails } from '@/app/actions/debts'
+import { fetchContractById, sendPaymentConfirmationAction } from '@/app/actions/contracts'
+import { fetchUsers } from '@/app/actions/users'
+import { format } from 'date-fns'
 import {
     Form,
     FormControl,
@@ -69,10 +72,27 @@ type RevenueFormValues = z.infer<typeof revenueSchema>
 
 interface AddRevenueSheetProps {
     onSuccess?: () => void
+    revenue?: any
+    trigger?: React.ReactNode
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
-    const [open, setOpen] = React.useState(false)
+export function AddRevenueSheet({ 
+    onSuccess, 
+    revenue, 
+    trigger,
+    open: externalOpen,
+    onOpenChange: externalOnOpenChange
+}: AddRevenueSheetProps) {
+    const [internalOpen, setInternalOpen] = React.useState(false)
+    const open = externalOpen !== undefined ? externalOpen : internalOpen
+    const setOpen = (val: boolean) => {
+        if (externalOnOpenChange) externalOnOpenChange(val)
+        else setInternalOpen(val)
+    }
+
+    const isEdit = !!revenue
     const [loading, setLoading] = React.useState(false)
     const [searchClientQuery, setSearchClientQuery] = React.useState('')
     const [filterHasContract, setFilterHasContract] = React.useState(false)
@@ -90,6 +110,8 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
             recorded_at: new Date().toISOString().split('T')[0],
             debt_id: null,
             installment_id: null,
+            send_xntt: true,
+            xntt_email: ''
         },
     })
 
@@ -137,11 +159,62 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
         enabled: !!debtId
     })
 
+    const { data: users = [] } = useQuery({
+        queryKey: ['users-all'],
+        queryFn: async () => {
+            const res = await fetchUsers()
+            return res.success ? (res.data ?? []) : []
+        },
+        enabled: open,
+    })
+
+    // Reset form when revenue changes or sheet opens
+    React.useEffect(() => {
+        if (open) {
+            if (revenue) {
+                form.reset({
+                    amount: Number(revenue.amount),
+                    category_id: revenue.category_id || '',
+                    branch_id: revenue.branch_id || '',
+                    customer_id: revenue.customer_id || null,
+                    contract_id: revenue.contract_id || null,
+                    description: revenue.description || '',
+                    payment_method: revenue.payment_method || 'Tiền mặt',
+                    recorded_at: revenue.recorded_at ? new Date(revenue.recorded_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                    debt_id: revenue.debt_id || null,
+                    installment_id: revenue.installment_id || null,
+                    send_xntt: false, // Default false for editing
+                    xntt_email: revenue.clients?.email || ''
+                })
+            } else {
+                form.reset({
+                    amount: 0,
+                    category_id: '',
+                    branch_id: '',
+                    customer_id: null,
+                    contract_id: null,
+                    description: '',
+                    payment_method: 'Tiền mặt',
+                    recorded_at: new Date().toISOString().split('T')[0],
+                    debt_id: null,
+                    installment_id: null,
+                    send_xntt: true,
+                    xntt_email: ''
+                })
+            }
+        }
+    }, [open, revenue, form])
+
     React.useEffect(() => {
         if (customerId && clients) {
             const selectedClient = clients.find((c: any) => c.id === customerId)
             if (selectedClient?.branch_id) {
                 form.setValue('branch_id', selectedClient.branch_id)
+            }
+            if (selectedClient?.email) {
+                form.setValue('xntt_email', selectedClient.email)
+            } else {
+                form.setValue('xntt_email', '')
             }
         }
     }, [customerId, clients, form])
@@ -184,10 +257,80 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
     async function onSubmit(values: RevenueFormValues) {
         setLoading(true)
         try {
-            const result = await createRevenue(values)
+            let result;
+            if (isEdit) {
+                const { ...updates } = values
+                // @ts-ignore
+                delete updates.send_xntt
+                // @ts-ignore
+                delete updates.xntt_email
+                result = await updateRevenue(revenue.id, updates)
+            } else {
+                result = await createRevenue(values)
+            }
+
             if (!result.success) throw new Error(result.error)
 
-            toast.success('Ghi nhận khoản thu thành công')
+            const message = isEdit ? 'Cập nhật khoản thu thành công' : 'Ghi nhận khoản thu thành công'
+            if (values.send_xntt && values.xntt_email) {
+                try {
+                    // Lấy thông tin hợp đồng để fill payload XNTT
+                    let contractData = null
+                    if (values.contract_id) {
+                        const cRes = await fetchContractById(values.contract_id)
+                        if (cRes.success) contractData = cRes.data
+                    }
+
+                    const selectedClient = clients?.find((c: any) => c.id === values.customer_id)
+                    const selectedBranch = branches?.find((b: any) => b.id === values.branch_id)
+                    
+                    // Lấy tên người thu từ danh sách users
+                    const supabase = createClient()
+                    const { data: { user: authUser } } = await supabase.auth.getUser()
+                    const currentUser = users.find((u: any) => u.email === authUser?.email)
+                    const collectorName = currentUser?.name || authUser?.email || ''
+
+                    const safeDate = (val: any) => {
+                        if (!val) return ''
+                        try { return format(new Date(val), 'dd/MM/yyyy') } catch { return '' }
+                    }
+
+                    const xnttPayload: any = {
+                        coso: selectedBranch?.name || contractData?.branches?.name || "Eva's Fit",
+                        ten: selectedClient?.member_name || contractData?.member_name || 'Khách hàng',
+                        sdt: selectedClient?.phone || contractData?.phone || '',
+                        email: values.xntt_email,
+                        diachi: selectedClient?.address || contractData?.member_address || '',
+                        ngaysinh: safeDate(selectedClient?.dob || contractData?.dob),
+                        cmnd: selectedClient?.id_number || contractData?.id_number || '',
+                        nguon: contractData?.source || 'Khác',
+                        goi: contractData?.package_name || 'Dịch vụ lẻ',
+                        custom: contractData?.custom_selection || '',
+                        tien1: values.amount.toLocaleString('vi-VN'),
+                        httt1: values.payment_method,
+                        tonggiatri: values.amount.toLocaleString('vi-VN'), // Với doanh thu lẻ, tổng = số tiền đóng
+                        hlv: contractData?.trainer_name || '',
+                        nbd: safeDate(contractData?.start_date),
+                        nkt: safeDate(contractData?.end_date),
+                        ndong: format(new Date(), 'dd/MM/yyyy'),
+                        nguoithu: collectorName,
+                        ghichu: values.description || '',
+                        contractId: values.contract_id || 'REVENUE_' + result.data.id,
+                        clientId: values.customer_id || undefined,
+                        revenueId: result.data.id,
+                        custom_message: "Cảm ơn bạn đã tin tưởng và đồng hành cùng Eva's Fit! Hy vọng bạn sẽ có những trải nghiệm tập luyện tuyệt vời nhất."
+                    }
+
+                    await sendPaymentConfirmationAction(xnttPayload)
+                    toast.success('Ghi nhận khoản thu và gửi email thành công')
+                } catch (emailErr) {
+                    console.error('Lỗi gửi XNTT:', emailErr)
+                    toast.error('Ghi nhận thu thành công nhưng gửi email thất bại')
+                }
+            } else {
+                toast.success('Ghi nhận khoản thu thành công')
+            }
+
             setOpen(false)
             form.reset()
             onSuccess?.()
@@ -200,12 +343,14 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 h-11 shadow-lg shadow-emerald-100">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Thêm Khoản thu
-                </Button>
-            </SheetTrigger>
+            {trigger ? <SheetTrigger asChild>{trigger}</SheetTrigger> : (
+                <SheetTrigger asChild>
+                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 h-11 shadow-lg shadow-emerald-100">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Thêm Khoản thu
+                    </Button>
+                </SheetTrigger>
+            )}
             <SheetContent
                 side="right"
                 className="w-full sm:max-w-[480px] p-0 border-l bg-slate-50 flex flex-col h-[100dvh] font-inter"
@@ -219,10 +364,10 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                         </div>
                         <div className="flex flex-col text-left">
                             <SheetTitle className="text-sm font-semibold text-slate-900 leading-tight">
-                                Ghi nhận thu
+                                {isEdit ? 'Sửa khoản thu' : 'Ghi nhận thu'}
                             </SheetTitle>
                             <SheetDescription className="text-[10px] font-medium text-slate-500 hidden sm:block">
-                                Điền thông tin giao dịch
+                                {isEdit ? 'Cập nhật thông tin giao dịch' : 'Điền thông tin giao dịch'}
                             </SheetDescription>
                         </div>
                     </div>
@@ -586,6 +731,63 @@ export function AddRevenueSheet({ onSuccess }: AddRevenueSheetProps) {
                                         </FormItem>
                                     )}
                                 />
+                            </div>
+
+                            {/* Section: Xác nhận thanh toán */}
+                            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-6 h-6 rounded-md bg-orange-50 flex items-center justify-center">
+                                            <FileText className="w-3.5 h-3.5 text-orange-600" />
+                                        </div>
+                                        <h3 className="text-[12px] font-semibold text-orange-600">
+                                            Xác nhận thanh toán
+                                        </h3>
+                                    </div>
+                                    <FormField
+                                        control={form.control}
+                                        name="send_xntt"
+                                        render={({ field }) => (
+                                            <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                                                <FormControl>
+                                                    <Checkbox
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                        className="h-5 w-5 rounded-md border-slate-300 data-[state=checked]:bg-orange-600 data-[state=checked]:border-none text-white"
+                                                    />
+                                                </FormControl>
+                                                <FormLabel className="text-[12px] font-medium text-slate-600 cursor-pointer">
+                                                    Gửi Email (XNTT)
+                                                </FormLabel>
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+
+                                {form.watch('send_xntt') && (
+                                    <FormField
+                                        control={form.control}
+                                        name="xntt_email"
+                                        render={({ field }) => (
+                                            <FormItem className="space-y-1 animate-in fade-in slide-in-from-top-2">
+                                                <FormLabel className="text-[11px] font-semibold text-slate-900">Email nhận XNTT</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder="Vui lòng nhập email khách hàng..."
+                                                        {...field}
+                                                        className="rounded-xl border-slate-200 bg-white h-11 text-sm font-medium text-slate-700"
+                                                    />
+                                                </FormControl>
+                                                {!field.value && (
+                                                    <p className="text-[10px] text-red-500 font-medium italic">
+                                                        * Cần có email để gửi xác nhận.
+                                                    </p>
+                                                )}
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
                             </div>
                         </form>
                     </Form>

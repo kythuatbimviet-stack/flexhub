@@ -41,15 +41,20 @@ import {
     RotateCcw
 } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { fetchRevenue, bulkDeleteRevenue } from '@/app/actions/financial'
+import { fetchRevenue, bulkDeleteRevenue, deleteRevenue } from '@/app/actions/financial'
 import { fetchBranches } from '@/app/actions/branches'
+import { fetchContractById, sendPaymentConfirmationAction } from '@/app/actions/contracts'
+import { fetchUsers } from '@/app/actions/users'
 import { toast } from 'sonner'
+import { createClient } from '@/lib/supabase'
+import { format } from 'date-fns'
 import * as XLSX from 'xlsx'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AddRevenueSheet } from '@/components/financial/add-revenue-sheet'
 import { ImportExcelRevenueDialog } from '@/components/financial/import-revenue-dialog'
 import { RevenueDetailsSheet } from '@/components/financial/revenue-details-sheet'
+import { RevenuePaymentConfirmationDialog } from '@/components/financial/revenue-payment-confirmation-dialog'
 import { Checkbox } from '@/components/ui/checkbox'
 
 export default function RevenuePage() {
@@ -60,7 +65,12 @@ export default function RevenuePage() {
     const [selectedRevenues, setSelectedRevenues] = React.useState<string[]>([])
     const [viewingRevenue, setViewingRevenue] = React.useState<any>(null)
     const [detailSheetOpen, setDetailSheetOpen] = React.useState(false)
+    const [xnttDialogOpen, setXnttDialogOpen] = React.useState(false)
+    const [selectedXnttRevenue, setSelectedXnttRevenue] = React.useState<any>(null)
     const [showMobileFilters, setShowMobileFilters] = React.useState(false)
+    const [editingRevenue, setEditingRevenue] = React.useState<any>(null)
+    const [editSheetOpen, setEditSheetOpen] = React.useState(false)
+    const [sendingXnttId, setSendingXnttId] = React.useState<string | null>(null)
     
     // Date Filters
     const [quickDateFilter, setQuickDateFilter] = React.useState('all')
@@ -170,6 +180,8 @@ export default function RevenuePage() {
             'Khách hàng': item.clients?.member_name || 'Vãng lai',
             'Thanh toán': item.payment_method,
             'Diễn giải': item.description,
+            'Trạng thái XNTT': item.xntt_history?.[0]?.status === 'done' ? 'Đã gửi' : (item.xntt_history?.[0]?.status === 'error' ? 'Lỗi' : (item.xntt_history?.[0] ? 'Đang gửi' : 'Chưa gửi')),
+            'Ngày gửi XNTT': item.xntt_history?.[0]?.created_at ? new Date(item.xntt_history[0].created_at).toLocaleString('vi-VN') : '',
         }))
 
         const ws = XLSX.utils.json_to_sheet(exportData)
@@ -179,13 +191,12 @@ export default function RevenuePage() {
         toast.success('Đã xuất file Excel thành công')
     }
 
-    const handleBulkDelete = async () => {
-        if (confirm(`Bạn có chắc chắn muốn xóa ${selectedRevenues.length} khoản thu đã chọn?`)) {
+    const handleDelete = async (id: string) => {
+        if (confirm('Bạn có chắc chắn muốn xóa khoản thu này?')) {
             try {
-                const result = await bulkDeleteRevenue(selectedRevenues)
+                const result = await deleteRevenue(id)
                 if (result.success) {
                     toast.success('Đã xóa dữ liệu thành công')
-                    setSelectedRevenues([])
                     refetch()
                 } else {
                     toast.error('Lỗi khi xóa: ' + result.error)
@@ -194,6 +205,19 @@ export default function RevenuePage() {
                 toast.error(error.message)
             }
         }
+    }
+
+    const { data: users = [] } = useQuery({
+        queryKey: ['users-all'],
+        queryFn: async () => {
+            const res = await fetchUsers()
+            return res.success ? (res.data ?? []) : []
+        },
+    })
+
+    const handleManualSendXntt = async (item: any) => {
+        setSelectedXnttRevenue(item)
+        setXnttDialogOpen(true)
     }
 
     const toggleSelectAll = () => {
@@ -453,6 +477,8 @@ export default function RevenuePage() {
                                 <TableHead className="text-gray-400">Danh mục</TableHead>
                                 <TableHead className="text-gray-400">Số tiền / Hình thức</TableHead>
                                 <TableHead className="text-gray-400">Ghi chú</TableHead>
+                                <TableHead className="text-gray-400">Xác nhận gửi</TableHead>
+                                <TableHead className="text-gray-400 text-right pr-6 w-[120px]">Tùy chọn</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -513,6 +539,64 @@ export default function RevenuePage() {
                                             {item.description || '-'}
                                         </p>
                                     </TableCell>
+                                    <TableCell className="py-3">
+                                        {(() => {
+                                            const history = item.xntt_history?.[0]
+                                            if (!history) return <span className="text-[10px] text-gray-400 font-medium">Chưa gửi</span>
+                                            
+                                            const status = history.status
+                                            const date = history.created_at ? format(new Date(history.created_at), 'HH:mm dd/MM') : ''
+
+                                            return (
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className={cn(
+                                                        "inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider w-fit",
+                                                        status === 'done' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30" :
+                                                        status === 'error' ? "bg-rose-50 text-rose-600 dark:bg-rose-950/30" :
+                                                        "bg-amber-50 text-amber-600 dark:bg-amber-950/30"
+                                                    )}>
+                                                        {status === 'done' ? 'Đã gửi' : status === 'error' ? 'Lỗi gửi' : 'Đang xử lý'}
+                                                    </span>
+                                                    <span className="text-[10px] text-gray-400 font-medium">{date}</span>
+                                                </div>
+                                            )
+                                        })()}
+                                    </TableCell>
+                                    <TableCell className="py-3 text-right pr-6" onClick={(e) => e.stopPropagation()}>
+                                        <div className="flex items-center justify-end gap-1 opacity-10 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 rounded-lg hover:bg-emerald-50 text-slate-400 hover:text-emerald-600"
+                                                onClick={() => handleManualSendXntt(item)}
+                                                disabled={sendingXnttId === item.id}
+                                                title="Gửi xác nhận thanh toán"
+                                            >
+                                                <RotateCcw className={cn("w-3.5 h-3.5", sendingXnttId === item.id && "animate-spin")} />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600"
+                                                onClick={() => {
+                                                    setEditingRevenue(item)
+                                                    setEditSheetOpen(true)
+                                                }}
+                                                title="Sửa"
+                                            >
+                                                <Edit2 className="w-3.5 h-3.5" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600"
+                                                onClick={() => handleDelete(item.id)}
+                                                title="Xóa"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                             {filteredRevenue.length === 0 && (
@@ -537,6 +621,22 @@ export default function RevenuePage() {
                 open={detailSheetOpen}
                 onOpenChange={setDetailSheetOpen}
                 onSuccess={refetch}
+            />
+
+            <AddRevenueSheet
+                revenue={editingRevenue}
+                open={editSheetOpen}
+                onOpenChange={(open) => {
+                    setEditSheetOpen(open)
+                    if (!open) setEditingRevenue(null)
+                }}
+                onSuccess={refetch}
+            />
+
+            <RevenuePaymentConfirmationDialog
+                open={xnttDialogOpen}
+                onOpenChange={setXnttDialogOpen}
+                revenue={selectedXnttRevenue}
             />
         </div >
     )

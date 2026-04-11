@@ -57,6 +57,7 @@ const mainNavigation = [
 
 const financialNavigation = [
     { name: 'Thu', href: '/revenue', icon: BanknoteArrowUp },
+    { name: 'Xác nhận thanh toán', href: '/xntt-history', icon: Send },
     { name: 'Chi', href: '/expense', icon: BanknoteArrowDown },
     { name: 'Công nợ', href: '/debts', icon: HandCoins },
     { name: 'Dòng tiền', href: '/cash-flow', icon: TrendingUpDown },

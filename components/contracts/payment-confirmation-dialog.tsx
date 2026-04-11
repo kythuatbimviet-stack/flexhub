@@ -134,7 +134,11 @@ export function PaymentConfirmationDialog({
 
         setLoading(true)
         try {
-            const res = await sendPaymentConfirmationAction({ ...formData, contractId: contract.id })
+            const res = await sendPaymentConfirmationAction({ 
+                ...formData, 
+                contractId: contract.id,
+                clientId: contract.client_id || contract.customer_id
+            })
             if (res.success) {
                 toast.success('Đã kích hoạt gửi email xác nhận thanh toán! Vui lòng chờ vài giây để email đến hộp thư.')
                 onOpenChange(false)

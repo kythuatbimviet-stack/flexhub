@@ -285,7 +285,9 @@ export async function updateClient(id: string, updates: any) {
             'height', 'weight', 'target_weight', 'goal', 'status', 'pt_name',
             'assigned_pt', 'branch_id', 'branch_name', 'source', 'referrer',
             'registration_type', 'medical_history', 'training_time', 'notes',
-            'customer_cycle', 'zalo_id', 'facebook_id', 'action_log', 'signature_url'
+            'customer_cycle', 'zalo_id', 'facebook_id', 'action_log', 'signature_url',
+            'survey_training_history', 'survey_injury_history', 'survey_work_stress', 
+            'survey_pathology_details', 'survey_health_advice'
         ]
 
         allowedFields.forEach(field => {

@@ -241,6 +241,11 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                 branch_id: currentUser?.branch_id || null,
                 signature_url: '',
                 avatar_url: '',
+                survey_training_history: '',
+                survey_injury_history: '',
+                survey_work_stress: '',
+                survey_pathology_details: '',
+                survey_health_advice: '',
             })
             setIsEditing(true)
         }
@@ -753,13 +758,13 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                     <ClientCardSection title="THÔNG TIN CƠ BẢN" icon={User}>
                                         <div className="space-y-5">
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                                <ClientInfoRow 
-                                                    label="Mã khách hàng" 
-                                                    value={formData.id} 
-                                                    name="id" 
-                                                    placeholder={formData.id === '(Tự động)' ? "(Tự động)" : "Mã KH"} 
-                                                    readOnly={true} 
-                                                    {...sharedRowProps} 
+                                                <ClientInfoRow
+                                                    label="Mã khách hàng"
+                                                    value={formData.id}
+                                                    name="id"
+                                                    placeholder={formData.id === '(Tự động)' ? "(Tự động)" : "Mã KH"}
+                                                    readOnly={true}
+                                                    {...sharedRowProps}
                                                 />
                                                 <ClientInfoRow label="Họ và tên hội viên" value={formData.member_name} name="member_name" {...sharedRowProps} />
                                             </div>
@@ -883,15 +888,56 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                     </ClientCardSection>
 
                                     {/* Section: Chỉ số cơ thể */}
-                                    <ClientCardSection title="CHỈ SỐ CƠ THỂ & MỤC TIÊU" icon={Activity}>
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
+                                    <ClientCardSection title="TÌNH TRẠNG SỨC KHỎE & MỤC TIÊU" icon={Activity}>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
                                             <ClientInfoRow label="Chiều cao (cm)" value={formData.height} name="height" type="number" {...sharedRowProps} />
                                             <ClientInfoRow label="Cân nặng (kg)" value={formData.weight} name="weight" type="number" {...sharedRowProps} />
-                                            <ClientInfoRow label="Mục tiêu (kg)" value={formData.target_weight} name="target_weight" type="number" {...sharedRowProps} />
+                                            {/* <ClientInfoRow label="Mục tiêu (kg)" value={formData.target_weight} name="target_weight" type="number" {...sharedRowProps} /> */}
                                         </div>
                                         <div className="space-y-5">
                                             <ClientInfoRow label="Mục tiêu tập luyện" value={formData.goal} name="goal" type="select" options={clientGoals.map((g: any) => g.nam)} {...sharedRowProps} />
                                             <ClientInfoRow label="Tiền sử bệnh lý" value={formData.medical_history} name="medical_history" type="textarea" {...sharedRowProps} />
+                                        </div>
+                                    </ClientCardSection>
+
+                                    {/* Section: Khảo sát khách hàng */}
+                                    <ClientCardSection title="KHẢO SÁT KHÁCH HÀNG" icon={ClipboardList}>
+                                        <div className="space-y-6">
+                                            <ClientInfoRow
+                                                label="Chị đã từng tập luyện bộ môn nào chưa? Trong thời gian tập luyện đó kết quả đạt được là gì? (Nếu chưa tập bỏ qua)"
+                                                value={formData.survey_training_history}
+                                                name="survey_training_history"
+                                                type="textarea"
+                                                {...sharedRowProps}
+                                            />
+                                            <ClientInfoRow
+                                                label="Chị đã bao giờ trải qua phẫu thuật, chấn thương, gãy xương bao giờ chưa?"
+                                                value={formData.survey_injury_history}
+                                                name="survey_injury_history"
+                                                type="textarea"
+                                                {...sharedRowProps}
+                                            />
+                                            <ClientInfoRow
+                                                label="Công việc của chị ngồi nhiều hay đi lại nhiều? Có thường xuyên stress không? (Nếu được công việc của chị hiện tại là làm gì?)"
+                                                value={formData.survey_work_stress}
+                                                name="survey_work_stress"
+                                                type="textarea"
+                                                {...sharedRowProps}
+                                            />
+                                            <ClientInfoRow
+                                                label="Chị có vấn đề gì về bệnh lý: Đau lưng, đau đầu gối, đau vai gáy, tuyến giáp, đa nang, huyết áp cao/thấp...."
+                                                value={formData.survey_pathology_details}
+                                                name="survey_pathology_details"
+                                                type="textarea"
+                                                {...sharedRowProps}
+                                            />
+                                            <ClientInfoRow
+                                                label="Chị có hay đi khám sức khỏe định kỳ không? Bác sĩ có chẩn đoán vấn đề về tim mạch và lời khuyên gì trước khi tham gia tập luyện không?"
+                                                value={formData.survey_health_advice}
+                                                name="survey_health_advice"
+                                                type="textarea"
+                                                {...sharedRowProps}
+                                            />
                                         </div>
                                     </ClientCardSection>
 
@@ -974,9 +1020,9 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                 </div>
                                                 <ClientInfoRow label="Chi nhánh quản lý" value={formData.branch_id} name="branch_id" type="select" options={allowedBranches.map((b: any) => ({ value: b.id, label: b.name }))} {...sharedRowProps} />
                                             </div>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                                <ClientInfoRow label="Loại đăng ký" value={formData.registration_type} name="registration_type" options={clientRegistrationTypes.map((t: any) => t.nam)} {...sharedRowProps} />
-                                                <ClientInfoRow label="Thời gian tập luyện" value={formData.training_time} name="training_time" type="select" options={clientTrainingTimes.map((t: any) => t.nam)} {...sharedRowProps} />
+                                            <div className="grid grid-cols-1 sm:grid-cols-1 gap-5">
+                                                {/* <ClientInfoRow label="Loại đăng ký" value={formData.registration_type} name="registration_type" {...sharedRowProps} /> */}
+                                                <ClientInfoRow label="Thời gian tập luyện" value={formData.training_time} name="training_time" {...sharedRowProps} />
                                             </div>
                                             <ClientInfoRow label="Ghi chú thêm" value={formData.notes} name="notes" type="textarea" {...sharedRowProps} />
                                         </div>
@@ -987,7 +1033,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                         <div className="space-y-5">
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                                 <ClientInfoRow label="Nguồn khách hàng" value={formData.source} name="source" type="select" options={clientSources.map((s: any) => s.nam)} {...sharedRowProps} />
-                                                <ClientInfoRow label="Người giới thiệu" value={formData.referrer} name="referrer" {...sharedRowProps} />
+                                                <ClientInfoRow label="Người giới thiệu/mang về" value={formData.referrer} name="referrer" {...sharedRowProps} />
                                             </div>
                                         </div>
                                     </ClientCardSection>
@@ -1131,8 +1177,8 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                                 <div className={cn(
                                                                     "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight",
                                                                     contract.status === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400" :
-                                                                    contract.status === 'Hết hạn HĐ' ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400" :
-                                                                    "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                                                                        contract.status === 'Hết hạn HĐ' ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400" :
+                                                                            "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                                                                 )}>
                                                                     {contract.status}
                                                                 </div>

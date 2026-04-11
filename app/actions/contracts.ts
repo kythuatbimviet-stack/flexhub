@@ -1059,6 +1059,8 @@ export interface PaymentConfirmationPayload {
     ghichu: string
     custom_message?: string
     contractId: string
+    clientId?: string
+    revenueId?: string
 }
 
 function generatePaymentConfirmationHtml(d: PaymentConfirmationPayload): string {
@@ -1163,7 +1165,7 @@ function generatePaymentConfirmationHtml(d: PaymentConfirmationPayload): string 
  */
 export async function sendPaymentConfirmationAction(
     payload: PaymentConfirmationPayload
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
         const accessInfo = await getAccessFilter()
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
@@ -1176,16 +1178,55 @@ export async function sendPaymentConfirmationAction(
         // 2. Build subject
         const subject = `Xác nhận thanh toán - ${payload.ten} - Eva's Fit`
 
-        // 3. Đóng gói JSON payload cho GAS đọc
-        const xnttPayload = JSON.stringify({ email: payload.email, subject, htmlBody })
+        // 3. Đóng gói JSON payload ban đầu (chưa có logId)
+        const initialPayload = JSON.stringify({ 
+            email: payload.email, 
+            subject, 
+            htmlBody 
+        })
 
-        // 4. Ghi vào DB trong 1 lần update duy nhất → Supabase Webhook kích hoạt GAS
-        //    Bao gồm luôn is_receipt_sent để tránh gọi updateContractReceiptStatus
-        //    riêng (sẽ tạo thêm 1 DB update → webhook bắn 2 lần)
-        const { error: updateError } = await supabase
+        // 4. Bước quan trọng: Insert vào bảng xntt_history để lấy logId
+        // Parse raw amount từ chuỗi formatted (ví dụ: '1.000.000' -> 1000000)
+        const rawAmount = payload.tien1 ? Number(payload.tien1.replace(/\./g, '').replace(/,/g, '')) : 0
+
+        const { data: newLog, error: logError } = await supabase
+            .from('xntt_history')
+            .insert([{
+                contract_id: payload.contractId,
+                client_id: payload.clientId || null,
+                revenue_id: payload.revenueId || null,
+                email: payload.email,
+                subject: subject,
+                html_body: htmlBody,
+                send_payload: initialPayload,
+                amount: rawAmount,
+                payment_method: payload.httt1 || null,
+                created_by_email: accessInfo.user.email
+            }])
+            .select()
+            .single()
+
+        if (logError) throw new Error(logError.message)
+
+        // 5. Cập nhật lại send_payload có chứa logId để GAS có thể update status
+        const finalPayload = JSON.stringify({ 
+            id: newLog.id, // logId để GAS gọi ngược lại update status
+            email: payload.email, 
+            subject, 
+            htmlBody 
+        })
+
+        const { error: updateLogError } = await supabase
+            .from('xntt_history')
+            .update({ send_payload: finalPayload })
+            .eq('id', newLog.id)
+
+        if (updateLogError) throw new Error(updateLogError.message)
+
+        // 6. Cập nhật trạng thái tổng quát bên bảng contracts (để tương thích ngược)
+        await supabase
             .from('contracts')
             .update({
-                sendemail_xntt: xnttPayload,
                 payment_method: payload.httt1 || null,
                 payment_notes: payload.ghichu || null,
                 is_receipt_sent: true,
@@ -1193,10 +1234,8 @@ export async function sendPaymentConfirmationAction(
             })
             .eq('id', payload.contractId)
 
-        if (updateError) throw new Error(updateError.message)
-
         revalidatePath('/contracts')
-        return { success: true }
+        return { success: true, data: newLog }
     } catch (error: any) {
         console.error('sendPaymentConfirmationAction Error:', error)
         return { success: false, error: error.message }
