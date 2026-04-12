@@ -11,10 +11,10 @@ interface LogoLoadingProps {
 
 export function LogoLoading({ className, size = 60 }: LogoLoadingProps) {
     return (
-        <div className={cn("flex flex-col items-center justify-center gap-4 py-12", className)}>
+        <div suppressHydrationWarning className={cn("flex flex-col items-center justify-center gap-4 py-12", className)}>
             <div className="relative">
                 {/* Outer pulse ring */}
-                <div className="absolute inset-0 rounded-full bg-[#FD5771]/20 animate-ping duration-[2000ms]" />
+                <div suppressHydrationWarning className="absolute inset-0 rounded-full bg-[#FD5771]/20 animate-ping [animation-duration:2000ms]" />
 
                 {/* Logo container */}
                 <div className="relative bg-white dark:bg-gray-900 rounded-full p-2 shadow-xl border border-gray-100 dark:border-gray-800 animate-pulse">

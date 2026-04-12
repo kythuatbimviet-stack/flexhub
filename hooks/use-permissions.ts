@@ -55,15 +55,17 @@ export function usePermissions() {
         fingerprintRef.current = newFingerprint
     }, [user, queryClient])
 
-    const permissions: AccessControl = user
-        ? getAccessControl(user)
-        : {
-            canViewAllBranches: false,
-            canManageUsers: false,
-            isStaffOnly: true
-        }
+    const permissions: AccessControl = React.useMemo(() => {
+        return user
+            ? getAccessControl(user)
+            : {
+                canViewAllBranches: false,
+                canManageUsers: false,
+                isStaffOnly: true
+            }
+    }, [user])
 
-    return {
+    return React.useMemo(() => ({
         user,
         permissions,
         isLoading,
@@ -72,5 +74,5 @@ export function usePermissions() {
         isManager: user?.position === 'Quản lý',
         isBranchManager: user?.position === 'Quản lý chi nhánh',
         isStaff: user?.position === 'Nhân viên' || user?.position === 'Huấn luyện viên',
-    }
+    }), [user, permissions, isLoading])
 }

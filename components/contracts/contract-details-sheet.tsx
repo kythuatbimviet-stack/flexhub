@@ -395,7 +395,8 @@ export function ContractDetailsSheet({
                     initialData.member_address = targetClient.address || ''
                     initialData.id_number = targetClient.id_number || ''
                     initialData.trainer_name = targetClient.pt_name || ''
-                    initialData.dob = (targetClient.dob || targetClient.date_of_birth) ? (targetClient.dob || targetClient.date_of_birth).split('T')[0] : ''
+                    const rawDob = targetClient.dob || targetClient.date_of_birth
+                    initialData.dob = (rawDob && typeof rawDob === 'string') ? rawDob.split('T')[0] : ''
                     initialData.avatar_url = targetClient.avatar_url || ''
                     initialData.assigned_pt = targetClient.assigned_pt || ''
                     initialData.branch_id = targetClient.branch_id || ''

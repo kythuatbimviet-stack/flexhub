@@ -75,7 +75,7 @@ export default function DashboardLayout({
     // AppDataInitializer no longer blocks — it syncs silently in background
     if (loading) {
         return (
-            <div className="flex h-screen w-screen items-center justify-center bg-white dark:bg-gray-950">
+            <div suppressHydrationWarning className="flex h-screen w-screen items-center justify-center bg-white dark:bg-gray-950">
                 <LogoLoading size={80} className="py-0" />
             </div>
         )
