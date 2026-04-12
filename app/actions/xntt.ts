@@ -47,6 +47,23 @@ export async function fetchXnttHistory() {
             .order('created_at', { ascending: false })
 
         if (error) throw error
+
+        // Merge contract info manually since no direct FK relationship in DB exists for join query to work
+        const contractIds = data?.map(i => i.contract_id).filter(id => id && !id.toString().startsWith('MANUAL')) || []
+        if (contractIds.length > 0) {
+            const { data: contracts } = await supabase
+                .from('contracts')
+                .select('id, package_name')
+                .in('id', contractIds)
+            
+            const contractMap = Object.fromEntries(contracts?.map(c => [c.id, c.package_name]) || [])
+            data?.forEach((item: any) => {
+                if (item.contract_id && contractMap[item.contract_id]) {
+                    item.contracts = { package_name: contractMap[item.contract_id] }
+                }
+            })
+        }
+
         return { success: true, data }
     } catch (error: any) {
         return { success: false, error: error.message }

@@ -21,6 +21,26 @@ const getAccessFilter = cache(async () => {
     return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
 })
 
+export async function fetchClientById(id: string) {
+    try {
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        const adminClient = await createAdminClient()
+        const { data, error } = await adminClient
+            .from('clients')
+            .select('*')
+            .eq('id', id)
+            .maybeSingle()
+
+        if (error) throw error
+        return { success: true, data }
+    } catch (error: any) {
+        console.error('Fetch Client By ID Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
 export async function fetchClients() {
     try {
         const accessInfo = await getAccessFilter()

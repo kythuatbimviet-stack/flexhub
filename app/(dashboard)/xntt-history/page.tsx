@@ -35,7 +35,9 @@ import {
     Filter,
     Calendar,
     Mail,
-    Trash2
+    Trash2,
+    Plus,
+    User
 } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchXnttHistory, resendXnttAction, deleteXnttHistory } from '@/app/actions/xntt'
@@ -50,14 +52,38 @@ import {
     DialogTitle,
     DialogDescription,
 } from '@/components/ui/dialog'
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+} from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { XnttCreateSheet } from '@/components/financial/xntt-create-sheet'
+import { ClientDetailsSheet } from '@/components/clients/client-details-sheet'
+import { ContractDetailsSheet } from '@/components/contracts/contract-details-sheet'
+import { fetchClientById } from '@/app/actions/clients'
+import { fetchContractById } from '@/app/actions/contracts'
+import { Loader2 } from 'lucide-react'
 
 export default function XnttHistoryPage() {
     const [searchQuery, setSearchQuery] = React.useState('')
     const [statusFilter, setStatusFilter] = React.useState('all')
     const [viewingLog, setViewingLog] = React.useState<any>(null)
-    const [detailDialogOpen, setDetailDialogOpen] = React.useState(false)
+    const [detailSheetOpen, setDetailSheetOpen] = React.useState(false)
     const [resendingId, setResendingId] = React.useState<string | null>(null)
+    const [isCreateSheetOpen, setIsCreateSheetOpen] = React.useState(false)
+
+    // State cho Client Detail Sheet
+    const [selectedClient, setSelectedClient] = React.useState<any>(null)
+    const [isClientSheetOpen, setIsClientSheetOpen] = React.useState(false)
+    const [loadingClient, setLoadingClient] = React.useState(false)
+
+    // State cho Contract Detail Sheet
+    const [selectedContract, setSelectedContract] = React.useState<any>(null)
+    const [isContractSheetOpen, setIsContractSheetOpen] = React.useState(false)
+    const [loadingContract, setLoadingContract] = React.useState(false)
 
     const queryClient = useQueryClient()
     const { data: historyData, isLoading, refetch } = useQuery({
@@ -75,6 +101,7 @@ export default function XnttHistoryPage() {
             const matchesSearch =
                 item.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 item.clients?.member_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.contracts?.package_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 item.contract_id?.toLowerCase().includes(searchQuery.toLowerCase())
             
             const matchesStatus = statusFilter === 'all' || item.status === statusFilter
@@ -82,6 +109,18 @@ export default function XnttHistoryPage() {
             return matchesSearch && matchesStatus
         })
     }, [historyData, searchQuery, statusFilter])
+
+    const stats = React.useMemo(() => {
+        if (!historyData) return { total: 0, uniqueContracts: 0, cash: 0, transfer: 0, card: 0 }
+        
+        return historyData.reduce((acc: any, item: any) => {
+            acc.total++
+            if (item.payment_method === 'Tiền mặt') acc.cash++
+            if (item.payment_method === 'Chuyển khoản') acc.transfer++
+            if (item.payment_method === 'Quẹt thẻ') acc.card++
+            return acc
+        }, { total: 0, uniqueContracts: new Set(historyData.map((i: any) => i.contract_id).filter(Boolean)).size, cash: 0, transfer: 0, card: 0 })
+    }, [historyData])
 
     const handleResend = async (id: string) => {
         setResendingId(id)
@@ -112,6 +151,42 @@ export default function XnttHistoryPage() {
             }
         } catch (error: any) {
             toast.error(error.message)
+        }
+    }
+
+    const handleOpenClientDetail = async (id: string) => {
+        if (!id) return
+        setLoadingClient(true)
+        try {
+            const res = await fetchClientById(id)
+            if (res.success) {
+                setSelectedClient(res.data)
+                setIsClientSheetOpen(true)
+            } else {
+                toast.error('Không tìm thấy thông tin học viên')
+            }
+        } catch (error) {
+            toast.error('Lỗi khi lấy thông tin học viên')
+        } finally {
+            setLoadingClient(false)
+        }
+    }
+
+    const handleOpenContractDetail = async (id: string) => {
+        if (!id || id.toString().startsWith('MANUAL')) return
+        setLoadingContract(true)
+        try {
+            const res = await fetchContractById(id)
+            if (res.success) {
+                setSelectedContract(res.data)
+                setIsContractSheetOpen(true)
+            } else {
+                toast.error('Không tìm thấy thông tin hợp đồng')
+            }
+        } catch (error) {
+            toast.error('Lỗi khi lấy thông tin hợp đồng')
+        } finally {
+            setLoadingContract(false)
         }
     }
 
@@ -150,36 +225,55 @@ export default function XnttHistoryPage() {
                         Theo dõi trạng thái gửi email xác nhận cho khách hàng
                     </p>
                 </div>
+                <Button 
+                    onClick={() => setIsCreateSheetOpen(true)}
+                    className="rounded-2xl bg-black hover:opacity-90 text-white shadow-xl shadow-slate-200 px-6 h-12 font-medium"
+                >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Thêm mới
+                </Button>
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Card className="border-none shadow-sm bg-white rounded-2xl">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tổng lượt gửi</CardTitle>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden group">
+                    <CardHeader className="p-4 pb-2">
+                        <CardTitle className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tổng lượt gửi</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">{historyData?.length || 0}</div>
+                    <CardContent className="p-4 pt-0">
+                        <div className="text-2xl font-bold text-slate-900">{stats.total}</div>
                     </CardContent>
                 </Card>
-                <Card className="border-none shadow-sm bg-white rounded-2xl">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Thành công</CardTitle>
+                <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden group">
+                    <CardHeader className="p-4 pb-2">
+                        <CardTitle className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Tổng hợp đồng</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-emerald-600">
-                            {historyData?.filter((i: any) => i.status === 'done').length || 0}
-                        </div>
+                    <CardContent className="p-4 pt-0">
+                        <div className="text-2xl font-bold text-blue-600">{stats.uniqueContracts}</div>
                     </CardContent>
                 </Card>
-                <Card className="border-none shadow-sm bg-white rounded-2xl">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-bold text-red-500 uppercase tracking-widest">Thất bại</CardTitle>
+                <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden group">
+                    <CardHeader className="p-4 pb-2">
+                        <CardTitle className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Tiền mặt</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-red-600">
-                            {historyData?.filter((i: any) => i.status === 'error').length || 0}
-                        </div>
+                    <CardContent className="p-4 pt-0">
+                        <div className="text-2xl font-bold text-emerald-600">{stats.cash}</div>
+                    </CardContent>
+                </Card>
+                <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden group">
+                    <CardHeader className="p-4 pb-2">
+                        <CardTitle className="text-[10px] font-bold text-violet-500 uppercase tracking-widest">Chuyển khoản</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                        <div className="text-2xl font-bold text-violet-600">{stats.transfer}</div>
+                    </CardContent>
+                </Card>
+                <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden group">
+                    <CardHeader className="p-4 pb-2">
+                        <CardTitle className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Quẹt thẻ</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                        <div className="text-2xl font-bold text-amber-600">{stats.card}</div>
                     </CardContent>
                 </Card>
             </div>
@@ -228,16 +322,17 @@ export default function XnttHistoryPage() {
             </Card>
 
             {/* Table */}
-            <Card className="border-none shadow-sm bg-white rounded-3xl overflow-hidden min-h-[400px]">
+            <Card className="border-none shadow-sm bg-white rounded-xl overflow-hidden min-h-[400px]">
                 <Table>
-                    <TableHeader className="bg-slate-50/80">
-                        <TableRow className="border-slate-100 hover:bg-transparent">
-                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider py-4 pl-6">Thời gian</TableHead>
-                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider py-4">Khách hàng / HĐ</TableHead>
-                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider py-4">Số tiền / HTTT</TableHead>
-                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider py-4">Email nhận</TableHead>
-                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider py-4">Trạng thái</TableHead>
-                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider py-4 text-right pr-6">Thao tác</TableHead>
+                    <TableHeader>
+                        <TableRow className="hover:bg-transparent border-gray-100 dark:border-gray-800 h-10 uppercase tracking-wider text-[11px] font-medium">
+                            <TableHead className="text-gray-400 py-4 pl-6">Thời gian</TableHead>
+                            <TableHead className="text-gray-400 py-4">Học viên</TableHead>
+                            <TableHead className="text-gray-400 py-4">Hợp đồng</TableHead>
+                            <TableHead className="text-gray-400 py-4">Thanh toán</TableHead>
+                            <TableHead className="text-gray-400 py-4">Email nhận</TableHead>
+                            <TableHead className="text-gray-400 py-4">Trạng thái</TableHead>
+                            <TableHead className="text-gray-400 py-4 text-right pr-6 w-[120px]">Thao tác</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -262,7 +357,7 @@ export default function XnttHistoryPage() {
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
                                         key={item.id}
-                                        className="group border-slate-50 hover:bg-slate-50/50 transition-colors"
+                                        className="group border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 transition-colors cursor-pointer"
                                     >
                                         <TableCell className="py-4 pl-6">
                                             <div className="flex flex-col">
@@ -274,22 +369,62 @@ export default function XnttHistoryPage() {
                                                 </span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-[13px] font-bold text-slate-900 group-hover:text-red-600 transition-colors">
-                                                    {item.clients?.member_name || 'Khách vãng lai'}
+                                        <TableCell className="py-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 font-bold text-[10px] uppercase">
+                                                    {item.clients?.member_name?.charAt(0) || <User className="w-3 h-3" />}
+                                                </div>
+                                                <div 
+                                                    className="flex flex-col cursor-pointer group/item"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        handleOpenClientDetail(item.client_id)
+                                                    }}
+                                                >
+                                                    <span className={cn(
+                                                        "text-sm font-bold text-gray-900 dark:text-gray-100 group-hover/item:text-blue-600 transition-colors uppercase",
+                                                        loadingClient && "opacity-50"
+                                                    )}>
+                                                        {item.clients?.member_name || 'Khách vãng lai'}
+                                                    </span>
+                                                    <span className="text-[11px] text-gray-400 font-medium">
+                                                        {item.email}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-3">
+                                            <div 
+                                                className="flex flex-col cursor-pointer group/item w-fit"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    handleOpenContractDetail(item.contract_id)
+                                                }}
+                                            >
+                                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 group-hover/item:text-blue-600 truncate max-w-[150px]">
+                                                    {item.contracts?.package_name || 'Gói tập thủ công'}
                                                 </span>
-                                                <span className="text-[11px] text-slate-400 font-bold bg-slate-100 w-fit px-1.5 rounded">
+                                                <span className={cn(
+                                                    "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 dark:bg-red-950/30 uppercase mt-0.5 group-hover/item:bg-red-100 transition-colors",
+                                                    loadingContract && "opacity-50"
+                                                )}>
                                                     {item.contract_id || 'N/A'}
                                                 </span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-[13px] font-bold text-emerald-600">
+                                        <TableCell className="py-3">
+                                            <div 
+                                                className="flex flex-col cursor-pointer group/item w-fit"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setViewingLog(item)
+                                                    setDetailSheetOpen(true)
+                                                }}
+                                            >
+                                                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 group-hover/item:opacity-80 transition-opacity">
                                                     {Number(item.amount || 0).toLocaleString()} ₫
                                                 </span>
-                                                <span className="text-[11px] text-slate-400 font-medium">
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
                                                     {item.payment_method}
                                                 </span>
                                             </div>
@@ -300,26 +435,26 @@ export default function XnttHistoryPage() {
                                                 {item.email}
                                             </div>
                                         </TableCell>
-                                        <TableCell className="py-4">
+                                        <TableCell className="py-3">
                                             <div className={cn(
-                                                "flex items-center gap-1.5 px-2.5 py-1 rounded-full w-fit text-[11px] font-bold",
-                                                item.status === 'done' ? "bg-emerald-50 text-emerald-600" :
-                                                item.status === 'error' ? "bg-red-50 text-red-600" :
-                                                "bg-amber-50 text-amber-600"
+                                                "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider w-fit",
+                                                item.status === 'done' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30" :
+                                                item.status === 'error' ? "bg-rose-50 text-rose-600 dark:bg-rose-950/30" :
+                                                "bg-amber-50 text-amber-600 dark:bg-amber-950/30"
                                             )}>
                                                 {getStatusIcon(item.status)}
                                                 {getStatusText(item.status)}
                                             </div>
                                         </TableCell>
-                                        <TableCell className="py-4 text-right pr-6">
-                                            <div className="flex items-center justify-end gap-1">
+                                        <TableCell className="py-3 text-right pr-6" onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-red-600"
+                                                    className="h-8 w-8 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600"
                                                     onClick={() => {
                                                         setViewingLog(item)
-                                                        setDetailDialogOpen(true)
+                                                        setDetailSheetOpen(true)
                                                     }}
                                                 >
                                                     <Eye className="w-4 h-4" />
@@ -353,63 +488,128 @@ export default function XnttHistoryPage() {
                 </Table>
             </Card>
 
-            {/* Detail Dialog */}
-            <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-                <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0 overflow-hidden border-none rounded-3xl font-inter">
-                    <DialogHeader className="p-6 bg-slate-50/80 border-b border-slate-100 shrink-0">
+            {/* Detail Sheet (Converted from Dialog) */}
+            <Sheet open={detailSheetOpen} onOpenChange={setDetailSheetOpen}>
+                <SheetContent side="right" className="w-full sm:max-w-2xl border-none p-0 flex flex-col h-full bg-slate-50 font-inter overflow-hidden">
+                    <SheetHeader className="p-6 bg-white border-b border-slate-100 shrink-0">
                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center">
-                                <Mail className="w-5 h-5 text-red-500" />
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                                <Mail className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
-                                <DialogTitle className="text-lg font-bold text-slate-900">Chi tiết Email xác nhận</DialogTitle>
-                                <DialogDescription className="text-xs font-medium text-slate-500 mt-0.5">
-                                    Nội dung đã gửi cho khách: {viewingLog?.email}
-                                </DialogDescription>
+                                <SheetTitle className="text-lg font-bold text-slate-900">Chi tiết Xác nhận thanh toán</SheetTitle>
+                                <SheetDescription className="text-xs text-slate-500 font-medium">Mã giao dịch: <span className="font-mono font-bold text-slate-900">{viewingLog?.id}</span></SheetDescription>
                             </div>
                         </div>
-                    </DialogHeader>
+                    </SheetHeader>
                     
-                    <div className="flex-1 overflow-hidden p-6 bg-white">
-                        <div className="mb-6 space-y-3">
-                           <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiêu đề</p>
-                                    <p className="font-semibold text-slate-700">{viewingLog?.subject}</p>
+                    <ScrollArea className="flex-1">
+                        <div className="p-6 space-y-6">
+                            {/* Summary Card */}
+                            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Học viên</p>
+                                        <p className="text-sm font-bold text-slate-900 uppercase">{viewingLog?.clients?.member_name || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hợp đồng</p>
+                                        <p className="text-sm font-bold text-red-600 uppercase">{viewingLog?.contract_id || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Số tiền</p>
+                                        <p className="text-sm font-bold text-emerald-600">{Number(viewingLog?.amount || 0).toLocaleString()} ₫</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hình thức</p>
+                                        <p className="text-sm font-bold text-slate-900">{viewingLog?.payment_method || 'N/A'}</p>
+                                    </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mã giao dịch</p>
-                                    <p className="font-semibold text-slate-700">{viewingLog?.revenue_id || viewingLog?.contract_id}</p>
+                                <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                        <span className="text-[13px] text-slate-600 font-medium">
+                                            {viewingLog?.created_at && format(new Date(viewingLog.created_at), 'dd/MM/yyyy HH:mm')}
+                                        </span>
+                                    </div>
+                                    <div className={cn(
+                                        "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider",
+                                        viewingLog?.status === 'done' ? "bg-emerald-50 text-emerald-600" :
+                                        viewingLog?.status === 'error' ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
+                                    )}>
+                                        {viewingLog?.status === 'done' ? 'Thành công' : viewingLog?.status === 'error' ? 'Thất bại' : 'Đang xử lý'}
+                                    </div>
                                 </div>
-                           </div>
+                            </div>
+
+                            {/* Email Content Preview */}
+                            <div className="space-y-3">
+                                <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
+                                    <Eye className="w-3.5 h-3.5" />
+                                    Nội dung email
+                                </h4>
+                                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                                    <div className="p-4 bg-slate-50 border-b border-slate-100">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-[11px] font-bold text-slate-400 uppercase w-16">Chủ đề:</span>
+                                            <span className="text-[13px] font-bold text-slate-700">{viewingLog?.subject}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[11px] font-bold text-slate-400 uppercase w-16">Đến:</span>
+                                            <span className="text-[13px] font-medium text-blue-600">{viewingLog?.email}</span>
+                                        </div>
+                                    </div>
+                                    <div className="p-0 overflow-auto max-h-[500px]">
+                                        {viewingLog?.html_body ? (
+                                            <iframe
+                                                srcDoc={viewingLog.html_body}
+                                                className="w-full border-none h-[800px]"
+                                                title="Email Preview"
+                                            />
+                                        ) : (
+                                            <div className="p-10 text-center text-slate-400 text-sm italic">Không có nội dung hiển thị</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nội dung HTML</p>
-                        <ScrollArea className="h-[45vh] border rounded-2xl p-4 bg-slate-50/30">
-                            {viewingLog?.html_body ? (
-                                <div 
-                                    className="prose prose-sm max-w-none"
-                                    dangerouslySetInnerHTML={{ __html: viewingLog.html_body }} 
-                                />
-                            ) : (
-                                <div className="text-center py-10 text-slate-400 text-sm italic">
-                                    Không có dữ liệu hiển thị
-                                </div>
-                            )}
-                        </ScrollArea>
-                    </div>
-
-                    <div className="p-4 bg-slate-50/80 border-t border-slate-100 flex justify-end shrink-0">
-                        <Button
-                            variant="default"
-                            onClick={() => setDetailDialogOpen(false)}
-                            className="rounded-xl px-6 bg-slate-900 text-white"
+                    </ScrollArea>
+                    
+                    <div className="p-6 bg-white border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+                        <Button variant="outline" className="rounded-xl h-10 px-6 font-bold text-xs uppercase tracking-wider" onClick={() => setDetailSheetOpen(false)}>Đóng</Button>
+                        <Button 
+                            className="bg-black hover:bg-slate-800 text-white rounded-xl h-10 px-6 font-bold text-xs uppercase tracking-wider gap-2 shadow-lg"
+                            disabled={resendingId === viewingLog?.id}
+                            onClick={() => handleResend(viewingLog?.id)}
                         >
-                            Đóng
+                            {resendingId === viewingLog?.id ? <RotateCcw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                            Gửi lại
                         </Button>
                     </div>
-                </DialogContent>
-            </Dialog>
+                </SheetContent>
+            </Sheet>
+
+            {/* Client Details Sheet */}
+            <ClientDetailsSheet
+                client={selectedClient}
+                open={isClientSheetOpen}
+                onOpenChange={setIsClientSheetOpen}
+                onSuccess={() => refetch()}
+            />
+
+            {/* Contract Details Sheet */}
+            <ContractDetailsSheet
+                contract={selectedContract}
+                open={isContractSheetOpen}
+                onOpenChange={setIsContractSheetOpen}
+                onSuccess={() => refetch()}
+            />
+
+            <XnttCreateSheet 
+                open={isCreateSheetOpen}
+                onOpenChange={setIsCreateSheetOpen}
+                onSuccess={() => refetch()}
+            />
         </div>
     )
 }
