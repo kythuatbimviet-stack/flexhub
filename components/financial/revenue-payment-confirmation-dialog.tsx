@@ -15,6 +15,13 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
+import {
     FileText,
     Loader2,
     Mail,
@@ -116,7 +123,7 @@ export function RevenuePaymentConfirmationDialog({
                     nbd: safeDate(contractInfo?.start_date),
                     nkt: safeDate(contractInfo?.end_date),
                     ndong: safeDate(revenue.recorded_at) || format(new Date(), 'dd/MM/yyyy'),
-                    nguoithu: collectorName,
+                    nguoithu: contractInfo?.trainer_name || collectorName,
                     ghichu: revenue.description || '',
                     custom_message: "Cảm ơn bạn đã tin tưởng và đồng hành cùng Eva's Fit! Hy vọng bạn sẽ có những trải nghiệm tập luyện tuyệt vời nhất.",
                 })
@@ -198,10 +205,10 @@ export function RevenuePaymentConfirmationDialog({
                         <TabsContent value="form" className="m-0 space-y-6">
                             <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm space-y-5">
                                 <div className="flex items-center gap-3 pb-3 border-b border-slate-50">
-                                    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
+                                    <div className="w-8 h-8 rounded-xl bg-[#F0F0F0] flex items-center justify-center text-black">
                                         <User className="w-4 h-4" />
                                     </div>
-                                    <h3 className="font-bold text-sm text-slate-800 uppercase tracking-wide">Thông tin hội viên</h3>
+                                    <h3 className="font-medium text-[15px] text-black tracking-tight">HỘI VIÊN</h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                                     <FormGroup label="Cơ sở" name="coso" value={formData.coso} onChange={handleInputChange} />
@@ -211,54 +218,82 @@ export function RevenuePaymentConfirmationDialog({
                                     <FormGroup label="Địa chỉ" name="diachi" value={formData.diachi} onChange={handleInputChange} />
                                     <FormGroup label="Ngày sinh" name="ngaysinh" value={formData.ngaysinh} onChange={handleInputChange} />
                                     <FormGroup label="Số CMND/CCCD" name="cmnd" value={formData.cmnd} onChange={handleInputChange} />
-                                    <FormGroup label="Nguồn" name="nguon" value={formData.nguon} onChange={handleInputChange} />
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm space-y-5">
-                                <div className="flex items-center gap-3 pb-3 border-b border-slate-50">
-                                    <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                            {/* THẺ 2: DỊCH VỤ & GÓI TẬP */}
+                            <div className="bg-white rounded-[28px] p-7 border border-[#F2F2F2] shadow-sm space-y-6">
+                                <div className="flex items-center gap-3 pb-4 border-b border-[#F9F9F9]">
+                                    <div className="w-8 h-8 rounded-xl bg-[#F0F0F0] flex items-center justify-center text-black">
                                         <ClipboardCheck className="w-4 h-4" />
                                     </div>
-                                    <h3 className="font-bold text-sm text-slate-800 uppercase tracking-wide">Khoản thu &amp; Dịch vụ</h3>
+                                    <h3 className="font-medium text-[15px] text-black tracking-tight">HỢP ĐỒNG</h3>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                    <FormGroup label="Dịch vụ / Gói tập" name="goi" value={formData.goi} onChange={handleInputChange} />
-                                    <FormGroup label="Số tiền đóng" name="tien1" value={formData.tien1} onChange={handleInputChange} />
-                                    <FormGroup label="Hình thức" name="httt1" value={formData.httt1} onChange={handleInputChange} />
-                                    <FormGroup label="Tổng giá trị" name="tonggiatri" value={formData.tonggiatri} onChange={handleInputChange} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <FormGroup label="Gói tập" name="goi" value={formData.goi} onChange={handleInputChange} />
+                                    <FormGroup label="Tổng giá trị hợp đồng" name="tonggiatri" value={formData.tonggiatri} onChange={handleInputChange} />
                                     <FormGroup label="Huấn luyện viên" name="hlv" value={formData.hlv} onChange={handleInputChange} />
-                                    <FormGroup label="Ngày đóng tiền" name="ndong" value={formData.ndong} onChange={handleInputChange} />
-                                    <FormGroup label="Người thu" name="nguoithu" value={formData.nguoithu} onChange={handleInputChange} />
+                                    <FormGroup label="Ngày bắt đầu" name="nbd" value={formData.nbd} onChange={handleInputChange} />
+                                    <FormGroup label="Ngày kết thúc" name="nkt" value={formData.nkt} onChange={handleInputChange} />
+                                </div>
+                            </div>
+
+                            {/* THẺ 3: CHI TIẾT THANH TOÁN & XÁC NHẬN */}
+                            <div className="bg-white rounded-[28px] p-7 border border-[#F2F2F2] shadow-sm space-y-6">
+                                <div className="flex items-center gap-3 pb-4 border-b border-[#F9F9F9]">
+                                    <div className="w-8 h-8 rounded-xl bg-[#F0F0F0] flex items-center justify-center text-black">
+                                        <CreditCard className="w-4 h-4" />
+                                    </div>
+                                    <h3 className="font-medium text-[15px] text-black tracking-tight">XÁC NHẬN THANH TOÁN</h3>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     <div className="col-span-full space-y-2">
-                                        <Label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-1">Ghi chú giao dịch</Label>
+                                        <Label className="text-[13px] font-medium text-black pl-1">Nội dung xác nhận (Lời cảm ơn / Ghi chú)</Label>
                                         <Textarea
                                             name="ghichu"
                                             value={formData.ghichu}
                                             onChange={handleInputChange}
-                                            className="rounded-2xl border-slate-100 bg-slate-50/50 resize-none min-h-[72px] text-sm"
-                                            placeholder="Ghi chú..."
+                                            className="rounded-2xl border-[#EFEFEF] bg-[#FBFBFB] focus:bg-white focus:ring-1 focus:ring-black focus:border-black resize-none min-h-[85px] text-[15px] text-black font-medium transition-all"
+                                            placeholder="VD: Cảm ơn bạn đã đóng tiền trả trước cho HĐ..."
                                         />
                                     </div>
+                                    <FormGroup label="Số tiền thanh toán" name="tien1" value={formData.tien1} onChange={handleInputChange} />
+                                    <SelectGroup
+                                        label="Hình thức thanh toán"
+                                        value={formData.httt1}
+                                        onChange={(val: string) => setFormData(p => ({ ...p, httt1: val }))}
+                                        options={[
+                                            { label: 'Tiền mặt', value: 'Tiền mặt' },
+                                            { label: 'Chuyển khoản', value: 'Chuyển khoản' },
+                                            { label: 'Quẹt thẻ', value: 'Quẹt thẻ' },
+                                        ]}
+                                    />
+                                    <SelectGroup
+                                        label="Người thu tiền"
+                                        value={formData.nguoithu}
+                                        onChange={(val: string) => setFormData(p => ({ ...p, nguoithu: val }))}
+                                        options={users.map((u: any) => ({ label: u.name || u.email, value: u.name || u.email }))}
+                                    />
+                                    <FormGroup label="Ngày thực hiện thu" name="ndong" value={formData.ndong} onChange={handleInputChange} />
                                 </div>
                             </div>
                         </TabsContent>
 
                         <TabsContent value="preview" className="m-0 flex justify-center">
                             <div className="max-w-[620px] w-full bg-white rounded-[24px] shadow-2xl overflow-hidden border border-slate-100">
-                                <div className="p-8 text-center border-b border-slate-50 bg-[#FAF8F5]/50">
-                                    <h2 className="text-[28px] font-serif text-emerald-600 tracking-tight leading-none mb-2">Eva's Fit</h2>
-                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[3px]">Biên nhận thanh toán</p>
+                                <div className="p-10 text-center border-b border-[#F2F2F2] bg-[#FBFBFB]">
+                                    <h2 className="text-[32px] font-serif text-[#10B981] tracking-tight leading-none mb-3">Eva's Fit</h2>
+                                    <p className="text-[12px] font-medium text-black tracking-[4px] opacity-40">BIÊN NHẬN THANH TOÁN</p>
                                 </div>
                                 <div className="p-8 space-y-8">
-                                    <div className="bg-emerald-600 rounded-2xl p-6 text-white flex justify-between items-center shadow-lg shadow-emerald-100">
+                                    <div className="bg-[#10B981] rounded-3xl p-7 text-white flex justify-between items-center shadow-xl shadow-emerald-50">
                                         <div>
-                                            <h3 className="text-lg font-bold tracking-wide uppercase">XÁC NHẬN THANH TOÁN</h3>
-                                            <p className="text-[11px] opacity-80 font-medium tracking-wider mt-1 uppercase">CƠ SỞ: {formData.coso}</p>
+                                            <h3 className="text-xl font-medium tracking-tight">XÁC NHẬN THANH TOÁN</h3>
+                                            <p className="text-[12px] opacity-80 font-medium tracking-wide mt-1">CƠ SỞ: {formData.coso}</p>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-[10px] opacity-70 font-bold uppercase tracking-widest mb-1">Số tiền đóng</div>
-                                            <div className="text-2xl font-bold">{formData.tien1 || '0'} đ</div>
+                                            <div className="text-[11px] opacity-70 font-medium tracking-widest mb-1">Số tiền thanh toán</div>
+                                            <div className="text-[28px] font-medium">{formData.tien1 || '0'} đ</div>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-x-12">
@@ -275,9 +310,15 @@ export function RevenuePaymentConfirmationDialog({
                                             <PreviewField label="Hình thức" value={formData.httt1} />
                                         </div>
                                     </div>
-                                    <div className="bg-[#E7F3EF] rounded-2xl p-6 border border-emerald-100">
-                                        <p className="text-[13px] text-slate-700 leading-relaxed italic">
-                                            Cảm ơn quý khách đã tin dùng dịch vụ tại Eva's Fit. <br/>
+                                    <div className="bg-[#F2F9F7] rounded-3xl p-7 border border-[#E1F2ED] space-y-5">
+                                        {formData.ghichu && (
+                                            <div className="flex flex-col gap-2 pb-4 border-b border-emerald-100/50">
+                                                <span className="text-[11px] font-medium text-emerald-700/60 uppercase tracking-widest">Nội dung xác nhận:</span>
+                                                <span className="text-[15px] text-black font-medium leading-relaxed italic">"{formData.ghichu}"</span>
+                                            </div>
+                                        )}
+                                        <p className="text-[14px] text-black/70 font-medium leading-relaxed">
+                                            Cảm ơn quý khách đã tin dùng dịch vụ tại Eva's Fit. <br />
                                             Lưu ý: Tất cả các khoản thu đều <b>không hoàn lại</b>.
                                         </p>
                                     </div>
@@ -316,7 +357,7 @@ export function RevenuePaymentConfirmationDialog({
 function FormGroup({ label, name, value, onChange, type = 'text', required = false, placeholder = '' }: any) {
     return (
         <div className="space-y-2">
-            <Label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-1">
+            <Label className="text-[13px] font-medium text-black pl-1">
                 {label} {required && <span className="text-red-500">*</span>}
             </Label>
             <Input
@@ -325,17 +366,39 @@ function FormGroup({ label, name, value, onChange, type = 'text', required = fal
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
-                className="rounded-xl border-slate-100 bg-slate-50/50 focus:bg-white h-11 text-sm font-medium text-slate-800 transition-all"
+                className="rounded-2xl border-[#EFEFEF] bg-[#FBFBFB] focus:bg-white focus:ring-1 focus:ring-black focus:border-black h-12 text-[15px] font-medium text-black transition-all"
             />
         </div>
     )
 }
 
-function PreviewField({ label, value, color = '#6B6760' }: any) {
+function SelectGroup({ label, value, onChange, options, required = false }: any) {
     return (
-        <div className="space-y-1">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</div>
-            <div className="text-sm font-bold truncate" style={{ color }}>{value || '—'}</div>
+        <div className="space-y-2">
+            <Label className="text-[13px] font-medium text-black pl-1">
+                {label} {required && <span className="text-red-500">*</span>}
+            </Label>
+            <Select value={value} onValueChange={onChange}>
+                <SelectTrigger className="rounded-2xl border-[#EFEFEF] bg-[#FBFBFB] focus:bg-white focus:ring-1 focus:ring-black focus:border-black h-12 text-[15px] font-medium text-black transition-all">
+                    <SelectValue placeholder={`Chọn...`} />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border-[#EFEFEF] shadow-2xl">
+                    {options.map((opt: any) => (
+                        <SelectItem key={opt.value} value={opt.value} className="text-[15px] font-medium rounded-xl m-1 py-3">
+                            {opt.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
+    )
+}
+
+function PreviewField({ label, value, color = '#000000' }: any) {
+    return (
+        <div className="space-y-1.5">
+            <div className="text-[11px] font-medium text-[#A0A0A0]">{label}</div>
+            <div className="text-[15px] font-medium truncate" style={{ color }}>{value || '—'}</div>
         </div>
     )
 }

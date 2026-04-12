@@ -1125,16 +1125,16 @@ function generatePaymentConfirmationHtml(d: PaymentConfirmationPayload): string 
       ${row('Nguồn', d.nguon)}
       ${sectionHeader('TH&#212;NG TIN G&#211;I T&#7852;P', '&#9658;')}
       ${row('Gói tập', d.goi)}
-      ${row('Lựa chọn', d.custom)}
+      ${row('Giá hợp đồng', d.tonggiatri + ' đ')}
       ${row('Huấn luyện viên', d.hlv)}
       ${row('Ngày bắt đầu', d.nbd)}
       ${row('Ngày kết thúc', d.nkt)}
       ${sectionHeader('CHI TI&#7870;T THANH TO&#193;N', '&#9658;')}
-      ${row('Lần 1 — Số tiền', d.tien1 ? d.tien1 + ' đ' : '—')}
-      ${row('Lần 1 — Hình thức', d.httt1)}
+      ${row('Số tiền', d.tien1 ? d.tien1 + ' đ' : '—')}
+      ${row('Hình thức', d.httt1)}
       ${d.tien2 ? row('Lần 2 — Số tiền', d.tien2 + ' đ') : ''}
       ${d.httt2 ? row('Lần 2 — Hình thức', d.httt2) : ''}
-      ${row('Ghi chú', d.ghichu)}
+      ${row('Nội dung xác nhận', d.ghichu)}
     </table>
     <div style="background:${salmon};padding:18px 24px;color:${white}">
       <table width="100%"><tr>

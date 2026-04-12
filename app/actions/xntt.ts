@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
+import { createClient, createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { getAccessControl, UserProfile } from '@/lib/permissions'
 import { cache } from 'react'
@@ -57,7 +57,7 @@ export async function fetchXnttHistory() {
  * Gửi lại XNTT (Tạo bản ghi mới để kích hoạt Webhook)
  */
 export async function resendXnttAction(historyId: string) {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     try {
         const accessInfo = await getAccessFilter()
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
@@ -114,7 +114,7 @@ export async function resendXnttAction(historyId: string) {
  * Xóa bản ghi lịch sử (Nếu cần)
  */
 export async function deleteXnttHistory(id: string) {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     try {
         const { error } = await supabase.from('xntt_history').delete().eq('id', id)
         if (error) throw error

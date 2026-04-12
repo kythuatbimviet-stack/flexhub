@@ -298,6 +298,7 @@ export function PaymentConfirmationDialog({
                                         </div>
                                         <div className="space-y-6 pl-12 border-l border-slate-100">
                                             <PreviewField label="Gói tập" value={formData.goi} color="#1C1A18" />
+                                            <PreviewField label="Giá hợp đồng" value={formData.tonggiatri + ' đ'} color="#1C1A18" />
                                             <PreviewField label="Huấn luyện viên" value={formData.hlv} />
                                             <PreviewField label="Ngày bắt đầu" value={formData.nbd} />
                                             <PreviewField label="Ngày kết thúc" value={formData.nkt} />
@@ -316,6 +317,26 @@ export function PaymentConfirmationDialog({
                                     </div>
                                     {/* Important Note */}
                                     <div className="bg-[#FAECE7] rounded-2xl p-6 border border-[#F5C4B3]">
+                                        <div className="flex items-center gap-2 text-[#993C1D] mb-3">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[#E8896A]" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Chi tiết thanh toán</span>
+                                        </div>
+                                        <div className="space-y-3 mb-6">
+                                            <div className="flex justify-between text-[13px]">
+                                                <span className="text-slate-500">Số tiền:</span>
+                                                <span className="font-bold text-slate-800">{formData.tien1} đ</span>
+                                            </div>
+                                            <div className="flex justify-between text-[13px]">
+                                                <span className="text-slate-500">Hình thức:</span>
+                                                <span className="font-bold text-slate-800">{formData.httt1}</span>
+                                            </div>
+                                            {formData.ghichu && (
+                                                <div className="flex flex-col gap-1 pt-2 border-t border-orange-100">
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nội dung xác nhận:</span>
+                                                    <span className="text-[13px] text-slate-700 italic">"{formData.ghichu}"</span>
+                                                </div>
+                                            )}
+                                        </div>
                                         <div className="flex items-center gap-2 text-[#993C1D] mb-3">
                                             <div className="w-1.5 h-1.5 rounded-full bg-[#E8896A]" />
                                             <span className="text-[10px] font-black uppercase tracking-widest">Lưu ý quan trọng</span>
