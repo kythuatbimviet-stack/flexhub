@@ -1,35 +1,8 @@
 'use server'
 
-import { createClient, createAdminClient, createClient as createSupabaseClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
-import { getAccessControl, UserProfile } from '@/lib/permissions'
-import { cache } from 'react'
-
-const getAccessFilter = cache(async () => {
-    const supabase = await createSupabaseClient()
-    const { data: { user: authUser } } = await supabase.auth.getUser()
-    if (!authUser?.email) return null
-
-    // Use Admin Client to bypass RLS on the 'users' table - we already have an authenticated session
-    const adminClient = await createAdminClient()
-    const { data: profile, error } = await adminClient
-        .from('users')
-        .select('*')
-        .eq('email', authUser.email)
-        .maybeSingle()
-
-    if (error) {
-        console.error('[getAccessFilter] Error fetching user profile:', error)
-        return null
-    }
-
-    if (!profile) {
-        console.warn('[getAccessFilter] No profile found for email:', authUser.email)
-        return null
-    }
-    
-    return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
-})
+import { getAccessFilter } from '@/lib/access-filter'
 
 export async function fetchDebts() {
     const supabase = await createAdminClient()

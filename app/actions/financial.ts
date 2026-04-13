@@ -1,28 +1,8 @@
 'use server'
 
-import { createClient, createClient as createSupabaseClient } from '@/lib/supabase-server'
+import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
-import { getAccessControl, UserProfile } from '@/lib/permissions'
-import { cache } from 'react'
-
-const getAccessFilter = cache(async () => {
-    const supabase = await createSupabaseClient()
-    const { data: { user: authUser } } = await supabase.auth.getUser()
-    if (!authUser?.email) return null
-
-    const { data: profile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', authUser.email)
-        .maybeSingle()
-
-    if (!profile) return null
-    return { 
-        user: profile as UserProfile, 
-        authId: authUser.id,
-        access: getAccessControl(profile as UserProfile) 
-    }
-})
+import { getAccessFilter } from '@/lib/access-filter'
 
 // --- Categories ---
 

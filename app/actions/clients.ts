@@ -1,25 +1,8 @@
 'use server'
 
-import { createAdminClient, createClient as createSupabaseClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
-import { getAccessControl, UserProfile } from '@/lib/permissions'
-import { cache } from 'react'
-
-// Dedup: cache() ensures only 1 DB call per request even if multiple actions use this
-const getAccessFilter = cache(async () => {
-    const supabase = await createSupabaseClient()
-    const { data: { user: authUser } } = await supabase.auth.getUser()
-    if (!authUser?.email) return null
-
-    const { data: profile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', authUser.email)
-        .maybeSingle()
-
-    if (!profile) return null
-    return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
-})
+import { getAccessFilter } from '@/lib/access-filter'
 
 export async function fetchClientById(id: string) {
     try {
@@ -167,19 +150,21 @@ export async function fetchClientsPage({
         dataQuery = applyBaseFilters(dataQuery)
         if (status) dataQuery = dataQuery.eq('status', status)
 
-        // 2. Fetch status config + main data in PARALLEL (was serial before – config blocked data)
-        const [mainResult, statusConfigResult] = await Promise.all([
+        // 2. Fetch data chính + RPC status counts SONG SONG
+        const [mainResult, statusCountResult] = await Promise.all([
             dataQuery,
-            adminClient.from('config_client_status').select('nam')
+            adminClient.rpc('get_client_status_counts', {
+                p_branch_ids: accessInfo.access.allowedBranchIds?.length
+                    ? accessInfo.access.allowedBranchIds
+                    : null,
+                p_email: accessInfo.user.email,
+                p_pt_name: accessInfo.user.name,
+                p_is_staff_only: accessInfo.access.isStaffOnly,
+                p_search: search || null,
+                p_source: source || null,
+                p_reg_type: regType || null,
+            })
         ])
-        const statusNames = statusConfigResult.data?.map((s: any) => s.nam) || []
-
-        // 3. Count per status in PARALLEL (only after we know status names)
-        const totalCountPromise = applyBaseFilters(adminClient.from('clients').select('*', { count: 'exact', head: true }))
-        const countPromises = statusNames.map((s: string) => {
-            return applyBaseFilters(adminClient.from('clients').select('*', { count: 'exact', head: true })).eq('status', s)
-        })
-        const countResults = await Promise.all([totalCountPromise, ...countPromises])
 
         const { data, error, count } = mainResult
 
@@ -188,13 +173,14 @@ export async function fetchClientsPage({
             return { success: false, error: error.message }
         }
 
-        // Process status counts — countResults[0] = total, [1..N] = per-status
-        const statusCounts: Record<string, number> = {}
-        const totalOverallCount = countResults[0].count || 0
-        statusCounts['total'] = totalOverallCount
-        statusNames.forEach((s: string, i: number) => {
-            statusCounts[s] = countResults[i + 1].count || 0
-        })
+        // Build statusCounts từ RPC result
+        const statusCounts: Record<string, number> = { total: 0 }
+        if (statusCountResult.data) {
+            statusCountResult.data.forEach((row: { status: string; cnt: number }) => {
+                statusCounts[row.status] = Number(row.cnt)
+                statusCounts['total'] = (statusCounts['total'] || 0) + Number(row.cnt)
+            })
+        }
 
         return {
             success: true,

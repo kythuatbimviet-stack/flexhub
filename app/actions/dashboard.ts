@@ -1,24 +1,8 @@
 'use server'
 
-import { createAdminClient, createClient as createSupabaseClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-server'
 import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns'
-import { getAccessControl, UserProfile } from '@/lib/permissions'
-import { cache } from 'react'
-
-const getAccessFilter = cache(async () => {
-    const supabase = await createSupabaseClient()
-    const { data: { user: authUser } } = await supabase.auth.getUser()
-    if (!authUser?.email) return null
-
-    const { data: profile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', authUser.email)
-        .maybeSingle()
-
-    if (!profile) return null
-    return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
-})
+import { getAccessFilter } from '@/lib/access-filter'
 
 export async function fetchDashboardMetrics(filters?: { startDate?: string; endDate?: string; branchId?: string }) {
     const supabase = await createAdminClient()
@@ -52,11 +36,6 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
             debtsQuery = debtsQuery.in('branch_id', branchIds)
             contractsQuery = contractsQuery.in('branch_id', branchIds)
             branchesQuery = branchesQuery.in('id', branchIds)
-            
-            const { data: allowedClientIds } = await supabase.from('clients').select('id').in('branch_id', branchIds)
-            if (allowedClientIds) {
-                weightQuery = weightQuery.in('client_id', allowedClientIds.map(c => c.id))
-            }
         }
 
         // Apply UI filters
@@ -82,11 +61,6 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
             expenseQuery = expenseQuery.eq('branch_id', filters.branchId)
             debtsQuery = debtsQuery.eq('branch_id', filters.branchId)
             contractsQuery = contractsQuery.eq('branch_id', filters.branchId)
-            
-            const { data: branchClientIds } = await supabase.from('clients').select('id').eq('branch_id', filters.branchId)
-            if (branchClientIds) {
-                weightQuery = weightQuery.in('client_id', branchClientIds.map(c => c.id))
-            }
         }
 
         // 1. Fetch data in parallel
@@ -123,6 +97,9 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
         const safeContracts = contracts || []
         const safeBranches = branches || []
         const safeWeights = weights || []
+        // Filter weights to only clients we have access to (replaces pre-filter serial queries)
+        const allowedClientIdSet = new Set(safeClients.map(c => c.id))
+        const filteredWeights = safeWeights.filter(w => allowedClientIdSet.has(w.client_id))
 
         // --- Core Calculations ---
         const totalCustomers = safeClients.length
@@ -159,7 +136,7 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
             branchLevelMetrics[bName].revenue += Number(r.amount) || 0
         })
 
-        const clientsWeights = safeWeights.reduce((acc: any, w) => {
+        const clientsWeights = filteredWeights.reduce((acc: any, w) => {
             if (!acc[w.client_id]) acc[w.client_id] = []
             acc[w.client_id].push(w)
             return acc
@@ -310,7 +287,7 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
                     contracts: safeContracts.length,
                     revenue: safeRevenue.length,
                     expense: safeExpense.length,
-                    weights: safeWeights.length,
+                    weights: filteredWeights.length,
                     debts: safeDebts.length
                 }
             }

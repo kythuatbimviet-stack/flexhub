@@ -1,8 +1,10 @@
 'use server'
 
+import { cache } from 'react'
 import { createClient, createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
-import { isAdmin, getAccessControl, UserProfile } from '@/lib/permissions'
+import { isAdmin, UserProfile } from '@/lib/permissions'
+import { getAccessFilter } from '@/lib/access-filter'
 
 async function checkAdmin() {
     const supabase = await createClient()
@@ -20,21 +22,11 @@ async function checkAdmin() {
 }
 
 export async function fetchUsers() {
-    const supabase = await createClient()
     try {
-        // [SEC] Require authentication and apply branch-level access control
-        const { data: { user: authUser } } = await supabase.auth.getUser()
-        if (!authUser?.email) return { success: false, error: 'Unauthorized' }
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
 
-        const { data: profile } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', authUser.email)
-            .maybeSingle()
-
-        if (!profile) return { success: false, error: 'Unauthorized' }
-        const access = getAccessControl(profile as UserProfile)
-
+        const supabase = await createAdminClient()
         let query = supabase
             .from('users')
             .select(`
@@ -44,8 +36,8 @@ export async function fetchUsers() {
             .order('created_at', { ascending: false })
 
         // Apply RBAC filters
-        if (!access.canViewAllBranches && access.allowedBranchIds) {
-            query = query.in('branch_id', access.allowedBranchIds)
+        if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
+            query = query.in('branch_id', accessInfo.access.allowedBranchIds)
         }
 
         const { data, error } = await query
@@ -176,7 +168,7 @@ export async function bulkCreateUsers(users: any[]) {
     }
 }
 
-export async function fetchCurrentUserProfile() {
+export const fetchCurrentUserProfile = cache(async () => {
     const supabase = await createClient()
     try {
         const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -204,7 +196,7 @@ export async function fetchCurrentUserProfile() {
         console.error('[fetchCurrentUserProfile] Unexpected error:', error.message)
         return { success: false, error: error.message }
     }
-}
+})
 
 export async function fetchUserByEmail(email: string) {
     const supabase = await createClient()

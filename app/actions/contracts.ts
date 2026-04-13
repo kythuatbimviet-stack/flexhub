@@ -1,26 +1,9 @@
 'use server'
 
-import { createClient, createAdminClient, createClient as createSupabaseClient } from '@/lib/supabase-server'
+import { createClient, createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { numberToVietnameseWords } from '@/lib/utils'
-import { getAccessControl, UserProfile } from '@/lib/permissions'
-import { cache } from 'react'
-
-// Dedup: cache() ensures only 1 DB call per request even if multiple actions use this
-const getAccessFilter = cache(async () => {
-    const supabase = await createSupabaseClient()
-    const { data: { user: authUser } } = await supabase.auth.getUser()
-    if (!authUser?.email) return null
-
-    const { data: profile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', authUser.email)
-        .maybeSingle()
-
-    if (!profile) return null
-    return { user: profile as UserProfile, access: getAccessControl(profile as UserProfile) }
-})
+import { getAccessFilter } from '@/lib/access-filter'
 
 // [SEC] Validate webhook URL to prevent SSRF — allow only HTTPS to non-private addresses
 function isValidWebhookUrl(url: string): boolean {
