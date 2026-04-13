@@ -578,7 +578,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                         <FormItem>
                                             <FormLabel className="text-xs text-gray-500 font-medium">Chiều cao (cm) <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
-                                                <Input type="number" step="0.1" {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
+                                                <Input type="text" inputMode="decimal" placeholder="170" {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -591,7 +591,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                         <FormItem>
                                             <FormLabel className="text-xs text-gray-500 font-medium">Cân nặng (kg) <span className="text-red-600">*</span></FormLabel>
                                             <FormControl>
-                                                <Input type="number" step="0.1" {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
+                                                <Input type="text" inputMode="decimal" placeholder="65" {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -604,7 +604,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                         <FormItem>
                                             <FormLabel className="text-xs text-gray-500 font-medium">Cân nặng mục tiêu</FormLabel>
                                             <FormControl>
-                                                <Input type="number" step="0.1" {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
+                                                <Input type="text" inputMode="decimal" placeholder="55" {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
