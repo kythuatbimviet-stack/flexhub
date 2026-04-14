@@ -31,7 +31,7 @@ export async function getGoogleAuthClient() {
       const parsed = JSON.parse(email);
       if (parsed.client_email) email = parsed.client_email;
       if (parsed.private_key && (!privateKey || privateKey === '')) privateKey = parsed.private_key;
-    } catch (e) {}
+    } catch (e) { }
   }
 
   if (!email || !privateKey) {
@@ -57,7 +57,7 @@ export async function getGoogleAuthClient() {
   } catch (err: any) {
     console.error('Google Auth Error:', err);
     if (err.message?.includes('invalid_grant')) {
-        throw new Error('Xác thực thất bại: Private Key hoặc Email không hợp lệ (invalid_grant). Hãy kiểm tra lại đã copy đúng chưa.');
+      throw new Error('Xác thực thất bại: Private Key hoặc Email không hợp lệ (invalid_grant). Hãy kiểm tra lại đã copy đúng chưa.');
     }
     throw new Error('Lỗi xác thực Google: ' + (err.message || 'No key set'));
   }
@@ -73,25 +73,26 @@ export function buildContractPlaceholders(contract: any) {
   const fields = [
     'id', 'member_name', 'phone', 'email', 'package_name', 'total_sessions',
     'package_price', 'total_amount', 'start_date', 'end_date', 'notes',
-    'id_number', 'dob', 'address', 'signing_date'
+    'id_number', 'dob', 'address', 'signing_date', 'legal_representative',
+    'representative_phone', 'center_representative'
   ];
 
   fields.forEach(field => {
     let val = contract[field] || contract.clients?.[field] || '....................';
-    
+
     // Format dates
     if (field.includes('date') || field === 'dob') {
-        try {
-            const d = new Date(val);
-            if (!isNaN(d.getTime())) {
-                val = d.toLocaleDateString('vi-VN');
-            }
-        } catch(e) {}
+      try {
+        const d = new Date(val);
+        if (!isNaN(d.getTime())) {
+          val = d.toLocaleDateString('vi-VN');
+        }
+      } catch (e) { }
     }
 
     data[`{{${field}}}`] = val.toString();
     data[`{{UPPER(${field})}}`] = val.toString().toUpperCase();
-    
+
     // Number formatting
     if (field.includes('price') || field.includes('amount')) {
       const num = parseFloat(val);
@@ -104,10 +105,10 @@ export function buildContractPlaceholders(contract: any) {
 
   // Center/Branch info
   if (contract.branches) {
-      data['{{center_name}}'] = contract.branches.name || '';
-      data['{{center_address}}'] = contract.branches.center_address || '';
-      data['{{center_phone}}'] = contract.branches.center_phone || '';
-      data['{{center_representative}}'] = contract.branches.legal_representative || '';
+    data['{{center_name}}'] = contract.branches.name || '';
+    data['{{center_address}}'] = contract.branches.center_address || '';
+    data['{{center_phone}}'] = contract.branches.center_phone || '';
+    // data['{{center_representative}}'] was already handled by the fields loop if it exists in contract
   }
 
   return data;
