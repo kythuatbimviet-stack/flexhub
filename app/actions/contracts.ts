@@ -250,7 +250,7 @@ export async function fetchContractById(id: string) {
             .select(`
                 *,
                 clients (member_name, phone, email, dob, address, avatar_url, status),
-                branches (name, id, legal_representative, representative_phone, center_address, center_phone)
+                branches (name, id, center_address, center_phone)
             `)
             .eq('id', id)
             .maybeSingle()

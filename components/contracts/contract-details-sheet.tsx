@@ -581,7 +581,7 @@ export function ContractDetailsSheet({
                 total_amount: totalAmount.toString(),
                 discounted_price: totalSaving.toString(),
                 package_duration: pkg.duration_days?.toString() || '',
-                total_sessions: (qty * duration).toString(),
+                total_sessions: '',
                 end_date: format(endDate, 'yyyy-MM-dd')
             }))
         }

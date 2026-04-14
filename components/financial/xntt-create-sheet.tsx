@@ -272,8 +272,8 @@ export function XnttCreateSheet({
                                             exit={{ height: 0, opacity: 0 }}
                                             transition={{ duration: 0.3, ease: "easeInOut" }}
                                         >
-                                            <div className="px-8 pb-8 pt-0 grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-[#F9F9F9]">
-                                                <div className="mt-6 col-span-full" /> {/* Spacer */}
+                                            <div className="px-8 pb-8 pt-0 flex flex-col gap-6 border-t border-[#F9F9F9]">
+                                                <div className="mt-6" /> {/* Spacer */}
                                                 <SelectGroup
                                                     label="Học viên (Chọn để tự điền)"
                                                     value={selectedClientId}
@@ -283,6 +283,7 @@ export function XnttCreateSheet({
                                                         value: c.id
                                                     }))}
                                                     required
+                                                    className="w-[450px]"
                                                 />
                                                 <SelectGroup
                                                     label="Hợp đồng (Chọn để tự điền)"
@@ -293,6 +294,7 @@ export function XnttCreateSheet({
                                                         value: c.id
                                                     }))}
                                                     disabled={!selectedClientId}
+                                                    className="w-[450px]"
                                                 />
                                             </div>
                                         </motion.div>
@@ -423,8 +425,11 @@ export function XnttCreateSheet({
                                     </div>
                                     <div className="grid grid-cols-2 gap-x-12 gap-y-8">
                                         <PreviewField label="Tên Hội viên" value={formData.ten} color="#000000" />
+                                        <PreviewField label="Số điện thoại" value={formData.sdt} color="#000000" />
                                         <PreviewField label="Email nhận" value={formData.email} color="#10B981" />
+                                        <PreviewField label="Số CMND/CCCD" value={formData.cmnd} />
                                         <PreviewField label="Dịch vụ / Gói tập" value={formData.goi} />
+                                        <PreviewField label="Huấn luyện viên" value={formData.hlv} />
                                         <PreviewField label="Ngày thanh toán" value={formData.ndong} />
                                     </div>
                                     <div className="bg-[#F2F9F7] rounded-[24px] p-8 border border-[#E1F2ED] space-y-5">
@@ -490,29 +495,48 @@ function FormGroup({ label, name, value, onChange, type = 'text', required = fal
     )
 }
 
-function SelectGroup({ label, value, onChange, options, required = false, disabled = false }: any) {
+function SelectGroup({ label, value, onChange, options, required = false, disabled = false, className }: any) {
+    const [searchTerm, setSearchTerm] = React.useState('')
+
+    // Lọc danh sách options dựa trên từ khóa tìm kiếm
+    const filteredOptions = React.useMemo(() => {
+        if (!searchTerm) return options
+        const lowSearch = searchTerm.toLowerCase()
+        return options.filter((opt: any) => 
+            opt.label.toLowerCase().includes(lowSearch)
+        )
+    }, [options, searchTerm])
+
     return (
-        <div className="space-y-2">
+        <div className={cn("space-y-2", className)}>
             <Label className="text-[13px] font-medium text-black pl-1">
                 {label} {required && <span className="text-red-500">*</span>}
             </Label>
-            <Select value={value} onValueChange={onChange} disabled={disabled}>
-                <SelectTrigger className="rounded-2xl border-[#EFEFEF] bg-[#FBFBFB] focus:bg-white focus:ring-1 focus:ring-black focus:border-black h-12 text-[15px] font-medium text-black transition-all">
+            <Select 
+                value={value} 
+                onValueChange={onChange} 
+                disabled={disabled}
+                onOpenChange={(open) => {
+                    if (!open) setSearchTerm('') // Reset tìm kiếm khi đóng menu
+                }}
+            >
+                <SelectTrigger className="w-full rounded-2xl border-[#EFEFEF] bg-[#FBFBFB] focus:bg-white focus:ring-1 focus:ring-black focus:border-black h-12 text-[15px] font-medium text-black transition-all">
                     <SelectValue placeholder={`Chọn...`} />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl border-[#EFEFEF] shadow-2xl max-h-[300px]">
-                    <div className="relative border-b border-[#F2F2F2] p-2">
+                    <div className="relative border-b border-[#F2F2F2] p-2" onKeyDown={(e) => e.stopPropagation()}>
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <Input
                             placeholder="Tìm nhanh..."
                             className="pl-10 h-10 rounded-xl border-none bg-[#F9F9F9] focus:ring-0 text-sm"
-                            onKeyDown={(e) => e.stopPropagation()}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    {options.length === 0 ? (
-                        <div className="py-6 text-center text-sm text-slate-400">Không có dữ liệu</div>
+                    {filteredOptions.length === 0 ? (
+                        <div className="py-6 text-center text-sm text-slate-400">Không có dữ liệu phù hợp</div>
                     ) : (
-                        options.map((opt: any) => (
+                        filteredOptions.map((opt: any) => (
                             <SelectItem key={opt.value} value={opt.value} className="text-[14px] font-medium rounded-xl m-1 py-3">
                                 {opt.label}
                             </SelectItem>

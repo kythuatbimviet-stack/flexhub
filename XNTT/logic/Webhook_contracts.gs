@@ -187,9 +187,11 @@ function buildFullPlaceholders(contract) {
   data["{{branch_name}}"] = br.name || "";
   data["{{center_address}}"] = br.center_address || br.address || c.address || "";
   data["{{center_phone}}"] = c.center_phone || br.center_phone || br.phone || "";
-  data["{{representative_phone}}"] = c.representative_phone || br.representative_phone || "";
+  data["{{representative_phone}}"] = c.representative_phone || "";
   data["{{center_representative}}"] = c.center_representative || br.representative || "Nguyễn Minh Trí"; 
-  data["{{legal_representative}}"] = c.legal_representative || br.legal_representative || "";
+  data["{{legal_representative}}"] = c.legal_representative || "";
+  data["{{center_legal_representative}}"] = br.legal_representative || "";
+  data["{{center_representative_phone}}"] = br.representative_phone || "";
   data["{{account_number}}"] = br.account_number ? String(br.account_number) : (c.account_number ? String(c.account_number) : "");
   data["{{bank_name}}"] = br.bank_name || c.bank_name || "";
   data["{{account_holder}}"] = br.account_holder || c.account_holder || "";

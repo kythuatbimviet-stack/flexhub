@@ -159,8 +159,9 @@ export function MembershipDetailsSheet({
             setFormData(pkg)
             setIsEditing(false)
         } else if (open) {
+            const randomId = `GOI-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
             setFormData({
-                id: '',
+                id: randomId,
                 package_name: '',
                 branch_id: '',
                 package_type: '',
@@ -189,8 +190,11 @@ export function MembershipDetailsSheet({
     const handleSave = async () => {
         setLoading(true)
         try {
+            // Tách các trường quan hệ (branches) và meta (created_at, updated_at) ra khỏi payload
+            const { branches: _b, created_at, updated_at, ...membershipData } = formData
+
             const payload = {
-                ...formData,
+                ...membershipData,
                 unit_price: parseFloat(formData.unit_price) || 0,
                 discounted_price: formData.discounted_price ? parseFloat(formData.discounted_price) : null,
                 duration_days: parseInt(formData.duration_days) || 0,
