@@ -27,7 +27,7 @@ export const DEFAULT_PLACEHOLDERS: {
         // Trung tâm
         { key: '{{center_name}}', label: 'Tên trung tâm', description: 'Tên đầy đủ của trung tâm', category: 'center', sample_value: 'TRUNG TÂM EVA\'S FIT', is_active: true, is_default: true, sort_order: 110 },
         { key: '{{center_short_name}}', label: 'Tên viết tắt TT', description: 'Tên viết tắt trung tâm', category: 'center', sample_value: 'EVA\'S FIT', is_active: true, is_default: true, sort_order: 120 },
-        { key: '{{center_representative}}', label: 'Đại diện trung tâm', description: 'Người đại diện trung tâm ký hợp đồng (Bên A)', category: 'center', sample_value: 'Nguyễn Minh Trí', is_active: true, is_default: true, sort_order: 130 },
+        { key: '{{center_representative}}', label: 'Đại diện trung tâm', description: 'Người đại diện trung tâm ký hợp đồng (Bên A)', category: 'center', sample_value: 'NGUYỄN VĂN AN', is_active: true, is_default: true, sort_order: 130 },
         { key: '{{branch_name}}', label: 'Tên chi nhánh', description: 'Tên chi nhánh trực tiếp', category: 'center', sample_value: 'Chi nhánh Quận 1', is_active: true, is_default: true, sort_order: 180 },
         { key: '{{account_number}}', label: 'Số tài khoản', description: 'Số tài khoản ngân hàng trung tâm', category: 'center', sample_value: '1234567890', is_active: true, is_default: true, sort_order: 190 },
         { key: '{{bank_name}}', label: 'Ngân hàng', description: 'Tên ngân hàng', category: 'center', sample_value: 'Vietcombank', is_active: true, is_default: true, sort_order: 200 },
