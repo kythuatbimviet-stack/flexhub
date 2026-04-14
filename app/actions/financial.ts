@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase-server'
+import { createClient, createAdminClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 import { getAccessFilter } from '@/lib/access-filter'
 
@@ -24,7 +24,7 @@ export async function fetchFinancialCategories(type?: 'revenue' | 'expense') {
 // --- Revenue ---
 
 export async function fetchRevenue() {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     try {
         const accessInfo = await getAccessFilter()
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
@@ -200,7 +200,7 @@ export async function bulkDeleteRevenue(ids: string[]) {
 // --- Expense ---
 
 export async function fetchExpense() {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     try {
         const accessInfo = await getAccessFilter()
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
@@ -225,7 +225,6 @@ export async function fetchExpense() {
             throw error
         }
 
-        console.log('Fetch Expense Data:', data?.length || 0, 'rows found')
         return { success: true, data }
     } catch (error: any) {
         console.error('Fetch Expense Failed:', error.message)
@@ -338,7 +337,7 @@ export async function fetchCashFlowData(filters?: {
     paymentMethod?: string
     customerId?: string
 }) {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     try {
         const accessInfo = await getAccessFilter()
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
@@ -426,7 +425,6 @@ export async function fetchExpenseTypes() {
             throw error
         }
 
-        console.log('Fetch Expense Types Success:', data?.length || 0, 'rows found')
         return { success: true, data }
     } catch (error: any) {
         console.error('Fetch Expense Types Failed:', error.message)

@@ -28,8 +28,8 @@ export function usePermissions() {
     const { data: profileResult, isLoading } = useQuery({
         queryKey: ['current-user-profile'],
         queryFn: fetchCurrentUserProfile,
-        // Always treat as stale so permission changes appear quickly on F5
-        staleTime: 0,
+        // Cache profile trong 2 phút để tránh spam request khi switch tab
+        staleTime: 2 * 60 * 1000,
         // Refetch every time the user looks at the page (tab focus / reconnect)
         refetchOnWindowFocus: true,
         refetchOnReconnect: true,

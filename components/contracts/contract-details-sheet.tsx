@@ -561,9 +561,14 @@ export function ContractDetailsSheet({
     const handlePackageChange = (packageId: string) => {
         const pkg = packages.find(p => p.id === packageId)
         if (pkg) {
-            const unitPrice = pkg.discounted_price || pkg.unit_price || 0
+            const originalUnitPrice = pkg.unit_price || 0
+            const finalUnitPrice = pkg.discounted_price || pkg.unit_price || 0
             const qty = parseInt(formData.quantity || '1')
-            const pkgPrice = unitPrice * qty
+            
+            const pkgPrice = originalUnitPrice * qty
+            const totalAmount = finalUnitPrice * qty
+            const totalSaving = (originalUnitPrice - finalUnitPrice) * qty
+
             const startDate = new Date(formData.start_date || new Date())
             const duration = parseInt(pkg.duration_days || '0')
             const endDate = addDays(startDate, duration * qty)
@@ -573,7 +578,8 @@ export function ContractDetailsSheet({
                 membership_id: packageId,
                 package_name: pkg.package_name,
                 package_price: pkgPrice.toString(),
-                total_amount: pkgPrice.toString(),
+                total_amount: totalAmount.toString(),
+                discounted_price: totalSaving.toString(),
                 package_duration: pkg.duration_days?.toString() || '',
                 total_sessions: (qty * duration).toString(),
                 end_date: format(endDate, 'yyyy-MM-dd')
@@ -595,10 +601,16 @@ export function ContractDetailsSheet({
                 const pkg = packages.find(p => p.id === prev.membership_id)
 
                 if (pkg) {
-                    const unitPrice = pkg.discounted_price || pkg.unit_price || 0
-                    const pkgPrice = unitPrice * qty
+                    const originalUnitPrice = pkg.unit_price || 0
+                    const finalUnitPrice = pkg.discounted_price || pkg.unit_price || 0
+                    
+                    const pkgPrice = originalUnitPrice * qty
+                    const totalAmount = finalUnitPrice * qty
+                    const totalSaving = (originalUnitPrice - finalUnitPrice) * qty
+
                     newData.package_price = pkgPrice.toString()
-                    newData.total_amount = pkgPrice.toString()
+                    newData.total_amount = totalAmount.toString()
+                    newData.discounted_price = totalSaving.toString()
                 }
 
                 const startDate = new Date(newData.start_date || new Date())
@@ -1367,7 +1379,14 @@ export function ContractDetailsSheet({
                                                             <div className="flex flex-col items-start min-w-0">
                                                                 <span className="font-semibold truncate w-full">{pkg.package_name}</span>
                                                                 <div className="flex items-center gap-2">
-                                                                    <span className="text-[11px] text-red-600 font-medium">{Number(pkg.unit_price).toLocaleString('vi-VN')} ₫</span>
+                                                                    {pkg.discounted_price && pkg.discounted_price < pkg.unit_price ? (
+                                                                        <>
+                                                                            <span className="text-[11px] text-slate-400 line-through">{Number(pkg.unit_price).toLocaleString('vi-VN')} ₫</span>
+                                                                            <span className="text-[11px] text-red-600 font-bold">{Number(pkg.discounted_price).toLocaleString('vi-VN')} ₫</span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <span className="text-[11px] text-red-600 font-medium">{Number(pkg.unit_price).toLocaleString('vi-VN')} ₫</span>
+                                                                    )}
                                                                     <span className="text-[10px] text-slate-400">| {pkg.package_duration} {pkg.duration_unit}</span>
                                                                 </div>
                                                             </div>

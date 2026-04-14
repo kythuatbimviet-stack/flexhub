@@ -129,7 +129,7 @@ export default function CashFlowPage() {
     })
 
     const { data: clients } = useQuery({
-        queryKey: ['clients-lite'],
+        queryKey: ['clients-all'],
         queryFn: async () => {
             const result = await fetchClients()
             if (!result.success) throw new Error(result.error)
