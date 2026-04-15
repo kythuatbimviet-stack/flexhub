@@ -7,7 +7,6 @@ import { fetchClients } from '@/app/actions/clients'
 import { fetchContractsLite } from '@/app/actions/contracts'  // ✅ Lite version cho prefetch nhanh
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchZaloUsers } from '@/app/actions/zalo-users'
-import { fetchRevenue, fetchExpense } from '@/app/actions/financial'
 import { fetchDebts } from '@/app/actions/debts'
 
 export interface AppDataProgressProps {
@@ -41,9 +40,8 @@ export function AppDataInitializer({ onProgress, onComplete }: AppDataProgressPr
         ]
 
         // Wave 2: Dữ liệu phụ — tải sau (không block navigation)
+        // Revenue và Expense đã được tải tựđộng với date-range filter ở từng trang riêng.
         const backgroundTasks = [
-            { key: ['revenue'],        fn: fetchRevenue,    msg: 'Khoản thu',      stale: FIVE_MINUTES },
-            { key: ['expense'],        fn: fetchExpense,    msg: 'Khoản chi',      stale: FIVE_MINUTES },
             { key: ['debts-all'],      fn: fetchDebts,      msg: 'Công nợ',        stale: FIVE_MINUTES },
             { key: ['zalo-users-all'], fn: fetchZaloUsers,  msg: 'Zalo',           stale: FIVE_MINUTES },
         ]
@@ -95,8 +93,9 @@ export function AppDataInitializer({ onProgress, onComplete }: AppDataProgressPr
         const interval = setInterval(() => {
             queryClient.invalidateQueries({ queryKey: ['clients-all'] })
             queryClient.invalidateQueries({ queryKey: ['contracts-all'] })
-            queryClient.invalidateQueries({ queryKey: ['revenue'] })
-            queryClient.invalidateQueries({ queryKey: ['expense'] })
+            // revenue và expense: invalidate theo prefix, bao phủ mọi date-range
+            queryClient.invalidateQueries({ queryKey: ['revenue'], exact: false })
+            queryClient.invalidateQueries({ queryKey: ['expense'], exact: false })
             queryClient.invalidateQueries({ queryKey: ['debts-all'] })
             queryClient.invalidateQueries({ queryKey: ['zalo-users-all'] })
         }, TEN_MINUTES)

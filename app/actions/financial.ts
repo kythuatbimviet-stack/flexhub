@@ -52,6 +52,38 @@ export async function fetchRevenue() {
     }
 }
 
+export async function fetchRevenueByDateRange(startDate?: string, endDate?: string) {
+    const supabase = await createAdminClient()
+    try {
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        let query = supabase
+            .from('revenue')
+            .select(`
+                *,
+                branches (name),
+                clients (member_name)
+            `)
+            .order('recorded_at', { ascending: false })
+
+        // Apply RBAC filters (giữ nguyên từ fetchRevenue)
+        if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
+            query = query.in('branch_id', accessInfo.access.allowedBranchIds)
+        }
+
+        // Apply date range filter at server side
+        if (startDate) query = query.gte('recorded_at', startDate)
+        if (endDate) query = query.lte('recorded_at', endDate + 'T23:59:59')
+
+        const { data, error } = await query
+        if (error) throw error
+        return { success: true, data }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
 export async function createRevenue(data: any) {
     const supabase = await createClient()
     try {
@@ -228,6 +260,37 @@ export async function fetchExpense() {
         return { success: true, data }
     } catch (error: any) {
         console.error('Fetch Expense Failed:', error.message)
+        return { success: false, error: error.message }
+    }
+}
+
+export async function fetchExpenseByDateRange(startDate?: string, endDate?: string) {
+    const supabase = await createAdminClient()
+    try {
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        let query = supabase
+            .from('expense')
+            .select(`
+                *,
+                branches (name, short_name)
+            `)
+            .order('recorded_at', { ascending: false })
+
+        // Apply RBAC filters (giữ nguyên từ fetchExpense)
+        if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
+            query = query.in('branch_id', accessInfo.access.allowedBranchIds)
+        }
+
+        // Apply date range filter at server side
+        if (startDate) query = query.gte('recorded_at', startDate)
+        if (endDate) query = query.lte('recorded_at', endDate + 'T23:59:59')
+
+        const { data, error } = await query
+        if (error) throw error
+        return { success: true, data }
+    } catch (error: any) {
         return { success: false, error: error.message }
     }
 }

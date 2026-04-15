@@ -14,10 +14,9 @@ export async function fetchDebts() {
             .from('debts')
             .select(`
                 *,
-                contracts (*),
                 clients (id, member_name, phone, avatar_url, email, dob, height, weight),
                 branches (name),
-                debt_installments (*, revenue:revenue_id (payment_method))
+                debt_installments (id, amount, status, due_date, revenue:revenue_id (payment_method))
             `)
             .order('created_at', { ascending: false })
 

@@ -41,7 +41,7 @@ import {
     RotateCcw
 } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { fetchRevenue, bulkDeleteRevenue, deleteRevenue } from '@/app/actions/financial'
+import { fetchRevenueByDateRange, bulkDeleteRevenue, deleteRevenue } from '@/app/actions/financial'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchContractById, sendPaymentConfirmationAction } from '@/app/actions/contracts'
 import { fetchUsers } from '@/app/actions/users'
@@ -79,12 +79,13 @@ export default function RevenuePage() {
 
     const queryClient = useQueryClient()
     const { data: revenueData, refetch: originalRefetch } = useQuery({
-        queryKey: ['revenue'],
+        queryKey: ['revenue', startDate, endDate],
         queryFn: async () => {
-            const result = await fetchRevenue()
+            const result = await fetchRevenueByDateRange(startDate || undefined, endDate || undefined)
             if (!result.success) throw new Error(result.error)
             return result.data
         },
+        staleTime: 5 * 60 * 1000, // 5 phút
     })
 
     const refetch = () => {
@@ -156,14 +157,10 @@ export default function RevenuePage() {
             const matchesBranch = branchFilter === 'all' || item.branch_id === branchFilter
             const matchesCategory = categoryFilter === 'all' || item.category_id === categoryFilter
             const matchesPaymentMethod = paymentMethodFilter === 'all' || item.payment_method === paymentMethodFilter
-            
-            const itemDate = item.recorded_at?.split('T')[0]
-            const matchesStartDate = !startDate || (itemDate && itemDate >= startDate)
-            const matchesEndDate = !endDate || (itemDate && itemDate <= endDate)
-
-            return matchesSearch && matchesBranch && matchesCategory && matchesPaymentMethod && matchesStartDate && matchesEndDate
+            // Date filter đã xử lý ở server-side, không cần filter lại ở đây
+            return matchesSearch && matchesBranch && matchesCategory && matchesPaymentMethod
         })
-    }, [revenueData, searchQuery, branchFilter, categoryFilter, paymentMethodFilter, startDate, endDate])
+    }, [revenueData, searchQuery, branchFilter, categoryFilter, paymentMethodFilter])
 
     const stats = React.useMemo(() => {
         return filteredRevenue.reduce((acc: any, item: any) => {
