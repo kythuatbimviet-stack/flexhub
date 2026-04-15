@@ -6,13 +6,36 @@ const FOLDER_ID = "1vKraumWp05a1QkhVr8aUbup0sgR-6sIH";
 function doPost(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
-    const record = payload.record; // New record
+    
+    // 1. CHẾ ĐỘ GỬI TRỰC TIẾP (DIRECT POST)
+    // Dùng khi Web App gửi thẳng subject/message/pdfBase64 mà không qua database webhook
+    if (!payload.record && payload.email) {
+      console.log("Direct POST request target: " + payload.email);
+      let pdfBlob = null;
+      if (payload.pdfBase64) {
+        pdfBlob = Utilities.newBlob(Utilities.base64Decode(payload.pdfBase64), 'application/pdf', payload.fileName || 'document.pdf');
+      }
+      
+      webapp_guiemail(
+        payload.subject || "Thông tin từ Eva's Fit", 
+        payload.email, 
+        pdfBlob, 
+        payload.name || "Quý khách", 
+        null, // contract object is missing in direct post, but we have the fields
+        payload.message || ""
+      );
+      
+      return ContentService.createTextOutput(JSON.stringify({ success: true, method: "direct_post" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const record = payload.record; // New record from Supabase Webhook
     const type = payload.type; // INSERT, UPDATE
 
     // Log the event type for debugging
     console.log("Event Type: " + type + " | Contract ID: " + record.id);
     
-    // 1. PDF GENERATION LOGIC
+    // 2. PDF GENERATION LOGIC
     if (record.contract_file_url === 'create_contract') { 
       const contract = fetchFullContractData(record.id);
       tg_log("Tạo hợp đồng mới","Mã hợp đồng"+ record.id,JSON.stringify(contract))     
@@ -22,13 +45,16 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 2. SHARING LOGIC (ZALO & EMAIL)
+    // 3. SHARING LOGIC (ZALO & EMAIL)
+    // - Zalo: Gửi khi cột sendzalo chứa giá trị khác 'done'
+    // - Email: CHỈ gửi khi cột sendemail có giá trị là 'trigger_email' (Tránh vòng lặp)
     const isZaloReq = record.sendzalo && record.sendzalo !== 'done';
-    const isEmailReq = record.sendemail && record.sendemail !== 'done';
+    const isEmailReq = record.sendemail === 'trigger_email';
 
     if (isZaloReq || isEmailReq) {
-      console.log("Processing sharing request for contract ID: " + record.id);
+      console.log("Processing sharing request for contract ID: " + record.id + " | EmailReq: " + isEmailReq);
       const contract = fetchFullContractData(record.id);
+      const branchName = (contract.branches && contract.branches.name) || "Eva's Fit";
       
       const fileId = extractFileIdFromUrl(contract.contract_file_url);
       let pdfBlob = null;
@@ -44,7 +70,7 @@ function doPost(e) {
         const zaloUserId = contract.zalo_id || (contract.clients && contract.clients.zalo_id);
         if (zaloUserId) {
           tg_log("Gửi Zalo khách ", "Zalo:"+ contract.zalo_id, "Mã hợp đồng"+record.id)     
-          const msg = `Eva's Fit gửi chị ${contract.member_name} hợp đồng điện tử. Chị vui lòng xem file đính kèm.`;
+          const msg = `${branchName} gửi chị ${contract.member_name} hợp đồng điện tử. Chị vui lòng xem file đính kèm.`;
           webapp_guizalo(zaloUserId, msg, pdfBlob);
           updateSupabaseSharingStatus(contract.id, 'sendzalo', 'done');
         } else {
@@ -56,39 +82,36 @@ function doPost(e) {
         const email = contract.email || (contract.clients && contract.clients.email);
         if (email) {
           tg_log("Gửi Email khách ", "Email:"+ contract.email, "Mã hợp đồng"+record.id)     
-          const subject = `Hợp đồng ${contract.member_name} - Eva's Fit Nam Định`;
-          const customMessage = record.email_message || ""; // Check if dynamic message was passed in record
+          const subject = `Hợp đồng ${contract.member_name} - ${branchName}`;
+          const customMessage = record.email_message || ""; // Lấy nội dung tùy chỉnh từ cột email_message trong DB
           webapp_guiemail(subject, email, pdfBlob, contract.member_name, contract, customMessage);
-          updateSupabaseSharingStatus(contract.id, 'sendemail', 'done');
+          
+          // Sau khi gửi xong, ghi đè 'trigger_email' bằng dấu thời gian (Timestamp)
+          // Vì Timestamp !== 'trigger_email', Webhook tiếp theo sẽ không gửi lặp lại.
+          updateSupabaseSharingStatus(contract.id, 'sendemail', new Date().toISOString());
         } else {
           console.warn("No Email found for contract: " + record.id);
         }
       }
     }
 
-    // 3. XNTT - XÁC NHẬN THANH TOÁN (Email HTML, không PDF)
-    // Kích hoạt khi cột sendemail_xntt chứa JSON payload thay vì 'done' hoặc 'error'
-    const isXNTTReq = record.sendemail_xntt &&
-                      record.sendemail_xntt !== 'done' &&
-                      record.sendemail_xntt !== 'error';
+    // 4. XNTT - XÁC NHẬN THANH TOÁN (Email HTML, không PDF)
+    const isXNTTReq = record.sendemail_xntt && record.sendemail_xntt !== 'done' && record.sendemail_xntt !== 'error';
 
     if (isXNTTReq) {
       try {
-        const xnttData = JSON.parse(record.sendemail_xntt); // { email, subject, htmlBody }
-        if (!xnttData.email || !xnttData.subject || !xnttData.htmlBody) {
-          throw new Error("Payload XNTT thiếu email/subject/htmlBody");
-        }
+        const xnttData = JSON.parse(record.sendemail_xntt);
+        const branchNameXNTT = (record.branches && record.branches.name) || "Eva's Fit";
+
         tg_log("XNTT", "Gửi XNTT", "To: " + xnttData.email);
         GmailApp.sendEmail(xnttData.email, xnttData.subject, "", {
           htmlBody: xnttData.htmlBody,
-          name: "Eva's Fit"
+          name: branchNameXNTT
         });
         updateSupabaseSharingStatus(record.id, 'sendemail_xntt', 'done');
-        tg_log("XNTT", "Thành công", "Đã gửi XNTT tới " + xnttData.email);
       } catch (xnttErr) {
         console.error("Lỗi xử lý XNTT: " + xnttErr.message);
         updateSupabaseSharingStatus(record.id, 'sendemail_xntt', 'error');
-        tg_log("XNTT", "LỖI gửi XNTT", xnttErr.message);
       }
     }
 
@@ -406,19 +429,20 @@ function webapp_guiemail(subject, email, pdfBlob, client_name, contract, customM
     }
 
     // Default system email body
+    const branchName = (contract && contract.branches && contract.branches.name) || "Eva's Fit";
     const htmlBody = emailMessage ? 
       `<div style="font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6; white-space: pre-wrap;">${emailMessage}</div>` :
       `<div style="font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6;">
-          <p>Eva's Fit xin chào chị <strong>${client_name}</strong>,</p>
+          <p>${branchName} xin chào chị <strong>${client_name}</strong>,</p>
           <p>Cảm ơn chị đã tin tưởng và lựa chọn tập luyện cùng Eva's Fit.</p>
           <p>Vui lòng xem chi tiết thông tin đính kèm.</p>
           <br>
-          <p>Trân trọng,<br><strong>Đội ngũ Eva's Fit</strong></p>
+          <p>Trân trọng,<br><strong>Đội ngũ ${branchName}</strong></p>
       </div>`;
 
     const mailOptions = {
       htmlBody: htmlBody,
-      name: "Eva's Fit"
+      name: branchName
     };
 
     if (pdfBlob) {

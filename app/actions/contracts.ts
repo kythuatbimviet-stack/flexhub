@@ -685,7 +685,7 @@ export async function generateContractId(branchId?: string | null) {
 
 export async function checkContractIdExists(id: string) {
     try {
-        const supabase = await createSupabaseClient()
+        const supabase = await createClient()
         const { data, error } = await supabase
             .from('contracts')
             .select('id')
@@ -731,7 +731,7 @@ export async function shareContractViaEmail(id: string, message?: string) {
         const { error } = await supabase
             .from('contracts')
             .update({ 
-                sendemail: new Date().toISOString(),
+                sendemail: 'trigger_email',
                 // We'll pass the message so GAS can see it in the record
                 email_message: message || null
             })
@@ -814,10 +814,15 @@ export async function sendCustomContractEmail(id: string, to: string, subject: s
                 throw new Error(result.error || 'Webhook chi nhánh trả về lỗi')
             }
 
-            // Update status in DB
+            // Update status in DB with Timestamp
+            // [IMPORTANT] Setting it to ISO date directly (not 'trigger_email') 
+            // prevents the Supabase Webhook from triggering a SECOND email in GAS.
             await supabase
                 .from('contracts')
-                .update({ sendemail: new Date().toISOString() })
+                .update({ 
+                    sendemail: new Date().toISOString(),
+                    email_message: body // Sync the custom body to DB
+                })
                 .eq('id', id)
 
             return { success: true, method: 'branch_webhook' }
