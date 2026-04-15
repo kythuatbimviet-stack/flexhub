@@ -116,7 +116,7 @@ const ClientCardSection = ({ title, icon: Icon, children }: any) => (
 
 const ClientInfoRow = ({ label, value, name, type = "text", options, isEditing, formData, onChange, onSelectChange }: any) => {
     const listId = options && type !== 'select' ? `${name}-list` : undefined;
-    const requiredNames = ['member_name', 'phone', 'training_time', 'branch_id', 'status', 'assigned_pt', 'pt_name', 'age', 'height', 'weight', 'source', 'goal'];
+    const requiredNames = ['member_name', 'phone', 'training_time', 'branch_id', 'status', 'assigned_pt', 'pt_name', 'height', 'weight', 'source', 'goal'];
     return (
         <div className="space-y-1">
             <Label className="text-xs font-medium text-slate-600 dark:text-slate-200">
@@ -152,12 +152,12 @@ const ClientInfoRow = ({ label, value, name, type = "text", options, isEditing, 
                         <Input
                             name={name}
                             type={type}
+                            list={listId}
                             step={type === 'number' ? '0.1' : undefined}
                             value={formData[name] ?? ''}
                             onChange={onChange}
                             className={cn(
                                 "w-full rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-blue-500 shadow-sm",
-                                name === 'age' && "bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 cursor-not-allowed",
                                 name === 'id' && "bg-slate-50 dark:bg-slate-800/50 text-red-600 dark:text-red-500 font-bold cursor-not-allowed"
                             )}
                         />
@@ -440,7 +440,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target
         const type = (e.target as any).type
-        const finalValue = type === 'number' ? parseFloat(value) : value
+        const finalValue = type === 'number' ? (value === '' ? null : parseFloat(value)) : value
 
         setFormData((prev: any) => {
             const newData = { ...prev, [name]: finalValue }
@@ -899,7 +899,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                             </div>
 
                                             <ClientInfoRow label="Khung giờ chị có thể đi tập là khung nào?" value={formData.training_time} name="training_time" {...sharedRowProps} />
-                                            <ClientInfoRow label="Mục tiêu tập luyện của chị hiện tại là gì?" value={formData.goal} name="goal" type="select" options={clientGoals.map((g: any) => g.nam)} {...sharedRowProps} />
+                                            <ClientInfoRow label="Mục tiêu tập luyện của chị hiện tại là gì?" value={formData.goal} name="goal" {...sharedRowProps} />
 
                                             <ClientInfoRow
                                                 label="Chị đã từng tập luyện bộ môn nào chưa? Trong thời gian tập luyện đó kết quả đạt được là gì? (Nếu chưa tập bỏ qua)"
