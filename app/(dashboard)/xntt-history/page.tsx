@@ -93,6 +93,8 @@ export default function XnttHistoryPage() {
             if (!result.success) throw new Error(result.error)
             return result.data
         },
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
     })
 
     const filteredHistory = React.useMemo(() => {

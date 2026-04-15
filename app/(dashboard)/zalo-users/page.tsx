@@ -85,6 +85,7 @@ export default function ZaloUsersPage() {
             return result.data ?? []
         },
         staleTime: 30 * 60 * 1000,
+        refetchOnWindowFocus: false,
         select: (data) => Array.isArray(data) ? data : [],
     })
 

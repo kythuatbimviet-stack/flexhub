@@ -25,26 +25,32 @@ export async function fetchWeightRecords() {
 }
 
 /**
- * fetchWeightRecordsRecent — Fetch chỉ N ngày gần nhất để tăng tốc load.
+ * fetchWeightRecordsRecent — Fetch chỉ N ngày gần nhất HOẶC theo khoảng ngày cụ thể.
  * 
  * ✅ Filter server-side: chỉ transfer data thực sự cần thiết.
  * ✅ RBAC qua Supabase RLS (createClient dùng session của user).
- * ✅ Default 180 ngày — đủ cho Gantt view thông thường.
- * 
- * @param days Số ngày gần nhất cần lấy (default: 180)
+ * ✅ Hỗ trợ nạp theo khoảng ngày (startDate, endDate) để bộ lọc nhanh hoạt động hiệu quả.
+ * ✅ Giới hạn .limit(1000) để đảm bảo không treo hệ thống khi data quá lớn.
  */
-export async function fetchWeightRecordsRecent(days: number = 180) {
+export async function fetchWeightRecordsRecent(days: number = 180, startDate?: string, endDate?: string) {
     try {
         const supabase = await createClient()
-        const since = new Date()
-        since.setDate(since.getDate() - days)
-        const sinceStr = since.toISOString().split('T')[0] // YYYY-MM-DD
+        let query = supabase.from('weight_tracking').select('*')
 
-        const { data, error } = await supabase
-            .from('weight_tracking')
-            .select('*')
-            .gte('measurement_date', sinceStr)
+        if (startDate && endDate) {
+            // Lọc theo khoảng ngày cụ thể (cho bộ lọc nhanh)
+            query = query.gte('measurement_date', startDate).lte('measurement_date', endDate)
+        } else {
+            // Lọc theo số ngày gần nhất (mặc định cũ)
+            const since = new Date()
+            since.setDate(since.getDate() - days)
+            const sinceStr = since.toISOString().split('T')[0] // YYYY-MM-DD
+            query = query.gte('measurement_date', sinceStr)
+        }
+
+        const { data, error } = await query
             .order('measurement_date', { ascending: false })
+            .limit(1000)
 
         if (error) {
             console.error('Fetch Recent Weight Records Error:', error)

@@ -208,7 +208,8 @@ export default function ClientsPage() {
             const res = await fetchBranches()
             return res.success ? (res.data ?? []) : []
         },
-        staleTime: ONE_HOUR,
+        staleTime: 30 * 60 * 1000,
+        refetchOnWindowFocus: false,
     })
 
     const { data: filterOptionsResult } = useQuery({
@@ -225,8 +226,8 @@ export default function ClientsPage() {
             const res = await fetchClients()
             return res.success ? (res.data ?? []) : []
         },
-        staleTime: FIVE_MINUTES,
-        refetchOnWindowFocus: true,     // Auto-refresh when switching back to tab
+        staleTime: 30 * 1000,
+        refetchOnWindowFocus: false, // Prevents aggressive background refetching which could be distracting
         refetchOnReconnect: true,       // Auto-refresh when network reconnects
     })
 
@@ -773,11 +774,11 @@ export default function ClientsPage() {
                                     <TableRow key={client.id} onClick={(e) => handleRowClick(client, e)}
                                         className={cn('border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 cursor-pointer group transition-colors',
                                             selectedRows.includes(client.id) && 'bg-red-50/30 dark:bg-red-950/20')}>
-                                        <TableCell className="pl-6" onClick={(e) => e.stopPropagation()}>
+                                        <TableCell className="py-4 pl-6" onClick={(e) => e.stopPropagation()}>
                                             <Checkbox checked={selectedRows.includes(client.id)}
                                                 onCheckedChange={() => toggleRow(client.id)} className="rounded-lg" />
                                         </TableCell>
-                                        <TableCell className="py-2">
+                                        <TableCell className="py-4">
                                             <Popover open={hoveredClientId === client.id} onOpenChange={(open) => !open && setHoveredClientId(null)}>
                                                 <PopoverTrigger asChild>
                                                     <div 
@@ -810,19 +811,19 @@ export default function ClientsPage() {
                                                 />
                                             </Popover>
                                         </TableCell>
-                                        <TableCell className="hidden md:table-cell">
+                                        <TableCell className="py-4 hidden md:table-cell">
                                             <div className="flex flex-col text-sm text-slate-800 dark:text-gray-300">
                                                 <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-slate-500" />{client.phone || '-'}</div>
                                                 <div className="flex items-center gap-1.5 text-slate-500 dark:text-gray-400 text-[11px] font-medium"><Mail className="w-3 h-3" />{client.email || 'N/A'}</div>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="hidden sm:table-cell">
+                                        <TableCell className="py-4 hidden sm:table-cell">
                                             <div className="flex flex-col text-sm text-slate-800 dark:text-gray-300">
                                                 <div className="flex items-center gap-1.5"><Dumbbell className="w-3 h-3 text-red-500" />{client.pt_name || 'Chưa gán PT'}</div>
                                                 <div className="flex items-center gap-1.5 text-slate-500 dark:text-gray-400 text-[11px] font-medium"><Building2 className="w-3 h-3" />{branches.find((b: any) => b.id === client.branch_id)?.name || 'Hệ thống'}</div>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="hidden lg:table-cell">
+                                        <TableCell className="py-4 hidden lg:table-cell">
                                             <div className="flex flex-col text-[11px] text-slate-800 dark:text-gray-300 leading-normal font-medium">
                                                 <div className="flex items-center gap-1.5">
                                                     <Activity className="w-3 h-3 text-red-500" />
@@ -844,7 +845,7 @@ export default function ClientsPage() {
                                                 {client.updated_at ? new Date(client.updated_at).toLocaleDateString('vi-VN') : '-'}
                                             </div>
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell className="py-4">
                                             <Badge variant="secondary" className={cn(
                                                 'border-none rounded-xl px-2.5 py-0.5 text-[9px] font-medium uppercase tracking-widest',
                                                 client.status === 'Chốt đăng kí' && 'bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30',
@@ -855,7 +856,7 @@ export default function ClientsPage() {
                                                 {client.status}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-right pr-8">
+                                        <TableCell className="py-4 text-right pr-8">
                                             <div className="flex items-center justify-end gap-1">
                                                 <Button variant="ghost" size="icon"
                                                     onClick={(e) => { e.stopPropagation(); setSelectedClient(client); setIsDetailsOpen(true) }}

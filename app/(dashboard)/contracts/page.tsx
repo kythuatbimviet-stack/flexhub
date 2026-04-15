@@ -389,7 +389,8 @@ export default function ContractsPage() {
             const res = await fetchContractsLite()  // ✅ Lite: nhanh hơn ~60%
             return res.success ? (res.data ?? []) : []
         },
-        staleTime: TEN_MINUTES,            // ✅ Match với AppDataInitializer
+        staleTime: 30 * 1000,
+        refetchOnWindowFocus: false,
         select: (data) => Array.isArray(data) ? data : [],
     })
 
@@ -399,7 +400,8 @@ export default function ContractsPage() {
             const res = await fetchBranches()
             return res.success ? (res.data ?? []) : []
         },
-        staleTime: Infinity,
+        staleTime: 30 * 60 * 1000,
+        refetchOnWindowFocus: false,
     })
 
     const allowedBranches = React.useMemo(() => {

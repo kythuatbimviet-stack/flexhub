@@ -72,6 +72,7 @@ import {
     format
 } from 'date-fns'
 
+const FIVE_MINUTES = 5 * 60 * 1000
 const THIRTY_MINUTES = 30 * 60 * 1000
 
 export default function DebtPage() {
@@ -149,22 +150,21 @@ export default function DebtPage() {
         queryKey: ['debts-all'],
         queryFn: async () => {
             const res = await fetchDebts()
-            if (!res.success) {
-                // Throw error instead of returning [] to let React Query handle error states
-                throw new Error(res.error || 'Unauthorized or failed to fetch debts')
-            }
+            if (!res.success) throw new Error(res.error || 'Unauthorized or failed to fetch debts')
             return res.data ?? []
         },
-        staleTime: THIRTY_MINUTES,
+        staleTime: 30 * 1000,
+        refetchOnWindowFocus: false,
     })
 
-    const { data: branches = [] } = useQuery({
+    const { data: branches = [] } = useQuery<any[]>({
         queryKey: ['branches'],
         queryFn: async () => {
             const res = await fetchBranches()
             return res.success ? (res.data ?? []) : []
         },
-        staleTime: Infinity,
+        staleTime: THIRTY_MINUTES,
+        refetchOnWindowFocus: false,
     })
 
     const filteredDebts = React.useMemo(() => {

@@ -386,7 +386,7 @@ export function ContractDetailsSheet({
 
                 // ⚡ ƯU TIÊN: Sử dụng ngay initialClient nếu có (Trường hợp 1)
                 const targetClient = initialClient || (initialClientId ? clients.find(c => c.id === initialClientId) : null)
-                
+
                 if (targetClient) {
                     initialData.client_id = targetClient.id
                     initialData.member_name = targetClient.member_name
@@ -424,7 +424,7 @@ export function ContractDetailsSheet({
                         initialData.bank_name = branch.bank_name || ''
                         initialData.bank_code = branch.bank_code || ''
                     }
-                    
+
                     // Mã số sẽ tự động sinh khi lưu (save)
                     initialData.id = '(Tự động)'
                 }
@@ -540,22 +540,22 @@ export function ContractDetailsSheet({
             branch_id: branchId,
             id: isCreateMode ? '(Tự động)' : prev.id, // Giữ nguyên logic tự động khi đổi chi nhánh trong lúc tạo mới
             facility_name: branch?.name || '',
-                address: branch?.address || '',
-                center_phone: branch?.center_phone || branch?.phone || '',
-                center_address: branch?.center_address || branch?.address || '',
-                center_representative: branch?.representative || '',
-                signature_center: branch?.representative || '',
-                account_number: branch?.account_number?.toString() || '',
-                account_holder: branch?.account_holder || '',
-                bank_name: branch?.bank_name || '',
-                bank_code: branch?.bank_code || '',
-                membership_id: '',
-                package_name: '',
-                package_price: '0',
-                total_amount: '0',
-                package_duration: '',
-                end_date: ''
-            }))
+            address: branch?.address || '',
+            center_phone: branch?.center_phone || branch?.phone || '',
+            center_address: branch?.center_address || branch?.address || '',
+            center_representative: branch?.representative || '',
+            signature_center: branch?.representative || '',
+            account_number: branch?.account_number?.toString() || '',
+            account_holder: branch?.account_holder || '',
+            bank_name: branch?.bank_name || '',
+            bank_code: branch?.bank_code || '',
+            membership_id: '',
+            package_name: '',
+            package_price: '0',
+            total_amount: '0',
+            package_duration: '',
+            end_date: ''
+        }))
     }
 
     const handlePackageChange = (packageId: string) => {
@@ -564,7 +564,7 @@ export function ContractDetailsSheet({
             const originalUnitPrice = pkg.unit_price || 0
             const finalUnitPrice = pkg.discounted_price || pkg.unit_price || 0
             const qty = parseInt(formData.quantity || '1')
-            
+
             const pkgPrice = originalUnitPrice * qty
             const totalAmount = finalUnitPrice * qty
             const totalSaving = (originalUnitPrice - finalUnitPrice) * qty
@@ -603,7 +603,7 @@ export function ContractDetailsSheet({
                 if (pkg) {
                     const originalUnitPrice = pkg.unit_price || 0
                     const finalUnitPrice = pkg.discounted_price || pkg.unit_price || 0
-                    
+
                     const pkgPrice = originalUnitPrice * qty
                     const totalAmount = finalUnitPrice * qty
                     const totalSaving = (originalUnitPrice - finalUnitPrice) * qty
@@ -1100,9 +1100,9 @@ export function ContractDetailsSheet({
                                                 <div className="flex items-center gap-1.5">
                                                     <div className={cn("w-1.5 h-1.5 rounded-full shrink-0",
                                                         (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-500" :
-                                                        (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-500" :
-                                                        (formData.status || defaultStatus) === 'Hết hạn HĐ' ? "bg-rose-500" :
-                                                        "bg-slate-400"
+                                                            (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-500" :
+                                                                (formData.status || defaultStatus) === 'Hết hạn HĐ' ? "bg-rose-500" :
+                                                                    "bg-slate-400"
                                                     )} />
                                                     <SelectValue placeholder="Trạng thái" />
                                                 </div>
@@ -1113,9 +1113,9 @@ export function ContractDetailsSheet({
                                                         <div className="flex items-center gap-2">
                                                             <div className={cn("w-1.5 h-1.5 rounded-full",
                                                                 s.nam === 'Chờ ký HĐ' ? "bg-amber-500" :
-                                                                s.nam === 'Đã ký HĐ' ? "bg-emerald-500" :
-                                                                s.nam === 'Hết hạn HĐ' ? "bg-rose-500" :
-                                                                "bg-slate-400"
+                                                                    s.nam === 'Đã ký HĐ' ? "bg-emerald-500" :
+                                                                        s.nam === 'Hết hạn HĐ' ? "bg-rose-500" :
+                                                                            "bg-slate-400"
                                                             )} />
                                                             {s.nam}
                                                         </div>
@@ -1127,13 +1127,13 @@ export function ContractDetailsSheet({
                                         <div className={cn(
                                             "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium tracking-tight",
                                             (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-50 text-amber-600 border border-amber-100 dark:bg-amber-950/20 dark:border-amber-900/30" :
-                                            (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" :
-                                            (formData.status || defaultStatus) === 'Hết hạn HĐ' ? "bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30" :
-                                            "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
+                                                (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" :
+                                                    (formData.status || defaultStatus) === 'Hết hạn HĐ' ? "bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30" :
+                                                        "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
                                         )}>
                                             <div className={cn("w-1.5 h-1.5 rounded-full",
                                                 (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-500" :
-                                                        "bg-slate-400"
+                                                    "bg-slate-400"
                                             )} />
                                             {formData.status || defaultStatus}
                                         </div>
@@ -1180,11 +1180,47 @@ export function ContractDetailsSheet({
                             </div>
                         )}
                     </div>
-
+                    {/* Section: Gửi Hợp đồng Khách hàng */}
+                    <ContractCardSection title="GỬI HỢP ĐỒNG" icon={Cloud}>
+                        <div className="space-y-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-wider flex items-center gap-2">
+                                        <Mail className="w-3 h-3" />
+                                        Gửi Email
+                                    </Label>
+                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                                        {formData.sendemail ? new Date(formData.sendemail).toLocaleDateString('vi-VN', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        }) : 'Chưa gửi'}
+                                    </p>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-wider flex items-center gap-2">
+                                        <MessageSquare className="w-3 h-3" />
+                                        Gửi Zalo
+                                    </Label>
+                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                                        {formData.sendzalo ? new Date(formData.sendzalo).toLocaleDateString('vi-VN', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        }) : 'Chưa gửi'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </ContractCardSection>
                     {/* Section: Thông tin khách hàng */}
                     <ContractCardSection title="KHÁCH HÀNG" icon={User}>
                         <div className="space-y-5">
-                            <ContractDetailRow label="Chọn Khách hàng" value={formData.member_name} name="client_id" icon={Users} {...sharedRowProps}>
+                            <ContractDetailRow label="Khách hàng" value={formData.member_name} name="client_id" icon={Users} {...sharedRowProps}>
                                 <Popover modal={true} open={clientOpen} onOpenChange={setClientOpen}>
                                     <PopoverTrigger asChild>
                                         <Button
@@ -1314,7 +1350,7 @@ export function ContractDetailsSheet({
                     </ContractCardSection>
 
                     {/* Section: Chi tiết hợp đồng */}
-                    <ContractCardSection title="Chi tiết hợp đồng" icon={Package}>
+                    <ContractCardSection title="HỢP ĐỒNG" icon={Package}>
                         <div className="space-y-5">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Phân loại gói" value={formData.package_type} name="package_type" icon={Package} {...sharedRowProps}>
@@ -1676,43 +1712,6 @@ export function ContractDetailsSheet({
                         </ContractCardSection>
                     )}
 
-                    {/* Section: Gửi Hợp đồng Khách hàng */}
-                    <ContractCardSection title="GỬI HỢP ĐỒNG" icon={Cloud}>
-                        <div className="space-y-5">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-wider flex items-center gap-2">
-                                        <Mail className="w-3 h-3" />
-                                        Gửi Email
-                                    </Label>
-                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
-                                        {formData.sendemail ? new Date(formData.sendemail).toLocaleDateString('vi-VN', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        }) : 'Chưa gửi'}
-                                    </p>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-wider flex items-center gap-2">
-                                        <MessageSquare className="w-3 h-3" />
-                                        Gửi Zalo
-                                    </Label>
-                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
-                                        {formData.sendzalo ? new Date(formData.sendzalo).toLocaleDateString('vi-VN', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        }) : 'Chưa gửi'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </ContractCardSection>
                 </div>
 
                 {/* Sticky Footer */}

@@ -77,6 +77,8 @@ export default function UsersPage() {
             if (!result.success) throw new Error(result.error)
             return result.data
         },
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
     })
 
     // Sync selected user with updated data from refetch
@@ -95,7 +97,9 @@ export default function UsersPage() {
             const result = await fetchBranches()
             if (!result.success) return []
             return result.data
-        }
+        },
+        staleTime: 30 * 60 * 1000,
+        refetchOnWindowFocus: false,
     })
 
     // Derived unique values for filters

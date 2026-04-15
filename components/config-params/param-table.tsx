@@ -47,7 +47,9 @@ export function ParamTable({ tableName, searchTerm, groupColor, groupBg }: Param
 
     const { data: result, isLoading, error } = useQuery({
         queryKey: ['config-params', tableName],
-        queryFn: () => fetchConfigParams(tableName)
+        queryFn: () => fetchConfigParams(tableName),
+        staleTime: 10 * 60 * 1000,
+        refetchOnWindowFocus: false,
     })
 
     const deleteMutation = useMutation({

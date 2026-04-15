@@ -69,6 +69,8 @@ export default function BranchesPage() {
             if (!result.success) throw new Error(result.error)
             return result.data
         },
+        staleTime: 30 * 60 * 1000,
+        refetchOnWindowFocus: false,
     })
 
     const handleRowClick = (branch: any, e: React.MouseEvent) => {

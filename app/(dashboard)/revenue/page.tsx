@@ -85,7 +85,8 @@ export default function RevenuePage() {
             if (!result.success) throw new Error(result.error)
             return result.data
         },
-        staleTime: 5 * 60 * 1000, // 5 phút
+        staleTime: 30 * 1000, // 30 giây
+        refetchOnWindowFocus: false,
     })
 
     const refetch = () => {
@@ -100,6 +101,19 @@ export default function RevenuePage() {
             if (!result.success) throw new Error(result.error)
             return result.data
         },
+        staleTime: 30 * 60 * 1000,
+        refetchOnWindowFocus: false,
+    })
+
+    const { data: pts } = useQuery({
+        queryKey: ['users-pts'],
+        queryFn: async () => {
+            const result = await fetchUsers()
+            if (!result.success) throw new Error(result.error)
+            return result.data
+        },
+        staleTime: 10 * 60 * 1000,
+        refetchOnWindowFocus: false,
     })
 
 
@@ -117,25 +131,20 @@ export default function RevenuePage() {
 
         switch (value) {
             case 'today':
-                start = now
-                end = now
+                break
+            case 'yesterday':
+                start.setDate(now.getDate() - 1)
+                end.setDate(now.getDate() - 1)
                 break
             case 'this-week':
-                const day = now.getDay()
-                const diff = now.getDate() - day + (day === 0 ? -6 : 1)
-                start = new Date(now.setDate(diff))
-                end = new Date(now.setDate(diff + 6))
+                start.setDate(now.getDate() - now.getDay())
                 break
             case 'last-week':
-                const lastWeekNow = new Date()
-                const lastWeekDay = lastWeekNow.getDay()
-                const lastWeekDiff = lastWeekNow.getDate() - lastWeekDay - 6
-                start = new Date(lastWeekNow.setDate(lastWeekDiff))
-                end = new Date(lastWeekNow.setDate(lastWeekDiff + 6))
+                start.setDate(now.getDate() - now.getDay() - 7)
+                end.setDate(now.getDate() - now.getDay() - 1)
                 break
             case 'this-month':
                 start = new Date(now.getFullYear(), now.getMonth(), 1)
-                end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
                 break
             case 'last-month':
                 start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -145,6 +154,39 @@ export default function RevenuePage() {
 
         setStartDate(start.toISOString().split('T')[0])
         setEndDate(end.toISOString().split('T')[0])
+    }
+
+    const handleBulkDelete = async () => {
+        if (selectedRevenues.length === 0) return
+        if (confirm(`Bạn có chắc chắn muốn xóa ${selectedRevenues.length} bản ghi đã chọn?`)) {
+            try {
+                const result = await bulkDeleteRevenue(selectedRevenues)
+                if (result.success) {
+                    toast.success(`Đã xóa ${selectedRevenues.length} bản ghi thành công`)
+                    setSelectedRevenues([])
+                    refetch()
+                } else {
+                    toast.error(result.error)
+                }
+            } catch (error: any) {
+                toast.error(error.message)
+            }
+        }
+    }
+
+    const handleOpenDetail = (revenue: any) => {
+        setViewingRevenue(revenue)
+        setDetailSheetOpen(true)
+    }
+
+    const handleOpenEdit = (revenue: any) => {
+        setEditingRevenue(revenue)
+        setEditSheetOpen(true)
+    }
+
+    const handleOpenXntt = (revenue: any) => {
+        setSelectedXnttRevenue(revenue)
+        setXnttDialogOpen(true)
     }
 
     const filteredRevenue = React.useMemo(() => {

@@ -51,7 +51,9 @@ export default function TrainingLogsPage() {
     // Fetch PTs for filter
     const { data: filterOptions } = useQuery({
         queryKey: ['client-filter-options'],
-        queryFn: fetchClientFilterOptions
+        queryFn: fetchClientFilterOptions,
+        staleTime: 30 * 60 * 1000,
+        refetchOnWindowFocus: false,
     })
     const pts = filterOptions?.data?.pts || []
 
@@ -64,7 +66,9 @@ export default function TrainingLogsPage() {
             branchId: branchFilter === 'all' ? undefined : branchFilter,
             ptName: ptFilter === 'all' ? undefined : ptFilter,
             clientSearch: debouncedClientSearch || undefined
-        })
+        }),
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
     })
 
     // 2. Fetch Paginated Summary (Table)
@@ -78,7 +82,9 @@ export default function TrainingLogsPage() {
             clientSearch: debouncedClientSearch || undefined,
             page,
             pageSize
-        })
+        }),
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
     })
 
     const reportData = summaryResult?.data || []

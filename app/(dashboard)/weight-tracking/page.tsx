@@ -38,11 +38,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { format, isWithinInterval, parseISO } from 'date-fns'
+import { format, isWithinInterval, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { fetchWeightRecords, fetchWeightRecordsRecent, deleteWeightRecord, deleteBulkWeightRecords } from '@/app/actions/weight-tracking'
 import { fetchClients } from '@/app/actions/clients'
-import { fetchContracts } from '@/app/actions/contracts'
+import { fetchContractsLite } from '@/app/actions/contracts'
 import { fetchUsers } from '@/app/actions/users'
 import { WeightChart } from '@/components/weight-tracking/weight-chart'
 import { AddWeightDialog } from '@/components/weight-tracking/add-weight-dialog'
@@ -61,6 +61,7 @@ export default function WeightTrackingPage() {
     const urlClientId = searchParams.get('clientId')
 
     const [selectedClientId, setSelectedClientId] = React.useState<string>(urlClientId || 'all')
+    const [dateRangeType, setDateRangeType] = React.useState<string>('this-week')
     const [startDate, setStartDate] = React.useState<string>('')
     const [endDate, setEndDate] = React.useState<string>('')
     const [selectedRecord, setSelectedRecord] = React.useState<any>(null)
@@ -78,15 +79,63 @@ export default function WeightTrackingPage() {
     const FIVE_MINUTES = 5 * 60 * 1000
     const THIRTY_MINUTES = 30 * 60 * 1000
 
+    React.useEffect(() => {
+        const now = new Date()
+        let start: Date | null = null
+        let end: Date | null = null
+
+        switch (dateRangeType) {
+            case 'this-week':
+                start = startOfWeek(now, { weekStartsOn: 1 })
+                end = endOfWeek(now, { weekStartsOn: 1 })
+                break
+            case 'last-week':
+                const lastW = subWeeks(now, 1)
+                start = startOfWeek(lastW, { weekStartsOn: 1 })
+                end = endOfWeek(lastW, { weekStartsOn: 1 })
+                break
+            case 'next-week':
+                const nextW = addWeeks(now, 1)
+                start = startOfWeek(nextW, { weekStartsOn: 1 })
+                end = endOfWeek(nextW, { weekStartsOn: 1 })
+                break
+            case 'this-month':
+                start = startOfMonth(now)
+                end = endOfMonth(now)
+                break
+            case 'last-month':
+                const lastM = subMonths(now, 1)
+                start = startOfMonth(lastM)
+                end = endOfMonth(lastM)
+                break
+            case 'next-month':
+                const nextM = addMonths(now, 1)
+                start = startOfMonth(nextM)
+                end = endOfMonth(nextM)
+                break
+            case 'custom':
+                // Giữ nguyên giá trị startDate/endDate hiện tại
+                return
+            default:
+                return
+        }
+
+        if (start && end) {
+            setStartDate(format(start, 'yyyy-MM-dd'))
+            setEndDate(format(end, 'yyyy-MM-dd'))
+        }
+    }, [dateRangeType])
+
     const { data: records = [], isLoading: isLoadingRecords, refetch: refetchRecords, error: queryError } = useQuery<any[]>({
-        queryKey: ['weight-records'],
+        queryKey: ['weight-records', startDate, endDate], // ✅ Refetch khi ngày thay đổi
         queryFn: async () => {
-            const res = await fetchWeightRecordsRecent(180) // ✅ 180 ngày gần nhất, filter server-side
+            // Nếu là custom mà chưa chọn ngày, có thể nạp mặc định hoặc chờ
+            const res = await fetchWeightRecordsRecent(180, startDate, endDate)
             if (!res.success) throw new Error(res.error || 'Lỗi tải dữ liệu theo dõi cân nặng')
             return res.data ?? []
         },
-        staleTime: FIVE_MINUTES,          // ✅ Tránh refetch liên tục khi focus tab
-        refetchOnWindowFocus: false,       // ✅ Chỉ refetch khi user thao tác
+        staleTime: FIVE_MINUTES,
+        refetchOnWindowFocus: false,
         select: (data) => Array.isArray(data) ? data : [],
     })
 
@@ -109,12 +158,12 @@ export default function WeightTrackingPage() {
 
     // ── Contracts — Reuse cache từ AppDataInitializer (key: 'contracts-all') ──
     const { data: contracts = [] } = useQuery<any[]>({
-        queryKey: ['contracts-all'],       // ✅ Dùng đúng cache key chung
+        queryKey: ['contracts-all'],
         queryFn: async () => {
-            const res = await fetchContracts()
+            const res = await fetchContractsLite()
             return res.success ? (res.data ?? []) : []
         },
-        staleTime: THIRTY_MINUTES,
+        staleTime: 10 * 60 * 1000,          // ✅ Khớp 10p của AppDataInitializer
         select: (data) => Array.isArray(data) ? data : [],
     })
 
@@ -338,11 +387,12 @@ export default function WeightTrackingPage() {
 
     const resetFilters = () => {
         setSearchTerm('')
+        setSelectedClientId('all')
         setFilterBranch('all')
         setFilterPT('all')
         setFilterPackage('all')
-        setStartDate('')
-        setEndDate('')
+        setDateRangeType('this-week')
+        // startDate/endDate tự động reset qua useEffect của dateRangeType
         toast.info('Đã xóa bộ lọc')
     }
 
@@ -485,6 +535,22 @@ export default function WeightTrackingPage() {
                                             className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2"
                                         >
                                             <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
+                                                <div className="col-span-1 lg:w-40">
+                                                    <Select value={dateRangeType} onValueChange={setDateRangeType}>
+                                                        <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-slate-50 dark:bg-gray-800/50 text-xs w-40 font-bold text-blue-600">
+                                                            <SelectValue placeholder="Thời gian" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                            <SelectItem value="this-week">Tuần này</SelectItem>
+                                                            <SelectItem value="last-week">Tuần trước</SelectItem>
+                                                            <SelectItem value="next-week">Tuần tới</SelectItem>
+                                                            <SelectItem value="this-month">Tháng này</SelectItem>
+                                                            <SelectItem value="last-month">Tháng trước</SelectItem>
+                                                            <SelectItem value="next-month">Tháng tới</SelectItem>
+                                                            <SelectItem value="custom">Tùy chọn</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
                                                 <div className="relative flex-1 lg:w-44">
                                                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                                     <Input

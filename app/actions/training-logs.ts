@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase-server'
 import { getAccessFilter } from '@/lib/access-filter'
+import { startOfMonth, endOfMonth, format } from 'date-fns'
 
 export async function fetchTrainingLogsSummary({
     startDate,
@@ -127,6 +128,12 @@ export async function fetchTotalTrainingStats({
 
         const adminClient = await createAdminClient()
         
+        // [Opt] Nếu không có tham số ngày, mặc định lấy trong tháng hiện tại để tránh nạp dữ liệu quá lớn
+        if (!startDate && !endDate) {
+            startDate = format(startOfMonth(new Date()), 'yyyy-MM-dd')
+            endDate = format(endOfMonth(new Date()), 'yyyy-MM-dd')
+        }
+
         // This is tricky because we need to filter training_logs by client filters
         // If there are many clients, we might need a more efficient way.
         // But for statistics, let's join training_logs with clients!inner

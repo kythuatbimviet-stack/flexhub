@@ -75,7 +75,8 @@ export default function ExpensePage() {
             if (!result.success) throw new Error(result.error)
             return result.data
         },
-        staleTime: 5 * 60 * 1000, // 5 phút
+        staleTime: 30 * 1000, // 30 giây
+        refetchOnWindowFocus: false,
     })
 
     const refetch = () => {
@@ -90,6 +91,8 @@ export default function ExpensePage() {
             if (!result.success) throw new Error(result.error)
             return result.data
         },
+        staleTime: 30 * 60 * 1000,
+        refetchOnWindowFocus: false,
     })
 
     const { data: categories } = useQuery({
@@ -99,6 +102,8 @@ export default function ExpensePage() {
             if (!result.success) throw new Error(result.error)
             return result.data
         },
+        staleTime: 30 * 60 * 1000,
+        refetchOnWindowFocus: false,
     })
 
     const handleQuickDateChange = (value: string) => {
