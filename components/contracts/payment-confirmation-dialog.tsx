@@ -64,7 +64,6 @@ export function PaymentConfirmationDialog({
         nkt: '',
         ndong: '',
         nguoithu: '',
-        ghichu: '',
         custom_message: "Cảm ơn bạn đã tin tưởng và đồng hành cùng Eva's Fit! Hy vọng bạn sẽ có những trải nghiệm tập luyện tuyệt vời nhất.",
     })
 
@@ -111,7 +110,6 @@ export function PaymentConfirmationDialog({
                 nkt: safeDate(contract.end_date),
                 ndong: safeDate(contract.signing_date) || format(new Date(), 'dd/MM/yyyy'),
                 nguoithu: collectorName,
-                ghichu: contract.payment_notes || '',
                 custom_message: "Cảm ơn bạn đã tin tưởng và đồng hành cùng Eva's Fit! Hy vọng bạn sẽ có những trải nghiệm tập luyện tuyệt vời nhất.",
             })
             setActiveTab('form')
@@ -233,16 +231,6 @@ export function PaymentConfirmationDialog({
                                     <FormGroup label="Ngày bắt đầu" name="nbd" value={formData.nbd} onChange={handleInputChange} />
                                     <FormGroup label="Ngày kết thúc" name="nkt" value={formData.nkt} onChange={handleInputChange} />
                                     <FormGroup label="Ngày đóng tiền" name="ndong" value={formData.ndong} onChange={handleInputChange} />
-                                    <div className="col-span-full space-y-2">
-                                        <Label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-1">Ghi chú</Label>
-                                        <Textarea
-                                            name="ghichu"
-                                            value={formData.ghichu}
-                                            onChange={handleInputChange}
-                                            className="rounded-2xl border-slate-100 bg-slate-50/50 resize-none min-h-[72px]"
-                                            placeholder="Ghi chú thanh toán..."
-                                        />
-                                    </div>
                                 </div>
                             </div>
 
@@ -330,12 +318,6 @@ export function PaymentConfirmationDialog({
                                                 <span className="text-slate-500">Hình thức:</span>
                                                 <span className="font-bold text-slate-800">{formData.httt1}</span>
                                             </div>
-                                            {formData.ghichu && (
-                                                <div className="flex flex-col gap-1 pt-2 border-t border-orange-100">
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nội dung xác nhận:</span>
-                                                    <span className="text-[13px] text-slate-700 italic">"{formData.ghichu}"</span>
-                                                </div>
-                                            )}
                                         </div>
                                         <div className="flex items-center gap-2 text-[#993C1D] mb-3">
                                             <div className="w-1.5 h-1.5 rounded-full bg-[#E8896A]" />

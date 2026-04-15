@@ -24,13 +24,17 @@ import {
     StickyNote,
     CreditCard,
     ChevronDown,
-    Loader2
+    Loader2,
+    User,
+    Search,
+    Check
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { fetchExpense, updateExpense, deleteExpense, fetchExpenseTypes } from '@/app/actions/financial'
 import { cn } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { fetchBranches } from '@/app/actions/branches'
+import { fetchUsers } from '@/app/actions/users'
 import {
     Select,
     SelectContent,
@@ -107,6 +111,15 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
         queryKey: ['branches'],
         queryFn: async () => {
             const result = await fetchBranches()
+            if (!result.success) throw new Error(result.error)
+            return result.data
+        },
+    })
+
+    const { data: users } = useQuery({
+        queryKey: ['users'],
+        queryFn: async () => {
+            const result = await fetchUsers()
             if (!result.success) throw new Error(result.error)
             return result.data
         },
@@ -316,6 +329,47 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                         </div>
                     </CardSection>
 
+                    <CardSection title="Trạng thái kết toán" icon={CreditCard}>
+                         <div className="space-y-1.5 font-inter text-left">
+                            <Label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 flex items-center gap-2 tracking-tight">
+                                <Tag className="w-3.5 h-3.5 text-slate-400" />
+                                Quyết toán
+                            </Label>
+                            {isEditing ? (
+                                <Select
+                                    onValueChange={(val) => {
+                                        const now = val === 'Đã kết toán' ? new Date().toISOString() : null
+                                        setFormData((p: any) => ({ ...p, settlement_status: val, settled_at: now }))
+                                    }}
+                                    value={formData.settlement_status || 'Chưa kết toán'}
+                                >
+                                    <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm">
+                                        <SelectValue placeholder="Chọn trạng thái" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl">
+                                        {['Chưa kết toán', 'Đã kết toán'].map(s => (
+                                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            ) : (
+                                <div className="space-y-1">
+                                    <div className={cn(
+                                        "text-[15px] font-bold",
+                                        formData.settlement_status === 'Đã kết toán' ? "text-emerald-600" : "text-amber-600"
+                                    )}>
+                                        {formData.settlement_status || 'Chưa kết toán'}
+                                    </div>
+                                    {formData.settlement_status === 'Đã kết toán' && formData.settled_at && (
+                                        <p className="text-[10px] text-slate-400 italic">
+                                            Kết toán lúc: {new Date(formData.settled_at).toLocaleString('vi-VN')}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </CardSection>
+
                     <CardSection title="Đối tượng & Chi nhánh" icon={Building2}>
                         <div className="space-y-5">
                              <div className="space-y-1.5 font-inter text-left">
@@ -340,6 +394,32 @@ export function ExpenseDetailsSheet({ expense, open, onOpenChange, onSuccess }: 
                                 ) : (
                                     <div className="text-[15px] font-medium text-slate-900 dark:text-white">
                                         {formData.branches?.name || 'Toàn hệ thống'}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-1.5 font-inter text-left">
+                                <Label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 flex items-center gap-2 tracking-tight">
+                                    <User className="w-3.5 h-3.5 text-slate-400" />
+                                    Người chi
+                                </Label>
+                                {isEditing ? (
+                                    <Select
+                                        onValueChange={(val) => setFormData((p: any) => ({ ...p, spender_name: val }))}
+                                        value={formData.spender_name || ''}
+                                    >
+                                        <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm">
+                                            <SelectValue placeholder="Chọn người chi" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl">
+                                            {['Kế toán', 'FM', 'CEO'].map(s => (
+                                                <SelectItem key={s} value={s}>{s}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <div className="text-[15px] font-medium text-slate-900 dark:text-white">
+                                        {formData.spender_name || <span className="text-slate-300 italic">Chưa xác định</span>}
                                     </div>
                                 )}
                             </div>

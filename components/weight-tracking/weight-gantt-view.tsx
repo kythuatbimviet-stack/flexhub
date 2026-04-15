@@ -238,6 +238,11 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                 const contract = client.latestContract
                 if (!contract) return false
 
+                // Filter out clients with 'Hết hạn HĐ' status
+                if (contract.status === 'Hết hạn HĐ') {
+                    return false
+                }
+
                 if (filterBranch !== "all" && contract.facility_name !== filterBranch) return false
                 if (filterPT !== "all" && contract.trainer_name !== filterPT) return false
                 if (filterPackage !== "all" && contract.registration_type !== filterPackage) return false

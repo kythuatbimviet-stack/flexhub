@@ -103,10 +103,10 @@ import { canAccessRecord } from '@/lib/permissions'
 const ClientCardSection = ({ title, icon: Icon, children }: any) => (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-visible mb-5">
         <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                <Icon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <div className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+                <Icon className="w-4 h-4 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="text-sm font-semibold text-blue-600 dark:text-blue-400">{title}</h3>
+            <h3 className="text-sm font-semibold text-red-600 dark:text-red-400">{title}</h3>
         </div>
         <div className="p-5 space-y-5">
             {children}
@@ -116,7 +116,7 @@ const ClientCardSection = ({ title, icon: Icon, children }: any) => (
 
 const ClientInfoRow = ({ label, value, name, type = "text", options, isEditing, formData, onChange, onSelectChange }: any) => {
     const listId = options && type !== 'select' ? `${name}-list` : undefined;
-    const requiredNames = ['member_name', 'branch_id', 'status', 'assigned_pt', 'pt_name', 'age', 'height', 'weight', 'source', 'goal'];
+    const requiredNames = ['member_name', 'phone', 'training_time', 'branch_id', 'status', 'assigned_pt', 'pt_name', 'age', 'height', 'weight', 'source', 'goal'];
     return (
         <div className="space-y-1">
             <Label className="text-xs font-medium text-slate-600 dark:text-slate-200">
@@ -244,7 +244,6 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                 survey_training_history: '',
                 survey_injury_history: '',
                 survey_work_stress: '',
-                survey_pathology_details: '',
                 survey_health_advice: '',
             })
             setIsEditing(true)
@@ -754,8 +753,8 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                         </div>
                                     )}
 
-                                    {/* Section 1: Thông tin cơ bản */}
-                                    <ClientCardSection title="THÔNG TIN CƠ BẢN" icon={User}>
+                                    {/* Section 1: THÔNG TIN CƠ BẢN KHÁCH HÀNG */}
+                                    <ClientCardSection title="THÔNG TIN CƠ BẢN KHÁCH HÀNG" icon={User}>
                                         <div className="space-y-5">
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                                 <ClientInfoRow
@@ -767,6 +766,10 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                     {...sharedRowProps}
                                                 />
                                                 <ClientInfoRow label="Họ và tên hội viên" value={formData.member_name} name="member_name" {...sharedRowProps} />
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                                <ClientInfoRow label="Nguồn khách hàng" value={formData.source} name="source" type="select" options={clientSources.map((s: any) => s.nam)} {...sharedRowProps} />
+                                                <ClientInfoRow label="Người giới thiệu/mang về" value={formData.referrer} name="referrer" {...sharedRowProps} />
                                             </div>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                                 <ClientInfoRow label="Số điện thoại" value={formData.phone} name="phone" {...sharedRowProps} />
@@ -796,7 +799,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                         </div>
                                     </ClientCardSection>
 
-                                    {/* Section 2: Mạng xã hội */}
+                                    {/* Section 2: MẠNG XÃ HỘI */}
                                     <ClientCardSection title="MẠNG XÃ HỘI" icon={MessageSquare}>
                                         <div className="space-y-5">
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -882,27 +885,22 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                         </p>
                                                     )}
                                                 </div>
-                                                <ClientInfoRow label="Link Facebook" value={formData.facebook_id} name="facebook_id" {...sharedRowProps} />
+                                                <ClientInfoRow label="Link facebook" value={formData.facebook_id} name="facebook_id" {...sharedRowProps} />
                                             </div>
                                         </div>
                                     </ClientCardSection>
 
-                                    {/* Section: Chỉ số cơ thể */}
-                                    <ClientCardSection title="TÌNH TRẠNG SỨC KHỎE & MỤC TIÊU" icon={Activity}>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-                                            <ClientInfoRow label="Chiều cao (cm)" value={formData.height} name="height" type="number" {...sharedRowProps} />
-                                            <ClientInfoRow label="Cân nặng (kg)" value={formData.weight} name="weight" type="number" {...sharedRowProps} />
-                                            {/* <ClientInfoRow label="Mục tiêu (kg)" value={formData.target_weight} name="target_weight" type="number" {...sharedRowProps} /> */}
-                                        </div>
-                                        <div className="space-y-5">
-                                            <ClientInfoRow label="Mục tiêu tập luyện" value={formData.goal} name="goal" type="select" options={clientGoals.map((g: any) => g.nam)} {...sharedRowProps} />
-                                            <ClientInfoRow label="Tiền sử bệnh lý" value={formData.medical_history} name="medical_history" type="textarea" {...sharedRowProps} />
-                                        </div>
-                                    </ClientCardSection>
-
-                                    {/* Section: Khảo sát khách hàng */}
-                                    <ClientCardSection title="KHẢO SÁT KHÁCH HÀNG" icon={ClipboardList}>
+                                    {/* Section 3: CHỈ SỐ & MỤC TIÊU */}
+                                    <ClientCardSection title="CHỈ SỐ & MỤC TIÊU" icon={Activity}>
                                         <div className="space-y-6">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+                                                <ClientInfoRow label="Chiều cao (cm)" value={formData.height} name="height" type="number" {...sharedRowProps} />
+                                                <ClientInfoRow label="Cân nặng (kg)" value={formData.weight} name="weight" type="number" {...sharedRowProps} />
+                                            </div>
+
+                                            <ClientInfoRow label="Khung giờ chị có thể đi tập là khung nào?" value={formData.training_time} name="training_time" {...sharedRowProps} />
+                                            <ClientInfoRow label="Mục tiêu tập luyện của chị hiện tại là gì?" value={formData.goal} name="goal" type="select" options={clientGoals.map((g: any) => g.nam)} {...sharedRowProps} />
+
                                             <ClientInfoRow
                                                 label="Chị đã từng tập luyện bộ môn nào chưa? Trong thời gian tập luyện đó kết quả đạt được là gì? (Nếu chưa tập bỏ qua)"
                                                 value={formData.survey_training_history}
@@ -926,8 +924,8 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                             />
                                             <ClientInfoRow
                                                 label="Chị có vấn đề gì về bệnh lý: Đau lưng, đau đầu gối, đau vai gáy, tuyến giáp, đa nang, huyết áp cao/thấp...."
-                                                value={formData.survey_pathology_details}
-                                                name="survey_pathology_details"
+                                                value={formData.medical_history}
+                                                name="medical_history"
                                                 type="textarea"
                                                 {...sharedRowProps}
                                             />
@@ -938,11 +936,12 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                 type="textarea"
                                                 {...sharedRowProps}
                                             />
+                                            <ClientInfoRow label="Ghi chú thêm" value={formData.notes} name="notes" type="textarea" {...sharedRowProps} />
                                         </div>
                                     </ClientCardSection>
 
-                                    {/* Section: Huấn luyện & Gói tập */}
-                                    <ClientCardSection title="PT VÀ GÓI TẬP" icon={Dumbbell}>
+                                    {/* Section: QUẢN LÝ */}
+                                    <ClientCardSection title="THÔNG TIN QUẢN LÝ" icon={Dumbbell}>
                                         <div className="space-y-5">
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                                 <div className="space-y-1">
@@ -1020,25 +1019,12 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                 </div>
                                                 <ClientInfoRow label="Chi nhánh quản lý" value={formData.branch_id} name="branch_id" type="select" options={allowedBranches.map((b: any) => ({ value: b.id, label: b.name }))} {...sharedRowProps} />
                                             </div>
-                                            <div className="grid grid-cols-1 sm:grid-cols-1 gap-5">
-                                                {/* <ClientInfoRow label="Loại đăng ký" value={formData.registration_type} name="registration_type" {...sharedRowProps} /> */}
-                                                <ClientInfoRow label="Thời gian tập luyện" value={formData.training_time} name="training_time" {...sharedRowProps} />
-                                            </div>
-                                            <ClientInfoRow label="Ghi chú thêm" value={formData.notes} name="notes" type="textarea" {...sharedRowProps} />
+                                            {/* <div className="grid grid-cols-1 sm:grid-cols-1 gap-5">
+                                                <ClientInfoRow label="Lộ trình đăng ký" value={formData.registration_type} name="registration_type" {...sharedRowProps} />
+                                            </div> */}
                                         </div>
                                     </ClientCardSection>
 
-                                    {/* Section: Nguồn khách */}
-                                    <ClientCardSection title="NGUỒN KHÁCH" icon={Star}>
-                                        <div className="space-y-5">
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                                <ClientInfoRow label="Nguồn khách hàng" value={formData.source} name="source" type="select" options={clientSources.map((s: any) => s.nam)} {...sharedRowProps} />
-                                                <ClientInfoRow label="Người giới thiệu/mang về" value={formData.referrer} name="referrer" {...sharedRowProps} />
-                                            </div>
-                                        </div>
-                                    </ClientCardSection>
-
-                                    {/* Section: Hệ thống */}
                                     {!isCreateMode && (
                                         <ClientCardSection title="THÔNG TIN HỆ THỐNG" icon={History}>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -1070,7 +1056,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                         </ClientCardSection>
                                     )}
 
-                                    {/* Section: Chữ ký khách hàng */}
+                                    {/* Section: Chữ ký khách hàng
                                     <ClientCardSection title="Chữ ký khách hàng" icon={FileText}>
                                         <div className="space-y-4">
                                             {isEditing ? (
@@ -1092,7 +1078,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                 </div>
                                             )}
                                         </div>
-                                    </ClientCardSection>
+                                    </ClientCardSection> */}
 
                                     {/* Section: Gửi Hợp đồng Khách hàng */}
                                     {latestContract?.data && (

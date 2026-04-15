@@ -15,6 +15,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchExpenseTypes, createExpense } from '@/app/actions/financial'
+import { fetchUsers } from '@/app/actions/users'
 import {
     Form,
     FormControl,
@@ -35,7 +36,9 @@ import {
     StickyNote,
     CreditCard,
     X,
-    ChevronDown
+    ChevronDown,
+    Search,
+    Check
 } from 'lucide-react'
 import {
     Select,
@@ -53,6 +56,9 @@ const expenseSchema = z.object({
     description: z.string().optional().default(''),
     payment_method: z.string().min(1, 'Vui lòng chọn hình thức thanh toán'),
     recorded_at: z.string().min(1, 'Vui lòng chọn ngày ghi nhận'),
+    spender_name: z.string().min(1, 'Vui lòng chọn người chi'),
+    settlement_status: z.string().min(1, 'Vui lòng chọn trạng thái kết toán'),
+    settled_at: z.string().optional().nullable(),
 })
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>
@@ -62,6 +68,7 @@ interface AddExpenseSheetProps {
 }
 
 export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
+
     const [open, setOpen] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
 
@@ -74,6 +81,9 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
             description: '',
             payment_method: 'Tiền mặt',
             recorded_at: new Date().toISOString().split('T')[0],
+            spender_name: '',
+            settlement_status: 'Chưa kết toán',
+            settled_at: null,
         },
     })
 
@@ -90,6 +100,15 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
         queryKey: ['financial-expense-types'],
         queryFn: async () => {
             const result = await fetchExpenseTypes()
+            if (!result.success) throw new Error(result.error)
+            return result.data
+        },
+    })
+
+    const { data: users } = useQuery({
+        queryKey: ['users'],
+        queryFn: async () => {
+            const result = await fetchUsers()
             if (!result.success) throw new Error(result.error)
             return result.data
         },
@@ -197,7 +216,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                             <Banknote className="w-3.5 h-3.5 text-rose-600" />
                                         </div>
                                         <h3 className="text-[12px] font-semibold text-rose-600">
-                                            Thông tin giao dịch
+                                            THÔNG TIN GIAO DỊCH
                                         </h3>
                                     </div>
 
@@ -242,7 +261,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                         />
                                     </div>
 
-                                    <div className="grid grid-cols-1 gap-4 pt-1">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                                         <FormField
                                             control={form.control}
                                             name="branch_id"
@@ -265,6 +284,29 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                                 </FormItem>
                                             )}
                                         />
+
+                                        <FormField
+                                            control={form.control}
+                                            name="spender_name"
+                                            render={({ field }) => (
+                                                <FormItem className="space-y-1 text-left">
+                                                    <FormLabel className="text-[11px] font-semibold text-slate-900 dark:text-slate-300">Người chi</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full">
+                                                                <SelectValue placeholder="Chọn người chi" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent className="rounded-xl border-slate-100">
+                                                            {['Kế toán', 'FM', 'CEO'].map(s => (
+                                                                <SelectItem key={s} value={s}>{s}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
                                     </div>
                                 </div>
 
@@ -274,7 +316,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                             <Tag className="w-3.5 h-3.5 text-blue-600" />
                                         </div>
                                         <h3 className="text-[12px] font-semibold text-blue-600">
-                                            Phân loại & Thanh toán
+                                            PHÂN LOẠI - THANH TOÁN
                                         </h3>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
@@ -339,7 +381,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                             <StickyNote className="w-3.5 h-3.5 text-amber-600" />
                                         </div>
                                         <h3 className="text-[12px] font-semibold text-amber-600">
-                                            Ghi chú / Diễn giải
+                                            GHI CHÚ
                                         </h3>
                                     </div>
                                     <FormField
@@ -358,6 +400,71 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                             </FormItem>
                                         )}
                                     />
+                                </div>
+                                {/* Card Section: Kết toán */}
+                                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
+                                    <div className="flex items-center gap-2 mb-2 text-left">
+                                        <div className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center">
+                                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                        </div>
+                                        <h3 className="text-[12px] font-semibold text-emerald-600">
+                                            KẾT TOÁN
+                                        </h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="settlement_status"
+                                            render={({ field }) => (
+                                                <FormItem className="space-y-1 text-left">
+                                                    <FormLabel className="text-[11px] font-semibold text-slate-900 dark:text-slate-300">Trạng thái kết toán</FormLabel>
+                                                    <Select
+                                                        onValueChange={(val) => {
+                                                            field.onChange(val)
+                                                            if (val === 'Đã kết toán') {
+                                                                form.setValue('settled_at', new Date().toISOString().split('T')[0])
+                                                            } else {
+                                                                form.setValue('settled_at', null)
+                                                            }
+                                                        }}
+                                                        value={field.value}
+                                                    >
+                                                        <FormControl>
+                                                            <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full">
+                                                                <SelectValue placeholder="Chọn..." />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent className="rounded-xl border-slate-100">
+                                                            {['Chưa kết toán', 'Đã kết toán'].map(s => (
+                                                                <SelectItem key={s} value={s}>{s}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <FormField
+                                            control={form.control}
+                                            name="settled_at"
+                                            render={({ field }) => (
+                                                <FormItem className="space-y-1 text-left">
+                                                    <FormLabel className="text-[11px] font-semibold text-slate-900 dark:text-slate-300">Ngày kết toán</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="date"
+                                                            {...field}
+                                                            value={field.value || ''}
+                                                            disabled={form.watch('settlement_status') !== 'Đã kết toán'}
+                                                            className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700"
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
                                 </div>
                             </form>
                         </Form>

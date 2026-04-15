@@ -64,8 +64,8 @@ export default function ExpensePage() {
 
     // Date Filters
     const [quickDateFilter, setQuickDateFilter] = React.useState('all')
-    const [startDate, setStartDate] = React.useState('')
-    const [endDate, setEndDate] = React.useState('')
+    const [startDate, setStartDate] = React.useState(() => new Date().toISOString().split('T')[0])
+    const [endDate, setEndDate] = React.useState(() => new Date().toISOString().split('T')[0])
 
     const queryClient = useQueryClient()
     const { data: expenseData, refetch: originalRefetch } = useQuery({
@@ -113,6 +113,10 @@ export default function ExpensePage() {
         let end = new Date()
 
         switch (value) {
+            case 'today':
+                start = now
+                end = now
+                break
             case 'this-week':
                 const day = now.getDay()
                 const diff = now.getDate() - day + (day === 0 ? -6 : 1)
@@ -372,6 +376,7 @@ export default function ExpensePage() {
                                                     </SelectTrigger>
                                                     <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
                                                         <SelectItem value="all">Tất cả thời gian</SelectItem>
+                                                        <SelectItem value="today">Hôm nay</SelectItem>
                                                         <SelectItem value="this-week">Tuần này</SelectItem>
                                                         <SelectItem value="last-week">Tuần trước</SelectItem>
                                                         <SelectItem value="this-month">Tháng này</SelectItem>

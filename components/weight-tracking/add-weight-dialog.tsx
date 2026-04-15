@@ -59,8 +59,8 @@ const weightSchema = z.object({
     id: z.string().optional(),
     client_id: z.string().min(1, 'Vui lòng chọn khách hàng'),
     measurement_date: z.string().min(1, 'Vui lòng chọn ngày đo'),
-    weight: z.coerce.number().min(1, 'Cân nặng phải lớn hơn 0'),
-    target_weight: z.coerce.number().optional().nullable(),
+    weight: z.preprocess((val) => (val === "" ? null : val), z.coerce.number().optional().nullable()),
+    target_weight: z.preprocess((val) => (val === "" ? null : val), z.coerce.number().optional().nullable()),
     measurements: z.string().optional(),
     next_measurement_date: z.string().optional().nullable(),
     contract_id: z.string().optional().nullable(),
@@ -90,7 +90,7 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
         defaultValues: {
             client_id: initialClientId || '',
             measurement_date: initialDate || format(new Date(), 'yyyy-MM-dd'),
-            weight: 0,
+            weight: null,
             target_weight: null,
             measurements: '',
             next_measurement_date: null,
@@ -107,7 +107,7 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
             form.reset({
                 client_id: initialClientId || '',
                 measurement_date: initialDate || format(new Date(), 'yyyy-MM-dd'),
-                weight: 0,
+                weight: undefined,
                 target_weight: null,
                 measurements: '',
                 next_measurement_date: null,
@@ -349,7 +349,7 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                                                 </FormControl>
                                                 <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800 font-inter">
                                                     <SelectItem value="none">Không áp dụng hợp đồng</SelectItem>
-                                                    {contractsResult?.map((c: any) => (
+                                                    {contractsResult?.filter((c: any) => c.status !== 'Hết hạn HĐ').map((c: any) => (
                                                         <SelectItem key={c.id} value={c.id}>
                                                             {c.package_name || c.registration_type} ({c.id.slice(-4)})
                                                         </SelectItem>

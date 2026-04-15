@@ -31,7 +31,7 @@ import {
     ClipboardList
 } from 'lucide-react'
 import { updateWeightRecord, deleteWeightRecord } from '@/app/actions/weight-tracking'
-import { fetchContractsByClientId } from '@/app/actions/contracts'
+import { fetchContractsByClientId, updateContract } from '@/app/actions/contracts'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
@@ -42,7 +42,7 @@ import {
     SelectValue
 } from '@/components/ui/select'
 import { useQuery } from '@tanstack/react-query'
-import { format } from 'date-fns'
+import { format, addDays, parseISO } from 'date-fns'
 import {
     Popover,
     PopoverContent,
@@ -114,6 +114,7 @@ export function WeightDetailsSheet({ record, open, onOpenChange, onSuccess, clie
     const [formData, setFormData] = React.useState<any>(null)
     const [openClientSearch, setOpenClientSearch] = React.useState(false)
     const [searchQuery, setSearchQuery] = React.useState('')
+    const [extensionDays, setExtensionDays] = React.useState(0)
 
     const filteredClientsSorted = React.useMemo(() => {
         if (!searchQuery) return clients
@@ -137,6 +138,7 @@ export function WeightDetailsSheet({ record, open, onOpenChange, onSuccess, clie
                 next_measurement_date: record.next_measurement_date ? record.next_measurement_date.split('T')[0] : null,
             })
             setIsEditing(false)
+            setExtensionDays(0)
         }
     }, [record, open])
 
@@ -163,8 +165,26 @@ export function WeightDetailsSheet({ record, open, onOpenChange, onSuccess, clie
             })
             if (!result.success) throw new Error(result.error)
 
+            // Process contract extension if requested
+            if (formData.contract_id && extensionDays > 0) {
+                const targetContract = contractsResult?.find((c: any) => c.id === formData.contract_id) || record.contracts
+                if (targetContract && targetContract.end_date) {
+                    const currentEndDate = parseISO(targetContract.end_date)
+                    const newEndDate = addDays(currentEndDate, extensionDays)
+                    const updateRes = await updateContract(formData.contract_id, {
+                        end_date: format(newEndDate, 'yyyy-MM-dd')
+                    })
+                    if (!updateRes.success) {
+                        toast.error(`Số đo đã lưu nhưng lỗi gia hạn hợp đồng: ${updateRes.error}`)
+                    } else {
+                        toast.success(`Đã gia hạn hợp đồng thêm ${extensionDays} ngày`)
+                    }
+                }
+            }
+
             toast.success('Cập nhật bản ghi cân nặng thành công')
             setIsEditing(false)
+            setExtensionDays(0)
             onSuccess()
         } catch (error: any) {
             toast.error(error.message || 'Lỗi khi cập nhật')
@@ -371,7 +391,7 @@ export function WeightDetailsSheet({ record, open, onOpenChange, onSuccess, clie
                                         </SelectTrigger>
                                         <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800 font-inter">
                                             <SelectItem value="none">Không áp dụng hợp đồng</SelectItem>
-                                            {contractsResult?.map((c: any) => (
+                                            {contractsResult?.filter((c: any) => c.status !== 'Hết hạn HĐ').map((c: any) => (
                                                 <SelectItem key={c.id} value={c.id}>
                                                     {c.package_name || c.registration_type} ({c.id.slice(-4)})
                                                 </SelectItem>
@@ -379,18 +399,39 @@ export function WeightDetailsSheet({ record, open, onOpenChange, onSuccess, clie
                                         </SelectContent>
                                     </Select>
                                 ) : (
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-[15px] font-medium text-slate-900 dark:text-slate-100">
-                                            {contract?.registration_type || contract?.package_name || 'N/A'}
-                                        </p>
-                                        {contract?.branches?.name && (
-                                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 text-[10px] font-bold">
-                                                {contract.branches.name}
-                                            </span>
-                                        )}
+                                    <div className="text-[15px] font-medium text-slate-900 dark:text-slate-100 min-h-[20px]">
+                                        {contract?.package_name || contract?.registration_type || <span className="text-slate-400 italic font-normal text-sm">Không áp dụng</span>}
                                     </div>
                                 )}
                             </div>
+
+                            {isEditing && formData?.contract_id && (
+                                <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                        <span className="text-[12px] font-bold text-blue-700 dark:text-blue-300 uppercase">Gia hạn hợp đồng</span>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[11px] font-medium text-blue-600/70 dark:text-blue-400/70">Số ngày gia hạn thêm</Label>
+                                        <div className="flex gap-2">
+                                            <Input 
+                                                type="number" 
+                                                min="0"
+                                                value={extensionDays}
+                                                onChange={(e) => setExtensionDays(parseInt(e.target.value) || 0)}
+                                                className="rounded-xl border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-blue-500 font-bold text-blue-600"
+                                                placeholder="Ví dụ: 7, 14, 30..."
+                                            />
+                                            <div className="flex items-center px-3 bg-blue-100 dark:bg-blue-900/40 rounded-xl text-[11px] font-bold text-blue-600 dark:text-blue-400 shrink-0">
+                                                NGÀY
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 italic mt-1 leading-relaxed">
+                                            Lưu ý: Hệ thống sẽ cộng dồn số ngày này vào ngày kết thúc hiện tại của hợp đồng.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </CardSection>
 

@@ -116,7 +116,7 @@ const contractFormSchema = z.object({
     assigned_pt: z.string().optional(),
     custom_selection: z.string().optional(),
     trainer_type: z.string().optional(),
-    total_sessions: z.string().min(1, { message: 'Vui lòng nhập số buổi tập' }),
+    total_sessions: z.string().optional(),
     signature_url: z.string().optional(),
     signature_center: z.string().optional(),
 })
@@ -175,7 +175,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             package_name: '',
             package_price: '',
             total_amount: '',
-            payment_method: 'Tiền mặt',
+            payment_method: 'Chốt chuyển khoản',
             trainer_name: '',
             center_representative: '',
             status: 'Chờ ký HĐ',
@@ -1236,8 +1236,8 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                    <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
                                                     <SelectItem value="Chốt chuyển khoản">Chuyển khoản</SelectItem>
+                                                    <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
                                                     <SelectItem value="Quẹt thẻ">Quẹt thẻ</SelectItem>
                                                 </SelectContent>
                                             </Select>

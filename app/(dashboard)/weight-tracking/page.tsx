@@ -144,6 +144,22 @@ export default function WeightTrackingPage() {
         return Array.from(pkgs).sort()
     }, [contracts])
 
+    // Filter active clients (those without 'Hết hạn HĐ' status on their latest contract)
+    const activeClientsList = React.useMemo(() => {
+        return clients.filter(client => {
+            const clientContracts = contracts
+                .filter(con => con.client_id === client.id)
+                .sort((a, b) => new Date(b.created_at || b.start_date).getTime() - new Date(a.created_at || a.start_date).getTime())
+            const latestContract = clientContracts[0]
+            
+            // If no contract found, we might want to keep them or hide them. 
+            // Usually, only those with a contract should be in progress tracking.
+            if (!latestContract) return false
+            
+            return latestContract.status !== 'Hết hạn HĐ'
+        })
+    }, [clients, contracts])
+
     const refetchAll = () => {
         refetchRecords()
     }
@@ -159,6 +175,11 @@ export default function WeightTrackingPage() {
                 .filter(con => con.client_id === record.client_id)
                 .sort((a, b) => new Date(b.created_at || b.start_date).getTime() - new Date(a.created_at || a.start_date).getTime())
             const contract = clientContracts[0]
+            
+            // Filter out clients with 'Hết hạn HĐ' status
+            if (contract?.status === 'Hết hạn HĐ') {
+                return false
+            }
 
             // Search Filter
             if (searchTerm) {
@@ -332,7 +353,7 @@ export default function WeightTrackingPage() {
                 onOpenChange={setIsDetailsOpen}
                 record={selectedRecord}
                 onSuccess={refetchAll}
-                clients={clients}
+                clients={activeClientsList}
                 users={users}
             />
 
@@ -379,7 +400,7 @@ export default function WeightTrackingPage() {
                         <TrendingUp className="w-4.5 h-4.5 mr-2" />
                         Weight Gantt
                     </Button>
-                    <AddWeightDialog onSuccess={refetchAll} clients={clients} />
+                    <AddWeightDialog onSuccess={refetchAll} clients={activeClientsList} />
                 </div>
             </div>
 
