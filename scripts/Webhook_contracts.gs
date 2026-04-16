@@ -217,11 +217,11 @@ function buildFullPlaceholders(contract) {
   data["{{phone}}"] = cl.phone || c.phone || "";
   data["{{email}}"] = cl.email || c.email || "";
   data["{{dob}}"] = formatDate(cl.dob || c.dob || c.date_of_birth);
-  data["{{initial_height}}"] = cl.height || cl.initial_height || c.initial_height || "";
-  data["{{initial_weight}}"] = cl.weight || cl.initial_weight || c.initial_weight || "";
-  data["{{id_number}}"] = cl.id_number || c.id_number || "";
+  data["{{initial_height}}"] = c.initial_height || cl.height || cl.initial_height || "";
+  data["{{initial_weight}}"] = c.initial_weight || cl.weight || cl.initial_weight || "";
+  data["{{id_number}}"] = c.id_number || cl.id_number || "";
   data["{{medical_condition}}"] = c.medical_condition || cl.medical_history || cl.medical_condition || "Không";
-  data["{{address}}"] = cl.address || c.member_address || "";
+  data["{{address}}"] = c.member_address || cl.address || "";
 
   // --- PACKAGE CATEGORY ---
   data["{{package_name}}"] = c.package_name || "";

@@ -408,7 +408,7 @@ export function ContractDetailsSheet({
                     initialData.source = targetClient.source || ''
                 }
 
-                const branchId = initialData.branch_id || allowedBranches[0]?.id
+                const branchId = initialData.branch_id || currentUser?.branch_id
                 if (branchId) {
                     initialData.branch_id = branchId
                     const branch = branches.find((b: any) => b.id === branchId)
@@ -801,6 +801,12 @@ export function ContractDetailsSheet({
                 }
                 if (!formData.membership_id) {
                     toast.error('Vui lòng chọn gói tập')
+                    setLoading(false)
+                    return
+                }
+
+                if (!formData.signature_url || formData.signature_url === '') {
+                    toast.error('Vui lòng yêu cầu khách hàng ký tên')
                     setLoading(false)
                     return
                 }
@@ -1579,7 +1585,7 @@ export function ContractDetailsSheet({
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-tight flex items-center gap-2">
                                     <Cloud className="w-3 h-3" />
-                                    Chữ ký khách hàng
+                                    Chữ ký khách hàng {isEditing && <span className="text-red-500">*</span>}
                                 </Label>
                                 {isEditing ? (
                                     <SignatureField

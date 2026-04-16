@@ -17,7 +17,6 @@ import {
     Edit3,
     User,
     Building2,
-    Package,
     RotateCcw,
     Flag
 } from 'lucide-react'
@@ -45,14 +44,14 @@ import {
 } from "@/components/ui/select"
 import { useQueryClient, useQuery } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
-import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getWeek, isToday, parseISO, differenceInDays } from 'date-fns'
+import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getWeek, isToday, parseISO, differenceInDays, startOfWeek, endOfWeek, subWeeks, addWeeks, subMonths, addMonths } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { AddWeightDialog } from './add-weight-dialog'
 import { WeightDetailsSheet } from './weight-details-sheet'
 import { WeightHistoryPanel } from './weight-history-panel'
-import { fetchTrainingLogs, upsertTrainingStatus } from '@/app/actions/weight-tracking'
+import { fetchTrainingLogs, upsertTrainingStatus, fetchWeightRecordsRecent } from '@/app/actions/weight-tracking'
 import { useIsMobile } from '@/hooks/use-mobile'
 
 interface WeightGanttViewProps {
@@ -65,9 +64,9 @@ interface WeightGanttViewProps {
 export function WeightGanttView({ records, clients, contracts, onSuccess }: WeightGanttViewProps) {
     const isMobile = useIsMobile()
     const queryClient = useQueryClient()
-    const [startDate, setStartDate] = React.useState<string>(format(startOfMonth(new Date()), 'yyyy-MM-01'))
-    const [endDate, setEndDate] = React.useState<string>(format(endOfMonth(addDays(new Date(), 30)), 'yyyy-MM-dd'))
-    const [localRecords, setLocalRecords] = React.useState<any[]>(records)
+    const [startDate, setStartDate] = React.useState<string>(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
+    const [endDate, setEndDate] = React.useState<string>(format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
+    const [dateRangeType, setDateRangeType] = React.useState<string>('this-week')
     const [showTarget, setShowTarget] = React.useState(true)
     const [showActual, setShowActual] = React.useState(true)
     const [showTraining, setShowTraining] = React.useState(true)
@@ -83,7 +82,6 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
     // Filters
     const [filterBranch, setFilterBranch] = React.useState<string>("all")
     const [filterPT, setFilterPT] = React.useState<string>("all")
-    const [filterPackage, setFilterPackage] = React.useState<string>("all")
     const [searchTerm, setSearchTerm] = React.useState<string>("")
 
     // Dialog state
@@ -105,11 +103,65 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
         }
     })
 
+    const { data: recordsFromGantt = [] } = useQuery({
+        queryKey: ['weight-records-gantt', startDate, endDate],
+        queryFn: async () => {
+            const res = await fetchWeightRecordsRecent(180, startDate, endDate)
+            return res.success ? (res.data ?? []) : []
+        }
+    })
+
     const visibleCount = [showTarget, showActual, showTraining].filter(Boolean).length
 
     const toggleColumn = (col: keyof typeof visibleColumns) => {
         setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }))
     }
+
+    React.useEffect(() => {
+        const now = new Date()
+        let start: Date | null = null
+        let end: Date | null = null
+
+        switch (dateRangeType) {
+            case 'this-week':
+                start = startOfWeek(now, { weekStartsOn: 1 })
+                end = endOfWeek(now, { weekStartsOn: 1 })
+                break
+            case 'last-week':
+                const lastW = subWeeks(now, 1)
+                start = startOfWeek(lastW, { weekStartsOn: 1 })
+                end = endOfWeek(lastW, { weekStartsOn: 1 })
+                break
+            case 'next-week':
+                const nextW = addWeeks(now, 1)
+                start = startOfWeek(nextW, { weekStartsOn: 1 })
+                end = endOfWeek(nextW, { weekStartsOn: 1 })
+                break
+            case 'this-month':
+                start = startOfMonth(now)
+                end = endOfMonth(now)
+                break
+            case 'last-month':
+                const lastM = subMonths(now, 1)
+                start = startOfMonth(lastM)
+                end = endOfMonth(lastM)
+                break
+            case 'next-month':
+                const nextM = addMonths(now, 1)
+                start = startOfMonth(nextM)
+                end = endOfMonth(nextM)
+                break
+            case 'custom':
+                return
+            default:
+                return
+        }
+
+        if (start && end) {
+            setStartDate(format(start, 'yyyy-MM-dd'))
+            setEndDate(format(end, 'yyyy-MM-dd'))
+        }
+    }, [dateRangeType])
 
     const getGridTemplate = () => {
         if (isMobile) {
@@ -144,7 +196,6 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
         }
         if (criteria === 'target') setShowTarget(val)
         if (criteria === 'actual') setShowActual(val)
-        if (criteria === 'actual') setShowActual(val)
         if (criteria === 'training') setShowTraining(val)
     }
 
@@ -166,10 +217,6 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
             toast.error(e.message)
         }
     }
-
-    React.useEffect(() => {
-        setLocalRecords(records)
-    }, [records])
 
     // Generate timeline days
     const days = React.useMemo(() => {
@@ -214,10 +261,6 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
         return Array.from(pts).sort()
     }, [contracts])
 
-    const packageOptions = React.useMemo(() => {
-        const pkgs = new Set(contracts.map(c => c.registration_type).filter(Boolean))
-        return Array.from(pkgs).sort()
-    }, [contracts])
 
     // Get active clients based on contracts and apply filters
     const activeClients = React.useMemo(() => {
@@ -245,7 +288,6 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
 
                 if (filterBranch !== "all" && contract.facility_name !== filterBranch) return false
                 if (filterPT !== "all" && contract.trainer_name !== filterPT) return false
-                if (filterPackage !== "all" && contract.registration_type !== filterPackage) return false
 
                 if (searchTerm) {
                     const search = searchTerm.toLowerCase().trim()
@@ -256,16 +298,16 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
 
                 return true
             })
-    }, [clients, contracts, filterBranch, filterPT, filterPackage, searchTerm])
+    }, [clients, contracts, filterBranch, filterPT, searchTerm])
 
     const handleOpenEdit = (clientId: string, date?: Date | null) => {
         const targetDate = date || selectedDate || new Date()
         const dateStr = format(targetDate, 'yyyy-MM-dd')
 
         // Find existing record for this client and date
-        const existing = records.find(r =>
+        const existing = recordsFromGantt.find(r =>
             r.client_id === clientId &&
-            isSameDay(new Date(r.measurement_date), parseISO(dateStr))
+            (r.measurement_date === dateStr || (r.measurement_date && r.measurement_date.startsWith(dateStr)))
         )
 
         if (existing) {
@@ -308,10 +350,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
     const handleResetFilters = () => {
         setFilterBranch("all")
         setFilterPT("all")
-        setFilterPackage("all")
         setSearchTerm("")
-        setStartDate(format(startOfMonth(new Date()), 'yyyy-MM-01'))
-        setEndDate(format(endOfMonth(addDays(new Date(), 30)), 'yyyy-MM-dd'))
+        setDateRangeType('this-week')
         toast.success('Đã đặt lại bộ lọc')
     }
 
@@ -337,24 +377,47 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                     </div>
 
                     <div className={cn(
-                        "flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1",
+                        "flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-2 py-1",
                         isMobile && "w-full justify-between"
                     )}>
+                        <Select value={dateRangeType} onValueChange={setDateRangeType}>
+                          <SelectTrigger className="h-7 w-28 border-none bg-transparent shadow-none p-0 text-xs focus:ring-0">
+                            <SelectValue placeholder="Chọn thời gian" />
+                          </SelectTrigger>
+                          <SelectContent className="text-xs">
+                            <SelectItem value="this-week">Tuần này</SelectItem>
+                            <SelectItem value="last-week">Tuần trước</SelectItem>
+                            <SelectItem value="next-week">Tuần tới</SelectItem>
+                            <SelectItem value="this-month">Tháng này</SelectItem>
+                            <SelectItem value="last-month">Tháng trước</SelectItem>
+                            <SelectItem value="next-month">Tháng tới</SelectItem>
+                            <SelectItem value="custom">Tùy chọn</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <span className="text-slate-300">|</span>
+
                         <div className="flex items-center gap-2 flex-1">
-                            <Calendar className="w-4 h-4 text-slate-400" />
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
                             <Input
                                 type="date"
                                 value={startDate}
-                                onChange={e => setStartDate(e.target.value)}
+                                onChange={e => {
+                                  setStartDate(e.target.value)
+                                  setDateRangeType('custom')
+                                }}
                                 className="h-7 w-28 border-none bg-transparent shadow-none p-0 text-xs focus-visible:ring-0"
                             />
                         </div>
-                        <span className="text-slate-300">|</span>
+                        <span className="text-slate-200">~</span>
                         <div className="flex items-center gap-2 flex-1 justify-end">
                             <Input
                                 type="date"
                                 value={endDate}
-                                onChange={e => setEndDate(e.target.value)}
+                                onChange={e => {
+                                  setEndDate(e.target.value)
+                                  setDateRangeType('custom')
+                                }}
                                 className="h-7 w-28 border-none bg-transparent shadow-none p-0 text-xs focus-visible:ring-0 text-right"
                             />
                         </div>
@@ -397,15 +460,6 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                             <SelectContent>
                                                 <SelectItem value="all">Tất cả PT</SelectItem>
                                                 {ptOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                        <Select value={filterPackage} onValueChange={setFilterPackage}>
-                                            <SelectTrigger className="h-9 text-xs">
-                                                <SelectValue placeholder="Gói tập" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">Tất cả gói tập</SelectItem>
-                                                {packageOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -469,22 +523,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                 </SelectContent>
                             </Select>
 
-                            <Select value={filterPackage} onValueChange={setFilterPackage}>
-                                <SelectTrigger className={cn("h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none shrink-0", isMobile ? "w-32" : "w-56")}>
-                                    <div className="flex items-center gap-2 overflow-hidden">
-                                        <Package className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                        <SelectValue placeholder="Gói tập" />
-                                    </div>
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
-                                    <SelectItem value="all">Tất cả gói tập</SelectItem>
-                                    {packageOptions.map(opt => (
-                                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            {(filterBranch !== "all" || filterPT !== "all" || filterPackage !== "all" || searchTerm !== "") && (
+                            {(filterBranch !== "all" || filterPT !== "all" || searchTerm !== "") && (
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -706,7 +745,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                         {activeClients.map((client, idx) => {
                             const contract = client.latestContract
                             const isSelected = selectedClientId === client.id
-                            const clientRecords = localRecords.filter(r => r.client_id === client.id)
+                            const clientRecords = recordsFromGantt.filter(r => r.client_id === client.id)
                             const plannedDates = new Set(
                                 clientRecords
                                     .map(r => r.next_measurement_date ? r.next_measurement_date.split('T')[0] : null)
@@ -811,7 +850,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                         {showTarget && (
                                             <div className="h-8 flex">
                                                 {days.map((day, i) => {
-                                                    const record = clientRecords.find(r => isSameDay(new Date(r.measurement_date), day))
+                                                    const dateKey = format(day, 'yyyy-MM-dd')
+                                                    const record = clientRecords.find(r => r.measurement_date === dateKey || (r.measurement_date && r.measurement_date.startsWith(dateKey)))
                                                     const isCellSelected = isSelected && selectedDate && isSameDay(selectedDate, day)
                                                     const isFriday = day.getDay() === 5
                                                     
@@ -842,7 +882,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                         {showActual && (
                                             <div className="h-8 flex">
                                                 {days.map((day, i) => {
-                                                    const record = clientRecords.find(r => isSameDay(new Date(r.measurement_date), day))
+                                                    const dateKey = format(day, 'yyyy-MM-dd')
+                                                    const record = clientRecords.find(r => r.measurement_date === dateKey || (r.measurement_date && r.measurement_date.startsWith(dateKey)))
                                                     const isCellSelected = isSelected && selectedDate && isSameDay(selectedDate, day)
                                                     const isFriday = day.getDay() === 5
                                                     return (
@@ -930,7 +971,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                         {showTraining && (
                                             <div className="h-8 flex">
                                                 {days.map((day, i) => {
-                                                    const log = trainingLogs.find(l => l.client_id === client.id && isSameDay(new Date(l.date), day))
+                                                    const dateKey = format(day, 'yyyy-MM-dd')
+                                                    const log = trainingLogs.find(l => l.client_id === client.id && (l.date === dateKey || (l.date && l.date.startsWith(dateKey))))
                                                     const isCellSelected = isSelected && selectedDate && isSameDay(selectedDate, day)
                                                     const isFriday = day.getDay() === 5
                                                     
@@ -1036,6 +1078,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                 initialClientId={selectedClientId || undefined}
                 initialDate={prefilledDate || (selectedDate ? format(selectedDate, 'yyyy-MM-dd') : undefined)}
                 onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ['weight-records-gantt'] })
                     queryClient.invalidateQueries({ queryKey: ['client-weight-history'] })
                     queryClient.invalidateQueries({ queryKey: ['latest-weight'] })
                     onSuccess?.()
@@ -1049,6 +1092,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                 onOpenChange={setIsDetailsOpen}
                 record={selectedRecord}
                 onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ['weight-records-gantt'] })
                     queryClient.invalidateQueries({ queryKey: ['client-weight-history'] })
                     queryClient.invalidateQueries({ queryKey: ['latest-weight'] })
                     onSuccess?.()
