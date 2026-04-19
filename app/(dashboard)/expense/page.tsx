@@ -63,7 +63,7 @@ export default function ExpensePage() {
     const [showMobileFilters, setShowMobileFilters] = React.useState(false)
 
     // Date Filters
-    const [quickDateFilter, setQuickDateFilter] = React.useState('all')
+    const [quickDateFilter, setQuickDateFilter] = React.useState('today')
     const [startDate, setStartDate] = React.useState(() => new Date().toISOString().split('T')[0])
     const [endDate, setEndDate] = React.useState(() => new Date().toISOString().split('T')[0])
 
@@ -228,9 +228,9 @@ export default function ExpensePage() {
         setBranchFilter('all')
         setCategoryFilter('all')
         setPaymentMethodFilter('all')
-        setQuickDateFilter('all')
-        setStartDate('')
-        setEndDate('')
+        setQuickDateFilter('today')
+        setStartDate(new Date().toISOString().split('T')[0])
+        setEndDate(new Date().toISOString().split('T')[0])
     }
 
     return (

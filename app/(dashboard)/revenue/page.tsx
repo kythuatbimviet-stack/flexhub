@@ -73,7 +73,7 @@ export default function RevenuePage() {
     const [sendingXnttId, setSendingXnttId] = React.useState<string | null>(null)
     
     // Date Filters
-    const [quickDateFilter, setQuickDateFilter] = React.useState('all')
+    const [quickDateFilter, setQuickDateFilter] = React.useState('today')
     const [startDate, setStartDate] = React.useState(() => new Date().toISOString().split('T')[0])
     const [endDate, setEndDate] = React.useState(() => new Date().toISOString().split('T')[0])
 
@@ -281,10 +281,7 @@ export default function RevenuePage() {
         setSearchQuery('')
         setBranchFilter('all')
         setCategoryFilter('all')
-        setPaymentMethodFilter('all')
-        setQuickDateFilter('all')
-        setStartDate('')
-        setEndDate('')
+        setEndDate(new Date().toISOString().split('T')[0])
     }
 
     return (

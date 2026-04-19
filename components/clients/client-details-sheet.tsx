@@ -913,7 +913,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                 <div className="space-y-1">
                                                     <Label className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
                                                         <Activity className="w-3 h-3" />
-                                                        BMI (Tự động)
+                                                        BMI
                                                     </Label>
                                                     <p className="text-xl font-bold text-slate-900 dark:text-white px-0.5">
                                                         {(() => {

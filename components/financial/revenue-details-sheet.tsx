@@ -248,7 +248,7 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
                         </div>
                     </div>
 
-                    <CardSection title="Thông tin giao dịch" icon={Tag}>
+                    <CardSection title="THÔNG TIN GIAO DỊCH" icon={Tag}>
                         <div className="grid grid-cols-2 gap-5">
                             <DetailRow label="Số tiền" value={new Intl.NumberFormat('vi-VN').format(formData.amount) + ' đ'} name="amount" type="number" icon={DollarSign} isEditing={isEditing} formData={formData} onChange={handleChange} />
 
@@ -308,46 +308,35 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
                         </div>
                     </CardSection>
 
-                    <CardSection title="Đối tượng & Chi nhánh" icon={Building2}>
-                        <div className="space-y-5">
-                            <DetailRow label="Khách hàng" value={formData.clients?.member_name || 'Khách vãng lai'} name="customer_id" icon={User} isEditing={isEditing} formData={formData} onChange={handleChange} />
-
-                             <div className="space-y-1.5 font-inter text-left">
-                                <Label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 flex items-center gap-2 tracking-tight">
-                                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                                    Chi nhánh
-                                </Label>
-                                {isEditing ? (
-                                    <Select
-                                        onValueChange={(val) => setFormData((p: any) => ({ ...p, branch_id: val }))}
-                                        value={formData.branch_id}
-                                    >
-                                        <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm">
-                                            <SelectValue placeholder="Chọn chi nhánh" />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl">
-                                            {branches?.map((branch: any) => (
-                                                <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                ) : (
-                                    <div className="text-[15px] font-medium text-slate-900 dark:text-white">
-                                        {formData.branches?.name || 'Toàn hệ thống'}
-                                    </div>
-                                )}
-                            </div>
+                    <CardSection title="THÔNG TIN KHÁCH HÀNG" icon={User}>
+                        <div className="grid grid-cols-2 gap-5">
+                            <DetailRow label="Tên khách hàng" value={formData.clients?.member_name || 'Khách vãng lai'} icon={User} isEditing={false} />
+                            <DetailRow label="Số điện thoại" value={formData.clients?.phone} icon={User} isEditing={false} />
+                            <DetailRow label="Địa chỉ" value={formData.clients?.address || formData.contracts?.member_address} icon={Building2} isEditing={false} />
+                            <DetailRow label="CCCD" value={formData.clients?.id_number} icon={Tag} isEditing={false} />
+                            <DetailRow label="Nguồn khách" value={formData.clients?.source || formData.contracts?.source} icon={Tag} isEditing={false} />
+                            <DetailRow label="Chi nhánh" value={formData.branches?.name || 'Toàn hệ thống'} icon={Building2} isEditing={false} />
                         </div>
                     </CardSection>
 
-                    <CardSection title="Ghi chú & Diễn giải" icon={StickyNote}>
+                    {formData.contracts && (
+                        <CardSection title="THÔNG TIN HỢP ĐỒNG" icon={Tag}>
+                            <div className="grid grid-cols-2 gap-5">
+                                <DetailRow label="HLV phụ trách" value={formData.contracts?.trainer_name} icon={User} isEditing={false} />
+                                <DetailRow label="Ngày bắt đầu gói" value={formData.contracts?.start_date ? new Date(formData.contracts.start_date).toLocaleDateString('vi-VN') : '-'} icon={Calendar} isEditing={false} />
+                                <DetailRow label="Gói tập" value={formData.contracts?.package_name} icon={Tag} isEditing={false} />
+                            </div>
+                        </CardSection>
+                    )}
+
+                    <CardSection title="GHI CHÚ & DIỄN GIẢI" icon={StickyNote}>
                         <DetailRow label="Nội dung" value={formData.description} name="description" type="textarea" isEditing={isEditing} formData={formData} onChange={handleChange} />
                     </CardSection>
                 </div>
 
                 {/* Sticky Footer */}
                 <div className="sticky bottom-0 bg-white dark:bg-gray-950 border-t border-slate-100 dark:border-slate-800 p-4 flex items-center justify-between gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] shrink-0">
-                     <Button
+                    <Button
                         variant="ghost"
                         onClick={() => onOpenChange(false)}
                         className="rounded-xl h-11 px-6 font-semibold text-[13px] text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-inter"
@@ -357,7 +346,7 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
                     </Button>
 
                     <div className="flex items-center gap-2">
-                         {!isEditing && (
+                        {!isEditing && (
                             <Button
                                 variant="outline"
                                 onClick={handleDelete}

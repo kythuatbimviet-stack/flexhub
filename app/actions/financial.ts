@@ -34,10 +34,18 @@ export async function fetchRevenue() {
             .select(`
                 *,
                 branches (name),
-                clients (member_name)
+                clients (*),
+                contracts (
+                    id,
+                    contract_name,
+                    trainer_name,
+                    start_date,
+                    total_amount,
+                    package_name,
+                    package_price
+                )
             `)
-            .order('recorded_at', { ascending: false })
-
+        
         // Apply RBAC filters
         if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
             query = query.in('branch_id', accessInfo.access.allowedBranchIds)
@@ -63,7 +71,16 @@ export async function fetchRevenueByDateRange(startDate?: string, endDate?: stri
             .select(`
                 *,
                 branches (name),
-                clients (member_name)
+                clients (*),
+                contracts (
+                    id,
+                    contract_name,
+                    trainer_name,
+                    start_date,
+                    total_amount,
+                    package_name,
+                    package_price
+                )
             `)
             .order('recorded_at', { ascending: false })
 

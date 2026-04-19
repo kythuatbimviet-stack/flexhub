@@ -64,9 +64,9 @@ interface WeightGanttViewProps {
 export function WeightGanttView({ records, clients, contracts, onSuccess }: WeightGanttViewProps) {
     const isMobile = useIsMobile()
     const queryClient = useQueryClient()
-    const [startDate, setStartDate] = React.useState<string>(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
-    const [endDate, setEndDate] = React.useState<string>(format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
-    const [dateRangeType, setDateRangeType] = React.useState<string>('this-week')
+    const [startDate, setStartDate] = React.useState<string>(format(startOfMonth(new Date()), 'yyyy-MM-dd'))
+    const [endDate, setEndDate] = React.useState<string>(format(endOfMonth(new Date()), 'yyyy-MM-dd'))
+    const [dateRangeType, setDateRangeType] = React.useState<string>('this-month')
     const [showTarget, setShowTarget] = React.useState(true)
     const [showActual, setShowActual] = React.useState(true)
     const [showTraining, setShowTraining] = React.useState(true)
@@ -312,10 +312,13 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                 const contract = client.latestContract
                 if (!contract) return false
 
-                // Filter out clients with 'Hết hạn HĐ' status
-                if (contract.status === 'Hết hạn HĐ') {
-                    return false
-                }
+                const contractEndDate = contract.end_date ? new Date(contract.end_date) : null
+                if (contractEndDate) contractEndDate.setHours(0, 0, 0, 0)
+                const today = new Date()
+                today.setHours(0, 0, 0, 0)
+
+                const isExpired = contract.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
+                if (isExpired) return false
 
                 if (filterBranch !== "all" && contract.facility_name !== filterBranch) return false
                 if (filterPT !== "all" && contract.trainer_name !== filterPT) return false
@@ -382,7 +385,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
         setFilterBranch("all")
         setFilterPT("all")
         setSearchTerm("")
-        setDateRangeType('this-week')
+        setDateRangeType('this-month')
         toast.success('Đã đặt lại bộ lọc')
     }
 

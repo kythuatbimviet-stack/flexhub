@@ -61,7 +61,7 @@ export default function WeightTrackingPage() {
     const urlClientId = searchParams.get('clientId')
 
     const [selectedClientId, setSelectedClientId] = React.useState<string>(urlClientId || 'all')
-    const [dateRangeType, setDateRangeType] = React.useState<string>('this-week')
+    const [dateRangeType, setDateRangeType] = React.useState<string>('this-month')
     const [startDate, setStartDate] = React.useState<string>('')
     const [endDate, setEndDate] = React.useState<string>('')
     const [selectedRecord, setSelectedRecord] = React.useState<any>(null)
@@ -205,7 +205,14 @@ export default function WeightTrackingPage() {
             // Usually, only those with a contract should be in progress tracking.
             if (!latestContract) return false
             
-            return latestContract.status !== 'Hết hạn HĐ'
+            const contractEndDate = latestContract.end_date ? new Date(latestContract.end_date) : null
+            if (contractEndDate) contractEndDate.setHours(0, 0, 0, 0)
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+
+            const isExpired = latestContract.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
+            
+            return !isExpired
         })
     }, [clients, contracts])
 
@@ -225,8 +232,15 @@ export default function WeightTrackingPage() {
                 .sort((a, b) => new Date(b.created_at || b.start_date).getTime() - new Date(a.created_at || a.start_date).getTime())
             const contract = clientContracts[0]
             
-            // Filter out clients with 'Hết hạn HĐ' status
-            if (contract?.status === 'Hết hạn HĐ') {
+            const contractEndDate = contract?.end_date ? new Date(contract.end_date) : null
+            if (contractEndDate) contractEndDate.setHours(0, 0, 0, 0)
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+
+            const isExpired = contract?.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
+            
+            // Filter out expired contracts
+            if (isExpired) {
                 return false
             }
 
@@ -391,7 +405,7 @@ export default function WeightTrackingPage() {
         setFilterBranch('all')
         setFilterPT('all')
         setFilterPackage('all')
-        setDateRangeType('this-week')
+        setDateRangeType('this-month')
         // startDate/endDate tự động reset qua useEffect của dateRangeType
         toast.info('Đã xóa bộ lọc')
     }

@@ -168,6 +168,23 @@ export function AddRevenueSheet({
         enabled: open,
     })
 
+    const contractId = form.watch('contract_id')
+    const amount = form.watch('amount')
+
+    const { data: contractRevenues } = useQuery({
+        queryKey: ['revenue-contract', contractId],
+        queryFn: async () => {
+            const supabase = createClient()
+            const { data, error } = await supabase
+                .from('revenue')
+                .select('id, amount')
+                .eq('contract_id', contractId)
+            if (error) throw error
+            return data
+        },
+        enabled: !!contractId && !isEdit && open
+    })
+
     // Reset form when revenue changes or sheet opens
     React.useEffect(() => {
         if (open) {
@@ -219,17 +236,42 @@ export function AddRevenueSheet({
         }
     }, [customerId, clients, form])
 
-    // Auto-fill from installment
     React.useEffect(() => {
         if (installmentId && debtDetails?.data?.installments) {
             const inst = debtDetails.data.installments.find((i: any) => i.id === installmentId)
             if (inst) {
                 form.setValue('amount', Number(inst.amount))
                 form.setValue('category_id', 'Công nợ')
-                form.setValue('description', `Thanh toán công nợ đợt cho HĐ ${debtDetails.data.contract_id}`)
+                form.setValue('description', `Thanh toán công nợ đợt ${inst.installment_number} cho HĐ ${debtDetails.data.contract_id}`)
             }
         }
     }, [installmentId, debtDetails, form])
+
+    // Automation logic for Category & Description when Contract is selected
+    React.useEffect(() => {
+        if (!isEdit && contractId && contracts && open) {
+            const contract = contracts.find((c: any) => c.id === contractId)
+            if (!contract) return
+
+            const prevPaymentsCount = contractRevenues?.length || 0
+            const packagePrice = Number(contract.package_price) || Number(contract.total_amount) || 0
+
+            // If it's the first payment
+            if (prevPaymentsCount === 0) {
+                if (amount >= packagePrice && packagePrice > 0) {
+                    form.setValue('category_id', 'Hợp đồng')
+                    form.setValue('description', `Thanh toán đủ cho HĐ ${contractId}`)
+                } else if (amount > 0) {
+                    form.setValue('category_id', 'Công nợ')
+                    form.setValue('description', `Thanh toán đợt 1 cho HĐ ${contractId}`)
+                }
+            } else if (amount > 0) {
+                // For subsequent payments
+                form.setValue('category_id', 'Công nợ')
+                form.setValue('description', `Thanh toán đợt ${prevPaymentsCount + 1} cho HĐ ${contractId}`)
+            }
+        }
+    }, [contractId, amount, contractRevenues, contracts, isEdit, form, open])
 
     const filteredContracts = React.useMemo(() => {
         if (!contracts) return []
