@@ -55,7 +55,10 @@ export default function TrainingLogsPage() {
         staleTime: 30 * 60 * 1000,
         refetchOnWindowFocus: false,
     })
-    const pts = filterOptions?.data?.pts || []
+    const pts = React.useMemo(() => {
+        const rawPts = filterOptions?.data?.pts || []
+        return Array.from(new Set(rawPts.map((p: any) => p.name))).sort()
+    }, [filterOptions])
 
     // 1. Fetch Total Stats (Lightweight)
     const { data: statsResult } = useQuery({

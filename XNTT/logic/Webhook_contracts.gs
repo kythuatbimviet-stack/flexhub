@@ -40,11 +40,13 @@ function doPost(e) {
     }
 
     // 1.2 LOGIC CHIA SẺ (ZALO & EMAIL - Trigger)
+    // - Zalo: CHỈ gửi khi có yêu cầu (khác 'done')
+    // - Email: CHỈ gửi khi cột sendemail có giá trị là 'trigger_email' (Tránh vòng lặp)
     const isZaloReq = record.sendzalo && record.sendzalo !== 'done';
-    const isEmailReq = record.sendemail && record.sendemail !== 'done';
+    const isEmailReq = record.sendemail === 'trigger_email';
 
     if (isZaloReq || isEmailReq) {
-      console.log("Processing sharing request for contract ID: " + record.id);
+      console.log("Processing sharing request for contract ID: " + record.id + " | EmailReq: " + isEmailReq);
       const contract = fetchFullContractData(record.id);
       const fileId = extractFileIdFromUrl(contract.contract_file_url);
       let pdfBlob = null;
@@ -73,7 +75,10 @@ function doPost(e) {
           const subject = `Hợp đồng ${contract.member_name} - Eva's Fit Nam Định`;
           const customMessage = record.email_message || "";
           webapp_guiemail(subject, email, pdfBlob, contract.member_name, contract, customMessage);
-          updateSupabaseSharingStatus(contract.id, 'sendemail', 'done');
+          
+          // Sau khi gửi xong, ghi đè bằng dấu thời gian (Timestamp) thay vì dùng chữ 'done'
+          // Vì Timestamp !== 'trigger_email', Webhook tiếp theo sẽ không gửi lặp lại.
+          updateSupabaseSharingStatus(contract.id, 'sendemail', new Date().toISOString());
         }
       }
     }

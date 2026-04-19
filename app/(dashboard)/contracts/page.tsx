@@ -27,7 +27,9 @@ import {
     LayoutGrid,
     ExternalLink,
     Phone,
-    Send
+    Send,
+    Mail,
+    ClipboardCheck
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -80,13 +82,13 @@ import * as XLSX from 'xlsx'
 
 const TEN_MINUTES = 10 * 60 * 1000
 
-const MemberSummaryPopover = ({ 
-    contract, 
-    onShowDetails, 
-    onMouseEnter, 
-    onMouseLeave 
-}: { 
-    contract: any, 
+const MemberSummaryPopover = ({
+    contract,
+    onShowDetails,
+    onMouseEnter,
+    onMouseLeave
+}: {
+    contract: any,
     onShowDetails: () => void,
     onMouseEnter?: () => void,
     onMouseLeave?: () => void
@@ -129,8 +131,8 @@ const MemberSummaryPopover = ({
     }, [contract.dob])
 
     return (
-        <PopoverContent 
-            className="w-[320px] p-0 border-none shadow-2xl rounded-[24px] overflow-hidden bg-white dark:bg-gray-950 font-inter" 
+        <PopoverContent
+            className="w-[320px] p-0 border-none shadow-2xl rounded-[24px] overflow-hidden bg-white dark:bg-gray-950 font-inter"
             onClick={(e) => e.stopPropagation()}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
@@ -159,7 +161,7 @@ const MemberSummaryPopover = ({
                     <div className="flex justify-between items-center text-[13px]">
                         <span className="text-slate-500 font-medium">Ngày sinh</span>
                         <span className="text-slate-900 dark:text-slate-200 font-semibold uppercase">
-                            {formattedDob} 
+                            {formattedDob}
                             {age !== null ? ` (${age} tuổi)` : ''}
                         </span>
                     </div>
@@ -195,7 +197,7 @@ const MemberSummaryPopover = ({
                 </div>
 
                 {/* Footer Action */}
-                <Button 
+                <Button
                     onClick={(e) => {
                         e.stopPropagation()
                         onShowDetails()
@@ -286,8 +288,8 @@ export default function ContractsPage() {
                                             onClick={() => setLocalSort({ ...localSort, key: f.value })}
                                             className={cn(
                                                 "flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium transition-all border",
-                                                localSort.key === f.value 
-                                                    ? "bg-red-50 border-red-100 text-red-600" 
+                                                localSort.key === f.value
+                                                    ? "bg-red-50 border-red-100 text-red-600"
                                                     : "bg-slate-50 border-transparent text-slate-500 hover:bg-slate-100"
                                             )}
                                         >
@@ -359,8 +361,8 @@ export default function ContractsPage() {
 
     const SortIcon = ({ columnKey }: { columnKey: string }) => {
         if (!sortConfig || sortConfig.key !== columnKey) return <ArrowUpDown className="ml-1 w-3 h-3 opacity-30" />
-        return sortConfig.direction === 'asc' 
-            ? <ChevronUp className="ml-1 w-3 h-3 text-red-500" /> 
+        return sortConfig.direction === 'asc'
+            ? <ChevronUp className="ml-1 w-3 h-3 text-red-500" />
             : <ChevronDown className="ml-1 w-3 h-3 text-red-500" />
     }
 
@@ -369,7 +371,7 @@ export default function ContractsPage() {
         return () => clearTimeout(t)
     }, [searchTerm])
     React.useEffect(() => { setPage(1) }, [statusFilter, branchFilter, ptFilter, contractTypeFilter, pageSize])
-    
+
     // Sort config state moved after usePermissions for correct initialization order if needed
     const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'updated_at', direction: 'desc' })
 
@@ -688,7 +690,7 @@ export default function ContractsPage() {
                                 <span className="text-sm">HĐ Đến hạn</span>
                             </Link>
                         </Button>
-                        <Button 
+                        <Button
                             onClick={() => {
                                 setSelectedContract(null)
                                 setIsDetailsOpen(true)
@@ -727,7 +729,7 @@ export default function ContractsPage() {
                         const colors = statusColors[s.nam] || { active: 'bg-white text-red-600 border-red-200', inactive: 'bg-white/50 text-gray-500 border-gray-100', badge: 'bg-red-500 text-white' }
 
                         return (
-                            <TabsTrigger key={`status-tab-${s.id}`} value={s.nam} 
+                            <TabsTrigger key={`status-tab-${s.id}`} value={s.nam}
                                 className={cn(
                                     "flex shrink-0 items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-none border",
                                     "data-[state=active]:shadow-md hover:scale-105 active:scale-95",
@@ -894,31 +896,31 @@ export default function ContractsPage() {
                                 </TableHead>
                                 <TableHead onClick={() => handleSort('member_name')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
                                     <div className="flex items-center">
-                                        HỢP ĐỒNG & HỘI VIÊN 
+                                        HỢP ĐỒNG & HỘI VIÊN
                                         <SortIcon columnKey="member_name" />
                                     </div>
                                 </TableHead>
                                 <TableHead onClick={() => handleSort('package_name')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
                                     <div className="flex items-center">
-                                        DỊCH VỤ & GÓI TẬP 
+                                        DỊCH VỤ & GÓI TẬP
                                         <SortIcon columnKey="package_name" />
                                     </div>
                                 </TableHead>
                                 <TableHead onClick={() => handleSort('total_amount')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
                                     <div className="flex items-center">
-                                        GIÁ TRỊ & THANH TOÁN 
+                                        GIÁ TRỊ & THANH TOÁN
                                         <SortIcon columnKey="total_amount" />
                                     </div>
                                 </TableHead>
                                 <TableHead onClick={() => handleSort('branch_id')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
                                     <div className="flex items-center">
-                                        CHI NHÁNH VÀ PT 
+                                        CHI NHÁNH VÀ PT
                                         <SortIcon columnKey="branch_id" />
                                     </div>
                                 </TableHead>
                                 <TableHead onClick={() => handleSort('start_date')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 cursor-pointer hover:text-red-600 transition-colors uppercase tracking-wider group">
                                     <div className="flex items-center">
-                                        NGÀY HỢP ĐỒNG 
+                                        NGÀY HỢP ĐỒNG
                                         <SortIcon columnKey="start_date" />
                                     </div>
                                 </TableHead>
@@ -960,7 +962,7 @@ export default function ContractsPage() {
                                     const isExpanded = expandedCustomers.has(group.clientId)
                                     return (
                                         <React.Fragment key={group.clientId}>
-                                            <TableRow 
+                                            <TableRow
                                                 className={cn(
                                                     "group border-gray-50 dark:border-gray-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer",
                                                     isExpanded && "bg-slate-50/50 dark:bg-slate-800/50"
@@ -979,7 +981,7 @@ export default function ContractsPage() {
                                                 <TableCell className="py-4" colSpan={2}>
                                                     <Popover open={hoveredClientId === group.clientId} onOpenChange={(open) => !open && handleMemberMouseLeave()}>
                                                         <PopoverTrigger asChild>
-                                                            <div 
+                                                            <div
                                                                 className="flex items-center gap-4 cursor-pointer outline-none group/client"
                                                                 onMouseEnter={() => handleMemberMouseEnter(group.clientId)}
                                                                 onMouseLeave={handleMemberMouseLeave}
@@ -1003,15 +1005,15 @@ export default function ContractsPage() {
                                                                 </div>
                                                             </div>
                                                         </PopoverTrigger>
-                                                        <MemberSummaryPopover 
-                                                            contract={group.contracts[0]} 
+                                                        <MemberSummaryPopover
+                                                            contract={group.contracts[0]}
                                                             onMouseEnter={() => handleMemberMouseEnter(group.clientId)}
                                                             onMouseLeave={handleMemberMouseLeave}
                                                             onShowDetails={() => {
-                                                                setSelectedContract(group.contracts[0]); 
+                                                                setSelectedContract(group.contracts[0]);
                                                                 setIsDetailsOpen(true)
                                                                 setHoveredClientId(null)
-                                                            }} 
+                                                            }}
                                                         />
                                                     </Popover>
                                                 </TableCell>
@@ -1113,14 +1115,65 @@ export default function ContractsPage() {
                                                                                                 </div>
                                                                                             </TableCell>
                                                                                             <TableCell>
-                                                                                                <div className={cn(
-                                                                                                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border whitespace-nowrap",
-                                                                                                    contract.status === 'Chờ ký HĐ' ? "bg-amber-50 text-amber-600 border-amber-100" :
-                                                                                                    contract.status === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                                                                                                    contract.status === 'Hết hạn HĐ' ? "bg-rose-50 text-rose-600 border-rose-100" :
-                                                                                                    "bg-gray-50 text-gray-600 border-gray-100"
-                                                                                                )}>
-                                                                                                    {contract.status}
+                                                                                                <div className="flex flex-col gap-1.5 min-w-[100px]">
+                                                                                                    <div className={cn(
+                                                                                                        "inline-flex w-fit items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border whitespace-nowrap",
+                                                                                                        contract.status === 'Chờ ký HĐ' ? "bg-amber-50 text-amber-600 border-amber-100" :
+                                                                                                            contract.status === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                                                                                                                contract.status === 'Hết hạn HĐ' ? "bg-rose-50 text-rose-600 border-rose-100" :
+                                                                                                                    "bg-gray-50 text-gray-600 border-gray-100"
+                                                                                                    )}>
+                                                                                                        {contract.status}
+                                                                                                    </div>
+
+                                                                                                    <div className="flex flex-col gap-1 mt-1 pt-1 border-t border-gray-50 dark:border-gray-800/50">
+                                                                                                        {contract.status === 'Hết hạn HĐ' ? (
+                                                                                                            <div className="flex items-center gap-1.5">
+                                                                                                                <ClipboardCheck className={cn(
+                                                                                                                    "w-2.5 h-2.5", 
+                                                                                                                    contract.closure_status ? "text-emerald-500" : "text-amber-500"
+                                                                                                                )} />
+                                                                                                                <span className={cn(
+                                                                                                                    "text-[10px] font-bold tracking-tight uppercase leading-none",
+                                                                                                                    contract.closure_status ? "text-emerald-600" : "text-amber-600"
+                                                                                                                )}>
+                                                                                                                    {contract.closure_status ? "Đã xử lý hợp đồng" : "Chưa xử lý hợp đồng"}
+                                                                                                                </span>
+                                                                                                            </div>
+                                                                                                        ) : (
+                                                                                                            <div className="flex items-center gap-1.5">
+                                                                                                                <Mail className={cn(
+                                                                                                                    "w-2.5 h-2.5", 
+                                                                                                                    (contract.sendemail && contract.sendemail !== 'trigger_email') ? "text-emerald-500" : 
+                                                                                                                    contract.sendemail === 'trigger_email' ? "text-amber-500 animate-pulse" : "text-gray-300"
+                                                                                                                )} />
+                                                                                                                <div className="flex flex-col">
+                                                                                                                    <span className={cn(
+                                                                                                                        "text-[10px] font-bold tracking-tight uppercase leading-none",
+                                                                                                                        (contract.sendemail && contract.sendemail !== 'trigger_email') ? "text-emerald-600" : 
+                                                                                                                        contract.sendemail === 'trigger_email' ? "text-amber-600" : "text-gray-400"
+                                                                                                                    )}>
+                                                                                                                        {contract.sendemail === 'trigger_email' ? "Đang gửi..." : 
+                                                                                                                         (contract.sendemail && contract.sendemail !== 'trigger_email') ? "Đã gửi email" : "Chưa gửi email"}
+                                                                                                                    </span>
+                                                                                                                    
+                                                                                                                    {contract.sendemail && contract.sendemail !== 'trigger_email' && (() => {
+                                                                                                                        try {
+                                                                                                                            const d = new Date(contract.sendemail)
+                                                                                                                            if (!isNaN(d.getTime())) {
+                                                                                                                                return (
+                                                                                                                                    <span className="text-[9px] text-gray-400 font-medium mt-0.5">
+                                                                                                                                        {format(d, 'HH:mm dd/MM/yy')}
+                                                                                                                                    </span>
+                                                                                                                                )
+                                                                                                                            }
+                                                                                                                        } catch (e) {}
+                                                                                                                        return null
+                                                                                                                    })()}
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                        )}
+                                                                                                    </div>
                                                                                                 </div>
                                                                                             </TableCell>
                                                                                             <TableCell className="text-right pr-4">

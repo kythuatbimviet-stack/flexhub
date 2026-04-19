@@ -72,7 +72,9 @@ function doPost(e) {
           tg_log("Gửi Zalo khách ", "Zalo:"+ contract.zalo_id, "Mã hợp đồng"+record.id)     
           const msg = `${branchName} gửi chị ${contract.member_name} hợp đồng điện tử. Chị vui lòng xem file đính kèm.`;
           webapp_guizalo(zaloUserId, msg, pdfBlob);
-          updateSupabaseSharingStatus(contract.id, 'sendzalo', 'done');
+          
+          // Ghi lại thời gian gửi Zalo thay vì dùng chữ 'done'
+          updateSupabaseSharingStatus(contract.id, 'sendzalo', new Date().toISOString());
         } else {
           console.warn("No Zalo UID found for contract: " + record.id);
         }

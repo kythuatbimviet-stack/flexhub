@@ -178,7 +178,7 @@ export async function fetchContractsLite() {
                 total_amount, payment_method, trainer_name, assigned_pt,
                 contract_type, package_name, package_type, facility_name,
                 created_by_email, created_at, updated_at,
-                sendzalo, sendemail, contract_file_url,
+                sendzalo, sendemail, contract_file_url, is_receipt_sent, receipt_sent_at,
                 id_number, phone, email, member_address, dob, source,
                 initial_height, initial_weight, target_weight, medical_condition,
                 legal_representative, representative_phone, center_address,

@@ -582,7 +582,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                 )}
                             </DropdownMenuContent>
                         </DropdownMenu>
-                        
+
                         {(formData.status === 'Không tham gia' || formData.status === 'Tư vấn & không tham gia') && (
                             <Input
                                 placeholder="Lý do..."
@@ -1057,10 +1057,10 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                         </p>
                                                     )}
                                                 </div>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                                <ClientInfoRow label="Chi nhánh quản lý" value={formData.branch_id} name="branch_id" type="select" options={allowedBranches.map((b: any) => ({ value: b.id, label: b.name }))} {...sharedRowProps} />
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                                    <ClientInfoRow label="Chi nhánh quản lý" value={formData.branch_id} name="branch_id" type="select" options={allowedBranches.map((b: any) => ({ value: b.id, label: b.name }))} {...sharedRowProps} />
+                                                </div>
                                             </div>
-                                        </div>
                                             {/* <div className="grid grid-cols-1 sm:grid-cols-1 gap-5">
                                                 <ClientInfoRow label="Lộ trình đăng ký" value={formData.registration_type} name="registration_type" {...sharedRowProps} />
                                             </div> */}
@@ -1098,7 +1098,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                         </ClientCardSection>
                                     )}
 
-                                    {/* Section: Chữ ký khách hàng
+                                    {/* Section: Chữ ký khách hàng */}
                                     <ClientCardSection title="Chữ ký khách hàng" icon={FileText}>
                                         <div className="space-y-4">
                                             {isEditing ? (
@@ -1120,7 +1120,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                 </div>
                                             )}
                                         </div>
-                                    </ClientCardSection> */}
+                                    </ClientCardSection>
 
                                     {/* Section: Gửi Hợp đồng Khách hàng */}
                                     {latestContract?.data && (

@@ -42,7 +42,7 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select"
-import { useQueryClient, useQuery } from '@tanstack/react-query'
+import { useQueryClient, useQuery, keepPreviousData } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getWeek, isToday, parseISO, differenceInDays, startOfWeek, endOfWeek, subWeeks, addWeeks, subMonths, addMonths } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -100,7 +100,9 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
         queryFn: async () => {
             const res = await fetchTrainingLogs(startDate, endDate)
             return res.success ? res.data : []
-        }
+        },
+        staleTime: 120000, // 2 minutes
+        placeholderData: keepPreviousData
     })
 
     const { data: recordsFromGantt = [] } = useQuery({
@@ -202,18 +204,47 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
     const handleUpdateStatus = async (status: 'Y' | 'N' | 'TĐ' | null) => {
         if (!selectedClientId || !selectedDate) return
         
+        const dateStr = format(selectedDate, 'yyyy-MM-dd')
+        const queryKey = ['training-logs', startDate, endDate]
+        
+        // 1. Snapshot previous data for rollback
+        const previousLogs = queryClient.getQueryData(queryKey)
+        
+        // 2. Optimistically update local cache
+        queryClient.setQueryData(queryKey, (old: any[] = []) => {
+            const exists = old.find(l => l.client_id === selectedClientId && l.date === dateStr)
+            
+            if (!status) {
+                // Remove if null
+                return old.filter(l => !(l.client_id === selectedClientId && l.date === dateStr))
+            }
+            
+            if (exists) {
+                // Update existing
+                return old.map(l => (l.client_id === selectedClientId && l.date === dateStr) ? { ...l, status } : l)
+            }
+            
+            // Add new
+            return [...old, { client_id: selectedClientId, date: dateStr, status }]
+        })
+        
+        // 3. Sync with server
         try {
-            const dateStr = format(selectedDate, 'yyyy-MM-dd')
             const res = await upsertTrainingStatus(selectedClientId, dateStr, status)
             if (res.success) {
-                queryClient.invalidateQueries({ queryKey: ['training-logs'] })
+                // Success: Just show toast, no need to invalidate the whole month's logs
+                // We keep the optimistic update as truth. 
+                // We can optionally invalidate only the specific client log if we have a separate query for it.
+                // In this case, client-training-logs logic:
                 queryClient.invalidateQueries({ queryKey: ['client-training-logs', selectedClientId] })
                 queryClient.invalidateQueries({ queryKey: ['training-logs-report'] })
                 toast.success('Đã cập nhật trạng thái tập luyện')
             } else {
-                toast.error(res.error || 'Lỗi khi cập nhật')
+                throw new Error(res.error || 'Lỗi khi cập nhật')
             }
         } catch (e: any) {
+            // 4. Rollback on error
+            queryClient.setQueryData(queryKey, previousLogs)
             toast.error(e.message)
         }
     }

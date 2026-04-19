@@ -139,7 +139,7 @@ const ContractDetailRow = ({ label, value, name, type = 'text', icon: Icon, isEd
         <div className="space-y-1.5 w-full text-left">
             <Label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
                 {Icon && <Icon className="w-3 h-3 text-red-500/70" />}
-                {label} {isEditing && ['package_name', 'payment_method', 'quantity', 'total_amount', 'status', 'id_number', 'email', 'client_id', 'membership_id'].includes(name) && <span className="text-red-500">*</span>}
+                {label} {isEditing && ['package_name', 'payment_method', 'quantity', 'total_amount', 'status', 'id_number', 'email', 'client_id', 'membership_id', 'initial_weight'].includes(name) && <span className="text-red-500">*</span>}
             </Label>
             {isEditing ? (
                 children ? (
@@ -401,7 +401,7 @@ export function ContractDetailsSheet({
                     initialData.assigned_pt = targetClient.assigned_pt || ''
                     initialData.branch_id = targetClient.branch_id || ''
                     initialData.initial_height = targetClient.height?.toString() || ''
-                    initialData.initial_weight = targetClient.weight?.toString() || ''
+                    initialData.initial_weight = ''
                     initialData.target_weight = targetClient.target_weight?.toString() || ''
                     initialData.medical_condition = targetClient.medical_history || ''
                     initialData.signature_url = targetClient.signature_url || ''
@@ -519,7 +519,7 @@ export function ContractDetailsSheet({
                     assigned_pt: client.assigned_pt || '',
                     branch_id: client.branch_id || prev.branch_id,
                     initial_height: client.height?.toString() || '',
-                    initial_weight: client.weight?.toString() || '',
+                    initial_weight: '',
                     target_weight: client.target_weight?.toString() || '',
                     medical_condition: client.medical_history || '',
                     signature_url: client.signature_url || '',
@@ -805,12 +805,17 @@ export function ContractDetailsSheet({
                     return
                 }
 
+                if (!formData.initial_weight || formData.initial_weight === '') {
+                    toast.error('Vui lòng nhập cân nặng ban đầu')
+                    setLoading(false)
+                    return
+                }
+
                 if (!formData.signature_url || formData.signature_url === '') {
                     toast.error('Vui lòng yêu cầu khách hàng ký tên')
                     setLoading(false)
                     return
                 }
-
                 // Check if ID exists
                 const checkRes = await checkContractIdExists(formData.id)
                 if (checkRes.success && checkRes.exists) {
@@ -1196,13 +1201,28 @@ export function ContractDetailsSheet({
                                         Gửi Email
                                     </Label>
                                     <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
-                                        {formData.sendemail ? new Date(formData.sendemail).toLocaleDateString('vi-VN', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        }) : 'Chưa gửi'}
+                                        {(() => {
+                                            if (!formData.sendemail) return 'Chưa gửi';
+                                            if (formData.sendemail === 'trigger_email') return 'Đang xử lý...';
+                                            try {
+                                                const d = new Date(formData.sendemail);
+                                                if (isNaN(d.getTime())) return formData.sendemail === 'done' ? 'Đã gửi' : 'Chưa gửi';
+                                                
+                                                return (
+                                                    <span className="flex flex-col">
+                                                        <span>Đã gửi</span>
+                                                        <span className="text-[11px] text-slate-400 font-normal">
+                                                            {d.toLocaleDateString('vi-VN', {
+                                                                day: '2-digit', month: '2-digit', year: 'numeric',
+                                                                hour: '2-digit', minute: '2-digit'
+                                                            })}
+                                                        </span>
+                                                    </span>
+                                                );
+                                            } catch {
+                                                return 'Đã gửi';
+                                            }
+                                        })()}
                                     </p>
                                 </div>
                                 <div className="space-y-1.5">
@@ -1211,13 +1231,20 @@ export function ContractDetailsSheet({
                                         Gửi Zalo
                                     </Label>
                                     <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
-                                        {formData.sendzalo ? new Date(formData.sendzalo).toLocaleDateString('vi-VN', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        }) : 'Chưa gửi'}
+                                        {(() => {
+                                            if (!formData.sendzalo) return 'Chưa gửi';
+                                            if (formData.sendzalo === 'done') return 'Đã gửi';
+                                            try {
+                                                const d = new Date(formData.sendzalo);
+                                                if (isNaN(d.getTime())) return 'Đã gửi';
+                                                return d.toLocaleDateString('vi-VN', {
+                                                    day: '2-digit', month: '2-digit', year: 'numeric',
+                                                    hour: '2-digit', minute: '2-digit'
+                                                });
+                                            } catch {
+                                                return 'Đã gửi';
+                                            }
+                                        })()}
                                     </p>
                                 </div>
                             </div>

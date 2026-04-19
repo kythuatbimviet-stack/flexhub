@@ -1,0 +1,115 @@
+Phân tích Hiệu năng Weight-Tracking (Gantt View)
+Tóm tắt vấn đề
+Có 3 điểm làm chậm trải nghiệm người dùng chính:
+
+Bấm Y/N/T → lưu lâu
+Chuyển sang tab "Tiến trình thay đổi" → tải lâu
+Tổng quát: refetch toàn bộ sau mỗi action thay vì chỉ cập nhật cache cục bộ
+Phân tích chi tiết
+❌ Vấn đề 1: handleUpdateStatus — Lưu Y/N/T cực chậm
+ts
+// weight-gantt-view.tsx, line 151
+const handleUpdateStatus = async (status: 'Y' | 'N' | 'TĐ' | null) => {
+    const res = await upsertTrainingStatus(clientId, dateStr, status)  // ← Chờ server xong rồi mới thay màu
+    if (res.success) {
+        queryClient.invalidateQueries({ queryKey: ['training-logs'] })  // ← Refetch TOÀN BỘ training-logs
+        queryClient.invalidateQueries({ queryKey: ['client-training-logs', ...] })
+        queryClient.invalidateQueries({ queryKey: ['training-logs-report'] })
+    }
+}
+Nguyên nhân gốc:
+
+Chờ hết round-trip network (Server Action Next.js → Supabase → response) mới cập nhật UI
+Server Action upsertTrainingStatus còn gọi revalidatePath() → buộc Next.js invalidate RSC cache, thêm latency
+Sau đó invalidateQueries trigger 3 refetch song song → network bận
+Giải pháp: Optimistic Update
+
+ts
+// Ngay lập tức cập nhật local cache TRƯỚC khi gọi API
+queryClient.setQueryData(['training-logs', startDate, endDate], (old: any[]) => {
+    // Cập nhật item trong cache ngay → UI đổi màu tức thì
+    return old.map(log => log.client_id === clientId && log.date === dateStr 
+        ? { ...log, status } : log)
+})
+// Sau đó mới gọi API, nếu lỗi thì rollback
+❌ Vấn đề 2: Tab "Tiến trình thay đổi" (WeightHistoryPanel) — Tải lâu
+ts
+// weight-gantt-view.tsx, line 100
+const { data: trainingLogs = [] } = useQuery({
+    queryKey: ['training-logs', startDate, endDate],  // ← KHÔNG có staleTime
+    queryFn: async () => {
+        const res = await fetchTrainingLogs(startDate, endDate)  // ← Fetch lại mỗi lần
+    }
+})
+Nguyên nhân gốc:
+
+staleTime = 0 (mặc định) → mỗi lần mount/focus lại đều refetch
+WeightHistoryPanel cũng tự gọi fetchClientTrainingLogs riêng, tạo request thứ 2 trùng lặp
+Không có placeholderData → UI trắng hoàn toàn trong khi chờ
+❌ Vấn đề 3: invalidateQueries quá rộng
+Sau khi save, code gọi:
+
+ts
+queryClient.invalidateQueries({ queryKey: ['training-logs'] })    // Fetch lại toàn bộ tháng
+queryClient.invalidateQueries({ queryKey: ['weight-records', ...] })  // (ở page.tsx)
+— Trong khi chỉ cần cập nhật 1 ô duy nhất.
+
+❌ Vấn đề 4: revalidatePath ở Server Action
+ts
+// weight-tracking.ts, line 365
+revalidatePath('/weight-tracking')
+revalidatePath('/training-logs')
+revalidatePath làm Next.js RSC cache bị xóa và buộc re-render ở server, thêm 200-400ms latency không cần thiết. Với Client Component, cái này không có tác dụng mà lại chậm.
+
+Đề xuất tối ưu hóa
+#	Vấn đề	Giải pháp	Tác động
+1	Y/N/T lưu chậm	Optimistic Update: cập nhật cache ngay, rollback nếu lỗi	⚡ Instant response
+2	Tab Tiến trình tải lâu	Thêm staleTime: 2 * 60 * 1000 cho training-logs query	✅ Không refetch khi chuyển tab
+3	invalidateQueries quá rộng	Dùng setQueryData thay vì invalidateQueries	✅ Không gây waterfall refetch
+4	revalidatePath thừa	Bỏ revalidatePath ở upsertTrainingStatus	✅ Tiết kiệm 200-400ms
+5	Skeleton loading	Thêm placeholderData: keepPreviousData	✅ UI không bị trắng khi chuyển tab
+Kế hoạch sửa cụ thể
+File: weight-gantt-view.tsx
+1. Thêm staleTime cho training-logs:
+
+ts
+const { data: trainingLogs = [] } = useQuery({
+    queryKey: ['training-logs', startDate, endDate],
+    queryFn: ...,
+    staleTime: 2 * 60 * 1000,   // ← Giữ cache 2 phút
+    placeholderData: keepPreviousData  // ← Không trắng khi reload
+})
+2. Optimistic Update cho handleUpdateStatus:
+
+ts
+const handleUpdateStatus = async (status: 'Y' | 'N' | 'TĐ' | null) => {
+    const dateStr = format(selectedDate, 'yyyy-MM-dd')
+    const queryKey = ['training-logs', startDate, endDate]
+    
+    // 1. Lưu lại snapshot để rollback
+    const previous = queryClient.getQueryData(queryKey)
+    
+    // 2. Cập nhật ngay lập tức (Optimistic)
+    queryClient.setQueryData(queryKey, (old: any[] = []) => {
+        const exists = old.find(l => l.client_id === selectedClientId && l.date === dateStr)
+        if (!status) return old.filter(l => !(l.client_id === selectedClientId && l.date === dateStr))
+        if (exists) return old.map(l => l.client_id === selectedClientId && l.date === dateStr ? { ...l, status } : l)
+        return [...old, { client_id: selectedClientId, date: dateStr, status }]
+    })
+    
+    // 3. Gọi API bất đồng bộ
+    try {
+        const res = await upsertTrainingStatus(selectedClientId, dateStr, status)
+        if (!res.success) throw new Error(res.error)
+        toast.success('Đã cập nhật')
+    } catch (e: any) {
+        // 4. Nếu lỗi, rollback về dữ liệu cũ
+        queryClient.setQueryData(queryKey, previous)
+        toast.error('Lỗi: ' + e.message)
+    }
+}
+File: weight-tracking.ts (Server Action)
+Bỏ revalidatePath trong upsertTrainingStatus vì:
+
+Trang dùng Client Component, không cần RSC revalidation
+Data được quản lý hoàn toàn qua React Query client-side

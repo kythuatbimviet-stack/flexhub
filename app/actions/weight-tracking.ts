@@ -341,7 +341,6 @@ export async function upsertTrainingStatus(clientId: string, date: string, statu
                 .eq('client_id', clientId)
                 .eq('date', date)
             if (deleteError) throw deleteError
-            revalidatePath('/weight-tracking')
             return { success: true }
         }
 
@@ -362,8 +361,6 @@ export async function upsertTrainingStatus(clientId: string, date: string, statu
             return { success: false, error: error.message }
         }
 
-        revalidatePath('/weight-tracking')
-        revalidatePath('/training-logs')
         return { success: true }
     } catch (error: any) {
         console.error('Unexpected Upsert Error:', error)
