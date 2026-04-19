@@ -23,6 +23,8 @@ import {
     PauseCircle,
     XCircle,
     AlertCircle,
+    Filter,
+    RotateCcw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -53,6 +55,8 @@ import { fetchContractsLite, bulkDeleteContracts } from '@/app/actions/contracts
 import Link from 'next/link'
 import { ContractDetailsSheet } from '@/components/contracts/contract-details-sheet'
 import { ContractClosureDialog } from '@/components/contracts/contract-closure-dialog'
+import { fetchBranches } from '@/app/actions/branches'
+import { usePermissions } from '@/hooks/use-permissions'
 
 // ─── Closure Status Badge ────────────────────────────────────
 function ClosureStatusBadge({ status }: { status?: string }) {
@@ -89,6 +93,11 @@ export default function DueContractsPage() {
     // Closure dialog state
     const [closureContract, setClosureContract] = React.useState<any | null>(null)
     const [isClosureOpen, setIsClosureOpen] = React.useState(false)
+    const [branchFilter, setBranchFilter] = React.useState('all')
+    const [ptFilter, setPtFilter] = React.useState('all')
+    const [showMobileFilters, setShowMobileFilters] = React.useState(false)
+
+    const { permissions, isLoading: isLoadingPermissions } = usePermissions()
 
     const handleRowClick = (contract: any, e: React.MouseEvent) => {
         if ((e.target as HTMLElement).closest('[data-no-click]')) return
@@ -133,6 +142,34 @@ export default function DueContractsPage() {
         staleTime: 10 * 60 * 1000,  // ✅ Đồng nhất 10 phút với AppDataInitializer & contracts/page.tsx
     })
 
+    const { data: branches = [] } = useQuery<any[]>({
+        queryKey: ['branches'],
+        queryFn: async () => {
+            const res = await fetchBranches()
+            return res.success ? (res.data ?? []) : []
+        },
+        staleTime: 30 * 60 * 1000,
+    })
+
+    const allowedBranches = React.useMemo(() => {
+        if (permissions.canViewAllBranches) return branches
+        if (permissions.allowedBranchIds) {
+            return branches.filter(b => permissions.allowedBranchIds?.includes(b.id))
+        }
+        return []
+    }, [branches, permissions])
+
+    React.useEffect(() => {
+        if (!isLoadingPermissions && !permissions.canViewAllBranches && allowedBranches.length === 1 && branchFilter === 'all') {
+            setBranchFilter(allowedBranches[0].id)
+        }
+    }, [allowedBranches, permissions, isLoadingPermissions, branchFilter])
+
+    const ptOptions = React.useMemo(() =>
+        Array.from(new Set((contracts ?? []).map((c: any) => c.trainer_name).filter(Boolean))),
+        [contracts]
+    )
+
     const filteredContracts = React.useMemo(() => {
         const today = new Date()
         today.setHours(0, 0, 0, 0)
@@ -160,14 +197,19 @@ export default function DueContractsPage() {
                 ) return false
             }
 
+            // Branch & PT filters
+            if (branchFilter !== 'all' && c.branch_id !== branchFilter) return false
+            if (ptFilter !== 'all' && c.trainer_name !== ptFilter) return false
+
             // Tab filter
             if (tab === 'this-week') return endDate >= today && endDate <= next7Days
             if (tab === 'next-week') return endDate > next7Days && endDate <= next14Days
             if (tab === 'this-month') return endDate >= today && endDate <= next30Days
             if (tab === 'expired') return endDate < today
+            
             return true
         })
-    }, [contracts, tab, searchTerm])
+    }, [contracts, tab, searchTerm, branchFilter, ptFilter])
 
     // ── Pagination ──────────────────────────────────────────
     const totalCount = filteredContracts.length
@@ -178,7 +220,12 @@ export default function DueContractsPage() {
         return filteredContracts.slice(from, from + pageSize)
     }, [filteredContracts, page, pageSize])
 
-    React.useEffect(() => { setPage(1) }, [tab, searchTerm, pageSize])
+    React.useEffect(() => { setPage(1) }, [tab, searchTerm, pageSize, branchFilter, ptFilter])
+
+    const clearFilters = () => {
+        setSearchTerm(''); setBranchFilter('all'); setPtFilter('all'); setPage(1)
+        toast.info('Đã làm mới bộ lọc')
+    }
 
     const counts = React.useMemo(() => {
         const today = new Date()
@@ -289,14 +336,68 @@ export default function DueContractsPage() {
                             </TabsTrigger>
                         </TabsList>
 
-                        <div className="relative group max-w-sm w-full lg:w-72">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-red-600 transition-colors" />
-                            <input
-                                placeholder="Tìm theo tên hội viên..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 h-10 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-sm outline-none focus:ring-2 focus:ring-red-500/20 transition-all font-medium"
-                            />
+                        <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2 flex-1 justify-end">
+                            <div className="flex items-center gap-2 flex-1 max-w-md">
+                                <div className="relative group flex-1">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-red-600 transition-colors" />
+                                    <input
+                                        placeholder="Tìm theo tên hội viên..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-10 h-10 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-sm outline-none focus:ring-2 focus:ring-red-500/20 transition-all font-medium font-inter"
+                                    />
+                                </div>
+                                <Button variant="outline" size="icon"
+                                    onClick={() => setShowMobileFilters(!showMobileFilters)}
+                                    className={cn("lg:hidden h-10 w-10 rounded-xl border-gray-200 dark:border-gray-800 transition-all",
+                                        showMobileFilters ? "bg-red-50 text-red-600 border-red-200" : "bg-white dark:bg-gray-800/50")}>
+                                    <Filter className="w-4 h-4" />
+                                </Button>
+                            </div>
+
+                            <AnimatePresence>
+                                {(showMobileFilters || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
+                                    <motion.div
+                                        initial={typeof window !== 'undefined' && window.innerWidth < 1024 ? { height: 0, opacity: 0 } : false}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2"
+                                    >
+                                        <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
+                                            <Select value={branchFilter} onValueChange={setBranchFilter}>
+                                                <SelectTrigger className="h-10 rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-4 shadow-none font-medium">
+                                                    <SelectValue placeholder="Chi nhánh" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                    {(permissions.canViewAllBranches || allowedBranches.length > 1) && (
+                                                        <SelectItem value="all">Tất cả chi nhánh</SelectItem>
+                                                    )}
+                                                    {allowedBranches.map((branch: any) => (
+                                                        <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+
+                                            <Select value={ptFilter} onValueChange={setPtFilter}>
+                                                <SelectTrigger className="h-10 rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-4 shadow-none font-medium">
+                                                    <SelectValue placeholder="PT phụ trách" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                    <SelectItem value="all">Tất cả PT</SelectItem>
+                                                    {ptOptions.map((pt: string) => (
+                                                        <SelectItem key={pt} value={pt}>{pt}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+
+                                            <Button variant="ghost" onClick={clearFilters}
+                                                className="h-10 w-10 p-0 rounded-xl text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 transition-all justify-center">
+                                                <RotateCcw className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
 

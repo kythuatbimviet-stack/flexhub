@@ -908,6 +908,36 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                 <ClientInfoRow label="Cân nặng (kg)" value={formData.weight} name="weight" type="number" {...sharedRowProps} />
                                             </div>
 
+                                            {/* Chỉ số sức khỏe tự động */}
+                                            <div className="grid grid-cols-2 gap-5 p-4 rounded-2xl bg-blue-50/30 dark:bg-blue-950/20 border border-blue-100/50 dark:border-blue-900/30 mb-6">
+                                                <div className="space-y-1">
+                                                    <Label className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <Activity className="w-3 h-3" />
+                                                        BMI (Tự động)
+                                                    </Label>
+                                                    <p className="text-xl font-bold text-slate-900 dark:text-white px-0.5">
+                                                        {(() => {
+                                                            const h = parseFloat(formData.height) || 0;
+                                                            const w = parseFloat(formData.weight) || 0;
+                                                            const hM = h / 100;
+                                                            return hM > 0 ? (w / (hM * hM)).toFixed(1) : '--';
+                                                        })()}
+                                                    </p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <Label className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <Scale className="w-3 h-3" />
+                                                        Chỉ số BW(i)
+                                                    </Label>
+                                                    <p className="text-xl font-bold text-slate-900 dark:text-white px-0.5">
+                                                        {(() => {
+                                                            const w = parseFloat(formData.weight) || 0;
+                                                            return w > 0 ? (w - 100).toFixed(0) : '--';
+                                                        })()}
+                                                    </p>
+                                                </div>
+                                            </div>
+
                                             <ClientInfoRow label="Khung giờ chị có thể đi tập là khung nào?" value={formData.training_time} name="training_time" {...sharedRowProps} />
                                             <ClientInfoRow label="Mục tiêu tập luyện của chị hiện tại là gì?" value={formData.goal} name="goal" {...sharedRowProps} />
 
