@@ -116,7 +116,7 @@ const ClientCardSection = ({ title, icon: Icon, children }: any) => (
 
 const ClientInfoRow = ({ label, value, name, type = "text", options, isEditing, formData, onChange, onSelectChange }: any) => {
     const listId = options && type !== 'select' ? `${name}-list` : undefined;
-    const requiredNames = ['member_name', 'phone', 'training_time', 'branch_id', 'status', 'assigned_pt', 'pt_name', 'height', 'weight', 'source', 'goal'];
+    const requiredNames = ['member_name', 'phone', 'branch_id', 'status', 'assigned_pt', 'pt_name', 'height', 'weight', 'source'];
     return (
         <div className="space-y-1">
             <Label className="text-xs font-medium text-slate-600 dark:text-slate-200">
@@ -582,6 +582,16 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                 )}
                             </DropdownMenuContent>
                         </DropdownMenu>
+                        
+                        {(formData.status === 'Không tham gia' || formData.status === 'Tư vấn & không tham gia') && (
+                            <Input
+                                placeholder="Lý do..."
+                                className="h-9 w-32 sm:w-48 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm focus-visible:ring-blue-500 shadow-none px-3 transition-all"
+                                value={formData.status_reason || ''}
+                                onChange={(e) => setFormData((prev: any) => ({ ...prev, status_reason: e.target.value }))}
+                                disabled={loading || (!isEditing && !isCreateMode)}
+                            />
+                        )}
 
                         {!isCreateMode && hasAccess && !isEditing && (
                             <>
@@ -1017,8 +1027,10 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                         </p>
                                                     )}
                                                 </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                                 <ClientInfoRow label="Chi nhánh quản lý" value={formData.branch_id} name="branch_id" type="select" options={allowedBranches.map((b: any) => ({ value: b.id, label: b.name }))} {...sharedRowProps} />
                                             </div>
+                                        </div>
                                             {/* <div className="grid grid-cols-1 sm:grid-cols-1 gap-5">
                                                 <ClientInfoRow label="Lộ trình đăng ký" value={formData.registration_type} name="registration_type" {...sharedRowProps} />
                                             </div> */}

@@ -292,6 +292,7 @@ export async function updateClient(id: string, updates: any) {
             'assigned_pt', 'branch_id', 'branch_name', 'source', 'referrer',
             'registration_type', 'medical_history', 'training_time', 'notes',
             'customer_cycle', 'zalo_id', 'facebook_id', 'action_log', 'signature_url',
+            'status_reason',
             'survey_training_history', 'survey_injury_history', 'survey_work_stress', 
             'survey_pathology_details', 'survey_health_advice'
         ]
@@ -381,6 +382,8 @@ export async function generateClientId(clientBranchId?: string | null) {
 
 /**
  * Fetch filter options (PTs list) based on user permissions
+ * ONLY from the users table as requested.
+ * Filtered by department = 'PT'.
  */
 export async function fetchClientFilterOptions() {
     try {
@@ -389,30 +392,32 @@ export async function fetchClientFilterOptions() {
 
         const adminClient = await createAdminClient()
 
-        // 1. Fetch PTs/Staff based on RBAC
-        // We fetch anyone who could be assigned as a PT
-        let ptQuery = adminClient
+        // Fetch users from 'users' table where department is 'PT'
+        let query = adminClient
             .from('users')
-            .select('name, email, position')
-            .eq('status', 'Hoạt động')
+            .select('name, branch_id, department')
+            .eq('department', 'PT')
+            .not('name', 'is', null)
 
-        // Apply Branch restrictions
+        // Apply Branch restrictions from RBAC
         if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
-            ptQuery = ptQuery.in('branch_id', accessInfo.access.allowedBranchIds)
+            query = query.in('branch_id', accessInfo.access.allowedBranchIds)
         }
 
-        const { data: userData, error: userError } = await ptQuery
+        const { data: userData, error: userError } = await query
         if (userError) throw userError
 
-        // Filter by common PT-related positions or just return all active users in allowed branches
         const pts = userData
-            ?.filter(u => ['Huấn luyện viên', 'Nhân viên', 'PT', 'Quản lý chi nhánh', 'Quản lý'].includes(u.position as string))
-            .map(u => u.name) || []
+            ?.filter(u => u.name && u.name.trim().length > 0)
+            .map(u => ({ 
+                name: u.name.trim(), 
+                branch_id: u.branch_id 
+            })) || []
 
         return {
             success: true,
             data: {
-                pts: Array.from(new Set(pts)).sort(),
+                pts: pts,
                 isStaffOnly: accessInfo.access.isStaffOnly,
                 userEmail: accessInfo.user.email,
                 userName: accessInfo.user.name

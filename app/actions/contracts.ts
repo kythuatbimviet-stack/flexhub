@@ -355,7 +355,7 @@ export async function finalizeContract(id: string, contractUpdates: any, debtPla
         // RBAC Check
         const { data: existing, error: fetchErr } = await supabase
             .from('contracts')
-            .select('branch_id, created_by_email')
+            .select('branch_id, created_by_email, client_id')
             .eq('id', id)
             .maybeSingle()
         
@@ -378,6 +378,19 @@ export async function finalizeContract(id: string, contractUpdates: any, debtPla
 
         if (contractError) throw contractError
         if (!contractData) throw new Error('Không tìm thấy hợp đồng để chốt')
+
+        // 1.5 Cập nhật trạng thái khách hàng về "Chốt đăng ký"
+        if (contractData.client_id) {
+            const { error: clientError } = await supabase
+                .from('clients')
+                .update({ status: 'Chốt đăng ký' })
+                .eq('id', contractData.client_id)
+
+            if (clientError) {
+                console.error('Error updating client status to Chốt đăng ký:', clientError)
+                // Chúng ta không throw error ở đây để tránh làm hỏng luồng chốt hợp đồng vốn đã thành công
+            }
+        }
 
         // 2. Nếu có trả trước, tạo khoản thu (Revenue)
         if (debtPlan && Number(debtPlan.paid_upfront) > 0) {
@@ -430,6 +443,7 @@ export async function finalizeContract(id: string, contractUpdates: any, debtPla
         }
 
         revalidatePath('/contracts')
+        revalidatePath('/clients')
         revalidatePath('/debts')
         revalidatePath('/financial/revenue')
         revalidatePath('/')

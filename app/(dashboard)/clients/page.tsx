@@ -85,8 +85,8 @@ const MemberSummaryPopover = ({ contract, onShowDetails }: { contract: any, onSh
     }, [contract.dob, contract.date_of_birth])
 
     return (
-        <PopoverContent 
-            className="w-[320px] p-0 border-none shadow-2xl rounded-[24px] overflow-hidden bg-white dark:bg-gray-950 font-inter" 
+        <PopoverContent
+            className="w-[320px] p-0 border-none shadow-2xl rounded-[24px] overflow-hidden bg-white dark:bg-gray-950 font-inter"
             onClick={(e) => e.stopPropagation()}
         >
             <div className="p-6 space-y-6">
@@ -111,7 +111,7 @@ const MemberSummaryPopover = ({ contract, onShowDetails }: { contract: any, onSh
                     <div className="flex justify-between items-center text-[13px]">
                         <span className="text-slate-500 font-medium">Ngày sinh</span>
                         <span className="text-slate-900 dark:text-slate-200 font-semibold uppercase">
-                            {formattedDob} 
+                            {formattedDob}
                             {age !== null ? ` (${age} tuổi)` : ''}
                         </span>
                     </div>
@@ -146,7 +146,7 @@ const MemberSummaryPopover = ({ contract, onShowDetails }: { contract: any, onSh
                     </div>
                 </div>
 
-                <Button 
+                <Button
                     onClick={(e) => {
                         e.stopPropagation()
                         onShowDetails()
@@ -178,10 +178,9 @@ export default function ClientsPage() {
     const [statusFilter, setStatusFilter] = React.useState('all')
     const [branchFilter, setBranchFilter] = React.useState('all')
     const [ptFilter, setPtFilter] = React.useState('all')
-    const [regTypeFilter, setRegTypeFilter] = React.useState('all')
     const [sourceFilter, setSourceFilter] = React.useState('all')
     const [showMobileFilters, setShowMobileFilters] = React.useState(false)
-    const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'updated_at', direction: 'desc' })
+    const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' })
     const [isSortOpen, setIsSortOpen] = React.useState(false)
     const [hoveredClientId, setHoveredClientId] = React.useState<string | null>(null)
 
@@ -190,9 +189,9 @@ export default function ClientsPage() {
         const t = setTimeout(() => { setDebouncedSearch(searchTerm); setPage(1) }, 300)
         return () => clearTimeout(t)
     }, [searchTerm])
-    React.useEffect(() => { setPage(1) }, [statusFilter, branchFilter, ptFilter, regTypeFilter, sourceFilter, pageSize])
+    React.useEffect(() => { setPage(1) }, [statusFilter, branchFilter, ptFilter, sourceFilter, pageSize])
 
-    const { permissions, user: currentUser, isLoading: isLoadingPermissions } = usePermissions()
+    const { permissions, user: currentUser, isLoading: isLoadingPermissions, isAdmin, isCEO, isManager, isBranchManager } = usePermissions()
 
     // ── Config queries (long-lived cache) ────────────────────────────────────
     const { data: configResult } = useQuery({
@@ -273,13 +272,10 @@ export default function ClientsPage() {
         if (branchFilter !== 'all') result = result.filter(c => c.branch_id === branchFilter)
         // PT
         if (ptFilter !== 'all') result = result.filter(c =>
-            c.pt_name?.toLowerCase().includes(ptFilter.toLowerCase()) ||
-            c.assigned_pt?.toLowerCase().includes(ptFilter.toLowerCase())
+            c.pt_name?.toLowerCase() === ptFilter.toLowerCase()
         )
         // Source
         if (sourceFilter !== 'all') result = result.filter(c => c.source === sourceFilter)
-        // Registration type
-        if (regTypeFilter !== 'all') result = result.filter(c => c.registration_type === regTypeFilter)
 
         // Sort
         result.sort((a, b) => {
@@ -293,7 +289,7 @@ export default function ClientsPage() {
         })
 
         return result
-    }, [allClients, debouncedSearch, statusFilter, branchFilter, ptFilter, sourceFilter, regTypeFilter, sortConfig])
+    }, [allClients, debouncedSearch, statusFilter, branchFilter, ptFilter, sourceFilter, sortConfig])
 
     // ── Status counts (from filtered base — no status filter applied) ─────────
     const statusCounts = React.useMemo(() => {
@@ -305,17 +301,16 @@ export default function ClientsPage() {
                 c.email?.toLowerCase().includes(q) ||
                 c.id?.toLowerCase().includes(q)
             const matchBranch = branchFilter === 'all' || c.branch_id === branchFilter
-            const matchPt = ptFilter === 'all' || c.pt_name?.toLowerCase().includes(ptFilter.toLowerCase()) || c.assigned_pt?.toLowerCase().includes(ptFilter.toLowerCase())
+            const matchPt = ptFilter === 'all' || c.pt_name?.toLowerCase() === ptFilter.toLowerCase()
             const matchSource = sourceFilter === 'all' || c.source === sourceFilter
-            const matchRegType = regTypeFilter === 'all' || c.registration_type === regTypeFilter
-            return matchSearch && matchBranch && matchPt && matchSource && matchRegType
+            return matchSearch && matchBranch && matchPt && matchSource
         })
         const counts: Record<string, number> = { total: base.length }
         clientStatuses.forEach((s: any) => {
             counts[s.nam] = base.filter(c => c.status === s.nam).length
         })
         return counts
-    }, [allClients, debouncedSearch, branchFilter, ptFilter, sourceFilter, regTypeFilter, clientStatuses])
+    }, [allClients, debouncedSearch, branchFilter, ptFilter, sourceFilter, clientStatuses])
 
     // ── Pagination (client-side) ──────────────────────────────────────────────
     const totalCount = filteredClients.length
@@ -353,14 +348,19 @@ export default function ClientsPage() {
     }
 
     // ── Filter option lists ───────────────────────────────────────────────────
-    const ptOptions = React.useMemo(() => filterOptionsResult?.data?.pts || [], [filterOptionsResult])
-    const regTypeOptions = React.useMemo(() => configResult?.data?.registrationTypes?.map((t: any) => t.nam) || [], [configResult])
+    const rawPtOptions = React.useMemo(() => filterOptionsResult?.data?.pts || [], [filterOptionsResult])
+    const ptOptions = React.useMemo(() => {
+        const filtered = branchFilter === 'all'
+            ? rawPtOptions
+            : rawPtOptions.filter((p: any) => p.branch_id === branchFilter)
+        return Array.from(new Set(filtered.map((p: any) => p.name))).sort()
+    }, [rawPtOptions, branchFilter])
     const sourceOptions = React.useMemo(() => configResult?.data?.sources?.map((s: any) => s.nam) || [], [configResult])
 
     const clearFilters = () => {
         setSearchTerm(''); setStatusFilter('all'); setBranchFilter('all')
-        setPtFilter('all'); setRegTypeFilter('all'); setSourceFilter('all'); setPage(1)
-        setSortConfig({ key: 'updated_at', direction: 'desc' })
+        setPtFilter('all'); setSourceFilter('all'); setPage(1)
+        setSortConfig({ key: 'created_at', direction: 'desc' })
         toast.info('Đã xóa tất cả bộ lọc')
     }
 
@@ -614,24 +614,17 @@ export default function ClientsPage() {
                                                 {allowedBranches.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
-                                        <Select value={ptFilter} onValueChange={setPtFilter} disabled={permissions.isStaffOnly}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3">
-                                                <SelectValue placeholder="PT" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                <SelectItem value="all">Tất cả PT</SelectItem>
-                                                {ptOptions.map((pt: any) => <SelectItem key={pt} value={pt}>{pt}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                        <Select value={regTypeFilter} onValueChange={setRegTypeFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3">
-                                                <SelectValue placeholder="Gói tập" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                <SelectItem value="all">Tất cả Gói tập</SelectItem>
-                                                {regTypeOptions.map((t: any) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
+                                        {(isAdmin || isCEO || isManager || isBranchManager) && (
+                                            <Select value={ptFilter} onValueChange={setPtFilter} disabled={permissions.isStaffOnly}>
+                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3">
+                                                    <SelectValue placeholder="PT" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                    <SelectItem value="all">Tất cả PT</SelectItem>
+                                                    {ptOptions.map((pt: any) => <SelectItem key={pt} value={pt}>{pt}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
                                         <Select value={sourceFilter} onValueChange={setSourceFilter}>
                                             <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3">
                                                 <SelectValue placeholder="Nguồn khách" />
@@ -725,8 +718,8 @@ export default function ClientsPage() {
                                 <TableHead onClick={() => handleSort('phone')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden md:table-cell cursor-pointer hover:text-red-600 transition-colors group">
                                     <div className="flex items-center">LIÊN HỆ<SortIcon columnKey="phone" /></div>
                                 </TableHead>
-                                <TableHead onClick={() => handleSort('branch_name')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden sm:table-cell cursor-pointer hover:text-red-600 transition-colors group">
-                                    <div className="flex items-center">PT & CHI NHÁNH<SortIcon columnKey="branch_name" /></div>
+                                <TableHead onClick={() => handleSort('pt_name')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden sm:table-cell cursor-pointer hover:text-red-600 transition-colors group">
+                                    <div className="flex items-center">PT & CHI NHÁNH<SortIcon columnKey="pt_name" /></div>
                                 </TableHead>
                                 <TableHead className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden lg:table-cell">CHỈ SỐ & MỤC TIÊU</TableHead>
                                 <TableHead onClick={() => handleSort('created_at')} className="text-[11px] font-bold text-gray-400 dark:text-blue-300 h-9 uppercase tracking-wider hidden xl:table-cell cursor-pointer hover:text-red-600 transition-colors group">
@@ -781,7 +774,7 @@ export default function ClientsPage() {
                                         <TableCell className="py-4">
                                             <Popover open={hoveredClientId === client.id} onOpenChange={(open) => !open && setHoveredClientId(null)}>
                                                 <PopoverTrigger asChild>
-                                                    <div 
+                                                    <div
                                                         className="flex items-center gap-3 cursor-pointer outline-none group/client"
                                                         onMouseEnter={() => setHoveredClientId(client.id)}
                                                         onMouseLeave={() => setHoveredClientId(null)}
@@ -801,13 +794,13 @@ export default function ClientsPage() {
                                                         </div>
                                                     </div>
                                                 </PopoverTrigger>
-                                                <MemberSummaryPopover 
-                                                    contract={client} 
+                                                <MemberSummaryPopover
+                                                    contract={client}
                                                     onShowDetails={() => {
-                                                        setSelectedClient(client); 
+                                                        setSelectedClient(client);
                                                         setIsDetailsOpen(true);
                                                         setHoveredClientId(null);
-                                                    }} 
+                                                    }}
                                                 />
                                             </Popover>
                                         </TableCell>
@@ -846,15 +839,22 @@ export default function ClientsPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell className="py-4">
-                                            <Badge variant="secondary" className={cn(
-                                                'border-none rounded-xl px-2.5 py-0.5 text-[9px] font-medium uppercase tracking-widest',
-                                                client.status === 'Chốt đăng kí' && 'bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30',
-                                                client.status === 'Đang tập' && 'bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400 border border-green-100 dark:border-green-900/30',
-                                                client.status === 'Tạm dừng' && 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30',
-                                                client.status === 'Đã nghỉ' && 'bg-gray-100 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400',
-                                            )}>
-                                                {client.status}
-                                            </Badge>
+                                            <div className="flex flex-col gap-1 items-start">
+                                                <Badge variant="secondary" className={cn(
+                                                    'border-none rounded-xl px-2.5 py-0.5 text-[9px] font-medium uppercase tracking-widest',
+                                                    client.status === 'Chốt đăng kí' && 'bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30',
+                                                    client.status === 'Đang tập' && 'bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400 border border-green-100 dark:border-green-900/30',
+                                                    client.status === 'Tạm dừng' && 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30',
+                                                    client.status === 'Đã nghỉ' && 'bg-gray-100 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400',
+                                                )}>
+                                                    {client.status}
+                                                </Badge>
+                                                {(client.status === 'Không tham gia' || client.status === 'Tư vấn & không tham gia') && client.status_reason && (
+                                                    <span className="text-[10px] text-red-600 dark:text-red-500 font-medium leading-tight mt-0.5">
+                                                        {client.status_reason}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell className="py-4 text-right pr-8">
                                             <div className="flex items-center justify-end gap-1">
