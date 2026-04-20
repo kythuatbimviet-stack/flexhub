@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
     Plus,
@@ -66,6 +67,7 @@ const revenueSchema = z.object({
     recorded_at: z.string().min(1, 'Vui lòng chọn ngày ghi nhận'),
     debt_id: z.string().nullable().optional(),
     installment_id: z.string().nullable().optional(),
+    tax_rate: z.number().min(0, 'Thuế không thể âm').default(0),
 })
 
 type RevenueFormValues = z.infer<typeof revenueSchema>
@@ -110,6 +112,7 @@ export function AddRevenueSheet({
             recorded_at: format(new Date(), 'yyyy-MM-dd'),
             debt_id: null,
             installment_id: null,
+            tax_rate: 0,
             send_xntt: true,
             xntt_email: ''
         },
@@ -200,6 +203,7 @@ export function AddRevenueSheet({
                     recorded_at: revenue.recorded_at ? format(new Date(revenue.recorded_at), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
                     debt_id: revenue.debt_id || null,
                     installment_id: revenue.installment_id || null,
+                    tax_rate: Number(revenue.tax_rate) || 0,
                     send_xntt: false, // Default false for editing
                     xntt_email: revenue.clients?.email || ''
                 })
@@ -215,6 +219,7 @@ export function AddRevenueSheet({
                     recorded_at: format(new Date(), 'yyyy-MM-dd'),
                     debt_id: null,
                     installment_id: null,
+                    tax_rate: 0,
                     send_xntt: true,
                     xntt_email: ''
                 })
@@ -729,33 +734,75 @@ export function AddRevenueSheet({
                                         SỐ TIỀN
                                     </h3>
                                 </div>
-                                <FormField
-                                    control={form.control}
-                                    name="amount"
-                                    render={({ field }) => (
-                                        <FormItem className="space-y-1">
-                                            <FormLabel className="text-[11px] font-semibold text-slate-900">Số tiền (VND)</FormLabel>
-                                            <FormControl>
-                                                <div className="relative">
-                                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
-                                                    <Input
-                                                        type="text"
-                                                        placeholder="0"
-                                                        value={field.value ? Number(field.value).toLocaleString('vi-VN') : ''}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value.replace(/\./g, '').replace(/,/g, '')
-                                                            if (val === '' || !isNaN(Number(val))) {
-                                                                field.onChange(val === '' ? 0 : Number(val))
-                                                            }
-                                                        }}
-                                                        className="rounded-xl border-slate-200 bg-white pl-10 h-11 focus:ring-emerald-500 text-[17px] font-bold text-emerald-600"
-                                                    />
+                                        <FormField
+                                            control={form.control}
+                                            name="amount"
+                                            render={({ field }) => (
+                                                <FormItem className="space-y-1">
+                                                    <FormLabel className="text-[11px] font-semibold text-slate-900">Số tiền (VND)</FormLabel>
+                                                    <FormControl>
+                                                        <div className="relative">
+                                                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
+                                                            <Input
+                                                                type="text"
+                                                                placeholder="0"
+                                                                value={field.value ? Number(field.value).toLocaleString('vi-VN') : ''}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value.replace(/\./g, '').replace(/,/g, '')
+                                                                    if (val === '' || !isNaN(Number(val))) {
+                                                                        field.onChange(val === '' ? 0 : Number(val))
+                                                                    }
+                                                                }}
+                                                                className="rounded-xl border-slate-200 bg-white dark:bg-slate-900 pl-10 h-11 focus:ring-emerald-500 text-[17px] font-bold text-emerald-600"
+                                                            />
+                                                        </div>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="tax_rate"
+                                                render={({ field }) => (
+                                                    <FormItem className="space-y-1">
+                                                        <FormLabel className="text-[11px] font-semibold text-slate-900 flex justify-between">
+                                                            Thuế suất (%)
+                                                            <span className="text-orange-600">Trừ thuế</span>
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <div className="relative">
+                                                                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500" />
+                                                                <Input
+                                                                    type="number"
+                                                                    placeholder="0"
+                                                                    {...field}
+                                                                    onChange={(e) => field.onChange(Number(e.target.value))}
+                                                                    className="rounded-xl border-slate-200 bg-white dark:bg-slate-900 pl-10 h-11 focus:ring-orange-500 text-[15px] font-bold text-orange-600"
+                                                                />
+                                                            </div>
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            <div className="space-y-1">
+                                                <Label className="text-[11px] font-semibold text-slate-900">Thực tế (Sau thuế)</Label>
+                                                <div className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center px-4">
+                                                    <span className="text-[15px] font-bold text-slate-700 dark:text-slate-300">
+                                                        {(() => {
+                                                            const amt = form.watch('amount') || 0
+                                                            const tax = form.watch('tax_rate') || 0
+                                                            return (amt * (1 - tax / 100)).toLocaleString('vi-VN')
+                                                        })()}
+                                                        <span className="ml-1 text-[11px] font-medium opacity-60">đ</span>
+                                                    </span>
                                                 </div>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                            </div>
+                                        </div>
                                 <FormField
                                     control={form.control}
                                     name="recorded_at"

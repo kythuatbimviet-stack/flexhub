@@ -250,7 +250,37 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
 
                     <CardSection title="THÔNG TIN GIAO DỊCH" icon={Tag}>
                         <div className="grid grid-cols-2 gap-5">
-                            <DetailRow label="Số tiền" value={new Intl.NumberFormat('vi-VN').format(formData.amount) + ' đ'} name="amount" type="number" icon={DollarSign} isEditing={isEditing} formData={formData} onChange={handleChange} />
+                            <DetailRow label="Tổng thu (Gross)" value={new Intl.NumberFormat('vi-VN').format(formData.amount) + ' đ'} name="amount" type="number" icon={DollarSign} isEditing={isEditing} formData={formData} onChange={handleChange} />
+                            
+                            <div className="space-y-1.5 font-inter text-left">
+                                <Label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 flex items-center gap-2 tracking-tight">
+                                    <Tag className="w-3.5 h-3.5 text-orange-400" />
+                                    Thuế suất (%)
+                                </Label>
+                                {isEditing ? (
+                                    <Input
+                                        name="tax_rate"
+                                        type="number"
+                                        value={formData.tax_rate ?? 0}
+                                        onChange={handleChange}
+                                        className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-10 text-sm focus:ring-2 focus:ring-emerald-500 shadow-sm"
+                                    />
+                                ) : (
+                                    <div className="text-[15px] font-medium text-orange-600">
+                                        {formData.tax_rate || 0}%
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-1.5 font-inter text-left">
+                                <Label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 flex items-center gap-2 tracking-tight">
+                                    <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                                    Thực tế (Net)
+                                </Label>
+                                <div className="text-[17px] font-bold text-emerald-600">
+                                    {new Intl.NumberFormat('vi-VN').format(Number(formData.amount) * (1 - (Number(formData.tax_rate) || 0) / 100))} đ
+                                </div>
+                            </div>
 
                             <div className="space-y-1.5 font-inter text-left">
                                 <Label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 flex items-center gap-2 tracking-tight">

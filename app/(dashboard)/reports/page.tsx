@@ -149,12 +149,27 @@ export default function ReportsPage() {
             case 'cashflow':
                 const isExpense = activeTab === 'expenses'
                 const isCashflow = activeTab === 'cashflow'
-                return [
+                const isRevenue = activeTab === 'revenue'
+                
+                const baseStats = [
                     { title: isExpense ? 'Tổng chi phí' : isCashflow ? 'Dòng tiền ròng' : 'Tổng doanh thu', value: formatCurrency(isExpense ? finance?.totalExpense : isCashflow ? summary?.netCashFlow : summary?.currentMonthRevenue), subValue: `Ghi nhận ${periodLabel}`, icon: DollarSign, color: isExpense ? 'text-red-600' : 'text-emerald-600', bgColor: isExpense ? 'bg-red-50' : 'bg-emerald-50' },
                     { title: 'Trung bình/Ngày', value: formatCurrency((isExpense ? finance?.totalExpense : summary?.currentMonthRevenue) / 30), subValue: 'Biến động hàng ngày', icon: Activity, color: 'text-blue-600', bgColor: 'bg-blue-50' },
                     { title: 'Cơ sở tốt nhất', value: summary?.bestBranch || 'N/A', subValue: 'Mang lại lợi nhuận cao', icon: Building2, color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
                     { title: 'Biến động kỳ', value: `${(summary?.revenueGrowthRate || 0).toFixed(1)}%`, subValue: 'So với kỳ trước', icon: TrendingUp, color: 'text-purple-600', bgColor: 'bg-purple-50', trend: summary?.revenueGrowthRate }
                 ]
+
+                if (isRevenue && branchPersonnel?.totalActualRevenue) {
+                    // Chèn Doanh thu thực tế vào vị trí thứ 2
+                    baseStats.splice(1, 0, { 
+                        title: 'Doanh thu thực tế', 
+                        value: formatCurrency(branchPersonnel.totalActualRevenue), 
+                        subValue: 'Sau khi trừ các khoản thuế', 
+                        icon: Target, 
+                        color: 'text-orange-600', 
+                        bgColor: 'bg-orange-50' 
+                    })
+                }
+                return baseStats
             case 'branch-pt':
                 return [
                     { title: 'Số chi nhánh', value: branchPersonnel?.branches?.length || 0, subValue: 'Số cơ sở ghi nhận số liệu', icon: Building2, color: 'text-blue-600', bgColor: 'bg-blue-50' },
@@ -397,8 +412,8 @@ export default function ReportsPage() {
                     <div className="grid gap-6 md:grid-cols-2">
                         <ChartCard title="Doanh thu theo Chi nhánh" description="So sánh tổng doanh thu giữa các cơ sở">
                             <BarChartComponent 
-                                data={branchPersonnel?.branches.map((p: any) => ({ name: p.branchName, value: p.revenue }))} 
-                                dataKey="value" 
+                                data={branchPersonnel?.branches.map((p: any) => ({ name: p.branchName, value: p.revenue || 0, actualValue: p.actualRevenue || p.revenue }))} 
+                                dataKey="actualValue" 
                             />
                         </ChartCard>
                         <ChartCard title="Cân nặng giảm theo Chi nhánh" description="Tổng số cân nặng khách hàng đã giảm được trong tháng theo cơ sở">

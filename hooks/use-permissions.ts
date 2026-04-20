@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { fetchCurrentUserProfile } from '@/app/actions/users'
+import { fetchMyDefinitiveProfileByEmail } from '@/app/actions/users'
 import { getAccessControl, UserProfile, AccessControl } from '@/lib/permissions'
 import React from 'react'
 
@@ -27,7 +27,7 @@ export function usePermissions() {
 
     const { data: profileResult, isLoading } = useQuery({
         queryKey: ['current-user-profile'],
-        queryFn: fetchCurrentUserProfile,
+        queryFn: fetchMyDefinitiveProfileByEmail,
         // Cache profile trong 2 phút để tránh spam request khi switch tab
         staleTime: 2 * 60 * 1000,
         // Refetch every time the user looks at the page (tab focus / reconnect)

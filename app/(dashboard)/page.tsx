@@ -17,7 +17,9 @@ import {
     Settings,
     LayoutDashboard,
     ChevronRight,
-    ArrowRight
+    ArrowRight,
+    Cake,
+    Calendar
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -36,6 +38,18 @@ const featureGroups = [
             { name: 'Hợp đồng', href: '/contracts', icon: FileText, desc: 'Quản lý các bản đăng ký và gói tập' },
             { name: 'Lộ trình', href: '/weight-tracking', icon: Activity, desc: 'Theo dõi cân nặng và chỉ số cơ thể' },
             { name: 'Zalo', href: '/zalo-users', icon: UserStar, desc: 'Kết nối và chăm sóc khách hàng qua Zalo' },
+        ]
+    },
+    {
+        id: 'calendar',
+        title: 'Lịch',
+        description: 'Theo dõi sinh nhật khách hàng và nhân sự trong hệ thống.',
+        color: 'text-rose-600',
+        bgColor: 'bg-rose-50 dark:bg-rose-900/20',
+        borderColor: 'border-rose-100 dark:border-rose-800',
+        features: [
+            { name: 'Sinh nhật khách hàng', href: '/calendar/client-birthdays', icon: Cake, desc: 'Danh sách khách hàng sinh nhật trong tháng' },
+            { name: 'Sinh nhật nhân sự', href: '/calendar/staff-birthdays', icon: Calendar, desc: 'Danh sách nhân sự sinh nhật trong tháng', adminOnly: true },
         ]
     },
     {
@@ -103,7 +117,7 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
-    const { user, permissions, isLoading } = usePermissions()
+    const { user, permissions, isLoading, isAdmin, isCEO, isManager } = usePermissions()
 
     const getGreeting = () => {
         const hour = new Date().getHours()
@@ -120,10 +134,20 @@ export default function DashboardPage() {
     const userName = user?.name || 'Admin'
     const isStaff = permissions.isStaffOnly
 
-    const visibleGroups = featureGroups.filter(group => {
-        if (isStaff && group.id !== 'member-management') return false
-        return true
-    })
+    const visibleGroups = featureGroups
+        .map(group => ({
+            ...group,
+            features: group.features.filter(f => {
+                // If feature is admin-only, only show to Admin/CEO/Manager
+                if ((f as any).adminOnly && !isAdmin && !isCEO && !isManager) return false
+                return true
+            })
+        }))
+        .filter(group => {
+            if (group.features.length === 0) return false
+            if (isStaff && group.id !== 'member-management' && group.id !== 'calendar') return false
+            return true
+        })
 
     return (
         <div className="space-y-12 font-inter pb-20">

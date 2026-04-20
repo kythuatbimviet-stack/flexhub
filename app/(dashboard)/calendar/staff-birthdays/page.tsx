@@ -53,8 +53,8 @@ export default function StaffBirthdaysPage() {
                         <Cake className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Sinh nhật nhân sự</h1>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Ghi nhận và tri ân đóng góp của đội ngũ Eva's Fit</p>
+                        <h1 className="text-2xl font-semibold text-black dark:text-white tracking-tight">Sinh nhật nhân sự</h1>
+                        <p className="text-sm text-black/60 dark:text-gray-400">Ghi nhận và tri ân đóng góp của đội ngũ Eva's Fit</p>
                     </div>
                 </div>
 
@@ -78,14 +78,14 @@ export default function StaffBirthdaysPage() {
                 <TabsList className="bg-slate-100/50 dark:bg-slate-900/50 p-1 rounded-2xl h-12 border border-slate-200/50 dark:border-slate-800/50">
                     <TabsTrigger 
                         value="month" 
-                        className="rounded-xl px-6 py-2 text-xs font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all"
+                        className="rounded-xl px-6 py-2 text-xs font-medium data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all"
                     >
                         <Calendar className="w-3.5 h-3.5 mr-2" />
                         Trong tháng này
                     </TabsTrigger>
                     <TabsTrigger 
                         value="week" 
-                        className="rounded-xl px-6 py-2 text-xs font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all"
+                        className="rounded-xl px-6 py-2 text-xs font-medium data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all"
                     >
                         <Clock className="w-3.5 h-3.5 mr-2" />
                         7 ngày tới
@@ -135,27 +135,27 @@ function StaffBirthdayCard({ person, index }: { person: any, index: number }) {
             className="group"
         >
             <Card className={cn(
-                "border-none shadow-sm dark:shadow-none rounded-[28px] overflow-hidden transition-all duration-300 bg-white dark:bg-slate-900 border-2",
+                "border-none shadow-sm dark:shadow-none rounded-[28px] overflow-hidden transition-all duration-300 bg-white dark:bg-slate-900 border-2 outline-none",
                 isToday ? "border-blue-100 dark:border-blue-900/30 ring-4 ring-blue-50 dark:ring-blue-900/10" : "border-slate-100 dark:border-slate-800"
             )}>
                 <CardContent className="p-6">
                     <div className="flex items-center gap-4 mb-5">
                         <Avatar className="w-16 h-16 rounded-2xl border-4 border-white dark:border-slate-800 shadow-xl shadow-blue-100 dark:shadow-blue-900/20">
                             <AvatarImage src={person.avatar_url} className="object-cover" />
-                            <AvatarFallback className="bg-blue-600 text-white font-bold text-2xl">
+                            <AvatarFallback className="bg-blue-600 text-white font-semibold text-2xl">
                                 {person.name.charAt(0)}
                             </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                            <h3 className="text-base font-bold text-slate-900 dark:text-white line-clamp-1 truncate uppercase tracking-tight">
+                            <h3 className="text-base font-semibold text-black dark:text-white line-clamp-1 truncate tracking-tight">
                                 {person.name}
                             </h3>
-                            <p className="text-[11px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider mt-0.5">
+                            <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium tracking-wide mt-0.5">
                                 {person.position || 'Nhân sự'}
                             </p>
                             {isToday && (
                                 <div className="mt-1">
-                                    <Badge className="bg-blue-600 text-[9px] h-4 py-0 font-bold">HAPPY BIRTHDAY!</Badge>
+                                    <Badge className="bg-blue-600 text-[9px] h-4 py-0 font-medium">SANG NIỀM VUI!</Badge>
                                 </div>
                             )}
                         </div>
@@ -163,25 +163,25 @@ function StaffBirthdayCard({ person, index }: { person: any, index: number }) {
 
                     <div className="grid grid-cols-2 gap-2 mb-6">
                         <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Ngày sinh</p>
-                            <p className="text-sm font-bold text-slate-900 dark:text-white">
+                            <p className="text-[10px] text-black/40 dark:text-gray-500 font-medium tracking-tight mb-1">Ngày sinh</p>
+                            <p className="text-sm font-semibold text-black dark:text-white">
                                 {bday.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
                             </p>
                         </div>
                         <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Tuổi</p>
-                            <p className="text-sm font-bold text-slate-900 dark:text-white">{person.age || '-'}</p>
+                            <p className="text-[10px] text-black/40 dark:text-gray-500 font-medium tracking-tight mb-1">Tuổi</p>
+                            <p className="text-sm font-semibold text-black dark:text-white">{person.age || '-'}</p>
                         </div>
                     </div>
 
                     <div className="flex flex-col gap-2.5 mb-6">
-                        <div className="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <div className="flex items-center gap-3 text-xs font-medium text-black dark:text-gray-300">
                             <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
                                 <Building2 className="w-3.5 h-3.5" />
                             </div>
                             {person.branches?.name || 'Chi nhánh -'}
                         </div>
-                        <div className="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <div className="flex items-center gap-3 text-xs font-medium text-black dark:text-gray-300">
                             <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600">
                                 <Briefcase className="w-3.5 h-3.5" />
                             </div>
@@ -194,18 +194,18 @@ function StaffBirthdayCard({ person, index }: { person: any, index: number }) {
                             asChild
                             variant="ghost" 
                             size="sm"
-                            className="flex-1 rounded-xl h-9 text-xs font-bold text-blue-600 hover:bg-blue-50"
+                            className="flex-1 rounded-xl h-9 text-xs font-medium text-blue-600 hover:bg-blue-50"
                         >
                             <a href={`tel:${person.phone}`}>
                                 <Phone className="w-3.5 h-3.5 mr-2" />
-                                Gọi
+                                Gọi điện
                             </a>
                         </Button>
                         <Button 
                             asChild
                             variant="ghost" 
                             size="sm"
-                            className="flex-1 rounded-xl h-9 text-xs font-bold text-slate-500 hover:bg-slate-50"
+                            className="flex-1 rounded-xl h-9 text-xs font-medium text-black/60 hover:bg-slate-50"
                         >
                             <a href={`mailto:${person.email}`}>
                                 <Mail className="w-3.5 h-3.5 mr-2" />

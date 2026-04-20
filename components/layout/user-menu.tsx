@@ -20,7 +20,7 @@ export function UserMenu() {
     const supabase = createClient()
 
     const { data: user } = useQuery({
-        queryKey: ['user-profile'],
+        queryKey: ['auth-user'],
         queryFn: async () => {
             const { data: { user } } = await supabase.auth.getUser()
             return user
@@ -52,19 +52,19 @@ export function UserMenu() {
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 flex items-center gap-2 pl-2 pr-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
-                    <div className="h-8 w-8 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white dark:ring-gray-800 shadow-sm">
+                    <div className="h-8 w-8 rounded-full bg-black flex items-center justify-center text-white text-[11px] font-semibold ring-2 ring-white dark:ring-gray-800 shadow-sm">
                         {initials}
                     </div>
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                    <ChevronDown className="w-4 h-4 text-black/40" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-64 rounded-2xl p-2 shadow-2xl border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal px-3 py-3">
                     <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-semibold leading-none text-gray-900 dark:text-gray-100">
+                        <p className="text-sm font-semibold leading-none text-black dark:text-gray-100">
                             {user?.user_metadata?.full_name || 'User'}
                         </p>
-                        <p className="text-xs leading-none text-gray-500 dark:text-gray-400 truncate">
+                        <p className="text-xs leading-none text-black/40 dark:text-gray-400 truncate">
                             {user?.email}
                         </p>
                     </div>
@@ -72,13 +72,13 @@ export function UserMenu() {
                 <DropdownMenuSeparator className="bg-gray-100 dark:bg-gray-800 mx-1" />
                 <div className="py-1">
                     <Link href="/profile">
-                        <DropdownMenuItem className="rounded-xl px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:bg-gray-50 dark:focus:bg-gray-800 transition-colors cursor-pointer group">
-                            <User className="mr-3 h-4 w-4 text-gray-400 group-hover:text-blue-500" />
+                        <DropdownMenuItem className="rounded-xl px-3 py-2.5 text-sm text-black/70 dark:text-gray-300 focus:bg-gray-50 dark:focus:bg-gray-800 transition-colors cursor-pointer group font-medium">
+                            <User className="mr-3 h-4 w-4 text-black/30 group-hover:text-blue-500" />
                             <span>Hồ sơ cá nhân</span>
                         </DropdownMenuItem>
                     </Link>
-                    <DropdownMenuItem className="rounded-xl px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:bg-gray-50 dark:focus:bg-gray-800 transition-colors cursor-pointer group">
-                        <Settings className="mr-3 h-4 w-4 text-gray-400 group-hover:text-blue-500" />
+                    <DropdownMenuItem className="rounded-xl px-3 py-2.5 text-sm text-black/70 dark:text-gray-300 focus:bg-gray-50 dark:focus:bg-gray-800 transition-colors cursor-pointer group font-medium">
+                        <Settings className="mr-3 h-4 w-4 text-black/30 group-hover:text-blue-500" />
                         <span>Cài đặt hệ thống</span>
                     </DropdownMenuItem>
                 </div>

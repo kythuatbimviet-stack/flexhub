@@ -33,6 +33,9 @@ export async function fetchRevenue() {
             .from('revenue')
             .select(`
                 *,
+                tax_rate,
+                tax_amount,
+                actual_amount,
                 branches (name),
                 clients (*),
                 contracts (
@@ -70,6 +73,9 @@ export async function fetchRevenueByDateRange(startDate?: string, endDate?: stri
             .from('revenue')
             .select(`
                 *,
+                tax_rate,
+                tax_amount,
+                actual_amount,
                 branches (name),
                 clients (*),
                 contracts (
@@ -114,9 +120,20 @@ export async function createRevenue(data: any) {
             }
         }
 
+        // Tính toán số tiền thuế và doanh thu thực tế
+        const amount = Number(data.amount) || 0
+        const taxRate = Number(data.tax_rate) || 0
+        const taxAmount = amount * (taxRate / 100)
+        const actualAmount = amount - taxAmount
+
         const { data: result, error } = await supabase
             .from('revenue')
-            .insert([{ ...data, recorded_by: accessInfo.authId }])
+            .insert([{ 
+                ...data, 
+                tax_amount: taxAmount,
+                actual_amount: actualAmount,
+                recorded_by: accessInfo.authId 
+            }])
             .select()
             .single()
 
@@ -190,11 +207,23 @@ export async function bulkCreateRevenue(revenues: any[]) {
 export async function updateRevenue(id: string, updates: any) {
     const supabase = await createClient()
     try {
+        // Nếu có cập nhật số tiền hoặc thuế suất, tính toán lại
+        if (updates.amount !== undefined || updates.tax_rate !== undefined) {
+            const currentRes = await supabase.from('revenue').select('amount, tax_rate').eq('id', id).single()
+            if (currentRes.data) {
+                const amount = updates.amount !== undefined ? Number(updates.amount) : Number(currentRes.data.amount)
+                const taxRate = updates.tax_rate !== undefined ? Number(updates.tax_rate) : Number(currentRes.data.tax_rate)
+                updates.tax_amount = amount * (taxRate / 100)
+                updates.actual_amount = amount - updates.tax_amount
+            }
+        }
+
         const { data: result, error } = await supabase
             .from('revenue')
             .update(updates)
             .eq('id', id)
             .select()
+            .single()
 
         if (error) throw error
         revalidatePath('/revenue')
@@ -427,6 +456,9 @@ export async function fetchCashFlowData(filters?: {
             .select(`
                 id, 
                 amount, 
+                tax_rate,
+                tax_amount,
+                actual_amount,
                 recorded_at, 
                 branch_id, 
                 description, 

@@ -38,7 +38,8 @@ import {
     Building2,
     User,
     CreditCard,
-    RotateCcw
+    RotateCcw,
+    Tag
 } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchRevenueByDateRange, bulkDeleteRevenue, deleteRevenue } from '@/app/actions/financial'
@@ -206,11 +207,18 @@ export default function RevenuePage() {
 
     const stats = React.useMemo(() => {
         return filteredRevenue.reduce((acc: any, item: any) => {
-            acc.total += item.amount
-            if (item.payment_method === 'Tiền mặt') acc.cash += item.amount
-            if (item.payment_method === 'Chuyển khoản') acc.transfer += item.amount
+            const amount = Number(item.amount) || 0
+            const tax = Number(item.tax_amount) || 0
+            const actual = Number(item.actual_amount) || 0
+            
+            acc.total += amount
+            acc.tax += tax
+            acc.actual += actual
+            
+            if (item.payment_method === 'Tiền mặt') acc.cash += amount
+            if (item.payment_method === 'Chuyển khoản') acc.transfer += amount
             return acc
-        }, { total: 0, cash: 0, transfer: 0 })
+        }, { total: 0, tax: 0, actual: 0, cash: 0, transfer: 0 })
     }, [filteredRevenue])
 
     const handleExportExcel = () => {
@@ -316,32 +324,48 @@ export default function RevenuePage() {
                         <DollarSign className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tổng thu (Lọc)</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">TỔNG THU (GROSS)</p>
                         <div className="text-2xl font-black text-emerald-600">
                             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.total)}
                         </div>
-                        <p className="text-[10px] text-gray-500 font-medium">Từ {filteredRevenue.length} giao dịch</p>
-                    </div>
-                </Card>
-                <Card className="rounded-2xl border-none shadow-sm bg-white dark:bg-gray-900 overflow-hidden relative group p-5">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 transition-transform group-hover:scale-110">
-                        <DollarSign className="w-12 h-12 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tiền mặt</p>
-                        <div className="text-2xl font-black text-blue-600">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.cash || 0)}
+                        <div className="flex items-center gap-3 mt-2">
+                             <div className="flex items-center gap-1">
+                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">TM: {new Intl.NumberFormat('vi-VN').format(stats.cash)}</span>
+                             </div>
+                             <div className="flex items-center gap-1">
+                                 <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">CK: {new Intl.NumberFormat('vi-VN').format(stats.transfer)}</span>
+                             </div>
                         </div>
                     </div>
                 </Card>
                 <Card className="rounded-2xl border-none shadow-sm bg-white dark:bg-gray-900 overflow-hidden relative group p-5">
                     <div className="absolute top-0 right-0 p-4 opacity-10 transition-transform group-hover:scale-110">
-                        <DollarSign className="w-12 h-12 text-purple-600 dark:text-purple-400" />
+                        <Tag className="w-12 h-12 text-orange-600 dark:text-orange-400" />
                     </div>
                     <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Chuyển khoản</p>
-                        <div className="text-2xl font-black text-purple-600">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.transfer || 0)}
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">TIỀN NỘP THUẾ</p>
+                        <div className="text-2xl font-black text-orange-600">
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.tax || 0)}
+                        </div>
+                        <div className="mt-2 flex items-center gap-1.5 bg-orange-50 dark:bg-orange-950/30 w-fit px-2 py-0.5 rounded text-[10px] font-bold text-orange-600">
+                            {stats.total > 0 ? ((stats.tax / stats.total) * 100).toFixed(1) : 0}% <span className="font-medium opacity-70 ml-1">so với tổng thu</span>
+                        </div>
+                    </div>
+                </Card>
+                <Card className="rounded-2xl border-none shadow-sm bg-slate-950 overflow-hidden relative group p-5">
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 to-transparent opacity-50" />
+                    <div className="absolute top-0 right-0 p-4 opacity-10 transition-transform group-hover:scale-110">
+                        <Building2 className="w-12 h-12 text-white" />
+                    </div>
+                    <div className="space-y-1 relative z-10">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">THỰC THU (NET)</p>
+                        <div className="text-2xl font-black text-white tracking-tight">
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.actual || 0)}
+                        </div>
+                        <div className="mt-2 flex items-center gap-1.5 bg-white/10 w-fit px-2 py-0.5 rounded text-[10px] font-bold text-white">
+                            {stats.total > 0 ? ((stats.actual / stats.total) * 100).toFixed(1) : 0}% <span className="font-medium opacity-70 ml-1">tỷ lệ thực thu</span>
                         </div>
                     </div>
                 </Card>

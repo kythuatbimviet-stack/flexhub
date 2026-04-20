@@ -18,7 +18,9 @@ import {
     User,
     Building2,
     RotateCcw,
-    Flag
+    Flag,
+    ArrowUpDown,
+    ChevronDown
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -83,6 +85,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
     const [filterBranch, setFilterBranch] = React.useState<string>("all")
     const [filterPT, setFilterPT] = React.useState<string>("all")
     const [searchTerm, setSearchTerm] = React.useState<string>("")
+    const [sortByWeight, setSortByWeight] = React.useState<'default' | 'asc' | 'desc'>('default')
 
     // Dialog state
     const [isAddOpen, setIsAddOpen] = React.useState(false)
@@ -295,7 +298,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
 
     // Get active clients based on contracts and apply filters
     const activeClients = React.useMemo(() => {
-        return clients
+        let list = clients
             .filter(c => contracts.some(con => con.client_id === c.id))
             .map(client => {
                 // Find the latest contract for this client
@@ -303,9 +306,15 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                     .filter(con => con.client_id === client.id)
                     .sort((a, b) => new Date(b.created_at || b.start_date).getTime() - new Date(a.created_at || a.start_date).getTime())
 
+                // Find the latest weight measurement
+                const clientRecords = recordsFromGantt.filter(r => r.client_id === client.id)
+                const sortedRecords = [...clientRecords].sort((a, b) => new Date(b.measurement_date).getTime() - new Date(a.measurement_date).getTime())
+                const latestWeight = sortedRecords[0]?.weight || 0
+
                 return {
                     ...client,
-                    latestContract: clientContracts[0]
+                    latestContract: clientContracts[0],
+                    latestWeight
                 }
             })
             .filter(client => {
@@ -332,7 +341,19 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
 
                 return true
             })
-    }, [clients, contracts, filterBranch, filterPT, searchTerm])
+
+        // Apply Sorting
+        if (sortByWeight === 'asc') {
+            list = list.sort((a, b) => a.latestWeight - b.latestWeight)
+        } else if (sortByWeight === 'desc') {
+            list = list.sort((a, b) => b.latestWeight - a.latestWeight)
+        } else {
+            // Default: sort by name
+            list = list.sort((a, b) => (a.member_name || '').localeCompare(b.member_name || ''))
+        }
+
+        return list
+    }, [clients, contracts, recordsFromGantt, filterBranch, filterPT, searchTerm, sortByWeight])
 
     const handleOpenEdit = (clientId: string, date?: Date | null) => {
         const targetDate = date || selectedDate || new Date()
@@ -385,6 +406,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
         setFilterBranch("all")
         setFilterPT("all")
         setSearchTerm("")
+        setSortByWeight('default')
         setDateRangeType('this-month')
         toast.success('Đã đặt lại bộ lọc')
     }
@@ -496,6 +518,16 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                 {ptOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
+                                        <Select value={sortByWeight} onValueChange={(val: any) => setSortByWeight(val)}>
+                                            <SelectTrigger className="h-9 text-xs">
+                                                <SelectValue placeholder="Sắp xếp" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="default">Mặc định (Tên)</SelectItem>
+                                                <SelectItem value="asc">Cân nặng (Tăng dần)</SelectItem>
+                                                <SelectItem value="desc">Cân nặng (Giảm dần)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                 </div>
                                 <div className="space-y-2">
@@ -556,8 +588,22 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                     ))}
                                 </SelectContent>
                             </Select>
+                            
+                            <Select value={sortByWeight} onValueChange={(val: any) => setSortByWeight(val)}>
+                                <SelectTrigger className={cn("h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none shrink-0", isMobile ? "w-32" : "w-48")}>
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                        <SelectValue placeholder="Sắp xếp" />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
+                                    <SelectItem value="default">Mặc định (Tên)</SelectItem>
+                                    <SelectItem value="asc">Cân nặng (Tăng dần)</SelectItem>
+                                    <SelectItem value="desc">Cân nặng (Giảm dần)</SelectItem>
+                                </SelectContent>
+                            </Select>
 
-                            {(filterBranch !== "all" || filterPT !== "all" || searchTerm !== "") && (
+                            {(filterBranch !== "all" || filterPT !== "all" || searchTerm !== "" || sortByWeight !== 'default') && (
                                 <Button
                                     variant="ghost"
                                     size="sm"

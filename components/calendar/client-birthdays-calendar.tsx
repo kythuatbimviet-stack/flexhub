@@ -46,6 +46,19 @@ export function ClientBirthdaysCalendar({ data }: ClientBirthdaysCalendarProps) 
         })
     }
 
+    const getDayColor = (dayIdx: number) => {
+        const colors = [
+            'bg-slate-50/50 dark:bg-slate-900/10',    // T2
+            'bg-blue-50/30 dark:bg-blue-950/10',      // T3
+            'bg-emerald-50/30 dark:bg-emerald-950/10', // T4
+            'bg-violet-50/30 dark:bg-violet-950/10',   // T5
+            'bg-amber-50/30 dark:bg-amber-950/10',    // T6
+            'bg-rose-50/30 dark:bg-rose-950/10',       // T7
+            'bg-red-50/40 dark:bg-red-950/20',        // CN
+        ]
+        return colors[dayIdx] || ''
+    }
+
     const renderMonthGrid = (date: Date) => {
         const start = startOfWeek(startOfMonth(date), { weekStartsOn: 1 })
         const end = endOfWeek(endOfMonth(date), { weekStartsOn: 1 })
@@ -54,8 +67,14 @@ export function ClientBirthdaysCalendar({ data }: ClientBirthdaysCalendarProps) 
         return (
             <div className="flex flex-col h-full animate-in fade-in duration-500">
                 <div className="grid grid-cols-7 border-b border-gray-100 dark:border-gray-800">
-                    {daysOfWeek.map(day => (
-                        <div key={day} className="py-3 text-center text-[11px] font-medium text-black dark:text-white tracking-wider">
+                    {daysOfWeek.map((day, idx) => (
+                        <div 
+                            key={day} 
+                            className={cn(
+                                "py-3 text-center text-[11px] font-bold text-black dark:text-white tracking-wider border-r border-gray-100 dark:border-gray-800 last:border-r-0",
+                                getDayColor(idx)
+                            )}
+                        >
                             {day}
                         </div>
                     ))}
@@ -69,8 +88,8 @@ export function ClientBirthdaysCalendar({ data }: ClientBirthdaysCalendarProps) 
                                 key={day.toISOString()} 
                                 className={cn(
                                     "min-h-[100px] border-r border-b border-gray-50 dark:border-gray-800 p-2 transition-colors",
-                                    !isCurrentMonth ? "bg-slate-50/30 dark:bg-slate-900/10" : "bg-white dark:bg-gray-900",
-                                    isToday(day) && "bg-red-50/30 dark:bg-red-900/5"
+                                    !isCurrentMonth ? "bg-slate-50/20 dark:bg-slate-900/5 opacity-50" : getDayColor((day.getDay() + 6) % 7),
+                                    isToday(day) && "bg-red-100/50 dark:bg-red-900/30 ring-1 ring-inset ring-red-200 dark:ring-red-800/50"
                                 )}
                             >
                                 <div className="flex justify-between items-start mb-1">

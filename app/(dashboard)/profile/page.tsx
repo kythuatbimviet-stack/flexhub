@@ -9,27 +9,28 @@ import { Card } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { uploadImage } from '@/app/actions/storage'
+import { useRouter } from 'next/navigation'
+import { updateMyProfile, fetchMyDefinitiveProfileByEmail } from '@/app/actions/users'
 
 export default function ProfilePage() {
     const supabase = createClient()
     const queryClient = useQueryClient()
+    const router = useRouter()
 
-    const { data: profile, isLoading } = useQuery({
-        queryKey: ['user-profile'],
+    const { data: response, isLoading } = useQuery({
+        queryKey: ['definitive-profile'],
         queryFn: async () => {
-            const { data: { user: authUser } } = await supabase.auth.getUser()
-            if (!authUser) return null
-
-            const { data, error } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', authUser.id)
-                .maybeSingle()
-
-            if (error) throw error
-            return data
+            const result = await fetchMyDefinitiveProfileByEmail()
+            if (!result.success) {
+                toast.error(result.error)
+                return null
+            }
+            return result
         }
     })
+
+    const profile = response?.data
+    const isLegacy = response?.isLegacy
 
     const [fullName, setFullName] = React.useState('')
     const [avatarUrl, setAvatarUrl] = React.useState('')
@@ -47,38 +48,15 @@ export default function ProfilePage() {
 
     const updateProfile = useMutation({
         mutationFn: async () => {
-            // Calculate age if dob is provided
-            let age = null
-            if (dob) {
-                const birthDate = new Date(dob)
-                const today = new Date()
-                age = today.getFullYear() - birthDate.getFullYear()
-                const m = today.getMonth() - birthDate.getMonth()
-                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                    age--
-                }
-            }
-
-            const { error: authError } = await supabase.auth.updateUser({
-                data: { full_name: fullName, avatar_url: avatarUrl }
+            const result = await updateMyProfile({
+                name: fullName,
+                avatar_url: avatarUrl,
+                dob: dob
             })
-            if (authError) throw authError
-
-            const { error: dbError } = await supabase
-                .from('users')
-                .update({
-                    name: fullName,
-                    avatar_url: avatarUrl,
-                    dob: dob,
-                    age: age,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', profile?.id)
-
-            if (dbError) throw dbError
+            if (!result.success) throw new Error(result.error)
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['user-profile'] })
+            queryClient.invalidateQueries({ queryKey: ['definitive-profile'] })
             toast.success('Cập nhật hồ sơ thành công')
         },
         onError: (error: any) => {
@@ -126,6 +104,10 @@ export default function ProfilePage() {
         )
     }
 
+    // DIAGNOSTICS: Check terminal and browser console for these logs
+    console.log('DEBUG [ProfilePage] Current Profile:', profile);
+    console.log('DEBUG [ProfilePage] Project URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+
     const initials = fullName?.split(' ').map(n => n[0]).join('').toUpperCase() || profile?.email?.substring(0, 2).toUpperCase() || 'NV'
 
     return (
@@ -157,11 +139,11 @@ export default function ProfilePage() {
                                 )}
                             </div>
                             <div className="pb-2 space-y-1 sm:space-y-2">
-                                <h2 className="text-xl sm:text-2xl font-bold text-black dark:text-white leading-tight tracking-tight">
+                                <h2 className="text-xl sm:text-2xl font-semibold text-black dark:text-white leading-tight tracking-tight">
                                     {fullName || 'Chưa cập nhật tên'}
                                 </h2>
                                 <div className="flex items-center justify-center sm:justify-start gap-2">
-                                    <p className="text-[13px] sm:text-[15px] text-slate-950 dark:text-gray-400 font-semibold bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-800 shadow-sm">
+                                    <p className="text-[13px] sm:text-[15px] text-black dark:text-gray-300 font-medium bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-800 shadow-sm">
                                         {profile?.email}
                                     </p>
                                 </div>
@@ -192,11 +174,11 @@ export default function ProfilePage() {
                             {/* Left Column: Basic Info */}
                             <div className="space-y-6 sm:space-y-8">
                                 <div className="space-y-4 sm:space-y-6">
-                                    <h3 className="text-[12px] sm:text-sm font-bold text-black dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-3 uppercase tracking-widest">
+                                    <h3 className="text-[12px] sm:text-sm font-semibold text-black dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-3 tracking-tight">
                                         Thông tin cơ bản
                                     </h3>
                                     <div className="space-y-2">
-                                        <label className="text-[11px] sm:text-xs font-semibold text-slate-950 dark:text-gray-400 ml-1 uppercase tracking-wider">
+                                        <label className="text-[11px] sm:text-xs font-medium text-black dark:text-gray-400 ml-1 tracking-tight">
                                             Họ và tên
                                         </label>
                                         <div className="relative group">
@@ -210,20 +192,20 @@ export default function ProfilePage() {
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-[11px] sm:text-xs font-semibold text-slate-950 dark:text-gray-400 ml-1 uppercase tracking-wider">
+                                            <label className="text-[11px] sm:text-xs font-medium text-black dark:text-gray-400 ml-1 tracking-tight">
                                                 Địa chỉ Email
                                             </label>
                                             <div className="relative">
                                                 <Input
                                                     value={profile?.email}
                                                     disabled
-                                                    className="h-11 sm:h-12 bg-slate-50 dark:bg-gray-800/30 border-gray-100 dark:border-gray-800 rounded-xl sm:rounded-2xl text-slate-400 dark:text-gray-600 cursor-not-allowed pl-4 text-xs font-medium"
+                                                    className="h-11 sm:h-12 bg-slate-50 dark:bg-gray-800/30 border-gray-100 dark:border-gray-800 rounded-xl sm:rounded-2xl text-slate-500 dark:text-gray-500 cursor-not-allowed pl-4 text-xs font-medium"
                                                 />
                                             </div>
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-[11px] sm:text-xs font-semibold text-slate-950 dark:text-gray-400 ml-1 uppercase tracking-wider">
+                                            <label className="text-[11px] sm:text-xs font-medium text-black dark:text-gray-400 ml-1 tracking-tight">
                                                 Ngày sinh nhật
                                             </label>
                                             <div className="relative group">

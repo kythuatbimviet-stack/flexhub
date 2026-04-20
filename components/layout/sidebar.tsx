@@ -135,7 +135,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                             </Link>
                         </div>
                         {!isCollapsed && (
-                            <span className="font-semibold text-lg tracking-tight text-gray-950 dark:text-white transition-opacity duration-300">
+                            <span className="font-semibold text-lg tracking-tight text-black dark:text-white transition-opacity duration-300">
                                 Eva's Fit <span className="text-red-600 dark:text-red-400 font-semibold text-[10px] ml-1 px-2 py-0.5 bg-red-50 dark:bg-red-900/30 rounded-full tracking-wider">ERP</span>
                             </span>
                         )}
@@ -178,8 +178,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                                             className={cn(
                                                 isActive
                                                     ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                                                    : 'text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800/50',
-                                                'group flex gap-x-3 rounded-xl p-2.5 text-sm leading-6 font-semibold transition-all duration-200',
+                                                    : 'text-black/70 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800/50',
+                                                'group flex gap-x-3 rounded-xl p-2.5 text-sm leading-6 font-medium transition-all duration-200',
                                                 isCollapsed && "justify-center px-0"
                                             )}
                                         >
@@ -219,7 +219,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                         {visibleCalendar.length > 0 && (
                             <li>
                                 {!isCollapsed ? (
-                                    <div className="text-[10px] font-bold leading-6 text-gray-400 dark:text-gray-300 uppercase tracking-[0.2em] mb-2 px-2">Lịch</div>
+                                    <div className="text-[10px] font-semibold leading-6 text-black/40 dark:text-gray-300 uppercase tracking-[0.1em] mb-2 px-2">Lịch</div>
                                 ) : (
                                     <div className="h-px bg-gray-100 dark:bg-gray-800 mx-2 mb-4" />
                                 )}
@@ -274,7 +274,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                         {visibleFinancial.length > 0 && (
                             <li>
                                 {!isCollapsed ? (
-                                    <div className="text-[10px] font-bold leading-6 text-gray-400 dark:text-gray-300 uppercase tracking-[0.2em] mb-2 px-2">Tài chính</div>
+                                    <div className="text-[10px] font-semibold leading-6 text-black/40 dark:text-gray-300 uppercase tracking-[0.1em] mb-2 px-2">Tài chính</div>
                                 ) : (
                                     <div className="h-px bg-gray-100 dark:bg-gray-800 mx-2 mb-4" />
                                 )}
@@ -329,7 +329,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                         {visibleSystem.length > 0 && (
                             <li>
                                 {!isCollapsed ? (
-                                    <div className="text-[10px] font-bold leading-6 text-gray-400 dark:text-gray-300 uppercase tracking-[0.2em] mb-2 px-2">Hệ thống</div>
+                                    <div className="text-[10px] font-semibold leading-6 text-black/40 dark:text-gray-300 uppercase tracking-[0.1em] mb-2 px-2">Hệ thống</div>
                                 ) : (
                                     <div className="h-px bg-gray-100 dark:bg-gray-800 mx-2 mb-4" />
                                 )}
@@ -385,7 +385,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                             <button
                                 onClick={handleLogout}
                                 className={cn(
-                                    "group -mx-2 flex gap-x-3 rounded-xl p-2.5 text-sm font-semibold leading-6 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400 w-full transition-all duration-200",
+                                    "group -mx-2 flex gap-x-3 rounded-xl p-2.5 text-sm font-medium leading-6 text-black/70 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400 w-full transition-all duration-200",
                                     isCollapsed && "justify-center px-0 mx-0"
                                 )}
                             >

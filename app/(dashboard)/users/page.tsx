@@ -52,12 +52,17 @@ import { cn } from '@/lib/utils'
 import { fetchUsers, bulkDeleteUsers } from '@/app/actions/users'
 import { fetchBranches } from '@/app/actions/branches'
 import * as XLSX from 'xlsx'
+import { useSearchParams, useRouter } from 'next/navigation'
 
 import { AddUserDialog } from '@/components/users/add-user-dialog'
 import { UserDetailsSheet } from '@/components/users/user-details-sheet'
 import { ImportUsersDialog } from '@/components/users/import-users-dialog'
 
 export default function UsersPage() {
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const emailParam = searchParams.get('email')
+
     const [searchTerm, setSearchTerm] = React.useState('')
     const [selectedRows, setSelectedRows] = React.useState<string[]>([])
     const [selectedUser, setSelectedUser] = React.useState<any | null>(null)
@@ -80,6 +85,28 @@ export default function UsersPage() {
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
     })
+
+    // Handle email search param
+    React.useEffect(() => {
+        if (emailParam) {
+            setSearchTerm(emailParam)
+        }
+    }, [emailParam])
+
+    React.useEffect(() => {
+        if (emailParam && users && !isDetailsOpen) {
+            const foundUser = users.find((u: any) => u.email.toLowerCase() === emailParam.toLowerCase())
+            if (foundUser) {
+                setSelectedUser(foundUser)
+                setIsDetailsOpen(true)
+
+                // Clear the URL parameter right after opening to prevent the double-close loop
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete('email')
+                router.replace(`/users${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false })
+            }
+        }
+    }, [emailParam, users, isDetailsOpen, router, searchParams])
 
     // Sync selected user with updated data from refetch
     React.useEffect(() => {
@@ -227,11 +254,11 @@ export default function UsersPage() {
 
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 px-1">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-gray-50 flex items-center gap-2">
-                        <UserCircle className="w-8 h-8 text-red-600" />
+                    <h1 className="text-3xl font-semibold tracking-tight text-black dark:text-gray-50 flex items-center gap-2">
+                        <UserCircle className="w-8 h-8 text-black" />
                         Quản lý Nhân sự
                     </h1>
-                    <p className="text-sm text-slate-500 dark:text-gray-400 font-medium">Quản lý đội ngũ Eva's Fit.</p>
+                    <p className="text-sm text-black/60 dark:text-gray-400 font-medium">Quản lý đội ngũ Eva's Fit.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <AnimatePresence>
@@ -376,13 +403,13 @@ export default function UsersPage() {
                                         className="rounded-lg border-slate-300 dark:border-slate-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600 shadow-sm"
                                     />
                                 </TableHead>
-                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Nhân sự & Liên hệ</TableHead>
-                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Ngày sinh</TableHead>
-                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Vị trí & Phòng ban</TableHead>
-                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Chi nhánh</TableHead>
-                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Vai trò</TableHead>
-                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Trạng thái</TableHead>
-                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9 text-right pr-10">Tùy chọn</TableHead>
+                                <TableHead className="text-[11px] font-medium text-black/40 dark:text-gray-400 h-9">Nhân sự & Liên hệ</TableHead>
+                                <TableHead className="text-[11px] font-medium text-black/40 dark:text-gray-400 h-9">Ngày sinh</TableHead>
+                                <TableHead className="text-[11px] font-medium text-black/40 dark:text-gray-400 h-9">Vị trí & Phòng ban</TableHead>
+                                <TableHead className="text-[11px] font-medium text-black/40 dark:text-gray-400 h-9">Chi nhánh</TableHead>
+                                <TableHead className="text-[11px] font-medium text-black/40 dark:text-gray-400 h-9">Vai trò</TableHead>
+                                <TableHead className="text-[11px] font-medium text-black/40 dark:text-gray-400 h-9">Trạng thái</TableHead>
+                                <TableHead className="text-[11px] font-medium text-black/40 dark:text-gray-400 h-9 text-right pr-10">Tùy chọn</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -432,8 +459,8 @@ export default function UsersPage() {
                                                     {!user.avatar_url && (user.name?.charAt(0) || 'U')}
                                                 </div>
                                                 <div className="flex flex-col gap-0.5">
-                                                    <span className="font-semibold text-slate-900 dark:text-slate-50 text-[15px] group-hover:text-red-600 transition-colors">{user.name}</span>
-                                                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{user.email}</span>
+                                                    <span className="font-semibold text-black dark:text-white text-[15px] group-hover:text-red-600 transition-colors">{user.name}</span>
+                                                    <span className="text-xs text-black/50 dark:text-gray-400 font-medium">{user.email}</span>
                                                 </div>
                                             </div>
                                         </TableCell>

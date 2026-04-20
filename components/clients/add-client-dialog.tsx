@@ -17,7 +17,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchClientConfigs } from '@/app/actions/config-params'
-import { fetchCurrentUserProfile, fetchUsers } from '@/app/actions/users'
+import { fetchMyDefinitiveProfileByEmail, fetchUsers } from '@/app/actions/users'
 import { fetchZaloUsers } from '@/app/actions/zalo-users'
 import {
     Popover,
@@ -116,7 +116,7 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
 
     const { data: currentUserResult } = useQuery({
         queryKey: ['current-user-profile'],
-        queryFn: fetchCurrentUserProfile
+        queryFn: fetchMyDefinitiveProfileByEmail
     })
 
     const { data: zaloUsersData } = useQuery({

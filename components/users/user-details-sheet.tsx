@@ -49,7 +49,7 @@ const CardSection = ({ title, icon: Icon, children }: any) => (
             <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
                 <Icon className="w-4 h-4" />
             </div>
-            <h3 className="text-[12px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">{title}</h3>
+            <h3 className="text-[12px] font-semibold text-black dark:text-white tracking-tight">{title}</h3>
         </div>
         {children}
     </div>
@@ -57,7 +57,7 @@ const CardSection = ({ title, icon: Icon, children }: any) => (
 
 const UserDetailRow = ({ label, value, name, type = 'text', options, icon: Icon, isEditing, formData, onChange, onValueChange }: any) => (
     <div className="space-y-1.5">
-        <Label className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
+        <Label className="text-[10px] font-medium text-black/40 dark:text-slate-500 tracking-tight flex items-center gap-2">
             {Icon && <Icon className="w-3 h-3" />}
             {label}
         </Label>
@@ -342,10 +342,10 @@ export function UserDetailsSheet({
                                 <UserCircle className="w-10 h-10 sm:w-12 sm:h-12" />
                             </div>
                             <div className="flex-1 min-w-0 pt-1 space-y-1">
-                                <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white truncate tracking-tight leading-none uppercase">
+                                <h2 className="text-lg sm:text-xl font-semibold text-black dark:text-white truncate tracking-tight leading-none">
                                     {user.name}
                                 </h2>
-                                <p className="text-[13px] sm:text-sm text-slate-500 dark:text-slate-400 italic">
+                                <p className="text-[13px] sm:text-sm text-black/60 dark:text-gray-400 font-medium">
                                     {user.position || 'Nhân sự Ladyfit'}
                                 </p>
                                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
@@ -476,9 +476,8 @@ export function UserDetailsSheet({
                                             })}
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-slate-400">Chưa phân quyền chi nhánh nào</p>
-                                    )
-                                )}
+                                        <p className="text-sm text-black/40 dark:text-gray-500 font-medium tracking-tight">Chưa phân quyền chi nhánh nào</p>
+                                    ))}
                             </div>
                         </CardSection>
                     )}

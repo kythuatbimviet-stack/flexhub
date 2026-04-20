@@ -104,13 +104,27 @@ export async function fetchStaffBirthdays(period: 'week' | 'month' = 'month') {
         const now = new Date()
         const currentMonth = now.getMonth() + 1
         
+        console.log(`[fetchStaffBirthdays] Period: ${period}, Current Month: ${currentMonth}`)
+
         const filtered = (data || []).filter((user: any) => {
             if (!user.dob) return false
+            
             const dob = new Date(user.dob)
-            const birthMonth = dob.getMonth() + 1
+            const dobStr = String(user.dob)
+            let birthMonth: number
+            
+            if (dobStr.includes('-')) {
+                // If it's YYYY-MM-DD, parsing directly is safer vs Timezone shifts
+                const parts = dobStr.split('-')
+                birthMonth = parseInt(parts[1], 10)
+            } else {
+                birthMonth = dob.getMonth() + 1
+            }
 
             if (period === 'month') {
-                return birthMonth === currentMonth
+                const isMatch = birthMonth === currentMonth
+                if (isMatch) console.log(`[fetchStaffBirthdays] Match found: ${user.name} (Month: ${birthMonth})`)
+                return isMatch
             } else if (period === 'week') {
                 const today = new Date()
                 today.setHours(0, 0, 0, 0)

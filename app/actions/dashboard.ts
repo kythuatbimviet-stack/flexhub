@@ -20,7 +20,7 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
 
         // Build base queries
         let clientsQuery = supabase.from('clients').select('id, status, source, registration_type, created_at, pt_name, branch_id, member_name')
-        let revenueQuery = supabase.from('revenue').select('amount, recorded_at, branch_id, customer_id')
+        let revenueQuery = supabase.from('revenue').select('amount, actual_amount, recorded_at, branch_id, customer_id')
         let expenseQuery = supabase.from('expense').select('amount, recorded_at, branch_id')
         let debtsQuery = supabase.from('debts').select('remaining_amount, paid_amount, status, created_at, branch_id')
         let contractsQuery = supabase.from('contracts').select('id, status, total_amount, end_date, created_at, branch_id')
@@ -121,6 +121,7 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
 
         const totalContractValue = safeContracts.reduce((sum, h) => sum + (Number(h.total_amount) || 0), 0)
         const totalRevenue = safeRevenue.reduce((sum, r) => sum + (Number(r.amount) || 0), 0)
+        const totalActualRevenue = safeRevenue.reduce((sum, r) => sum + (Number(r.actual_amount) || 0), 0)
         const totalExpense = safeExpense.reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
 
         // --- Branch-level Reports (Renamed from Province) ---
@@ -133,7 +134,7 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
         safeRevenue.forEach(r => {
             const bName = branchIdToName[r.branch_id || ''] || 'Chi nhánh khác'
             if (!branchLevelMetrics[bName]) branchLevelMetrics[bName] = { branchName: bName, revenue: 0, weightLoss: 0 }
-            branchLevelMetrics[bName].revenue += Number(r.amount) || 0
+            branchLevelMetrics[bName].revenue += Number(r.actual_amount || r.amount) || 0 // Ưu tiên doanh thu thực tế cho báo cáo
         })
 
         const clientsWeights = filteredWeights.reduce((acc: any, w) => {
@@ -154,13 +155,13 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
             }
         })
 
-        // --- PT Performance ---
         const ptMetrics: Record<string, { 
-            name: string, 
-            leads: Record<string, number>, 
-            totalWeightLoss: number, 
-            maxWeightLoss: number,
-            revenue: number
+            name: string; 
+            leads: Record<string, number>; 
+            totalWeightLoss: number; 
+            maxWeightLoss: number; 
+            revenue: number; 
+            actualRevenue: number; 
         }> = {}
 
         safeClients.forEach(client => {
@@ -171,7 +172,8 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
                     leads: { 'Facebook': 0, 'tiktok': 0, 'Outdoor': 0, 'PR': 0, 'Tự kiếm': 0, 'Khác': 0 },
                     totalWeightLoss: 0,
                     maxWeightLoss: 0,
-                    revenue: 0
+                    revenue: 0,
+                    actualRevenue: 0
                 }
             }
 
@@ -194,11 +196,13 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
                 if (maxLoss > ptMetrics[ptName].maxWeightLoss) ptMetrics[ptName].maxWeightLoss = maxLoss
             }
         })
-
         safeRevenue.forEach(r => {
             const client = safeClients.find(c => c.id === r.customer_id)
             const ptName = client?.pt_name || 'Chưa gán PT'
-            if (ptMetrics[ptName]) ptMetrics[ptName].revenue += Number(r.amount) || 0
+            if (ptMetrics[ptName]) {
+                ptMetrics[ptName].revenue += Number(r.amount) || 0
+                ptMetrics[ptName].actualRevenue += Number(r.actual_amount || r.amount) || 0
+            }
         })
 
         // --- Restoring Existing Fields ---
@@ -231,6 +235,7 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
         const recoveryRate = totalContractValue === 0 ? 0 : (totalPaidAmount / totalContractValue) * 100
 
         const currentMonthRevenue = safeRevenue.filter(r => r.recorded_at && r.recorded_at >= monthStart).reduce((s, r) => s + (Number(r.amount) || 0), 0)
+        const currentMonthActualRevenue = safeRevenue.filter(r => r.recorded_at && r.recorded_at >= monthStart).reduce((s, r) => s + (Number(r.actual_amount || r.amount) || 0), 0)
         const lastMonthRevenue = safeRevenue.filter(r => r.recorded_at && r.recorded_at >= lastMonthStart && r.recorded_at <= lastMonthEnd).reduce((s, r) => s + (Number(r.amount) || 0), 0)
         const revenueGrowthRate = lastMonthRevenue === 0 ? (currentMonthRevenue > 0 ? 100 : 0) : ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
 
@@ -240,14 +245,16 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
             const mEnd = endOfMonth(date).toISOString()
             const label = format(date, 'MMM')
             const rev = safeRevenue.filter(r => r.recorded_at && r.recorded_at >= mStart && r.recorded_at <= mEnd).reduce((sum, r) => sum + (Number(r.amount) || 0), 0)
+            const actualRev = safeRevenue.filter(r => r.recorded_at && r.recorded_at >= mStart && r.recorded_at <= mEnd).reduce((sum, r) => sum + (Number(r.actual_amount || r.amount) || 0), 0)
             const exp = safeExpense.filter(e => e.recorded_at && e.recorded_at >= mStart && e.recorded_at <= mEnd).reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
-            return { name: label, revenue: rev, expense: exp, profit: rev - exp }
+            return { name: label, revenue: rev, actualRevenue: actualRev, expense: exp, profit: actualRev - exp }
         })
 
         const branchMetrics = safeBranches.map(branch => {
             const bRev = safeRevenue.filter(r => r.branch_id === branch.id).reduce((sum, r) => sum + (Number(r.amount) || 0), 0)
+            const bActualRev = safeRevenue.filter(r => r.branch_id === branch.id).reduce((sum, r) => sum + (Number(r.actual_amount || r.amount) || 0), 0)
             const bExp = safeExpense.filter(e => e.branch_id === branch.id).reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
-            return { id: branch.id, name: branch.name, revenue: bRev, expense: bExp, profit: bRev - bExp }
+            return { id: branch.id, name: branch.name, revenue: bRev, actualRevenue: bActualRev, expense: bExp, profit: bActualRev - bExp }
         })
         const bestBranch = [...branchMetrics].sort((a, b) => b.profit - a.profit)[0]?.name || 'N/A'
 
@@ -267,7 +274,9 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
                 },
                 branchPersonnel: {
                     branches: Object.values(branchLevelMetrics),
-                    pts: Object.values(ptMetrics).sort((a, b) => b.totalWeightLoss - a.totalWeightLoss)
+                    totalActualRevenue,
+                    currentMonthActualRevenue,
+                    ptPerformance: Object.values(ptMetrics).sort((a, b) => b.revenue - a.revenue)
                 },
                 customers: {
                     statusCounts: customerStatusCounts,
