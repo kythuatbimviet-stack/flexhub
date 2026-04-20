@@ -54,6 +54,7 @@ const userFormSchema = z.object({
     department: z.string().optional(),
     permissions: z.string().optional(),
     status: z.string().min(1, { message: 'Trạng thái không được để trống' }),
+    dob: z.string().optional(),
 })
 
 export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
@@ -72,6 +73,7 @@ export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
             department: '',
             permissions: 'User',
             status: 'Activated',
+            dob: '',
         },
     })
 
@@ -156,6 +158,19 @@ export function AddUserDialog({ onSuccess }: { onSuccess: () => void }) {
                                             <FormLabel className="text-xs font-medium text-slate-700 dark:text-slate-300">Email (ID đăng nhập)</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="email@evafit.vn" {...field} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 transition-all h-11 border-2" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="dob"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs font-medium text-slate-700 dark:text-slate-300">Ngày sinh</FormLabel>
+                                            <FormControl>
+                                                <Input type="date" {...field} className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 h-11 border-2" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

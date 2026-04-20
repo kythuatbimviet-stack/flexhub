@@ -166,6 +166,13 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                 signature_url: row['URL chữ ký'] || row['signature_url'] || '',
                 created_by: row['Người tạo (ID)'] || row['created_by'] || '',
                 created_by_email: row['Email người tạo'] || row['created_by_email'] || '',
+                // New Fields from Schema Audit
+                status_reason: row['Lý do trạng thái'] || row['status_reason'] || '',
+                survey_training_history: row['Khảo sát - Lịch sử tập luyện'] || row['survey_training_history'] || '',
+                survey_injury_history: row['Khảo sát - Lịch sử chấn thương'] || row['survey_injury_history'] || '',
+                survey_work_stress: row['Khảo sát - Áp lực công việc/Stress'] || row['survey_work_stress'] || '',
+                survey_pathology_details: row['Khảo sát - Bệnh lý chi tiết'] || row['survey_pathology_details'] || '',
+                survey_health_advice: row['Khảo sát - Lời khuyên sức khỏe'] || row['survey_health_advice'] || '',
                 // Ngày tạo / Ngày cập nhật: đọc từ Excel, nếu trống → thời điểm hiện tại
                 created_at: parseExcelDateTime(row['Ngày tạo'] || row['created_at']) || new Date().toISOString(),
                 updated_at: parseExcelDateTime(row['Ngày cập nhật'] || row['updated_at']) || new Date().toISOString(),
@@ -270,6 +277,12 @@ export function ImportExcelClientDialog({ onSuccess }: ImportExcelClientDialogPr
                 'Facebook ID': '',
                 'Lịch sử tác động': '',
                 'URL chữ ký': '',
+                'Lý do trạng thái': '',
+                'Khảo sát - Lịch sử tập luyện': '',
+                'Khảo sát - Lịch sử chấn thương': '',
+                'Khảo sát - Áp lực công việc/Stress': '',
+                'Khảo sát - Bệnh lý chi tiết': '',
+                'Khảo sát - Lời khuyên sức khỏe': '',
             }
         ]
         const ws = XLSX.utils.json_to_sheet(template)

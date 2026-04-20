@@ -215,9 +215,9 @@ export default function XnttHistoryPage() {
     }
 
     return (
-        <div className="p-4 sm:p-6 space-y-6 bg-slate-50/50 min-h-screen font-inter">
+        <div className="space-y-1.5 font-inter pb-10">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
                 <div className="space-y-1">
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
                         <Send className="w-6 h-6 text-red-600" />
@@ -237,7 +237,7 @@ export default function XnttHistoryPage() {
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 px-1">
                 <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden group">
                     <CardHeader className="p-4 pb-2">
                         <CardTitle className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tổng lượt gửi</CardTitle>
@@ -281,7 +281,7 @@ export default function XnttHistoryPage() {
             </div>
 
             {/* Filters */}
-            <Card className="border-none shadow-sm bg-white rounded-2xl">
+            <Card className="border-none shadow-sm bg-white rounded-2xl px-1">
                 <CardContent className="p-4">
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="relative flex-1">
@@ -324,7 +324,7 @@ export default function XnttHistoryPage() {
             </Card>
 
             {/* Table */}
-            <Card className="border-none shadow-sm bg-white rounded-xl overflow-hidden min-h-[400px]">
+            <Card className="border-none shadow-sm bg-white rounded-xl overflow-hidden min-h-[400px] px-1">
                 <Table>
                     <TableHeader>
                         <TableRow className="hover:bg-transparent border-gray-100 dark:border-gray-800 h-10 uppercase tracking-wider text-[11px] font-medium">

@@ -93,7 +93,9 @@ const UserDetailRow = ({ label, value, name, type = 'text', options, icon: Icon,
             )
         ) : (
             <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
-                {name === 'status' ? (value === 'Activated' ? 'Đang hoạt động' : 'Tạm ngưng') : (value || '-')}
+                {name === 'status' ? (value === 'Activated' ? 'Đang hoạt động' : 'Tạm ngưng') : 
+                 (name === 'dob' && value) ? new Date(value).toLocaleDateString('vi-VN') :
+                 (value || '-')}
             </p>
         )}
     </div>
@@ -165,7 +167,25 @@ export function UserDetailsSheet({
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
-        setFormData((prev: any) => ({ ...prev, [name]: value }))
+        setFormData((prev: any) => {
+            const newData = { ...prev, [name]: value }
+            
+            // Auto-calculate age if dob changes
+            if (name === 'dob' && value) {
+                const birthDate = new Date(value)
+                const today = new Date()
+                let age = today.getFullYear() - birthDate.getFullYear()
+                const m = today.getMonth() - birthDate.getMonth()
+                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                    age--
+                }
+                if (age >= 0) newData.age = age
+            } else if (name === 'dob' && !value) {
+                newData.age = null
+            }
+            
+            return newData
+        })
     }
 
     const handleSave = async () => {
@@ -351,6 +371,10 @@ export function UserDetailsSheet({
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <UserDetailRow label="Số điện thoại" value={formData.phone} name="phone" icon={Phone} {...sharedRowProps} />
                                 <UserDetailRow label="Email" value={formData.email} name="email" icon={Mail} {...sharedRowProps} />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <UserDetailRow label="Ngày sinh" value={formData.dob} name="dob" type="date" icon={Calendar} {...sharedRowProps} />
+                                <UserDetailRow label="Tuổi" value={formData.age} name="age" type="number" icon={User} {...sharedRowProps} />
                             </div>
                         </div>
                     </CardSection>

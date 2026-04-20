@@ -91,6 +91,12 @@ const clientSchema = z.object({
     branch_id: z.string().min(1, 'Chi nhánh là bắt buộc').nullable(),
     signature_url: z.string().optional(),
     avatar_url: z.string().optional(),
+    status_reason: z.string().optional(),
+    survey_training_history: z.string().optional(),
+    survey_injury_history: z.string().optional(),
+    survey_work_stress: z.string().optional(),
+    survey_pathology_details: z.string().optional(),
+    survey_health_advice: z.string().optional(),
 })
 
 type ClientFormValues = z.infer<typeof clientSchema>
@@ -188,6 +194,12 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
             branch_id: null,
             signature_url: '',
             avatar_url: '',
+            status_reason: '',
+            survey_training_history: '',
+            survey_injury_history: '',
+            survey_work_stress: '',
+            survey_pathology_details: '',
+            survey_health_advice: '',
         },
     })
 
@@ -299,28 +311,43 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                     </DialogTitle>
                     <DialogDescription className="text-gray-500 dark:text-gray-400 flex items-center justify-between gap-4">
                         <span>Hoàn tất thông tin bên dưới (<span className="text-red-600 font-bold">*</span> là bắt buộc)</span>
-                        <Select
-                            value={form.watch('status')}
-                            onValueChange={(val) => form.setValue('status', val)}
-                        >
-                            <SelectTrigger className="w-[180px] rounded-xl border-gray-100 bg-gray-50/50 text-sm shrink-0 font-bold text-red-600">
-                                <SelectValue placeholder="Chọn trạng thái" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-gray-100">
-                                {clientStatuses.length > 0 ? (
-                                    clientStatuses.map((s) => (
-                                        <SelectItem key={s.id} value={s.nam} className="font-bold">{s.nam}</SelectItem>
-                                    ))
-                                ) : (
-                                    <>
-                                        <SelectItem value="Chốt đăng kí" className="font-bold">Chốt đăng kí</SelectItem>
-                                        <SelectItem value="Đang tập" className="font-bold">Đang tập</SelectItem>
-                                        <SelectItem value="Tạm dừng" className="font-bold">Tạm dừng</SelectItem>
-                                        <SelectItem value="Đã nghỏ" className="font-bold">Đã nghỏ</SelectItem>
-                                    </>
-                                )}
-                            </SelectContent>
-                        </Select>
+                        <div className="flex items-center gap-2 shrink-0">
+                            {(form.watch('status') === 'Không tham gia' || form.watch('status') === 'Tư vấn & không tham gia') && (
+                                <FormField
+                                    control={form.control}
+                                    name="status_reason"
+                                    render={({ field }) => (
+                                        <Input
+                                            {...field}
+                                            placeholder="Lý do..."
+                                            className="w-[150px] h-9 rounded-xl border-gray-100 bg-gray-50/50 text-xs text-red-600 font-bold"
+                                        />
+                                    )}
+                                />
+                            )}
+                            <Select
+                                value={form.watch('status')}
+                                onValueChange={(val) => form.setValue('status', val)}
+                            >
+                                <SelectTrigger className="w-[180px] rounded-xl border-gray-100 bg-gray-50/50 text-sm shrink-0 font-bold text-red-600">
+                                    <SelectValue placeholder="Chọn trạng thái" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl border-gray-100 font-inter">
+                                    {clientStatuses.length > 0 ? (
+                                        clientStatuses.map((s) => (
+                                            <SelectItem key={s.id} value={s.nam} className="font-bold">{s.nam}</SelectItem>
+                                        ))
+                                    ) : (
+                                        <>
+                                            <SelectItem value="Chốt đăng kí" className="font-bold">Chốt đăng kí</SelectItem>
+                                            <SelectItem value="Đang tập" className="font-bold">Đang tập</SelectItem>
+                                            <SelectItem value="Tạm dừng" className="font-bold">Tạm dừng</SelectItem>
+                                            <SelectItem value="Đã nghỉ" className="font-bold">Đã nghỉ</SelectItem>
+                                        </>
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </DialogDescription>
                 </DialogHeader>
 
@@ -829,9 +856,79 @@ export function AddClientDialog({ onSuccess }: AddClientDialogProps) {
                                 name="medical_history"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Tiền sử bệnh lý</FormLabel>
+                                        <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Tiền sử bệnh lý (Đau lưng, vai gáy...)</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Chấn thương, bệnh lý cần lưu ý..." {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
+                                            <Input placeholder="..." {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            {/* Survey Questions */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="survey_training_history"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Lịch sử tập luyện bộ môn khác?</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="..." {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="survey_injury_history"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Có từng phẫu thuật/chấn thương?</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="..." {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="survey_work_stress"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Áp lực công việc/Stress?</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="..." {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="survey_health_advice"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Bác sĩ có lời khuyên gì không?</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="..." {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <FormField
+                                control={form.control}
+                                name="survey_pathology_details"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs text-gray-500 dark:text-gray-300 font-medium">Chi tiết bệnh lý (nếu có)</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="..." {...field} className="rounded-xl border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 text-gray-900 dark:text-white" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

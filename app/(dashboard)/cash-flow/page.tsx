@@ -275,9 +275,9 @@ export default function CashFlowPage() {
     }
 
     return (
-        <div className="p-4 sm:p-8 space-y-8 bg-slate-50/50 dark:bg-slate-950/50 min-h-screen font-inter">
+        <div className="space-y-1.5 font-inter pb-10">
             {/* Header & Main Filters */}
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-6 px-1">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Dòng tiền</h1>
@@ -477,7 +477,7 @@ export default function CashFlowPage() {
             </div>
 
             {/* Total Stats Summary */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-1">
                 <Card className="rounded-2xl border-none shadow-sm bg-white dark:bg-gray-900 overflow-hidden relative group p-5">
                     <div className="absolute top-0 right-0 p-4 opacity-10 transition-transform group-hover:scale-110">
                         <ArrowUpRight className="w-12 h-12 text-emerald-600" />
@@ -523,7 +523,7 @@ export default function CashFlowPage() {
             </div>
 
             {/* Main Content Area - Grid with Charts and Table */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 px-1">
                 {/* Chart 1: Revenue vs Expense */}
                 <Card className="rounded-3xl border-none shadow-sm bg-white dark:bg-gray-900 overflow-hidden">
                     <CardHeader className="p-5 sm:p-7 border-b border-slate-50 dark:border-slate-800">
@@ -595,7 +595,7 @@ export default function CashFlowPage() {
             </div>
 
             {/* Transaction History Table */}
-            <Card className="rounded-3xl border-none shadow-sm bg-white dark:bg-gray-900 overflow-hidden">
+            <Card className="rounded-3xl border-none shadow-sm bg-white dark:bg-gray-900 overflow-hidden px-1">
                 <CardHeader className="p-5 sm:p-7 border-b border-slate-50 dark:border-slate-800">
                     <CardTitle className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <History className="w-5 h-5 text-indigo-600" />

@@ -55,7 +55,7 @@ export async function createUser(user: any) {
         const validColumns = [
             'email', 'name', 'phone', 'branch_id', 'branch_name', 
             'position', 'department', 'permissions', 'direct_manager', 
-            'avatar_url', 'status', 'managed_branches'
+            'avatar_url', 'status', 'managed_branches', 'dob', 'age'
         ]
         
         const sanitizedUser = Object.keys(user)
@@ -89,7 +89,7 @@ export async function updateUser(id: string, updates: any) {
         const validColumns = [
             'email', 'name', 'phone', 'branch_id', 'branch_name', 
             'position', 'department', 'permissions', 'direct_manager', 
-            'avatar_url', 'status', 'managed_branches'
+            'avatar_url', 'status', 'managed_branches', 'dob', 'age'
         ]
         
         const sanitizedUpdates = Object.keys(updates)

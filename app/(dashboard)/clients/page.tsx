@@ -488,6 +488,7 @@ export default function ClientsPage() {
                 'Mục tiêu cân nặng': c.target_weight,
                 'Mục tiêu': c.goal,
                 'Trạng thái': c.status,
+                'Lý do trạng thái': c.status_reason,
                 'Tên PT phụ trách': c.pt_name,
                 'PT được gán (Email)': c.assigned_pt,
                 'Mã chi nhánh': c.branch_id,
@@ -497,6 +498,11 @@ export default function ClientsPage() {
                 'Loại đăng ký': c.registration_type,
                 'Tiền sử bệnh lý': c.medical_history,
                 'Thời gian tập luyện': c.training_time,
+                'Khảo sát - Lịch sử tập luyện': c.survey_training_history,
+                'Khảo sát - Lịch sử chấn thương': c.survey_injury_history,
+                'Khảo sát - Áp lực công việc/Stress': c.survey_work_stress,
+                'Khảo sát - Bệnh lý chi tiết': c.survey_pathology_details,
+                'Khảo sát - Lời khuyên sức khỏe': c.survey_health_advice,
                 'Ghi chú': c.notes,
                 'Chu kỳ khách hàng': c.customer_cycle,
                 'Zalo ID': c.zalo_id,
@@ -514,7 +520,7 @@ export default function ClientsPage() {
         const wb = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(wb, ws, 'Clients')
         XLSX.writeFile(wb, 'eva_fit_clients_full_export.xlsx')
-        toast.success('Đã xuất file Excel thành công với 32 trường dữ liệu')
+        toast.success('Đã xuất file Excel thành công với 38 trường dữ liệu')
     }
 
     const toggleRow = (id: string) =>

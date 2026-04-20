@@ -69,7 +69,7 @@ import { fetchClients } from '@/app/actions/clients'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchMemberships } from '@/app/actions/memberships'
 import { fetchUserByEmail, fetchUsers } from '@/app/actions/users'
-import { addDays } from 'date-fns'
+import { addDays, format } from 'date-fns'
 import { fetchConfigParams, ConfigItem } from '@/app/actions/config-params'
 import { useQuery } from '@tanstack/react-query'
 const contractFormSchema = z.object({
@@ -107,6 +107,7 @@ const contractFormSchema = z.object({
     legal_representative: z.string().optional(),
     center_address: z.string().optional(),
     medical_condition: z.string().optional(),
+    medical_conditions: z.string().optional(),
     initial_height: z.string().optional(),
     initial_weight: z.string().optional(),
     package_type: z.string().optional(),
@@ -169,7 +170,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             member_address: '',
             contract_type: 'Hội viên',
             contract_name: '',
-            start_date: new Date().toISOString().split('T')[0],
+            start_date: format(new Date(), 'yyyy-MM-dd'),
             end_date: '',
             membership_id: '',
             package_name: '',
@@ -247,7 +248,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                 }
                 form.setValue('trainer_name', initialClient.pt_name || '')
                 if (initialClient.dob) {
-                    form.setValue('dob', initialClient.dob.split('T')[0])
+                    form.setValue('dob', format(new Date(initialClient.dob), 'yyyy-MM-dd'))
                 }
                 if (initialClient.signature_url) {
                     form.setValue('signature_url', initialClient.signature_url)
@@ -341,7 +342,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                     }
                     form.setValue('trainer_name', client.pt_name || '')
                     if (client.dob) {
-                        form.setValue('dob', client.dob.split('T')[0])
+                        form.setValue('dob', format(new Date(client.dob), 'yyyy-MM-dd'))
                     }
                     if (client.signature_url) {
                         form.setValue('signature_url', client.signature_url)
@@ -394,7 +395,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             }
             form.setValue('trainer_name', client.pt_name || '')
             if (client.dob) {
-                form.setValue('dob', client.dob.split('T')[0])
+                form.setValue('dob', format(new Date(client.dob), 'yyyy-MM-dd'))
             }
             if (client.signature_url) {
                 form.setValue('signature_url', client.signature_url)
@@ -460,7 +461,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             if (form.getValues('start_date') && pkg.duration_days) {
                 const startDate = new Date(form.getValues('start_date'))
                 const endDate = addDays(startDate, parseInt(pkg.duration_days) * qty)
-                form.setValue('end_date', endDate.toISOString().split('T')[0])
+                form.setValue('end_date', format(endDate, 'yyyy-MM-dd'))
             }
         }
     }
@@ -481,7 +482,7 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
             if (watchStartDate && pkg.duration_days) {
                 const startDate = new Date(watchStartDate)
                 const endDate = addDays(startDate, parseInt(pkg.duration_days) * qty)
-                form.setValue('end_date', endDate.toISOString().split('T')[0])
+                form.setValue('end_date', format(endDate, 'yyyy-MM-dd'))
             }
         }
     }, [watchQuantity, watchStartDate, form])
@@ -1135,6 +1136,81 @@ export function AddContractDialog({ onSuccess, initialClientId, initialClient, i
                                 Thành tiền
                             </h3>
                             <div className="space-y-6">
+                                <div className="space-y-4">
+                                    <h3 className="text-sm font-medium text-red-600 flex items-center gap-2">
+                                        <Activity className="w-4 h-4" />
+                                        Tình trạng sức khỏe & Bệnh lý
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="medical_conditions"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-xs text-slate-500 font-medium">Tình trạng sức khỏe</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="Sức khỏe hiện tại..." {...field} className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="medical_condition"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-xs text-slate-500 font-medium">Tình trạng bệnh lý</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="Tiền sử bệnh lý, chấn thương..." {...field} className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="initial_height"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-xs text-slate-500 font-medium">Chiều cao (cm)</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="0" {...field} className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white text-center" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="initial_weight"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-xs text-slate-500 font-medium">Cân nặng (kg) <span className="text-red-500">*</span></FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="0" {...field} className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white text-center" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="target_weight"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-xs text-slate-500 font-medium">Mục tiêu (kg)</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="0" {...field} className="rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white text-center" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                </div>
                                 {/* Row 1: Số tháng & Giá tự tính */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <FormField

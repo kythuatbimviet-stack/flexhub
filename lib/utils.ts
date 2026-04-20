@@ -113,7 +113,10 @@ export function formatExcelDate(value: any): string | null {
     // Case 2: Javascript Date object
     if (value instanceof Date) {
         try {
-            return value.toISOString().split('T')[0];
+            const year = value.getFullYear();
+            const month = String(value.getMonth() + 1).padStart(2, '0');
+            const day = String(value.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         } catch (e) {
             return null;
         }
@@ -127,7 +130,10 @@ export function formatExcelDate(value: any): string | null {
             // 25569 is the number of days between 1899-12-30 and 1970-01-01.
             const date = new Date(Math.round((serial - 25569) * 86400 * 1000));
             if (!isNaN(date.getTime())) {
-                return date.toISOString().split('T')[0];
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
             }
         } catch (e) {
             // fallback

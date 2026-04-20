@@ -635,6 +635,13 @@ export default function ContractsPage() {
             'Cập nhật cuối': c.updated_at ? new Date(c.updated_at).toLocaleString('vi-VN') : '',
             'Nhật ký hoạt động': c.action_log,
             'Địa chỉ trung tâm': c.center_address,
+            'Trạng thái đóng/tất toán': c.closure_status,
+            'Lý do đóng': c.closure_reason,
+            'Ngày đóng': c.closed_at ? new Date(c.closed_at).toLocaleDateString('vi-VN') : '',
+            'Đã gửi biên lai': c.is_receipt_sent ? 'Có' : 'Không',
+            'Thời điểm gửi biên lai': c.receipt_sent_at ? new Date(c.receipt_sent_at).toLocaleString('vi-VN') : '',
+            'Gửi email XNTT': c.sendemail_xntt,
+            'Nội dung email': c.email_message,
         }))
         const ws = XLSX.utils.json_to_sheet(data)
         const wb = XLSX.utils.book_new()

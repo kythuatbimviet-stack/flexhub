@@ -17,6 +17,7 @@ import { toast } from 'sonner'
 import { bulkCreateRevenue, fetchFinancialCategories } from '@/app/actions/financial'
 import { fetchBranches } from '@/app/actions/branches'
 import { useQuery } from '@tanstack/react-query'
+import { format } from 'date-fns'
 
 interface ImportExcelRevenueDialogProps {
     onSuccess: () => void
@@ -76,7 +77,7 @@ export function ImportExcelRevenueDialog({ onSuccess }: ImportExcelRevenueDialog
                         branch_id: branch?.id || null,
                         description: row['Diễn giải'] || row['Ghi chú'] || '',
                         payment_method: row['Thanh toán'] || 'Tiền mặt',
-                        recorded_at: row['Ngày'] ? new Date(row['Ngày']).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                        recorded_at: row['Ngày'] ? format(new Date(row['Ngày']), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
                     }
                 })
 

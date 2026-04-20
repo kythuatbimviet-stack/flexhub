@@ -245,6 +245,8 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                 survey_injury_history: '',
                 survey_work_stress: '',
                 survey_health_advice: '',
+                survey_pathology_details: '',
+                status_reason: '',
             })
             setIsEditing(true)
         }
@@ -966,6 +968,13 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                 label="Chị có vấn đề gì về bệnh lý: Đau lưng, đau đầu gối, đau vai gáy, tuyến giáp, đa nang, huyết áp cao/thấp...."
                                                 value={formData.medical_history}
                                                 name="medical_history"
+                                                type="textarea"
+                                                {...sharedRowProps}
+                                            />
+                                            <ClientInfoRow
+                                                label="Chi tiết bệnh lý (nếu có)"
+                                                value={formData.survey_pathology_details}
+                                                name="survey_pathology_details"
                                                 type="textarea"
                                                 {...sharedRowProps}
                                             />

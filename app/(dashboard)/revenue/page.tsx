@@ -152,8 +152,8 @@ export default function RevenuePage() {
                 break
         }
 
-        setStartDate(start.toISOString().split('T')[0])
-        setEndDate(end.toISOString().split('T')[0])
+        setStartDate(format(start, 'yyyy-MM-dd'))
+        setEndDate(format(end, 'yyyy-MM-dd'))
     }
 
     const handleBulkDelete = async () => {

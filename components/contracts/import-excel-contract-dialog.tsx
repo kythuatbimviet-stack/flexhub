@@ -344,6 +344,15 @@ export function ImportExcelContractDialog({ onSuccess }: ImportExcelContractDial
                 // Audit
                 created_by: row['Người tạo (ID)'] || row['created_by'] || '',
                 created_by_email: row['Email người tạo'] || row['created_by_email'] || '',
+
+                // Closure & Tracking
+                closure_status: row['Trạng thái đóng/tất toán'] || row['closure_status'] || '',
+                closure_reason: row['Lý do đóng'] || row['closure_reason'] || '',
+                closed_at: parseExcelDate(row['Ngày đóng'] || row['closed_at']),
+                is_receipt_sent: (row['Đã gửi biên lai'] || row['is_receipt_sent']) === 'Có' || (row['Đã gửi biên lai'] || row['is_receipt_sent']) === true,
+                receipt_sent_at: parseExcelDateTime(row['Thời điểm gửi biên lai'] || row['receipt_sent_at']),
+                sendemail_xntt: row['Gửi email XNTT'] || row['sendemail_xntt'] || '',
+                email_message: row['Nội dung email'] || row['email_message'] || '',
             }
         })
 
@@ -523,6 +532,15 @@ export function ImportExcelContractDialog({ onSuccess }: ImportExcelContractDial
                 'Ngày tạo hệ thống': '22/03/2025 0:00',  // timestamp
                 'Cập nhật cuối': '29/03/2026 7:28',       // timestamp
                 'Nhật ký hoạt động': '',
+
+                // Closure & Tracking
+                'Trạng thái đóng/tất toán': '',
+                'Lý do đóng': '',
+                'Ngày đóng': '',
+                'Đã gửi biên lai': 'Không',
+                'Thời điểm gửi biên lai': '',
+                'Gửi email XNTT': '',
+                'Nội dung email': '',
             }
         ]
         const ws = XLSX.utils.json_to_sheet(template)

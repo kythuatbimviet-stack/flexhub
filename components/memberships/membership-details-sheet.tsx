@@ -54,18 +54,18 @@ const MembershipCardSection = ({ title, icon: Icon, children }: any) => (
     </div>
 )
 
-const MembershipDetailRow = ({ 
-    label, 
-    value, 
-    name, 
-    type = 'text', 
-    icon: Icon, 
-    isSelect = false, 
-    options = [], 
-    isEditing, 
-    onChange, 
-    onSelectChange, 
-    placeholder 
+const MembershipDetailRow = ({
+    label,
+    value,
+    name,
+    type = 'text',
+    icon: Icon,
+    isSelect = false,
+    options = [],
+    isEditing,
+    onChange,
+    onSelectChange,
+    placeholder
 }: any) => {
     const formatNumber = (val: string | number) => {
         if (val === undefined || val === null || val === '') return ''
@@ -256,10 +256,10 @@ export function MembershipDetailsSheet({
         }
     }
 
-    const sharedRowProps = { 
-        isEditing, 
-        onChange: handleInputChange, 
-        onSelectChange: handleSelectChange 
+    const sharedRowProps = {
+        isEditing,
+        onChange: handleInputChange,
+        onSelectChange: handleSelectChange
     }
 
     return (
@@ -432,7 +432,7 @@ export function MembershipDetailsSheet({
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <MembershipDetailRow icon={Calendar} label="Thời hạn (Ngày)" value={formData.duration_days} name="duration_days" type="number" {...sharedRowProps} placeholder="30" />
-                                <MembershipDetailRow icon={Calendar} label="Số tháng (Hệ số)" value={formData.months_purchased} name="months_purchased" type="number" {...sharedRowProps} placeholder="1" />
+                                <MembershipDetailRow icon={Calendar} label="Số tháng (Tháng)" value={formData.months_purchased} name="months_purchased" type="number" {...sharedRowProps} placeholder="1" />
                             </div>
                         </div>
                     </MembershipCardSection>

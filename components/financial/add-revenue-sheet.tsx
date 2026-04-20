@@ -78,9 +78,9 @@ interface AddRevenueSheetProps {
     onOpenChange?: (open: boolean) => void
 }
 
-export function AddRevenueSheet({ 
-    onSuccess, 
-    revenue, 
+export function AddRevenueSheet({
+    onSuccess,
+    revenue,
     trigger,
     open: externalOpen,
     onOpenChange: externalOnOpenChange
@@ -107,7 +107,7 @@ export function AddRevenueSheet({
             contract_id: null,
             description: '',
             payment_method: 'Tiền mặt',
-            recorded_at: new Date().toISOString().split('T')[0],
+            recorded_at: format(new Date(), 'yyyy-MM-dd'),
             debt_id: null,
             installment_id: null,
             send_xntt: true,
@@ -197,7 +197,7 @@ export function AddRevenueSheet({
                     contract_id: revenue.contract_id || null,
                     description: revenue.description || '',
                     payment_method: revenue.payment_method || 'Tiền mặt',
-                    recorded_at: revenue.recorded_at ? new Date(revenue.recorded_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                    recorded_at: revenue.recorded_at ? format(new Date(revenue.recorded_at), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
                     debt_id: revenue.debt_id || null,
                     installment_id: revenue.installment_id || null,
                     send_xntt: false, // Default false for editing
@@ -212,7 +212,7 @@ export function AddRevenueSheet({
                     contract_id: null,
                     description: '',
                     payment_method: 'Tiền mặt',
-                    recorded_at: new Date().toISOString().split('T')[0],
+                    recorded_at: format(new Date(), 'yyyy-MM-dd'),
                     debt_id: null,
                     installment_id: null,
                     send_xntt: true,
@@ -325,7 +325,7 @@ export function AddRevenueSheet({
 
                     const selectedClient = clients?.find((c: any) => c.id === values.customer_id)
                     const selectedBranch = branches?.find((b: any) => b.id === values.branch_id)
-                    
+
                     // Lấy tên người thu từ danh sách users
                     const supabase = createClient()
                     const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -447,6 +447,63 @@ export function AddRevenueSheet({
                 <div className="flex-1 overflow-y-auto">
                     <Form {...form}>
                         <form id="add-revenue-form" onSubmit={form.handleSubmit(onSubmit)} className="p-4 sm:p-5 space-y-4">
+                            {/* Card Section: Phân loại khoản thu */}
+                            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-6 h-6 rounded-md bg-blue-50 flex items-center justify-center">
+                                        <Tag className="w-3.5 h-3.5 text-blue-600" />
+                                    </div>
+                                    <h3 className="text-[12px] font-semibold text-blue-600">
+                                        PHÂN LOẠI KHOẢN THU
+                                    </h3>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="category_id"
+                                        render={({ field }) => (
+                                            <FormItem className="space-y-1">
+                                                <FormLabel className="text-[11px] font-semibold text-slate-900">Danh mục</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full sm:w-[180px]">
+                                                            <SelectValue placeholder="Chọn..." />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent className="rounded-xl border-slate-100">
+                                                        <SelectItem value="Hợp đồng">Hợp đồng</SelectItem>
+                                                        <SelectItem value="Công nợ">Công nợ</SelectItem>
+                                                        <SelectItem value="Khác">Khác</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="payment_method"
+                                        render={({ field }) => (
+                                            <FormItem className="space-y-1">
+                                                <FormLabel className="text-[11px] font-semibold text-slate-900">Hình thức</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full sm:w-[180px]">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent className="rounded-xl border-slate-100">
+                                                        <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
+                                                        <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
+                                                        <SelectItem value="Thẻ">Thẻ</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </div>
 
                             {/* Card Section: Thông tin liên quan (Moved Up) */}
                             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
@@ -455,7 +512,7 @@ export function AddRevenueSheet({
                                         <Building2 className="w-3.5 h-3.5 text-purple-600" />
                                     </div>
                                     <h3 className="text-[12px] font-semibold text-purple-600">
-                                        Thông tin liên quan
+                                        THÔNG TIN LIÊN QUAN
                                     </h3>
                                 </div>
                                 <FormField
@@ -662,64 +719,6 @@ export function AddRevenueSheet({
                                 />
                             </div>
 
-                            {/* Card Section: Phân loại khoản thu */}
-                            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-6 h-6 rounded-md bg-blue-50 flex items-center justify-center">
-                                        <Tag className="w-3.5 h-3.5 text-blue-600" />
-                                    </div>
-                                    <h3 className="text-[12px] font-semibold text-blue-600">
-                                        Phân loại khoản thu
-                                    </h3>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="category_id"
-                                        render={({ field }) => (
-                                            <FormItem className="space-y-1">
-                                                <FormLabel className="text-[11px] font-semibold text-slate-900">Danh mục</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full sm:w-[180px]">
-                                                            <SelectValue placeholder="Chọn..." />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent className="rounded-xl border-slate-100">
-                                                        <SelectItem value="Hợp đồng">Hợp đồng</SelectItem>
-                                                        <SelectItem value="Công nợ">Công nợ</SelectItem>
-                                                        <SelectItem value="Khác">Khác</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="payment_method"
-                                        render={({ field }) => (
-                                            <FormItem className="space-y-1">
-                                                <FormLabel className="text-[11px] font-semibold text-slate-900">Hình thức</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger className="rounded-xl border-slate-200 bg-white h-11 text-[15px] font-medium text-slate-700 w-full sm:w-[180px]">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent className="rounded-xl border-slate-100">
-                                                        <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
-                                                        <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
-                                                        <SelectItem value="Thẻ">Thẻ</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                            </div>
-
                             {/* Card Section: Thông tin số tiền (Moved Down) */}
                             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
                                 <div className="flex items-center gap-2 mb-2">
@@ -727,7 +726,7 @@ export function AddRevenueSheet({
                                         <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
                                     </div>
                                     <h3 className="text-[12px] font-semibold text-emerald-600">
-                                        Số tiền
+                                        SỐ TIỀN
                                     </h3>
                                 </div>
                                 <FormField
@@ -821,7 +820,7 @@ export function AddRevenueSheet({
                                                     />
                                                 </FormControl>
                                                 {!field.value && (
-                                                    <p className="text-[10px] text-red-500 font-medium italic">
+                                                    <p className="text-[10px] text-red-500 font-medium">
                                                         * Cần có email để gửi xác nhận.
                                                     </p>
                                                 )}

@@ -1374,7 +1374,8 @@ export function ContractDetailsSheet({
                     {/* Section: Chỉ số sức khỏe */}
                     <ContractCardSection title="CHỈ SỐ SỨC KHỎE" icon={Hash}>
                         <div className="space-y-5">
-                            <ContractDetailRow label="Bệnh lý" value={formData.medical_condition} name="medical_condition" icon={FileText} {...sharedRowProps} />
+                            <ContractDetailRow label="Tình trạng sức khỏe" value={formData.medical_conditions} name="medical_conditions" icon={Activity} {...sharedRowProps} />
+                            <ContractDetailRow label="Tình trạng bệnh lý" value={formData.medical_condition} name="medical_condition" icon={FileText} {...sharedRowProps} />
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Chiều cao (cm)" value={formData.initial_height} name="initial_height" type="text" icon={Hash} {...sharedRowProps} />
                                 <ContractDetailRow label="Cân nặng (kg)" value={formData.initial_weight} name="initial_weight" type="text" icon={Hash} {...sharedRowProps} />

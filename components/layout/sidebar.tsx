@@ -33,7 +33,9 @@ import {
     Tags,
     Home,
     Cloud,
-    HeartHandshake
+    HeartHandshake,
+    Cake,
+    Calendar
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { usePermissions } from '@/hooks/use-permissions'
@@ -53,6 +55,11 @@ const mainNavigation = [
     { name: 'Tiến trình thay đổi', href: '/weight-tracking', icon: Activity },
     { name: 'Tần suất tập luyện', href: '/training-logs', icon: HeartHandshake },
     { name: 'Zalo', href: '/zalo-users', icon: UserStar },
+]
+
+const calendarNavigation = [
+    { name: 'Sinh nhật khách hàng', href: '/calendar/client-birthdays', icon: Cake },
+    { name: 'Sinh nhật nhân sự', href: '/calendar/staff-birthdays', icon: Calendar, adminOnly: true },
 ]
 
 const financialNavigation = [
@@ -90,6 +97,10 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
     // if (isLoading) return null
 
     // Filter navigation based on permissions
+    const visibleCalendar = calendarNavigation.filter(item => {
+        if (item.adminOnly && !isAdmin && !isManager && !isCEO) return false
+        return true
+    })
     const visibleFinancial = permissions.isStaffOnly ? [] : financialNavigation
     const visibleSystem = systemNavigation.filter(item => {
         if (item.adminOnly && !isAdmin) return false
@@ -204,6 +215,61 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                                 })}
                             </ul>
                         </li>
+
+                        {visibleCalendar.length > 0 && (
+                            <li>
+                                {!isCollapsed ? (
+                                    <div className="text-[10px] font-bold leading-6 text-gray-400 dark:text-gray-300 uppercase tracking-[0.2em] mb-2 px-2">Lịch</div>
+                                ) : (
+                                    <div className="h-px bg-gray-100 dark:bg-gray-800 mx-2 mb-4" />
+                                )}
+                                <ul role="list" className={cn("-mx-2 space-y-1", isCollapsed && "mx-0")}>
+                                    {visibleCalendar.map((item) => {
+                                        const isActive = pathname === item.href
+                                        const content = (
+                                            <Link
+                                                href={item.href}
+                                                className={cn(
+                                                    isActive
+                                                        ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                                                        : 'text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800/50',
+                                                    'group flex gap-x-3 rounded-xl p-2.5 text-sm leading-6 font-semibold transition-all duration-200',
+                                                    isCollapsed && "justify-center px-0"
+                                                )}
+                                            >
+                                                <item.icon
+                                                    className={cn(
+                                                        isActive
+                                                            ? 'text-red-600 dark:text-red-400'
+                                                            : 'text-gray-400 dark:text-gray-500 group-hover:text-red-600 dark:group-hover:text-red-400',
+                                                        'h-5 w-5 shrink-0 transition-colors duration-200'
+                                                    )}
+                                                    aria-hidden="true"
+                                                />
+                                                {!isCollapsed && <span>{item.name}</span>}
+                                            </Link>
+                                        )
+
+                                        if (isCollapsed) {
+                                            return (
+                                                <li key={item.name}>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            {content}
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="right" className="font-semibold text-xs py-1.5 px-3 rounded-lg shadow-xl border-none bg-slate-900 text-white">
+                                                            {item.name}
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </li>
+                                            )
+                                        }
+
+                                        return <li key={item.name}>{content}</li>
+                                    })}
+                                </ul>
+                            </li>
+                        )}
 
                         {visibleFinancial.length > 0 && (
                             <li>

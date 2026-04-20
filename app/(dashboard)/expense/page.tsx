@@ -46,6 +46,7 @@ import { fetchBranches } from '@/app/actions/branches'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 import { cn } from '@/lib/utils'
+import { format } from 'date-fns'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AddExpenseSheet } from '@/components/financial/add-expense-sheet'
 import { ImportExcelExpenseDialog } from '@/components/financial/import-expense-dialog'
@@ -146,8 +147,8 @@ export default function ExpensePage() {
                 break
         }
 
-        setStartDate(start.toISOString().split('T')[0])
-        setEndDate(end.toISOString().split('T')[0])
+        setStartDate(format(start, 'yyyy-MM-dd'))
+        setEndDate(format(end, 'yyyy-MM-dd'))
     }
 
     const filteredExpense = React.useMemo(() => {

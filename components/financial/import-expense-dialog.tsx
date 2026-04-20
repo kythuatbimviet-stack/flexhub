@@ -17,6 +17,7 @@ import { toast } from 'sonner'
 import { bulkCreateExpense, fetchExpenseTypes } from '@/app/actions/financial'
 import { fetchBranches } from '@/app/actions/branches'
 import { useQuery } from '@tanstack/react-query'
+import { format } from 'date-fns'
 
 interface ImportExcelExpenseDialogProps {
     onSuccess: () => void
@@ -75,7 +76,6 @@ export function ImportExcelExpenseDialog({ onSuccess }: ImportExcelExpenseDialog
                         branch_id: branch?.id || null,
                         description: row['Diễn giải'] || row['Ghi chú'] || '',
                         payment_method: row['Thanh toán'] || 'Tiền mặt',
-                        recorded_at: row['Ngày'] ? new Date(row['Ngày']).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                     }
                 })
 

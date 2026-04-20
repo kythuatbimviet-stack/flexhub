@@ -48,6 +48,7 @@ import {
     SelectValue
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { format } from 'date-fns'
 
 const expenseSchema = z.object({
     amount: z.string().min(1, 'Vui lòng nhập số tiền'),
@@ -80,7 +81,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
             branch_id: '',
             description: '',
             payment_method: 'Tiền mặt',
-            recorded_at: new Date().toISOString().split('T')[0],
+            recorded_at: format(new Date(), 'yyyy-MM-dd'),
             spender_name: '',
             settlement_status: 'Chưa kết toán',
             settled_at: null,
@@ -422,7 +423,7 @@ export function AddExpenseSheet({ onSuccess }: AddExpenseSheetProps) {
                                                         onValueChange={(val) => {
                                                             field.onChange(val)
                                                             if (val === 'Đã kết toán') {
-                                                                form.setValue('settled_at', new Date().toISOString().split('T')[0])
+                                                                form.setValue('settled_at', format(new Date(), 'yyyy-MM-dd'))
                                                             } else {
                                                                 form.setValue('settled_at', null)
                                                             }

@@ -377,6 +377,7 @@ export default function UsersPage() {
                                     />
                                 </TableHead>
                                 <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Nhân sự & Liên hệ</TableHead>
+                                <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Ngày sinh</TableHead>
                                 <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Vị trí & Phòng ban</TableHead>
                                 <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Chi nhánh</TableHead>
                                 <TableHead className="text-[11px] font-medium text-slate-400 dark:text-blue-300 h-9">Vai trò</TableHead>
@@ -387,7 +388,7 @@ export default function UsersPage() {
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-96 text-center">
+                                    <TableCell colSpan={8} className="h-96 text-center">
                                         <div className="flex flex-col items-center gap-4">
                                             <div className="w-14 h-14 border-4 border-slate-100 border-t-red-600 rounded-full animate-spin shadow-inner" />
                                             <span className="text-slate-400 font-medium text-sm">Đang tải danh sách nhân sự...</span>
@@ -396,7 +397,7 @@ export default function UsersPage() {
                                 </TableRow>
                             ) : filteredUsers?.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-96 text-center">
+                                    <TableCell colSpan={8} className="h-96 text-center">
                                         <div className="flex flex-col items-center gap-5">
                                             <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-[2rem] flex items-center justify-center border-2 border-slate-100 dark:border-slate-700 shadow-sm">
                                                 <UserCircle className="w-10 h-10 text-slate-200" />
@@ -434,6 +435,16 @@ export default function UsersPage() {
                                                     <span className="font-semibold text-slate-900 dark:text-slate-50 text-[15px] group-hover:text-red-600 transition-colors">{user.name}</span>
                                                     <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{user.email}</span>
                                                 </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-[13px] font-semibold text-red-600 dark:text-red-400">
+                                                    {user.dob ? new Date(user.dob).toLocaleDateString('vi-VN') : '-'}
+                                                </span>
+                                                {user.age && (
+                                                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{user.age} tuổi</span>
+                                                )}
                                             </div>
                                         </TableCell>
                                         <TableCell>

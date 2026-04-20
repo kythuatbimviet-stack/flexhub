@@ -82,8 +82,8 @@ export function FinalizeContractDialog({
             paid_upfront: '0',
             installments_count: '1',
             installment_frequency: 'monthly',
-            signing_date: new Date().toISOString().split('T')[0],
-            start_date: contract?.start_date || new Date().toISOString().split('T')[0],
+            signing_date: format(new Date(), 'yyyy-MM-dd'),
+            start_date: contract?.start_date || format(new Date(), 'yyyy-MM-dd'),
             end_date: contract?.end_date || '',
             payment_method: 'Tiền mặt',
         },
@@ -96,8 +96,8 @@ export function FinalizeContractDialog({
                 paid_upfront: '0',
                 installments_count: '1',
                 installment_frequency: 'monthly',
-                signing_date: new Date().toISOString().split('T')[0],
-                start_date: contract.start_date || new Date().toISOString().split('T')[0],
+                signing_date: format(new Date(), 'yyyy-MM-dd'),
+                start_date: contract.start_date || format(new Date(), 'yyyy-MM-dd'),
                 end_date: contract.end_date || '',
                 payment_method: 'Tiền mặt',
             })
@@ -203,7 +203,7 @@ export function FinalizeContractDialog({
                     debtPlan.installments.push({
                         installment_number: i,
                         amount: i === count ? remaining - (amountPerInst * (count - 1)) : amountPerInst,
-                        due_date: currentDate.toISOString().split('T')[0],
+                        due_date: format(currentDate, 'yyyy-MM-dd'),
                         status: 'Chưa thanh toán'
                     })
                 }
