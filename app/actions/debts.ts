@@ -16,6 +16,7 @@ export async function fetchDebts() {
                 *,
                 clients (id, member_name, phone, avatar_url, email, dob, height, weight),
                 branches (name),
+                contracts (id, trainer_name, assigned_pt, created_by_email),
                 debt_installments (id, amount, status, due_date, revenue:revenue_id (payment_method))
             `)
             .order('created_at', { ascending: false })

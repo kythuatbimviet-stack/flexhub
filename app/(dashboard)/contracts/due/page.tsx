@@ -571,7 +571,7 @@ export default function DueContractsPage() {
                             </TabsTrigger>
 
                             <Select value={tab} onValueChange={setTab}>
-                                <SelectTrigger 
+                                <SelectTrigger
                                     className={cn(
                                         "h-9 px-4 rounded-xl border transition-all text-sm font-medium w-48 ml-auto",
                                         !['this-week', 'next-week', 'next-month', 'expired'].includes(tab)
@@ -586,7 +586,7 @@ export default function DueContractsPage() {
                                     <SelectItem value="last-month">Tháng trước</SelectItem>
                                     <SelectItem value="this-month">Tháng này</SelectItem>
                                     <SelectItem value="this-quarter">Quý này</SelectItem>
-                                    <SelectItem value="custom" className="text-blue-600 font-bold">📅 Tùy chọn ngày</SelectItem>
+                                    <SelectItem value="custom" className="text-blue-600 font-bold">Tùy chọn ngày</SelectItem>
                                 </SelectContent>
                             </Select>
                         </TabsList>
@@ -1091,9 +1091,29 @@ export default function DueContractsPage() {
                                                 </TableCell>
                                                 {isExpiredTab && (
                                                     <TableCell data-no-click>
-                                                        <ClosureStatusBadge
-                                                            status={contract.closure_status}
-                                                        />
+                                                        <div className="flex flex-col gap-1.5">
+                                                            <ClosureStatusBadge
+                                                                status={contract.closure_status}
+                                                            />
+                                                            {contract.final_weight && (
+                                                                <div className="flex flex-col text-[10px] bg-gray-50 dark:bg-gray-800/50 p-1.5 rounded-lg border border-gray-100 dark:border-gray-800/50">
+                                                                    <div className="flex items-center justify-between gap-2 border-b border-gray-100 dark:border-gray-800 pb-1 mb-1">
+                                                                        <span className="text-gray-400 font-medium">BĐ: {contract.initial_weight}kg</span>
+                                                                        <span className="text-gray-900 dark:text-gray-100 font-bold">KT: {contract.final_weight}kg</span>
+                                                                    </div>
+                                                                    <div className={cn(
+                                                                        "flex items-center gap-1 font-bold",
+                                                                        Number(contract.initial_weight || 0) - Number(contract.final_weight || 0) > 0
+                                                                            ? "text-emerald-600 dark:text-emerald-400"
+                                                                            : "text-amber-600 dark:text-amber-400"
+                                                                    )}>
+                                                                        {Number(contract.initial_weight || 0) - Number(contract.final_weight || 0) > 0 ? <ChevronDown className="w-2.5 h-2.5" /> : <ChevronUp className="w-2.5 h-2.5" />}
+                                                                        {Number(contract.initial_weight || 0) - Number(contract.final_weight || 0) > 0 ? "Giảm" : "Tăng"}{" "}
+                                                                        {Math.abs(Number(contract.initial_weight || 0) - Number(contract.final_weight || 0))}kg
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </TableCell>
                                                 )}
                                                 <TableCell className="text-right pr-8" data-no-click>
