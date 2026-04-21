@@ -894,7 +894,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                         {visibleColumns.package && !isMobile && (
                                             <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-[11px] text-slate-900 dark:text-slate-100 text-center px-2 gap-1">
                                                 <div>{contract?.initial_height ? `${contract.initial_height}cm` : '-'}</div>
-                                                <div>{client.latestWeight ? `${client.latestWeight}kg` : '-'}</div>
+                                                <div>{contract?.initial_weight ? `${contract.initial_weight}kg` : '-'}</div>
                                             </div>
                                         )}
                                         {visibleColumns.branch && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-500 dark:text-slate-300 text-center px-2">{contract?.branches?.name || '-'}</div>}
