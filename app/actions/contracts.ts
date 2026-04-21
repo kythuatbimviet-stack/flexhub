@@ -1271,3 +1271,33 @@ export async function updateContractReceiptStatus(contractId: string): Promise<{
         return { success: false, error: error.message }
     }
 }
+
+export async function reviewContract(id: string) {
+    try {
+        const accessInfo = await getAccessFilter()
+        if (!accessInfo) return { success: false, error: 'Unauthorized' }
+
+        const { user } = accessInfo
+        // Only CEO, Manager, or Branch Manager can review
+        const isAuthorized = user.position === 'CEO' || user.position === 'Quản lý' || user.position === 'Quản lý chi nhánh'
+        if (!isAuthorized) return { success: false, error: 'Bạn không có quyền xác nhận review hợp đồng này' }
+
+        const supabase = await createAdminClient()
+        const { error } = await supabase
+            .from('contracts')
+            .update({ 
+                status: 'Đã Review',
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', id)
+
+        if (error) throw error
+
+        revalidatePath('/contracts')
+        revalidatePath('/')
+        return { success: true }
+    } catch (error: any) {
+        console.error('Review Contract Error:', error)
+        return { success: false, error: error.message }
+    }
+}

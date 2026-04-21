@@ -75,7 +75,7 @@ import { Badge } from '@/components/ui/badge'
 import { fetchBranches } from '@/app/actions/branches'
 import { fetchUsers } from '@/app/actions/users'
 import { toast } from 'sonner'
-import { updateContract, deleteContract, createContract, generateContractId, checkContractIdExists, fetchContractById } from '@/app/actions/contracts'
+import { updateContract, deleteContract, createContract, generateContractId, checkContractIdExists, fetchContractById, reviewContract } from '@/app/actions/contracts'
 import { addDays, format } from 'date-fns'
 import { updateClient, fetchClients } from '@/app/actions/clients'
 import { uploadSignature } from '@/app/actions/storage'
@@ -199,7 +199,7 @@ export function ContractDetailsSheet({
     const [loading, setLoading] = React.useState(false)
     const [isLoadingFullData, setIsLoadingFullData] = React.useState(false)
     const [formData, setFormData] = React.useState<any>({})
-    const { permissions, user: currentUser, isLoading: permsLoading } = usePermissions()
+    const { permissions, user: currentUser, isLoading: permsLoading, isCEO, isManager, isBranchManager } = usePermissions()
     const avatarInputRef = React.useRef<HTMLInputElement>(null)
     const prevContractIdRef = React.useRef<string | null>(null)
     const [generatingId, setGeneratingId] = React.useState(false)
@@ -921,7 +921,10 @@ export function ContractDetailsSheet({
             // Gửi lệnh cập nhật ngầm
             await supabase
                 .from('contracts')
-                .update({ contract_file_url: 'create_contract' })
+                .update({ 
+                    contract_file_url: 'create_contract',
+                    status: 'Chờ Review' 
+                })
                 .eq('id', contract.id)
 
             // Mở trang xem trước trong tab mới
@@ -930,6 +933,7 @@ export function ContractDetailsSheet({
             // Đóng bảng chi tiết và reset trạng thái ngay lập tức
             setGeneratingPdf(false)
             onOpenChange(false)
+            onSuccess() // Refresh list to show new status
         } catch (error: any) {
             setGeneratingPdf(false)
             toast.error('Lỗi hệ thống: ' + error.message)
@@ -1111,9 +1115,11 @@ export function ContractDetailsSheet({
                                                 <div className="flex items-center gap-1.5">
                                                     <div className={cn("w-1.5 h-1.5 rounded-full shrink-0",
                                                         (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-500" :
-                                                            (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-500" :
-                                                                (formData.status || defaultStatus) === 'Hết hạn HĐ' ? "bg-rose-500" :
-                                                                    "bg-slate-400"
+                                                            (formData.status || defaultStatus) === 'Chờ Review' ? "bg-orange-500" :
+                                                                (formData.status || defaultStatus) === 'Đã Review' ? "bg-blue-500" :
+                                                                    (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-500" :
+                                                                        (formData.status || defaultStatus) === 'Hết hạn HĐ' ? "bg-rose-500" :
+                                                                            "bg-slate-400"
                                                     )} />
                                                     <SelectValue placeholder="Trạng thái" />
                                                 </div>
@@ -1123,10 +1129,12 @@ export function ContractDetailsSheet({
                                                     <SelectItem key={s.id} value={s.nam} className="text-xs rounded-lg py-2">
                                                         <div className="flex items-center gap-2">
                                                             <div className={cn("w-1.5 h-1.5 rounded-full",
-                                                                s.nam === 'Chờ ký HĐ' ? "bg-amber-500" :
-                                                                    s.nam === 'Đã ký HĐ' ? "bg-emerald-500" :
-                                                                        s.nam === 'Hết hạn HĐ' ? "bg-rose-500" :
-                                                                            "bg-slate-400"
+                                                            s.nam === 'Chờ ký HĐ' ? "bg-amber-500" :
+                                                                s.nam === 'Chờ Review' ? "bg-orange-500" :
+                                                                    s.nam === 'Đã Review' ? "bg-blue-500" :
+                                                                        s.nam === 'Đã ký HĐ' ? "bg-emerald-500" :
+                                                                            s.nam === 'Hết hạn HĐ' ? "bg-rose-500" :
+                                                                                "bg-slate-400"
                                                             )} />
                                                             {s.nam}
                                                         </div>
@@ -1138,13 +1146,17 @@ export function ContractDetailsSheet({
                                         <div className={cn(
                                             "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium tracking-tight",
                                             (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-50 text-amber-600 border border-amber-100 dark:bg-amber-950/20 dark:border-amber-900/30" :
-                                                (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" :
-                                                    (formData.status || defaultStatus) === 'Hết hạn HĐ' ? "bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30" :
-                                                        "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
+                                                (formData.status || defaultStatus) === 'Chờ Review' ? "bg-orange-50 text-orange-600 border border-orange-100 dark:bg-orange-950/20 dark:border-orange-900/30" :
+                                                    (formData.status || defaultStatus) === 'Đã Review' ? "bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30" :
+                                                        (formData.status || defaultStatus) === 'Đã ký HĐ' ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" :
+                                                            (formData.status || defaultStatus) === 'Hết hạn HĐ' ? "bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30" :
+                                                                "bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:border-slate-700"
                                         )}>
                                             <div className={cn("w-1.5 h-1.5 rounded-full",
                                                 (formData.status || defaultStatus) === 'Chờ ký HĐ' ? "bg-amber-500" :
-                                                    "bg-slate-400"
+                                                    (formData.status || defaultStatus) === 'Chờ Review' ? "bg-orange-500" :
+                                                        (formData.status || defaultStatus) === 'Đã Review' ? "bg-blue-500" :
+                                                            "bg-slate-400"
                                             )} />
                                             {formData.status || defaultStatus}
                                         </div>
@@ -1172,6 +1184,36 @@ export function ContractDetailsSheet({
                             </div>
                         )}
 
+                        {formData.status === 'Chờ Review' && !isEditing && (isCEO || isManager || isBranchManager) && (
+                            <div className="mt-6 p-4 rounded-2xl bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 flex flex-col gap-3">
+                                <div className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
+                                    <ShieldCheck className="w-5 h-5" />
+                                    <span className="text-sm font-bold">Hợp đồng đang chờ Review</span>
+                                </div>
+                                <Button
+                                    onClick={async () => {
+                                        if (confirm('Xác nhận đã Review hợp đồng này?')) {
+                                            setLoading(true)
+                                            const res = await reviewContract(contract.id)
+                                            setLoading(false)
+                                            if (res.success) {
+                                                toast.success('Đã xác nhận Review thành công')
+                                                onSuccess()
+                                                setFormData((prev: any) => ({ ...prev, status: 'Đã Review' }))
+                                            } else {
+                                                toast.error(res.error)
+                                            }
+                                        }
+                                    }}
+                                    disabled={loading}
+                                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl h-11 shadow-lg shadow-orange-100 dark:shadow-none"
+                                >
+                                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                    Xác nhận Đã Review
+                                </Button>
+                            </div>
+                        )}
+
                         {/* Show summary even if no edit access, but actions are restricted elsewhere */}
                         {!isEditing && (
                             <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between gap-3">
@@ -1193,13 +1235,24 @@ export function ContractDetailsSheet({
                     </div>
                     {/* Section: Gửi Hợp đồng Khách hàng */}
                     <ContractCardSection title="GỬI HỢP ĐỒNG" icon={Cloud}>
-                        <div className="space-y-5">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-wider flex items-center gap-2">
-                                        <Mail className="w-3 h-3" />
-                                        Gửi Email
-                                    </Label>
+                        {formData.status === 'Chờ Review' ? (
+                            <div className="flex flex-col items-center justify-center py-4 px-2 text-center bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+                                <AlertCircle className="w-8 h-8 text-orange-500 mb-2 opacity-50" />
+                                <p className="text-xs font-medium text-slate-500">Hợp đồng đang chờ Review.<br/>Chưa thể gửi Email/Zalo lúc này.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                    <div className="space-y-1.5 opacity-90">
+                                        <div className="flex items-center justify-between">
+                                            <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-wider flex items-center gap-2">
+                                                <Mail className="w-3 h-3" />
+                                                Gửi Email
+                                            </Label>
+                                            {formData.status === 'Đã Review' && (
+                                                <Badge variant="outline" className="text-[8px] h-4 bg-blue-50 text-blue-600 border-blue-100">Đã Review</Badge>
+                                            )}
+                                        </div>
                                     <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
                                         {(() => {
                                             if (!formData.sendemail) return 'Chưa gửi';
@@ -1249,7 +1302,8 @@ export function ContractDetailsSheet({
                                 </div>
                             </div>
                         </div>
-                    </ContractCardSection>
+                    )}
+                </ContractCardSection>
                     {/* Section: Thông tin khách hàng */}
                     <ContractCardSection title="KHÁCH HÀNG" icon={User}>
                         <div className="space-y-5">
