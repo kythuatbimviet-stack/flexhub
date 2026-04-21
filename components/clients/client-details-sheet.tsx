@@ -247,6 +247,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                 survey_health_advice: '',
                 survey_pathology_details: '',
                 status_reason: '',
+                id_number: '',
             })
             setIsEditing(true)
         }
@@ -791,7 +792,10 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                 <ClientInfoRow label="Ngày sinh" value={formData.dob} name="dob" type="date" {...sharedRowProps} />
                                                 <ClientInfoRow label="Tuổi" value={formData.age} name="age" type="number" {...sharedRowProps} />
                                             </div>
-                                            <ClientInfoRow label="Địa chỉ liên hệ" value={formData.address} name="address" {...sharedRowProps} />
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                                <ClientInfoRow label="Địa chỉ liên hệ" value={formData.address} name="address" {...sharedRowProps} />
+                                                <ClientInfoRow label="Số CMND/CCCD" value={formData.id_number} name="id_number" {...sharedRowProps} />
+                                            </div>
                                             <div className="flex items-end gap-3">
                                                 <div className="flex-1">
                                                     <ClientInfoRow label="Avatar URL" value={formData.avatar_url} name="avatar_url" {...sharedRowProps} />

@@ -512,7 +512,9 @@ export function ContractDetailsSheet({
                     phone: client.phone || '',
                     email: client.email || '',
                     member_address: client.address || '', // Lấy từ 'address' của Client
-                    id_number: client.id_number || '', // Căn cước công dân
+                    // [ĐỒNG BỘ DỮ LIỆU] Lấy CCCD từ hồ sơ khách hàng nếu có. 
+                    // Nếu hợp đồng đã có dữ liệu CCCD, ưu tiên giữ lại dữ liệu hiện tại của hợp đồng.
+                    id_number: prev.id_number || client.id_number || '', 
                     trainer_name: client.pt_name || '',
                     dob: (client.dob || client.date_of_birth) ? (client.dob || client.date_of_birth).split('T')[0] : '',
                     avatar_url: client.avatar_url || '',
@@ -772,7 +774,8 @@ export function ContractDetailsSheet({
                     email: formData.email,
                     address: formData.member_address,
                     dob: formData.dob,
-                    status: formData.client_status
+                    status: formData.client_status,
+                    id_number: formData.id_number // [ĐỒNG BỘ DỮ LIỆU] Tự động cập nhật CCCD sang hồ sơ khách hàng
                 }
                 await updateClient(clientId, clientUpdates)
             }
@@ -801,6 +804,14 @@ export function ContractDetailsSheet({
                 }
                 if (!formData.membership_id) {
                     toast.error('Vui lòng chọn gói tập')
+                    setLoading(false)
+                    return
+                }
+
+                // [RÀNG BUỘC DỮ LIỆU] Bắt buộc nhập CCCD để đảm bảo tính ổn định và đầy đủ của hợp đồng.
+                // Nếu trường này trống, hệ thống sẽ chặn không cho lưu.
+                if (!formData.id_number || formData.id_number.trim() === '') {
+                    toast.error('Vui lòng nhập số CMND/CCCD của khách hàng')
                     setLoading(false)
                     return
                 }
@@ -921,9 +932,9 @@ export function ContractDetailsSheet({
             // Gửi lệnh cập nhật ngầm
             await supabase
                 .from('contracts')
-                .update({ 
+                .update({
                     contract_file_url: 'create_contract',
-                    status: 'Chờ Review' 
+                    status: 'Chờ Review'
                 })
                 .eq('id', contract.id)
 
@@ -1129,12 +1140,12 @@ export function ContractDetailsSheet({
                                                     <SelectItem key={s.id} value={s.nam} className="text-xs rounded-lg py-2">
                                                         <div className="flex items-center gap-2">
                                                             <div className={cn("w-1.5 h-1.5 rounded-full",
-                                                            s.nam === 'Chờ ký HĐ' ? "bg-amber-500" :
-                                                                s.nam === 'Chờ Review' ? "bg-orange-500" :
-                                                                    s.nam === 'Đã Review' ? "bg-blue-500" :
-                                                                        s.nam === 'Đã ký HĐ' ? "bg-emerald-500" :
-                                                                            s.nam === 'Hết hạn HĐ' ? "bg-rose-500" :
-                                                                                "bg-slate-400"
+                                                                s.nam === 'Chờ ký HĐ' ? "bg-amber-500" :
+                                                                    s.nam === 'Chờ Review' ? "bg-orange-500" :
+                                                                        s.nam === 'Đã Review' ? "bg-blue-500" :
+                                                                            s.nam === 'Đã ký HĐ' ? "bg-emerald-500" :
+                                                                                s.nam === 'Hết hạn HĐ' ? "bg-rose-500" :
+                                                                                    "bg-slate-400"
                                                             )} />
                                                             {s.nam}
                                                         </div>
@@ -1238,7 +1249,7 @@ export function ContractDetailsSheet({
                         {formData.status === 'Chờ Review' ? (
                             <div className="flex flex-col items-center justify-center py-4 px-2 text-center bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
                                 <AlertCircle className="w-8 h-8 text-orange-500 mb-2 opacity-50" />
-                                <p className="text-xs font-medium text-slate-500">Hợp đồng đang chờ Review.<br/>Chưa thể gửi Email/Zalo lúc này.</p>
+                                <p className="text-xs font-medium text-slate-500">Hợp đồng đang chờ Review.<br />Chưa thể gửi Email/Zalo lúc này.</p>
                             </div>
                         ) : (
                             <div className="space-y-5">
@@ -1253,57 +1264,57 @@ export function ContractDetailsSheet({
                                                 <Badge variant="outline" className="text-[8px] h-4 bg-blue-50 text-blue-600 border-blue-100">Đã Review</Badge>
                                             )}
                                         </div>
-                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
-                                        {(() => {
-                                            if (!formData.sendemail) return 'Chưa gửi';
-                                            if (formData.sendemail === 'trigger_email') return 'Đang xử lý...';
-                                            try {
-                                                const d = new Date(formData.sendemail);
-                                                if (isNaN(d.getTime())) return formData.sendemail === 'done' ? 'Đã gửi' : 'Chưa gửi';
-                                                
-                                                return (
-                                                    <span className="flex flex-col">
-                                                        <span>Đã gửi</span>
-                                                        <span className="text-[11px] text-slate-400 font-normal">
-                                                            {d.toLocaleDateString('vi-VN', {
-                                                                day: '2-digit', month: '2-digit', year: 'numeric',
-                                                                hour: '2-digit', minute: '2-digit'
-                                                            })}
+                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                                            {(() => {
+                                                if (!formData.sendemail) return 'Chưa gửi';
+                                                if (formData.sendemail === 'trigger_email') return 'Đang xử lý...';
+                                                try {
+                                                    const d = new Date(formData.sendemail);
+                                                    if (isNaN(d.getTime())) return formData.sendemail === 'done' ? 'Đã gửi' : 'Chưa gửi';
+
+                                                    return (
+                                                        <span className="flex flex-col">
+                                                            <span>Đã gửi</span>
+                                                            <span className="text-[11px] text-slate-400 font-normal">
+                                                                {d.toLocaleDateString('vi-VN', {
+                                                                    day: '2-digit', month: '2-digit', year: 'numeric',
+                                                                    hour: '2-digit', minute: '2-digit'
+                                                                })}
+                                                            </span>
                                                         </span>
-                                                    </span>
-                                                );
-                                            } catch {
-                                                return 'Đã gửi';
-                                            }
-                                        })()}
-                                    </p>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-wider flex items-center gap-2">
-                                        <MessageSquare className="w-3 h-3" />
-                                        Gửi Zalo
-                                    </Label>
-                                    <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
-                                        {(() => {
-                                            if (!formData.sendzalo) return 'Chưa gửi';
-                                            if (formData.sendzalo === 'done') return 'Đã gửi';
-                                            try {
-                                                const d = new Date(formData.sendzalo);
-                                                if (isNaN(d.getTime())) return 'Đã gửi';
-                                                return d.toLocaleDateString('vi-VN', {
-                                                    day: '2-digit', month: '2-digit', year: 'numeric',
-                                                    hour: '2-digit', minute: '2-digit'
-                                                });
-                                            } catch {
-                                                return 'Đã gửi';
-                                            }
-                                        })()}
-                                    </p>
+                                                    );
+                                                } catch {
+                                                    return 'Đã gửi';
+                                                }
+                                            })()}
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-medium text-slate-900 dark:text-slate-300 tracking-wider flex items-center gap-2">
+                                            <MessageSquare className="w-3 h-3" />
+                                            Gửi Zalo
+                                        </Label>
+                                        <p className="text-[15px] font-medium text-slate-700 dark:text-slate-200 min-h-[20px]">
+                                            {(() => {
+                                                if (!formData.sendzalo) return 'Chưa gửi';
+                                                if (formData.sendzalo === 'done') return 'Đã gửi';
+                                                try {
+                                                    const d = new Date(formData.sendzalo);
+                                                    if (isNaN(d.getTime())) return 'Đã gửi';
+                                                    return d.toLocaleDateString('vi-VN', {
+                                                        day: '2-digit', month: '2-digit', year: 'numeric',
+                                                        hour: '2-digit', minute: '2-digit'
+                                                    });
+                                                } catch {
+                                                    return 'Đã gửi';
+                                                }
+                                            })()}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                </ContractCardSection>
+                        )}
+                    </ContractCardSection>
                     {/* Section: Thông tin khách hàng */}
                     <ContractCardSection title="KHÁCH HÀNG" icon={User}>
                         <div className="space-y-5">

@@ -506,7 +506,7 @@ export default function XnttHistoryPage() {
                     </SheetHeader>
                     
                     <ScrollArea className="flex-1">
-                        <div className="p-6 space-y-6">
+                        <div className="sm:p-6 p-4 space-y-6">
                             {/* Summary Card */}
                             <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
@@ -561,11 +561,19 @@ export default function XnttHistoryPage() {
                                             <span className="text-[13px] font-medium text-blue-600">{viewingLog?.email}</span>
                                         </div>
                                     </div>
-                                    <div className="p-0 overflow-auto max-h-[500px]">
+                                    <div className="p-0 overflow-visible">
                                         {viewingLog?.html_body ? (
                                             <iframe
                                                 srcDoc={viewingLog.html_body}
-                                                className="w-full border-none h-[800px]"
+                                                className="w-full border-none transition-all duration-300"
+                                                style={{ height: '0px' }}
+                                                onLoad={(e) => {
+                                                    const iframe = e.currentTarget;
+                                                    if (iframe.contentWindow) {
+                                                        const height = iframe.contentWindow.document.body.scrollHeight;
+                                                        iframe.style.height = `${height}px`;
+                                                    }
+                                                }}
                                                 title="Email Preview"
                                             />
                                         ) : (

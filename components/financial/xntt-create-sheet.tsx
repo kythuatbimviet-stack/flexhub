@@ -140,6 +140,7 @@ export function XnttCreateSheet({
                 setFormData(prev => ({
                     ...prev,
                     goi: contract.package_name || '',
+                    cmnd: contract.id_number || '',
                     hlv: contract.trainer_name || '',
                     nbd: contract.start_date ? format(new Date(contract.start_date), 'dd/MM/yyyy') : '',
                     nkt: contract.end_date ? format(new Date(contract.end_date), 'dd/MM/yyyy') : '',

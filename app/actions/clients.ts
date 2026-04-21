@@ -38,7 +38,7 @@ export async function fetchClients() {
         // Apply RBAC filters
         if (!accessInfo.access.canViewAllBranches) {
             const allowedIds = accessInfo.access.allowedBranchIds || []
-            
+
             if (accessInfo.access.isStaffOnly) {
                 // Staff: Must be in allowed branches AND (Created by him OR Assigned to him)
                 if (allowedIds.length > 0) {
@@ -114,7 +114,7 @@ export async function fetchClientsPage({
             // Apply RBAC filters
             if (!accessInfo.access.canViewAllBranches) {
                 const allowedIds = accessInfo.access.allowedBranchIds || []
-                
+
                 if (accessInfo.access.isStaffOnly) {
                     // Staff filters
                     if (allowedIds.length > 0) {
@@ -237,7 +237,7 @@ export async function bulkDeleteClients(ids: string[]) {
         // Note: Delete debt_installments first as they may point to revenue or debts
         const { data: debts } = await adminClient.from('debts').select('id').in('client_id', ids)
         const debtIds = debts?.map(d => d.id) || []
-        
+
         if (debtIds.length > 0) {
             await adminClient.from('debt_installments').delete().in('debt_id', debtIds)
         }
@@ -245,17 +245,17 @@ export async function bulkDeleteClients(ids: string[]) {
         // Clear revenue references in debt_installments before deleting revenue
         const { data: revenues } = await adminClient.from('revenue').select('id').in('customer_id', ids)
         const revenueIds = revenues?.map(r => r.id) || []
-        
+
         if (revenueIds.length > 0) {
             await adminClient.from('debt_installments').update({ revenue_id: null }).in('revenue_id', revenueIds)
             await adminClient.from('revenue').delete().in('id', revenueIds)
         }
-        
+
         // Delete debts associated with these clients
         if (debtIds.length > 0) {
             await adminClient.from('debts').delete().in('id', debtIds)
         }
-        
+
         // Delete contracts associated with these clients
         await adminClient.from('contracts').delete().in('client_id', ids)
 
@@ -288,12 +288,12 @@ export async function updateClient(id: string, updates: any) {
         const safeUpdates: any = {}
         const allowedFields = [
             'member_name', 'phone', 'email', 'address', 'dob', 'age', 'gender',
-            'height', 'weight', 'target_weight', 'goal', 'status', 'pt_name',
+            'id_number', 'height', 'weight', 'target_weight', 'goal', 'status', 'pt_name',
             'assigned_pt', 'branch_id', 'branch_name', 'source', 'referrer',
             'registration_type', 'medical_history', 'training_time', 'notes',
             'customer_cycle', 'zalo_id', 'facebook_id', 'action_log', 'signature_url',
             'status_reason',
-            'survey_training_history', 'survey_injury_history', 'survey_work_stress', 
+            'survey_training_history', 'survey_injury_history', 'survey_work_stress',
             'survey_pathology_details', 'survey_health_advice'
         ]
 
@@ -409,9 +409,9 @@ export async function fetchClientFilterOptions() {
 
         const pts = userData
             ?.filter(u => u.name && u.name.trim().length > 0)
-            .map(u => ({ 
-                name: u.name.trim(), 
-                branch_id: u.branch_id 
+            .map(u => ({
+                name: u.name.trim(),
+                branch_id: u.branch_id
             })) || []
 
         return {
