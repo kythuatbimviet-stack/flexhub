@@ -326,8 +326,12 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                 const today = new Date()
                 today.setHours(0, 0, 0, 0)
 
-                const isExpired = contract.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
-                if (isExpired) return false
+                const isCancelled = contract.status === 'Hợp đồng huỷ'
+                const isPastEnd = contract.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
+                const isFinalized = contract.final_weight != null
+
+                // Hiển thị nếu không phải HĐ huỷ VÀ (chưa hết hạn HOẶC chưa chốt cân)
+                if (isCancelled || (isPastEnd && isFinalized)) return false
 
                 if (filterBranch !== "all" && contract.facility_name !== filterBranch) return false
                 if (filterPT !== "all" && contract.trainer_name !== filterPT) return false

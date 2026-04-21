@@ -193,7 +193,7 @@ export default function WeightTrackingPage() {
         return Array.from(pkgs).sort()
     }, [contracts])
 
-    // Filter active clients (those without 'Hết hạn HĐ' status on their latest contract)
+    // Filter active clients according to new business logic
     const activeClientsList = React.useMemo(() => {
         return clients.filter(client => {
             const clientContracts = contracts
@@ -201,8 +201,6 @@ export default function WeightTrackingPage() {
                 .sort((a, b) => new Date(b.created_at || b.start_date).getTime() - new Date(a.created_at || a.start_date).getTime())
             const latestContract = clientContracts[0]
             
-            // If no contract found, we might want to keep them or hide them. 
-            // Usually, only those with a contract should be in progress tracking.
             if (!latestContract) return false
             
             const contractEndDate = latestContract.end_date ? new Date(latestContract.end_date) : null
@@ -210,9 +208,12 @@ export default function WeightTrackingPage() {
             const today = new Date()
             today.setHours(0, 0, 0, 0)
 
-            const isExpired = latestContract.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
+            const isCancelled = latestContract.status === 'Hợp đồng huỷ'
+            const isPastEnd = latestContract.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
+            const isFinalized = latestContract.final_weight != null
             
-            return !isExpired
+            // Hiển thị nếu không phải HĐ huỷ VÀ (chưa hết hạn HOẶC chưa chốt cân)
+            return !isCancelled && (!isPastEnd || !isFinalized)
         })
     }, [clients, contracts])
 
@@ -237,10 +238,12 @@ export default function WeightTrackingPage() {
             const today = new Date()
             today.setHours(0, 0, 0, 0)
 
-            const isExpired = contract?.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
+            const isCancelled = contract?.status === 'Hợp đồng huỷ'
+            const isPastEnd = contract?.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
+            const isFinalized = contract?.final_weight != null
             
-            // Filter out expired contracts
-            if (isExpired) {
+            // Filter out cancelled or finalized expired contracts
+            if (isCancelled || (isPastEnd && isFinalized)) {
                 return false
             }
 

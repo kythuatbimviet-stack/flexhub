@@ -180,7 +180,7 @@ export async function fetchContractsLite() {
                 created_by_email, created_at, updated_at,
                 sendzalo, sendemail, contract_file_url, is_receipt_sent, receipt_sent_at,
                 id_number, phone, email, member_address, dob, source,
-                initial_height, initial_weight, target_weight, medical_condition,
+                initial_height, initial_weight, target_weight, final_weight, medical_condition,
                 legal_representative, representative_phone, center_address,
                 closure_status, closure_reason, closed_at,
                 total_sessions, package_price, discounted_price, package_duration, quantity,
