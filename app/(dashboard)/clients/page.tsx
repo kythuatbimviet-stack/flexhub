@@ -46,7 +46,7 @@ import { usePermissions } from '@/hooks/use-permissions'
 const ONE_HOUR = 3600000
 const FIVE_MINUTES = 5 * 60 * 1000
 
-const MemberSummaryPopover = ({ contract, onShowDetails }: { contract: any, onShowDetails: () => void }) => {
+const MemberSummaryPopover = ({ contract, onShowDetails, onMouseEnter, onMouseLeave }: { contract: any, onShowDetails: () => void, onMouseEnter?: () => void, onMouseLeave?: () => void }) => {
     const age = React.useMemo(() => {
         if (!contract.dob && !contract.date_of_birth) return null
         try {
@@ -88,6 +88,8 @@ const MemberSummaryPopover = ({ contract, onShowDetails }: { contract: any, onSh
         <PopoverContent
             className="w-[320px] p-0 border-none shadow-2xl rounded-[24px] overflow-hidden bg-white dark:bg-gray-950 font-inter"
             onClick={(e) => e.stopPropagation()}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
         >
             <div className="p-6 space-y-6">
                 <div className="flex items-center gap-4">
@@ -183,6 +185,18 @@ export default function ClientsPage() {
     const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' })
     const [isSortOpen, setIsSortOpen] = React.useState(false)
     const [hoveredClientId, setHoveredClientId] = React.useState<string | null>(null)
+    const closeTimeoutRef = React.useRef<any>(null)
+
+    const handleMemberMouseEnter = (clientId: string) => {
+        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current)
+        setHoveredClientId(clientId)
+    }
+
+    const handleMemberMouseLeave = () => {
+        closeTimeoutRef.current = setTimeout(() => {
+            setHoveredClientId(null)
+        }, 300)
+    }
 
     // Debounce search
     React.useEffect(() => {
@@ -778,12 +792,12 @@ export default function ClientsPage() {
                                                 onCheckedChange={() => toggleRow(client.id)} className="rounded-lg" />
                                         </TableCell>
                                         <TableCell className="py-4">
-                                            <Popover open={hoveredClientId === client.id} onOpenChange={(open) => !open && setHoveredClientId(null)}>
+                                            <Popover open={hoveredClientId === client.id} onOpenChange={(open) => !open && handleMemberMouseLeave()}>
                                                 <PopoverTrigger asChild>
                                                     <div
                                                         className="flex items-center gap-3 cursor-pointer outline-none group/client"
-                                                        onMouseEnter={() => setHoveredClientId(client.id)}
-                                                        onMouseLeave={() => setHoveredClientId(null)}
+                                                        onMouseEnter={() => handleMemberMouseEnter(client.id)}
+                                                        onMouseLeave={handleMemberMouseLeave}
                                                     >
                                                         <Avatar className="h-9 w-9 border-2 border-white dark:border-gray-800 shadow-sm">
                                                             <AvatarImage src={client.avatar_url} alt={client.member_name} className="object-cover" />
@@ -807,6 +821,10 @@ export default function ClientsPage() {
                                                         setIsDetailsOpen(true);
                                                         setHoveredClientId(null);
                                                     }}
+                                                    onMouseEnter={() => {
+                                                        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current)
+                                                    }}
+                                                    onMouseLeave={handleMemberMouseLeave}
                                                 />
                                             </Popover>
                                         </TableCell>

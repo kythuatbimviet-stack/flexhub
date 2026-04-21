@@ -77,7 +77,7 @@ export async function fetchClientBirthdays(startDate?: string, endDate?: string)
     }
 }
 
-export async function fetchStaffBirthdays(period: 'week' | 'month' = 'month') {
+export async function fetchStaffBirthdays(period: 'week' | 'month' | 'all' = 'month', startDate?: string, endDate?: string) {
     try {
         const accessInfo = await getAccessFilter()
         if (!accessInfo) return { success: false, error: 'Unauthorized' }
@@ -101,45 +101,62 @@ export async function fetchStaffBirthdays(period: 'week' | 'month' = 'month') {
         const { data, error } = await query
         if (error) throw error
 
-        const now = new Date()
-        const currentMonth = now.getMonth() + 1
-        
-        console.log(`[fetchStaffBirthdays] Period: ${period}, Current Month: ${currentMonth}`)
+        let filtered = (data || [])
 
-        const filtered = (data || []).filter((user: any) => {
-            if (!user.dob) return false
-            
-            const dob = new Date(user.dob)
-            const dobStr = String(user.dob)
-            let birthMonth: number
-            
-            if (dobStr.includes('-')) {
-                // If it's YYYY-MM-DD, parsing directly is safer vs Timezone shifts
-                const parts = dobStr.split('-')
-                birthMonth = parseInt(parts[1], 10)
-            } else {
-                birthMonth = dob.getMonth() + 1
-            }
+        if (startDate && endDate) {
+            const start = new Date(startDate)
+            const end = new Date(endDate)
+            start.setHours(0, 0, 0, 0)
+            end.setHours(23, 59, 59, 999)
 
-            if (period === 'month') {
-                const isMatch = birthMonth === currentMonth
-                if (isMatch) console.log(`[fetchStaffBirthdays] Match found: ${user.name} (Month: ${birthMonth})`)
-                return isMatch
-            } else if (period === 'week') {
-                const today = new Date()
-                today.setHours(0, 0, 0, 0)
+            filtered = filtered.filter((user: any) => {
+                if (!user.dob) return false
+                const dob = new Date(user.dob)
                 
-                const nextWeek = new Date(today)
-                nextWeek.setDate(today.getDate() + 7)
-
-                const years = [today.getFullYear(), today.getFullYear() + 1]
-                return years.some(year => {
-                    const bday = new Date(year, dob.getMonth(), dob.getDate())
-                    return bday >= today && bday <= nextWeek
+                // Compare birthday within the range regardless of the birth year
+                const yearsToTest = [start.getFullYear(), end.getFullYear()]
+                
+                return yearsToTest.some(year => {
+                    const normalizedBday = new Date(year, dob.getMonth(), dob.getDate())
+                    return normalizedBday >= start && normalizedBday <= end
                 })
-            }
-            return false
-        })
+            })
+        } else {
+            const now = new Date()
+            const currentMonth = now.getMonth() + 1
+            
+            filtered = filtered.filter((user: any) => {
+                if (!user.dob) return false
+                
+                const dob = new Date(user.dob)
+                const dobStr = String(user.dob)
+                let birthMonth: number
+                
+                if (dobStr.includes('-')) {
+                    const parts = dobStr.split('-')
+                    birthMonth = parseInt(parts[1], 10)
+                } else {
+                    birthMonth = dob.getMonth() + 1
+                }
+
+                if (period === 'month') {
+                    return birthMonth === currentMonth
+                } else if (period === 'week') {
+                    const today = new Date()
+                    today.setHours(0, 0, 0, 0)
+                    
+                    const nextWeek = new Date(today)
+                    nextWeek.setDate(today.getDate() + 7)
+
+                    const years = [today.getFullYear(), today.getFullYear() + 1]
+                    return years.some(year => {
+                        const bday = new Date(year, dob.getMonth(), dob.getDate())
+                        return bday >= today && bday <= nextWeek
+                    })
+                }
+                return true // 'all' period
+            })
+        }
 
         filtered.sort((a: any, b: any) => {
             const da = new Date(a.dob)

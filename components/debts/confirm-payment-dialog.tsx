@@ -129,6 +129,7 @@ export function ConfirmPaymentDialog({
                                 <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800">
                                     <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
                                     <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
+                                    <SelectItem value="Quẹt thẻ">Quẹt thẻ</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

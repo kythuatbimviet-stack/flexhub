@@ -937,8 +937,9 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                     </Label>
                                                     <p className="text-xl font-bold text-slate-900 dark:text-white px-0.5">
                                                         {(() => {
+                                                            const h = parseFloat(formData.height) || 0;
                                                             const w = parseFloat(formData.weight) || 0;
-                                                            return w > 0 ? (w - 100).toFixed(0) : '--';
+                                                            return h > 0 && w > 0 ? (h - 100 - w).toFixed(0) : '--';
                                                         })()}
                                                     </p>
                                                 </div>
@@ -1070,9 +1071,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                         </p>
                                                     )}
                                                 </div>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                                    <ClientInfoRow label="Chi nhánh quản lý" value={formData.branch_id} name="branch_id" type="select" options={allowedBranches.map((b: any) => ({ value: b.id, label: b.name }))} {...sharedRowProps} />
-                                                </div>
+                                                <ClientInfoRow label="Chi nhánh quản lý" value={formData.branch_id} name="branch_id" type="select" options={allowedBranches.map((b: any) => ({ value: b.id, label: b.name }))} {...sharedRowProps} />
                                             </div>
                                             {/* <div className="grid grid-cols-1 sm:grid-cols-1 gap-5">
                                                 <ClientInfoRow label="Lộ trình đăng ký" value={formData.registration_type} name="registration_type" {...sharedRowProps} />

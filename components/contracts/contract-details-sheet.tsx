@@ -751,7 +751,7 @@ export function ContractDetailsSheet({
         try {
             let finalFormData = { ...formData }
 
-            // 1. Upload avata if changed (and it's a base64 string)
+            // 1. Upload avatar if changed (and it's a base64 string)
             if (formData.avatar_url && formData.avatar_url.startsWith('data:image')) {
                 const safeId = (formData.id && formData.id !== '(Tự động)') ? formData.id : 'new'
                 const fileName = `avatar_${safeId}_${Date.now()}.png`
@@ -762,22 +762,6 @@ export function ContractDetailsSheet({
                 } else {
                     toast.error('Không thể upload ảnh đại diện: ' + uploadResult.error)
                 }
-            }
-
-            // Sync client profile info
-            const clientId = isCreateMode ? formData.client_id : contract?.client_id
-            if (clientId) {
-                const clientUpdates: any = {
-                    avatar_url: finalFormData.avatar_url,
-                    member_name: formData.member_name,
-                    phone: formData.phone,
-                    email: formData.email,
-                    address: formData.member_address,
-                    dob: formData.dob,
-                    status: formData.client_status,
-                    id_number: formData.id_number // [ĐỒNG BỘ DỮ LIỆU] Tự động cập nhật CCCD sang hồ sơ khách hàng
-                }
-                await updateClient(clientId, clientUpdates)
             }
 
             // 2. Chữ ký khách hàng
@@ -793,6 +777,23 @@ export function ContractDetailsSheet({
                     setLoading(false)
                     return
                 }
+            }
+
+            // 3. Sync client profile info (After uploads are done)
+            const clientId = isCreateMode ? formData.client_id : contract?.client_id
+            if (clientId) {
+                const clientUpdates: any = {
+                    avatar_url: finalFormData.avatar_url,
+                    member_name: formData.member_name,
+                    phone: formData.phone,
+                    email: formData.email,
+                    address: formData.member_address,
+                    dob: formData.dob,
+                    status: formData.client_status,
+                    id_number: formData.id_number,
+                    signature_url: finalFormData.signature_url // [ĐỒNG BỘ DỮ LIỆU] Tự động cập nhật chữ ký sang hồ sơ khách hàng
+                }
+                await updateClient(clientId, clientUpdates)
             }
 
             if (isCreateMode) {

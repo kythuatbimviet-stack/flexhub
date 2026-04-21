@@ -173,11 +173,11 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
             return '120px' // Only Client name
         }
         let cols = ['40px'] // STT
-        if (visibleColumns.pt) cols.push('80px')
+        if (visibleColumns.pt) cols.push('80px') // PT
         cols.push('180px') // Khách hàng
-        if (visibleColumns.time) cols.push('140px')
-        if (visibleColumns.package) cols.push('100px')
-        if (visibleColumns.branch) cols.push('100px')
+        if (visibleColumns.time) cols.push('140px') // Thời gian tập
+        if (visibleColumns.package) cols.push('100px') // Chiều cao / Cân nặng (Replacing old package)
+        if (visibleColumns.branch) cols.push('100px') // Chi nhánh
         cols.push('80px') // Tiêu chí
         return cols.join(' ')
     }
@@ -206,31 +206,31 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
 
     const handleUpdateStatus = async (status: 'Y' | 'N' | 'TĐ' | null) => {
         if (!selectedClientId || !selectedDate) return
-        
+
         const dateStr = format(selectedDate, 'yyyy-MM-dd')
         const queryKey = ['training-logs', startDate, endDate]
-        
+
         // 1. Snapshot previous data for rollback
         const previousLogs = queryClient.getQueryData(queryKey)
-        
+
         // 2. Optimistically update local cache
         queryClient.setQueryData(queryKey, (old: any[] = []) => {
             const exists = old.find(l => l.client_id === selectedClientId && l.date === dateStr)
-            
+
             if (!status) {
                 // Remove if null
                 return old.filter(l => !(l.client_id === selectedClientId && l.date === dateStr))
             }
-            
+
             if (exists) {
                 // Update existing
                 return old.map(l => (l.client_id === selectedClientId && l.date === dateStr) ? { ...l, status } : l)
             }
-            
+
             // Add new
             return [...old, { client_id: selectedClientId, date: dateStr, status }]
         })
-        
+
         // 3. Sync with server
         try {
             const res = await upsertTrainingStatus(selectedClientId, dateStr, status)
@@ -437,18 +437,18 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                         isMobile && "w-full justify-between"
                     )}>
                         <Select value={dateRangeType} onValueChange={setDateRangeType}>
-                          <SelectTrigger className="h-7 w-28 border-none bg-transparent shadow-none p-0 text-xs focus:ring-0">
-                            <SelectValue placeholder="Chọn thời gian" />
-                          </SelectTrigger>
-                          <SelectContent className="text-xs">
-                            <SelectItem value="this-week">Tuần này</SelectItem>
-                            <SelectItem value="last-week">Tuần trước</SelectItem>
-                            <SelectItem value="next-week">Tuần tới</SelectItem>
-                            <SelectItem value="this-month">Tháng này</SelectItem>
-                            <SelectItem value="last-month">Tháng trước</SelectItem>
-                            <SelectItem value="next-month">Tháng tới</SelectItem>
-                            <SelectItem value="custom">Tùy chọn</SelectItem>
-                          </SelectContent>
+                            <SelectTrigger className="h-7 w-28 border-none bg-transparent shadow-none p-0 text-xs focus:ring-0">
+                                <SelectValue placeholder="Chọn thời gian" />
+                            </SelectTrigger>
+                            <SelectContent className="text-xs">
+                                <SelectItem value="this-week">Tuần này</SelectItem>
+                                <SelectItem value="last-week">Tuần trước</SelectItem>
+                                <SelectItem value="next-week">Tuần tới</SelectItem>
+                                <SelectItem value="this-month">Tháng này</SelectItem>
+                                <SelectItem value="last-month">Tháng trước</SelectItem>
+                                <SelectItem value="next-month">Tháng tới</SelectItem>
+                                <SelectItem value="custom">Tùy chọn</SelectItem>
+                            </SelectContent>
                         </Select>
 
                         <span className="text-slate-300">|</span>
@@ -459,8 +459,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                 type="date"
                                 value={startDate}
                                 onChange={e => {
-                                  setStartDate(e.target.value)
-                                  setDateRangeType('custom')
+                                    setStartDate(e.target.value)
+                                    setDateRangeType('custom')
                                 }}
                                 className="h-7 w-28 border-none bg-transparent shadow-none p-0 text-xs focus-visible:ring-0"
                             />
@@ -471,8 +471,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                 type="date"
                                 value={endDate}
                                 onChange={e => {
-                                  setEndDate(e.target.value)
-                                  setDateRangeType('custom')
+                                    setEndDate(e.target.value)
+                                    setDateRangeType('custom')
                                 }}
                                 className="h-7 w-28 border-none bg-transparent shadow-none p-0 text-xs focus-visible:ring-0 text-right"
                             />
@@ -547,8 +547,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                         </div>
                                     </div>
                                 </div>
-                                <Button 
-                                    variant="ghost" 
+                                <Button
+                                    variant="ghost"
                                     className="w-full h-9 text-xs text-red-500 hover:text-red-600 hover:bg-red-50"
                                     onClick={handleResetFilters}
                                 >
@@ -588,7 +588,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                     ))}
                                 </SelectContent>
                             </Select>
-                            
+
                             <Select value={sortByWeight} onValueChange={(val: any) => setSortByWeight(val)}>
                                 <SelectTrigger className={cn("h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none shrink-0", isMobile ? "w-32" : "w-48")}>
                                     <div className="flex items-center gap-2 overflow-hidden">
@@ -623,7 +623,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                         <>
                             <AnimatePresence>
                                 {selectedClientId && selectedDate && (
-                                    <motion.div 
+                                    <motion.div
                                         initial={{ opacity: 0, x: 20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: 20 }}
@@ -634,8 +634,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                             <div className="flex items-center gap-1.5">
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Button 
-                                                            size="sm" 
+                                                        <Button
+                                                            size="sm"
                                                             className="h-8 w-8 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
                                                             onClick={() => handleUpdateStatus('Y')}
                                                         >
@@ -649,8 +649,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
 
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Button 
-                                                            size="sm" 
+                                                        <Button
+                                                            size="sm"
                                                             className="h-8 w-8 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
                                                             onClick={() => handleUpdateStatus('N')}
                                                         >
@@ -664,8 +664,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
 
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Button 
-                                                            size="sm" 
+                                                        <Button
+                                                            size="sm"
                                                             className="h-8 w-10 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
                                                             onClick={() => handleUpdateStatus('TĐ')}
                                                         >
@@ -678,9 +678,9 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                 </Tooltip>
                                             </div>
                                         </TooltipProvider>
-                                        <Button 
+                                        <Button
                                             variant="ghost"
-                                            size="sm" 
+                                            size="sm"
                                             className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-500 p-0"
                                             onClick={() => handleUpdateStatus(null)}
                                             title="Xóa trạng thái"
@@ -714,7 +714,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                         {Object.entries({
                                             pt: "PT",
                                             time: "Thời gian tập",
-                                            package: "Loại gói",
+                                            package: "Chiều cao / Cân nặng",
                                             branch: "Chi nhánh"
                                         }).map(([key, label]) => (
                                             <div
@@ -788,10 +788,10 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                 {!isMobile && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">STT</div>}
                                 {visibleColumns.pt && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">PT</div>}
                                 <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center px-2">Khách hàng</div>
-                                {visibleColumns.time && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">Thời gian tập</div>}
-                                {visibleColumns.package && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">Loại gói</div>}
-                                {visibleColumns.branch && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">Chi nhánh</div>}
-                                {!isMobile && <div className="h-full flex items-center justify-center text-center px-1">Tiêu chí</div>}
+                                {visibleColumns.time && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">THỜI GIAN TẬP</div>}
+                                {visibleColumns.package && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex flex-col items-center justify-center text-center px-1 leading-tight"><span>Chiều cao</span><span>Cân nặng</span></div>}
+                                {visibleColumns.branch && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 h-full flex items-center justify-center">CHI NHÁNH</div>}
+                                {!isMobile && <div className="h-full flex items-center justify-center text-center px-1">TIÊU CHÍ</div>}
                             </div>
                             <div className="flex h-12 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
                                 {days.map((day, i) => {
@@ -835,90 +835,82 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                             return (
                                 <div key={client.id} className="flex group transition-colors duration-200">
                                     {/* Left Content (Sticky Column) */}
-                                        <div
-                                            className={cn(
-                                                "sticky left-0 z-30 border-r border-b border-slate-200 dark:border-slate-800 shrink-0 font-inter transition-all duration-200 overflow-hidden",
-                                                isSelected ? "bg-blue-600/15 dark:bg-blue-600/25" : "bg-white dark:bg-slate-950 group-hover:bg-slate-50 dark:group-hover:bg-slate-900/50"
-                                            )}
-                                            style={{ display: 'grid', gridTemplateColumns: getGridTemplate(), width: getLeftPaneWidth(), minHeight: `${visibleCount * 32}px` }}
-                                            onClick={() => handleRowClick(client.id)}
-                                        >
-                                            {!isMobile && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-xs text-slate-400 dark:text-slate-300 font-medium">{idx + 1}</div>}
-                                            {visibleColumns.pt && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-500 dark:text-slate-300 text-center px-2">{contract?.trainer_name || '-'}</div>}
-                                            <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-start justify-center px-2 sm:px-4 py-2 gap-1.5 overflow-hidden">
-                                                <div 
-                                                    className="font-bold text-[11px] sm:text-xs text-slate-900 dark:text-blue-400 truncate w-full cursor-pointer hover:text-blue-600 dark:hover:text-blue-300 hover:underline transition-all"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleClientNameClick(client);
-                                                    }}
-                                                >
-                                                    {client.member_name}
-                                                </div>
-                                                <div className="flex flex-col gap-0.5 w-full">
-                                                    {!isMobile && (
-                                                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-300 whitespace-nowrap">
-                                                            <span className="font-medium">SĐT:</span>
-                                                            <span>{contract?.phone || '-'}</span>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex items-center gap-2 sm:gap-3 text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-300">
-                                                        <div className="flex items-center gap-1">
-                                                            <span className="font-medium">W:</span>
-                                                            <span>{contract?.initial_weight ? `${contract.initial_weight}kg` : '-'}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1">
-                                                            <span className="font-medium">T:</span>
-                                                            <span>{contract?.target_weight ? `${contract.target_weight}kg` : '-'}</span>
-                                                        </div>
+                                    <div
+                                        className={cn(
+                                            "sticky left-0 z-30 border-r border-b border-slate-200 dark:border-slate-800 shrink-0 font-inter transition-all duration-200 overflow-hidden",
+                                            isSelected ? "bg-blue-600/15 dark:bg-blue-600/25" : "bg-white dark:bg-slate-950 group-hover:bg-slate-50 dark:group-hover:bg-slate-900/50"
+                                        )}
+                                        style={{ display: 'grid', gridTemplateColumns: getGridTemplate(), width: getLeftPaneWidth(), minHeight: `${visibleCount * 32}px` }}
+                                        onClick={() => handleRowClick(client.id)}
+                                    >
+                                        {!isMobile && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-xs text-slate-400 dark:text-slate-300 font-medium">{idx + 1}</div>}
+                                        {visibleColumns.pt && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-500 dark:text-slate-300 text-center px-2">{contract?.trainer_name || '-'}</div>}
+                                        <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-start justify-center px-2 sm:px-4 py-2 gap-1 overflow-hidden">
+                                            <div
+                                                className="font-bold text-[11px] sm:text-xs text-slate-900 dark:text-blue-400 truncate w-full cursor-pointer hover:text-blue-600 dark:hover:text-blue-300 hover:underline transition-all"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleClientNameClick(client);
+                                                }}
+                                            >
+                                                {client.member_name}
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 w-full">
+                                                {!isMobile && (
+                                                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-300 whitespace-nowrap">
+                                                        <span className="font-medium">SĐT:</span>
+                                                        <span>{contract?.phone || '-'}</span>
                                                     </div>
+                                                )}
+                                                <div className="flex flex-col text-[10px] text-slate-900 dark:text-slate-100 font-medium leading-tight mt-0.5">
+                                                    <span>{contract?.package_name || '-'}</span>
+                                                    {contract?.total_amount && (
+                                                        <span className="text-red-600 dark:text-red-400 font-bold">
+                                                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(contract.total_amount)}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
-                                            {visibleColumns.time && !isMobile && (
-                                                <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-[10px] text-slate-500 dark:text-slate-300 gap-0.5">
-                                                    <span>{contract?.start_date ? format(new Date(contract.start_date), 'dd/MM/yyyy') : '-'}</span>
-                                                    <div className="flex items-center gap-1">
-                                                        <span className="text-slate-300 dark:text-slate-600">|</span>
-                                                        {contract?.end_date && (
-                                                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-red-50 text-red-600 dark:bg-red-900/30">
-                                                                {differenceInDays(new Date(contract.end_date), new Date()) > 0 
-                                                                    ? `Còn ${differenceInDays(new Date(contract.end_date), new Date())} ngày` 
-                                                                    : "Hết hạn"}
-                                                            </span>
-                                                        )}
-                                                        <span className="text-slate-300 dark:text-slate-600">|</span>
-                                                    </div>
-                                                    <span>{contract?.end_date ? format(new Date(contract.end_date), 'dd/MM/yyyy') : '-'}</span>
-                                                </div>
-                                            )}
-                                            {visibleColumns.package && !isMobile && (
-                                                <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-[10px] text-slate-500 dark:text-slate-200 text-center px-2 gap-0.5">
-                                                    <div className="line-clamp-1 font-medium">{contract?.package_name || '-'}</div>
-                                                    {contract?.total_amount && (
-                                                        <div className="font-bold text-blue-600 dark:text-blue-400">
-                                                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(contract.total_amount)}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                            {visibleColumns.branch && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-500 dark:text-slate-300 text-center px-2">{contract?.branches?.name || '-'}</div>}
-                                            {!isMobile && (
-                                                <div className={cn(
-                                                    "flex flex-col text-[9px] font-bold uppercase gap-0 p-0 overflow-hidden",
-                                                    isSelected ? "bg-transparent" : "bg-white dark:bg-slate-900"
-                                                )}>
-                                                    {showTarget && (
-                                                        <div className="h-8 flex items-center justify-center border-b border-blue-100 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1 text-center leading-none">Cần đạt</div>
-                                                    )}
-                                                    {showActual && (
-                                                        <div className="h-8 flex items-center justify-center border-b border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-1 text-center leading-none">Thực tế</div>
-                                                    )}
-                                                    {showTraining && (
-                                                        <div className="h-8 flex items-center justify-center border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 px-1 text-center leading-none">Tập</div>
-                                                    )}
-                                                </div>
-                                            )}
                                         </div>
+                                        {visibleColumns.time && !isMobile && (
+                                            <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-[10px] text-slate-500 dark:text-slate-300 gap-1">
+                                                <span>{contract?.start_date ? format(new Date(contract.start_date), 'dd/MM/yyyy') : '-'}</span>
+                                                {contract?.end_date && (
+                                                    <div className="bg-rose-50 dark:bg-rose-900/30 px-2 py-0.5 rounded-full">
+                                                        <span className="text-[9px] font-bold uppercase text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                                                            {differenceInDays(new Date(contract.end_date), new Date()) > 0
+                                                                ? `Còn ${differenceInDays(new Date(contract.end_date), new Date())} ngày`
+                                                                : "Hết hạn"}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <span>{contract?.end_date ? format(new Date(contract.end_date), 'dd/MM/yyyy') : '-'}</span>
+                                            </div>
+                                        )}
+                                        {visibleColumns.package && !isMobile && (
+                                            <div className="border-r border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-[11px] text-slate-900 dark:text-slate-100 text-center px-2 gap-1">
+                                                <div>{contract?.initial_height ? `${contract.initial_height}cm` : '-'}</div>
+                                                <div>{client.latestWeight ? `${client.latestWeight}kg` : '-'}</div>
+                                            </div>
+                                        )}
+                                        {visibleColumns.branch && !isMobile && <div className="border-r border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-500 dark:text-slate-300 text-center px-2">{contract?.branches?.name || '-'}</div>}
+                                        {!isMobile && (
+                                            <div className={cn(
+                                                "flex flex-col text-[9px] font-bold uppercase gap-0 p-0 overflow-hidden",
+                                                isSelected ? "bg-transparent" : "bg-white dark:bg-slate-900"
+                                            )}>
+                                                {showTarget && (
+                                                    <div className="h-8 flex items-center justify-center border-b border-blue-100 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1 text-center leading-none font-bold text-[10px]">CẦN ĐẠT</div>
+                                                )}
+                                                {showActual && (
+                                                    <div className="h-8 flex items-center justify-center border-b border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-1 text-center leading-none font-bold text-[10px]">THỰC TẾ</div>
+                                                )}
+                                                {showTraining && (
+                                                    <div className="h-8 flex items-center justify-center border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 px-1 text-center leading-none font-bold text-[10px]">TẬP</div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
 
                                     {/* Right Content (Timeline Row Data) */}
                                     <div
@@ -934,10 +926,10 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                     const record = clientRecords.find(r => r.measurement_date === dateKey || (r.measurement_date && r.measurement_date.startsWith(dateKey)))
                                                     const isCellSelected = isSelected && selectedDate && isSameDay(selectedDate, day)
                                                     const isFriday = day.getDay() === 5
-                                                    
+
                                                     // Show record target weight if it exists, otherwise baseline on start date
                                                     const displayTarget = record?.target_weight || (isSameDay(day, parseISO(startDate)) ? client.latestContract?.target_weight : null)
-                                                    
+
                                                     return (
                                                         <div
                                                             key={i}
@@ -980,8 +972,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                             <span className={cn("text-[11px] font-semibold", isCellSelected ? "text-emerald-700 dark:text-emerald-300" : "text-emerald-600 dark:text-emerald-400")}>
                                                                 {record?.weight ? record.weight : (
                                                                     plannedDates.has(format(day, 'yyyy-MM-dd')) ? (() => {
-                                                                        const sourceRecord = clientRecords.find(r => 
-                                                                            r.next_measurement_date && 
+                                                                        const sourceRecord = clientRecords.find(r =>
+                                                                            r.next_measurement_date &&
                                                                             isSameDay(parseISO(r.next_measurement_date), day)
                                                                         )
                                                                         if (!sourceRecord) return null
@@ -1055,7 +1047,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                                     const log = trainingLogs.find(l => l.client_id === client.id && (l.date === dateKey || (l.date && l.date.startsWith(dateKey))))
                                                     const isCellSelected = isSelected && selectedDate && isSameDay(selectedDate, day)
                                                     const isFriday = day.getDay() === 5
-                                                    
+
                                                     return (
                                                         <div
                                                             key={i}
@@ -1088,8 +1080,8 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                         {/* Today Vertical Line */}
                         {days.findIndex(d => isToday(d)) !== -1 && (
                             <div
-                                className="absolute top-0 bottom-0 w-[2px] bg-red-500 z-10 pointer-events-none"
-                                style={{ left: `calc(${getLeftPaneWidth()} + ${days.findIndex(d => isToday(d)) * 50 + 25}px)` }}
+                                className="absolute top-0 bottom-0 w-[1.5px] bg-rose-300/60 z-10 pointer-events-none"
+                                style={{ left: `calc(${getLeftPaneWidth()} + ${days.findIndex(d => isToday(d)) * 50 + 24}px)` }}
                             />
                         )}
                     </div>
@@ -1206,9 +1198,9 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                     {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'Chọn ô để thao tác'}
                                 </span>
                             </div>
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => {
                                     setSelectedClientId(null);
                                     setSelectedDate(null);
@@ -1218,41 +1210,41 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                 <ChevronDown className="w-5 h-5" />
                             </Button>
                         </div>
-                        
+
                         {selectedDate && (
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <Button 
-                                        size="sm" 
+                                    <Button
+                                        size="sm"
                                         onClick={() => handleUpdateStatus('Y')}
                                         className="h-10 w-10 rounded-xl bg-emerald-500 text-white font-bold"
                                     >
                                         Y
                                     </Button>
-                                    <Button 
-                                        size="sm" 
+                                    <Button
+                                        size="sm"
                                         onClick={() => handleUpdateStatus('N')}
                                         className="h-10 w-10 rounded-xl bg-rose-500 text-white font-bold"
                                     >
                                         N
                                     </Button>
-                                    <Button 
-                                        size="sm" 
+                                    <Button
+                                        size="sm"
                                         onClick={() => handleUpdateStatus('TĐ')}
                                         className="h-10 w-10 rounded-xl bg-amber-500 text-white font-bold"
                                     >
                                         T
                                     </Button>
-                                    <Button 
+                                    <Button
                                         variant="outline"
-                                        size="sm" 
+                                        size="sm"
                                         onClick={() => handleUpdateStatus(null)}
                                         className="h-10 w-10 rounded-xl border-slate-200 text-slate-400"
                                     >
                                         <RotateCcw className="w-4 h-4" />
                                     </Button>
                                 </div>
-                                
+
                                 <Button
                                     onClick={() => handleOpenEdit(selectedClientId, selectedDate)}
                                     className="h-10 px-4 gap-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-lg shadow-blue-200 dark:shadow-none"

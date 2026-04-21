@@ -250,7 +250,17 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
 
                     <CardSection title="THÔNG TIN GIAO DỊCH" icon={Tag}>
                         <div className="grid grid-cols-2 gap-5">
-                            <DetailRow label="Tổng thu (Gross)" value={new Intl.NumberFormat('vi-VN').format(formData.amount) + ' đ'} name="amount" type="number" icon={DollarSign} isEditing={isEditing} formData={formData} onChange={handleChange} />
+                            <div className="space-y-1.5 font-inter text-left">
+                                <DetailRow label="Số tiền thanh toán" value={new Intl.NumberFormat('vi-VN').format(formData.amount) + ' đ'} name="amount" type="number" icon={DollarSign} isEditing={isEditing} formData={formData} onChange={handleChange} />
+                                {formData.contracts?.total_amount && (
+                                    <div className="text-[11px] text-slate-500 font-medium px-0.5">
+                                        trên tổng giá trị HĐ: <span className="font-bold text-slate-700 dark:text-slate-300">{new Intl.NumberFormat('vi-VN').format(formData.contracts.total_amount)} đ</span>
+                                        <span className="ml-1.5 text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded-md">
+                                            ({((formData.amount / formData.contracts.total_amount) * 100).toFixed(1)}%)
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
                             
                             <div className="space-y-1.5 font-inter text-left">
                                 <Label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 flex items-center gap-2 tracking-tight">
@@ -343,7 +353,7 @@ export function RevenueDetailsSheet({ revenue, open, onOpenChange, onSuccess }: 
                             <DetailRow label="Tên khách hàng" value={formData.clients?.member_name || 'Khách vãng lai'} icon={User} isEditing={false} />
                             <DetailRow label="Số điện thoại" value={formData.clients?.phone} icon={User} isEditing={false} />
                             <DetailRow label="Địa chỉ" value={formData.clients?.address || formData.contracts?.member_address} icon={Building2} isEditing={false} />
-                            <DetailRow label="CCCD" value={formData.clients?.id_number} icon={Tag} isEditing={false} />
+                            <DetailRow label="CCCD" value={formData.clients?.id_number || formData.contracts?.id_number} icon={Tag} isEditing={false} />
                             <DetailRow label="Nguồn khách" value={formData.clients?.source || formData.contracts?.source} icon={Tag} isEditing={false} />
                             <DetailRow label="Chi nhánh" value={formData.branches?.name || 'Toàn hệ thống'} icon={Building2} isEditing={false} />
                         </div>

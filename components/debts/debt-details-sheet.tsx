@@ -234,6 +234,12 @@ export function DebtDetailsSheet({ debt, open, onOpenChange, onSuccess }: DebtDe
                                                 </p>
                                                 <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">{details.data.branches?.name}</p>
                                             </div>
+                                            <div className="space-y-1">
+                                                <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 tracking-wider flex items-center gap-1.5">
+                                                    <User className="w-3 h-3" /> HLV/PT
+                                                </p>
+                                                <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300">{details.data.contracts?.trainer_name || '---'}</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

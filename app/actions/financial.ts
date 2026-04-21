@@ -45,7 +45,8 @@ export async function fetchRevenue() {
                     start_date,
                     total_amount,
                     package_name,
-                    package_price
+                    package_price,
+                    id_number
                 )
             `)
         
@@ -85,7 +86,8 @@ export async function fetchRevenueByDateRange(startDate?: string, endDate?: stri
                     start_date,
                     total_amount,
                     package_name,
-                    package_price
+                    package_price,
+                    id_number
                 )
             `)
             .order('recorded_at', { ascending: false })
