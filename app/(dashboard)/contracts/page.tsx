@@ -423,15 +423,47 @@ export default function ContractsPage() {
 
     // ── Client-side filtering ─────────────────────────────────────────────────
     const filteredContracts = React.useMemo(() => {
-        let result = (contracts ?? []).filter((c: any) => {
+        const pool = contracts ?? []
+
+        // Hàm chuẩn hóa tiếng Việt để tìm kiếm chính xác (uỳ vs ùy, vv)
+        const normalize = (str: string) => {
+            if (!str) return ''
+            return str
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[đĐ]/g, 'd')
+                .trim()
+        }
+        
+        // [FIX] Group-aware Search: Nếu có search, xác định tập hợp các Client ID khớp
+        let matchingClientIds = new Set<string>()
+        if (debouncedSearch) {
+            const q = normalize(debouncedSearch)
+            pool.forEach((c: any) => {
+                const searchContent = [
+                    c.member_name,
+                    c.id,
+                    c.client_id,
+                    c.phone,
+                    c.package_name
+                ].map(v => normalize(v)).join(' ')
+
+                if (searchContent.includes(q)) {
+                    const cid = c.client_id || (c.member_name ? `name-${c.member_name}-${c.phone || ''}` : 'unknown')
+                    matchingClientIds.add(cid)
+                }
+            })
+        }
+
+        let result = pool.filter((c: any) => {
+            // Search Filter (Group-aware)
             if (debouncedSearch) {
-                const q = debouncedSearch.toLowerCase()
-                if (
-                    !c.member_name?.toLowerCase().includes(q) &&
-                    !c.id?.toLowerCase().includes(q) &&
-                    !c.package_name?.toLowerCase().includes(q)
-                ) return false
+                const cid = c.client_id || (c.member_name ? `name-${c.member_name}-${c.phone || ''}` : 'unknown')
+                if (!matchingClientIds.has(cid)) return false
             }
+
+            // Categorical Filters
             if (statusFilter !== 'all' && c.status !== statusFilter) return false
             if (branchFilter !== 'all' && c.branch_id !== branchFilter) return false
             if (ptFilter !== 'all' && c.trainer_name !== ptFilter) return false
@@ -1003,9 +1035,16 @@ export default function ContractsPage() {
                                                                     <h4 className="text-[15px] font-bold text-slate-900 dark:text-white leading-tight uppercase group-hover/client:text-red-600 transition-colors">
                                                                         {group.customerName}
                                                                     </h4>
-                                                                    <span className="text-[12px] font-semibold text-rose-500 tracking-tight">
-                                                                        {group.phone}
-                                                                    </span>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-[12px] font-semibold text-rose-500 tracking-tight">
+                                                                            {group.phone}
+                                                                        </span>
+                                                                        {group.clientId && !group.clientId.startsWith('name-') && (
+                                                                            <span className="text-[10px] font-bold text-slate-400 bg-slate-50 dark:bg-slate-800/50 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                                                                {group.clientId}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                                 <div className="p-1 opacity-0 group-hover/client:opacity-100 rounded-lg text-slate-300 transition-opacity">
                                                                     <LayoutGrid className="w-4 h-4 ml-1" />

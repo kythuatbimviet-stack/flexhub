@@ -121,9 +121,6 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
     const { data: contractsResult, isLoading: loadingContracts } = useQuery({
         queryKey: ['contracts-for-weight-add', selectedClientId],
         queryFn: async () => {
-            const res = await fetchLatestContractByClientId(selectedClientId) // Using latest to get the main one, but maybe I should fetch all?
-            // User said: "Hợp đồng tùy chọn sẽ là danh sách hợp đồng theo hôi viên đó"
-            // So I should fetch all contracts for that client.
             const { fetchContractsByClientId } = await import('@/app/actions/contracts')
             const result = await fetchContractsByClientId(selectedClientId)
             return result.success ? result.data : []
@@ -131,7 +128,27 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
         enabled: !!selectedClientId,
     })
 
-    const latestContract = contractsResult?.[0] || null
+    // [FIX] Lấy hợp đồng đại diện: Là hợp đồng mới nhất đang hoạt động (không huỷ, không hết hạn)
+    const latestContract = React.useMemo(() => {
+        if (!contractsResult) return null
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        const activeContracts = contractsResult.filter((c: any) => {
+            const endDate = c.end_date ? new Date(c.end_date) : null
+            if (endDate) endDate.setHours(0, 0, 0, 0)
+            
+            const isCancelled = c.status === 'Hợp đồng huỷ'
+            const isPastEnd = c.status === 'Hết hạn HĐ' || (endDate && endDate < today)
+            const isFinalized = c.final_weight != null
+
+            return !isCancelled && (!isPastEnd || !isFinalized)
+        })
+
+        return activeContracts.sort((a: any, b: any) => 
+            new Date(b.created_at || b.start_date).getTime() - new Date(a.created_at || a.start_date).getTime()
+        )[0] || null
+    }, [contractsResult])
 
     const { data: latestWeight, isLoading: loadingWeight } = useQuery({
         queryKey: ['latest-weight', selectedClientId],
@@ -349,7 +366,18 @@ export function AddWeightDialog({ onSuccess, clients, initialClientId, initialDa
                                                 </FormControl>
                                                 <SelectContent className="rounded-xl border-slate-100 dark:border-slate-800 font-inter">
                                                     <SelectItem value="none">Không áp dụng hợp đồng</SelectItem>
-                                                    {contractsResult?.filter((c: any) => c.status !== 'Hết hạn HĐ').map((c: any) => (
+                                                    {contractsResult?.filter((c: any) => {
+                                                        const endDate = c.end_date ? new Date(c.end_date) : null
+                                                        if (endDate) endDate.setHours(0, 0, 0, 0)
+                                                        const today = new Date()
+                                                        today.setHours(0, 0, 0, 0)
+                                                        
+                                                        const isCancelled = c.status === 'Hợp đồng huỷ'
+                                                        const isPastEnd = c.status === 'Hết hạn HĐ' || (endDate && endDate < today)
+                                                        const isFinalized = c.final_weight != null
+
+                                                        return !isCancelled && (!isPastEnd || !isFinalized)
+                                                    }).map((c: any) => (
                                                         <SelectItem key={c.id} value={c.id}>
                                                             {c.package_name || c.registration_type} ({c.id.slice(-4)})
                                                         </SelectItem>

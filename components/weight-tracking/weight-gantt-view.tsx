@@ -298,48 +298,64 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
 
     // Get active clients based on contracts and apply filters
     const activeClients = React.useMemo(() => {
-        let list = clients
-            .filter(c => contracts.some(con => con.client_id === c.id))
-            .map(client => {
-                // Find the latest contract for this client
-                const clientContracts = contracts
-                    .filter(con => con.client_id === client.id)
-                    .sort((a, b) => new Date(b.created_at || b.start_date).getTime() - new Date(a.created_at || a.start_date).getTime())
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
 
-                // Find the latest weight measurement
+        let list = clients
+            .map(client => {
+                const clientContracts = contracts.filter(con => con.client_id === client.id)
+                
+                // Tìm tất cả các hợp đồng còn hiệu lực
+                const activeContracts = clientContracts.filter(contract => {
+                    const contractEndDate = contract.end_date ? new Date(contract.end_date) : null
+                    if (contractEndDate) contractEndDate.setHours(0, 0, 0, 0)
+
+                    const isCancelled = contract.status === 'Hợp đồng huỷ'
+                    const isPastEnd = contract.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
+                    const isFinalized = contract.final_weight != null
+
+                    return !isCancelled && (!isPastEnd || !isFinalized)
+                })
+
+                if (activeContracts.length === 0) return null
+
+                // Lấy hợp đồng mới nhất trong số các hợp đồng đang hiệu lực
+                const latestActive = [...activeContracts].sort((a, b) => 
+                    new Date(b.created_at || b.start_date).getTime() - new Date(a.created_at || a.start_date).getTime()
+                )[0]
+
+                // Tìm bản ghi cân nặng mới nhất
                 const clientRecords = recordsFromGantt.filter(r => r.client_id === client.id)
                 const sortedRecords = [...clientRecords].sort((a, b) => new Date(b.measurement_date).getTime() - new Date(a.measurement_date).getTime())
                 const latestWeight = sortedRecords[0]?.weight || 0
 
                 return {
                     ...client,
-                    latestContract: clientContracts[0],
+                    latestContract: latestActive,
                     latestWeight
                 }
             })
-            .filter(client => {
+            .filter((client): client is any => {
+                if (!client) return false
                 const contract = client.latestContract
-                if (!contract) return false
 
-                const contractEndDate = contract.end_date ? new Date(contract.end_date) : null
-                if (contractEndDate) contractEndDate.setHours(0, 0, 0, 0)
-                const today = new Date()
-                today.setHours(0, 0, 0, 0)
-
-                const isCancelled = contract.status === 'Hợp đồng huỷ'
-                const isPastEnd = contract.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
-                const isFinalized = contract.final_weight != null
-
-                // Hiển thị nếu không phải HĐ huỷ VÀ (chưa hết hạn HOẶC chưa chốt cân)
-                if (isCancelled || (isPastEnd && isFinalized)) return false
-
+                // Branch & PT filters applied to the representative active contract
                 if (filterBranch !== "all" && contract.facility_name !== filterBranch) return false
                 if (filterPT !== "all" && contract.trainer_name !== filterPT) return false
 
                 if (searchTerm) {
-                    const search = searchTerm.toLowerCase().trim()
-                    const nameMatch = client.member_name?.toLowerCase().includes(search)
-                    const phoneMatch = client.phone?.includes(search)
+                    const normalize = (str: string) => {
+                        if (!str) return ''
+                        return str
+                            .toLowerCase()
+                            .normalize('NFD')
+                            .replace(/[\u0300-\u036f]/g, '')
+                            .replace(/[đĐ]/g, 'd')
+                            .trim()
+                    }
+                    const q = normalize(searchTerm)
+                    const nameMatch = normalize(client.member_name).includes(q)
+                    const phoneMatch = client.phone?.includes(q)
                     if (!nameMatch && !phoneMatch) return false
                 }
 

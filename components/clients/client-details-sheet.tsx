@@ -939,7 +939,7 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                         {(() => {
                                                             const h = parseFloat(formData.height) || 0;
                                                             const w = parseFloat(formData.weight) || 0;
-                                                            return h > 0 && w > 0 ? (h - 100 - w).toFixed(0) : '--';
+                                                            return h > 0 ? (h - 100).toFixed(0) : '--';
                                                         })()}
                                                     </p>
                                                 </div>

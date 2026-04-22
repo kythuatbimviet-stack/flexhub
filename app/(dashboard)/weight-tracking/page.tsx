@@ -193,27 +193,27 @@ export default function WeightTrackingPage() {
         return Array.from(pkgs).sort()
     }, [contracts])
 
-    // Filter active clients according to new business logic
+    // [FIX] Kiểm tra TẤT CẢ hợp đồng, thay vì chỉ lấy cái cuối cùng
+    // Điều này đảm bảo nếu khách có HĐ mới bị huỷ nhưng còn HĐ cũ đang chạy thì vẫn hiện.
     const activeClientsList = React.useMemo(() => {
-        return clients.filter(client => {
-            const clientContracts = contracts
-                .filter(con => con.client_id === client.id)
-                .sort((a, b) => new Date(b.created_at || b.start_date).getTime() - new Date(a.created_at || a.start_date).getTime())
-            const latestContract = clientContracts[0]
-            
-            if (!latestContract) return false
-            
-            const contractEndDate = latestContract.end_date ? new Date(latestContract.end_date) : null
-            if (contractEndDate) contractEndDate.setHours(0, 0, 0, 0)
-            const today = new Date()
-            today.setHours(0, 0, 0, 0)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
 
-            const isCancelled = latestContract.status === 'Hợp đồng huỷ'
-            const isPastEnd = latestContract.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
-            const isFinalized = latestContract.final_weight != null
+        return clients.filter(client => {
+            const clientContracts = contracts.filter(con => con.client_id === client.id)
             
-            // Hiển thị nếu không phải HĐ huỷ VÀ (chưa hết hạn HOẶC chưa chốt cân)
-            return !isCancelled && (!isPastEnd || !isFinalized)
+            // Một khách hàng được coi là "Active" nếu có ÍT NHẤT MỘT hợp đồng không bị loại trừ
+            return clientContracts.some(contract => {
+                const contractEndDate = contract.end_date ? new Date(contract.end_date) : null
+                if (contractEndDate) contractEndDate.setHours(0, 0, 0, 0)
+
+                const isCancelled = contract.status === 'Hợp đồng huỷ'
+                const isPastEnd = contract.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
+                const isFinalized = contract.final_weight != null
+                
+                // Trả về true nếu hợp đồng này HỢP LỆ (không huỷ và chưa chốt hết hạn)
+                return !isCancelled && (!isPastEnd || !isFinalized)
+            })
         })
     }, [clients, contracts])
 
@@ -223,35 +223,49 @@ export default function WeightTrackingPage() {
 
     const filteredRecords = React.useMemo(() => {
         if (!Array.isArray(records)) return []
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
         return records.filter((record: any) => {
             const client = clients.find(c => c.id === record.client_id)
             if (!client) return false
 
-            // Find latest contract for additional filtering
-            const clientContracts = contracts
-                .filter(con => con.client_id === record.client_id)
-                .sort((a, b) => new Date(b.created_at || b.start_date).getTime() - new Date(a.created_at || a.start_date).getTime())
-            const contract = clientContracts[0]
+            const clientContracts = contracts.filter(con => con.client_id === record.client_id)
             
-            const contractEndDate = contract?.end_date ? new Date(contract.end_date) : null
-            if (contractEndDate) contractEndDate.setHours(0, 0, 0, 0)
-            const today = new Date()
-            today.setHours(0, 0, 0, 0)
+            // Kiểm tra xem khách hàng của bản ghi này có hợp đồng nào đang hiệu lực không
+            const activeContracts = clientContracts.filter(contract => {
+                const contractEndDate = contract.end_date ? new Date(contract.end_date) : null
+                if (contractEndDate) contractEndDate.setHours(0, 0, 0, 0)
 
-            const isCancelled = contract?.status === 'Hợp đồng huỷ'
-            const isPastEnd = contract?.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
-            const isFinalized = contract?.final_weight != null
-            
-            // Filter out cancelled or finalized expired contracts
-            if (isCancelled || (isPastEnd && isFinalized)) {
-                return false
-            }
+                const isCancelled = contract.status === 'Hợp đồng huỷ'
+                const isPastEnd = contract.status === 'Hết hạn HĐ' || (contractEndDate && contractEndDate < today)
+                const isFinalized = contract.final_weight != null
+
+                return !isCancelled && (!isPastEnd || !isFinalized)
+            })
+
+            if (activeContracts.length === 0) return false
+
+            // Dùng hợp đồng hợp lệ mới nhất để làm context cho Filter (PT, Chi nhánh)
+            const contract = [...activeContracts].sort((a, b) => 
+                new Date(b.created_at || b.start_date).getTime() - new Date(a.created_at || a.start_date).getTime()
+            )[0]
 
             // Search Filter
             if (searchTerm) {
-                const search = searchTerm.toLowerCase().trim()
-                const nameMatch = client.member_name?.toLowerCase().includes(search)
-                const phoneMatch = client.phone?.includes(search)
+                const normalize = (str: string) => {
+                    if (!str) return ''
+                    return str
+                        .toLowerCase()
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .replace(/[đĐ]/g, 'd')
+                        .trim()
+                }
+
+                const q = normalize(searchTerm)
+                const nameMatch = normalize(client.member_name).includes(q)
+                const phoneMatch = client.phone?.includes(q)
                 if (!nameMatch && !phoneMatch) return false
             }
 
