@@ -11,6 +11,7 @@ export async function fetchWeightRecords() {
             .from('weight_tracking')
             .select('*')
             .order('measurement_date', { ascending: false })
+            .limit(2000) // [PERF] Hard cap — tránh full scan toàn bảng
 
         if (error) {
             console.error('Fetch Weight Records Error:', error)

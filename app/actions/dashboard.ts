@@ -25,8 +25,10 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
         let debtsQuery = supabase.from('debts').select('id, remaining_amount, paid_amount, status, created_at, branch_id, branches(name), clients(member_name)')
         let contractsQuery = supabase.from('contracts').select('id, status, total_amount, package_name, end_date, created_at, branch_id, branches(name), clients(member_name)')
         let branchesQuery = supabase.from('branches').select('id, name, province')
-        let weightQuery = supabase.from('weight_tracking').select('client_id, weight, measurement_date').order('measurement_date', { ascending: true })
-        let trainingLogsQuery = supabase.from('training_logs').select('date, status, client_id')
+        // [PERF] Default: lấy tối đa 12 tháng gần nhất + hard limit để tránh full scan
+        const defaultQueryStart = filters?.startDate || new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().split('T')[0]
+        let weightQuery = supabase.from('weight_tracking').select('client_id, weight, measurement_date').gte('measurement_date', defaultQueryStart).order('measurement_date', { ascending: true }).limit(5000)
+        let trainingLogsQuery = supabase.from('training_logs').select('date, status, client_id').gte('date', defaultQueryStart).limit(10000)
 
         // Apply RBAC filters
         if (!accessInfo.access.canViewAllBranches && accessInfo.access.allowedBranchIds) {
@@ -220,9 +222,11 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
                 if (maxLoss > ptMetrics[ptName].maxWeightLoss) ptMetrics[ptName].maxWeightLoss = maxLoss
             }
         })
+        // [PERF] Dùng Map để tra cứu O(1) thay vì .find() O(N) trong forEach
+        const clientById = new Map(safeClients.map(c => [c.id, c]))
         safeRevenue.forEach((r: any) => {
-            const client = safeClients.find(c => c.id === r.customer_id)
-            const ptName = client?.pt_name || 'Chưa gán PT'
+            const client = clientById.get(r.customer_id)
+            const ptName = (client as any)?.pt_name || 'Chưa gán PT'
             if (ptMetrics[ptName]) {
                 ptMetrics[ptName].revenue += Number(r.amount) || 0
                 ptMetrics[ptName].actualRevenue += Number(r.actual_amount || r.amount) || 0
@@ -395,9 +399,10 @@ export async function fetchDashboardMetrics(filters?: { startDate?: string; endD
             .sort((a, b) => a.name.localeCompare(b.name))
 
         // Link logs to PTs for consistency metrics
+        // [PERF] Tái dùng clientById Map đã tạo phía trên — O(1) lookup
         filteredLogs.forEach(l => {
-            const client = safeClients.find(c => c.id === l.client_id)
-            const ptName = client?.pt_name || 'Chưa gán PT'
+            const client = clientById.get(l.client_id)
+            const ptName = (client as any)?.pt_name || 'Chưa gán PT'
             if (ptMetrics[ptName]) {
                 ptMetrics[ptName].totalSessions++
                 if (l.status === 'Y') {

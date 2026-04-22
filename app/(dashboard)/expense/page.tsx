@@ -58,6 +58,7 @@ export default function ExpensePage() {
     const [branchFilter, setBranchFilter] = React.useState('all')
     const [categoryFilter, setCategoryFilter] = React.useState('all')
     const [paymentMethodFilter, setPaymentMethodFilter] = React.useState('all')
+    const [settlementFilter, setSettlementFilter] = React.useState('all')
     const [selectedExpenses, setSelectedExpenses] = React.useState<string[]>([])
     const [viewingExpense, setViewingExpense] = React.useState<any>(null)
     const [detailSheetOpen, setDetailSheetOpen] = React.useState(false)
@@ -160,10 +161,11 @@ export default function ExpensePage() {
             const matchesBranch = branchFilter === 'all' || item.branch_id === branchFilter
             const matchesCategory = categoryFilter === 'all' || item.category_id === categoryFilter
             const matchesPaymentMethod = paymentMethodFilter === 'all' || item.payment_method === paymentMethodFilter
+            const matchesSettlement = settlementFilter === 'all' || (item.settlement_status || 'Chưa kết toán') === settlementFilter
             // Date filter đã xử lý ở server-side, không cần filter lại ở đây
-            return matchesSearch && matchesBranch && matchesCategory && matchesPaymentMethod
+            return matchesSearch && matchesBranch && matchesCategory && matchesPaymentMethod && matchesSettlement
         })
-    }, [expenseData, searchQuery, branchFilter, categoryFilter, paymentMethodFilter])
+    }, [expenseData, searchQuery, branchFilter, categoryFilter, paymentMethodFilter, settlementFilter])
 
     const stats = React.useMemo(() => {
         return filteredExpense.reduce((acc: any, item: any) => {
@@ -229,6 +231,7 @@ export default function ExpensePage() {
         setBranchFilter('all')
         setCategoryFilter('all')
         setPaymentMethodFilter('all')
+        setSettlementFilter('all')
         setQuickDateFilter('today')
         setStartDate(new Date().toISOString().split('T')[0])
         setEndDate(new Date().toISOString().split('T')[0])
@@ -421,6 +424,17 @@ export default function ExpensePage() {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
+
+                                            <Select value={settlementFilter} onValueChange={setSettlementFilter}>
+                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs sm:text-sm lg:w-40 px-3">
+                                                    <SelectValue placeholder="Kết toán" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                    <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                                                    <SelectItem value="Chưa kết toán">Chưa kết toán</SelectItem>
+                                                    <SelectItem value="Đã kết toán">Đã kết toán</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -467,6 +481,7 @@ export default function ExpensePage() {
                                 <TableHead>Danh mục</TableHead>
                                 <TableHead>Số tiền</TableHead>
                                 <TableHead>Hình thức</TableHead>
+                                <TableHead>Kết toán</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -526,11 +541,31 @@ export default function ExpensePage() {
                                             <span className="text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest">{item.payment_method}</span>
                                         </div>
                                     </TableCell>
+                                    <TableCell className="py-3">
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className={cn(
+                                                'w-fit inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide',
+                                                item.settlement_status === 'Đã kết toán'
+                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                    : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                            )}>
+                                                {item.settlement_status || 'Chưa kết toán'}
+                                            </span>
+                                            {item.settlement_status === 'Đã kết toán' && item.settled_at && (
+                                                <span className="text-[10px] text-gray-400">
+                                                    {new Date(item.settled_at).toLocaleDateString('vi-VN')}
+                                                </span>
+                                            )}
+                                            {item.spender_name && (
+                                                <span className="text-[10px] text-gray-400">{item.spender_name}</span>
+                                            )}
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                             {filteredExpense.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-64 text-center">
+                                    <TableCell colSpan={7} className="h-64 text-center">
                                         <div className="flex flex-col items-center justify-center gap-3">
                                             <div className="w-16 h-16 bg-gray-50/50 dark:bg-gray-800/30 rounded-3xl flex items-center justify-center">
                                                 <Banknote className="w-8 h-8 text-gray-200" />
