@@ -17,7 +17,14 @@ import {
     Settings,
     DollarSign,
     BanknoteArrowDown,
-    TrendingUpDown
+    TrendingUpDown,
+    HeartHandshake,
+    UserStar,
+    Cake,
+    Calendar,
+    Send,
+    HandCoins,
+    BanknoteArrowUp
 } from 'lucide-react'
 import {
     Sheet,
@@ -38,27 +45,32 @@ const mobileMainItems = [
 ]
 
 const secondaryNavigation = [
-    { name: 'Thu', href: '/revenue', icon: DollarSign },
-    { name: 'Chi', href: '/expense', icon: BanknoteArrowDown },
-    { name: 'Dòng tiền', href: '/cash-flow', icon: TrendingUpDown },
-    { name: 'Chi nhánh', href: '/branches', icon: Building2 },
-    { name: 'Nhân sự', href: '/users', icon: Users },
-    { name: 'Gói tập', href: '/packages', icon: Package },
-    { name: 'Tham số', href: '/config-params', icon: Settings },
+    { name: 'Tần suất tập luyện', href: '/training-logs', icon: HeartHandshake, section: 'main' },
+    { name: 'Zalo', href: '/zalo-users', icon: UserStar, section: 'main' },
+    { name: 'Sinh nhật khách', href: '/calendar/client-birthdays', icon: Cake, section: 'calendar' },
+    { name: 'Sinh nhật NV', href: '/calendar/staff-birthdays', icon: Calendar, section: 'calendar', adminOnly: true },
+    { name: 'Thu', href: '/revenue', icon: BanknoteArrowUp, section: 'financial' },
+    { name: 'Chi', href: '/expense', icon: BanknoteArrowDown, section: 'financial' },
+    { name: 'Xác nhận thanh toán', href: '/xntt-history', icon: Send, section: 'financial' },
+    { name: 'Công nợ', href: '/debts', icon: HandCoins, section: 'financial' },
+    { name: 'Dòng tiền', href: '/cash-flow', icon: TrendingUpDown, section: 'financial' },
+    { name: 'Chi nhánh', href: '/branches', icon: Building2, section: 'system' },
+    { name: 'Nhân sự', href: '/users', icon: Users, section: 'system', adminOnly: true },
+    { name: 'Gói tập', href: '/packages', icon: Package, section: 'system' },
+    { name: 'Tham số', href: '/config-params', icon: Settings, section: 'system' },
+    { name: 'Báo cáo', href: '/reports', icon: LayoutDashboard, section: 'system' },
 ]
 
 export function MobileNav() {
     const pathname = usePathname()
     const supabase = createClient()
-    const { permissions } = usePermissions()
+    const { permissions, isAdmin, isCEO, isManager } = usePermissions()
     const isStaff = permissions.isStaffOnly
 
-    // Permissions logic: Hide these items for regular "Staff" (Nhân viên)
+    // Permissions logic: Sync with sidebar visibility
     const filteredSecondaryNav = secondaryNavigation.filter(item => {
-        if (isStaff) {
-            // Staff cannot see management items
-            return false
-        }
+        if (item.adminOnly && !isAdmin && !isCEO && !isManager) return false
+        if (isStaff && (item.section === 'financial' || item.section === 'system')) return false
         return true
     })
 

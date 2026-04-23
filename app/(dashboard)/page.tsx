@@ -19,7 +19,9 @@ import {
     ChevronRight,
     ArrowRight,
     Cake,
-    Calendar
+    Calendar,
+    HeartHandshake,
+    Send
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -37,6 +39,7 @@ const featureGroups = [
             { name: 'Khách hàng', href: '/clients', icon: Users, desc: 'Danh sách và thông tin chi tiết hội viên' },
             { name: 'Hợp đồng', href: '/contracts', icon: FileText, desc: 'Quản lý các bản đăng ký và gói tập' },
             { name: 'Lộ trình', href: '/weight-tracking', icon: Activity, desc: 'Theo dõi cân nặng và chỉ số cơ thể' },
+            { name: 'Tần suất tập luyện', href: '/training-logs', icon: HeartHandshake, desc: 'Theo dõi sự chuyên cần của hội viên' },
             { name: 'Zalo', href: '/zalo-users', icon: UserStar, desc: 'Kết nối và chăm sóc khách hàng qua Zalo' },
         ]
     },
@@ -61,6 +64,7 @@ const featureGroups = [
         borderColor: 'border-emerald-100 dark:border-emerald-800',
         features: [
             { name: 'Thu', href: '/revenue', icon: BanknoteArrowUp, desc: 'Ghi nhận các khoản thu hệ thống' },
+            { name: 'Xác nhận thanh toán', href: '/xntt-history', icon: Send, desc: 'Lịch sử xác nhận thanh toán' },
             { name: 'Chi', href: '/expense', icon: BanknoteArrowDown, desc: 'Quản lý chi tiêu và vận hành' },
             { name: 'Công nợ', href: '/debts', icon: HandCoins, desc: 'Theo dõi các khoản phải thu/trả' },
             { name: 'Dòng tiền', href: '/cash-flow', icon: TrendingUpDown, desc: 'Phân tích biến động tiền mặt' },
@@ -78,6 +82,7 @@ const featureGroups = [
             { name: 'Nhân sự', href: '/users', icon: Users, desc: 'Phân quyền và quản lý tài khoản' },
             { name: 'Gói tập', href: '/packages', icon: Package, desc: 'Thiết lập các gói dịch vụ tập luyện' },
             { name: 'Tham số', href: '/config-params', icon: Settings, desc: 'Cấu hình các hằng số hệ thống' },
+            { name: 'Báo cáo', href: '/reports', icon: LayoutDashboard, desc: 'Hệ thống báo cáo và phân tích' },
         ]
     }
 ]

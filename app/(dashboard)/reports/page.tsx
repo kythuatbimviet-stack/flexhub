@@ -352,17 +352,17 @@ export default function ReportsPage() {
                             </SelectContent>
                         </Select>
 
-                        <Button variant="outline" className="rounded-xl px-5 h-9 text-[11px] font-bold border-gray-200 dark:border-gray-800 transition-all hover:bg-gray-50 dark:hover:bg-gray-800">
+{/* <Button variant="outline" className="rounded-xl px-5 h-9 text-[11px] font-bold border-gray-200 dark:border-gray-800 transition-all hover:bg-gray-50 dark:hover:bg-gray-800">
                             <Calendar className="w-3.5 h-3.5 mr-2" />
                             Xuất báo cáo
-                        </Button>
+                        </Button> */}
                     </div>
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
                     {/* 1. Tabs List at the VERY TOP of content */}
-                    <ScrollArea className="w-full pb-2">
-                        <TabsList className="inline-flex h-12 items-center justify-start rounded-2xl bg-gray-50/80 dark:bg-gray-900/50 p-1 text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-gray-800 shrink-0">
+                    <div className="w-full overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+                        <TabsList className="inline-flex h-12 items-center justify-start rounded-2xl bg-gray-50/80 dark:bg-gray-900/50 p-1 text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-gray-800 shrink-0 min-w-max">
                             <TabsTrigger value="customers" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Khách hàng</TabsTrigger>
                             <TabsTrigger value="routes" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all whitespace-nowrap text-gray-900 dark:text-gray-100">Tiến trình thay đổi</TabsTrigger>
                             <TabsTrigger value="contracts" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Hợp đồng</TabsTrigger>
@@ -372,7 +372,7 @@ export default function ReportsPage() {
                             <TabsTrigger value="cashflow" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Dòng tiền</TabsTrigger>
                             <TabsTrigger value="branch-pt" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100 whitespace-nowrap">Chi nhánh & Nhân sự</TabsTrigger>
                         </TabsList>
-                    </ScrollArea>
+                    </div>
 
                     {/* 2. Dynamic Summary Stats - Changes with Tab */}
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
