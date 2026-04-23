@@ -231,27 +231,29 @@ export default function ClientBirthdaysPage() {
                             {(showMobileFilters || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
                                 <motion.div initial={false} animate={{ height: "auto", opacity: 1 }} className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2">
                                     <div className="flex flex-col lg:flex-row gap-2 items-stretch lg:items-center pt-2 lg:pt-0">
-                                        <Select value={branchFilter} onValueChange={setBranchFilter}>
-                                            <SelectTrigger className="h-10 rounded-xl border-gray-100 bg-white lg:w-44 text-sm font-medium">
-                                                <SelectValue placeholder="Chi nhánh" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100">
-                                                <SelectItem value="all">Tất cả chi nhánh</SelectItem>
-                                                {branches.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-
-                                        {(isAdmin || isCEO || isManager || isBranchManager) && (
-                                            <Select value={ptFilter} onValueChange={setPtFilter}>
-                                                <SelectTrigger className="h-10 rounded-xl border-gray-100 bg-white lg:w-44 text-sm font-medium">
-                                                    <SelectValue placeholder="PT phụ trách" />
+                                        <div className="flex flex-row gap-2">
+                                            <Select value={branchFilter} onValueChange={setBranchFilter}>
+                                                <SelectTrigger className="h-10 rounded-xl border-gray-100 bg-white w-full lg:w-44 text-sm font-medium">
+                                                    <SelectValue placeholder="Chi nhánh" />
                                                 </SelectTrigger>
                                                 <SelectContent className="rounded-xl border-gray-100">
-                                                    <SelectItem value="all">Tất cả PT</SelectItem>
-                                                    {pts.map((pt: any) => <SelectItem key={pt} value={pt}>{pt}</SelectItem>)}
+                                                    <SelectItem value="all">Tất cả chi nhánh</SelectItem>
+                                                    {branches.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
-                                        )}
+
+                                            {(isAdmin || isCEO || isManager || isBranchManager) && (
+                                                <Select value={ptFilter} onValueChange={setPtFilter}>
+                                                    <SelectTrigger className="h-10 rounded-xl border-gray-100 bg-white w-full lg:w-44 text-sm font-medium">
+                                                        <SelectValue placeholder="PT phụ trách" />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-xl border-gray-100">
+                                                        <SelectItem value="all">Tất cả PT</SelectItem>
+                                                        {pts.map((pt: any) => <SelectItem key={pt} value={pt}>{pt}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        </div>
 
                                         <div className="flex items-center gap-2">
                                             <Select value={quickDateFilter} onValueChange={handleQuickDateChange}>
@@ -328,7 +330,7 @@ function BirthdayCard({ person, index }: { person: any, index: number }) {
             <Card className={cn("border-none shadow-sm dark:shadow-none rounded-[32px] overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-white dark:bg-slate-900 border-2", isToday ? "border-red-200 dark:border-red-900/30 ring-4 ring-red-50 dark:ring-red-900/10" : "border-transparent")}>
                 <CardContent className="p-6">
                     <div className="flex items-center gap-4 mb-5 relative">
-                        <Avatar className="w-16 h-16 rounded-[20px] border-4 border-white dark:border-slate-800 shadow-xl shadow-red-100">
+                        <Avatar className="w-16 h-16 rounded-[20px] border-4 border-white dark:border-slate-800 shadow-xl shadow-red-100 dark:shadow-none">
                             <AvatarImage src={person.avatar_url} className="object-cover" />
                             <AvatarFallback className="bg-gradient-to-br from-red-500 to-rose-600 text-white font-bold text-2xl">{person.member_name.charAt(0)}</AvatarFallback>
                         </Avatar>

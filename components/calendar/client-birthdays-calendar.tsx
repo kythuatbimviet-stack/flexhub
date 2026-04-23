@@ -20,11 +20,16 @@ import {
 import { vi } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Cake, Phone, MessageSquare } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Cake, Phone, MessageSquare, Building2, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+    Sheet,
+} from '@/components/ui/sheet'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { BirthdayDetailsSheet } from './birthday-details-sheet'
 
 interface ClientBirthdaysCalendarProps {
     data: any[]
@@ -35,6 +40,8 @@ type ViewMode = 'week' | 'month' | 'quarter'
 export function ClientBirthdaysCalendar({ data }: ClientBirthdaysCalendarProps) {
     const [currentDate, setCurrentDate] = React.useState(new Date())
     const [mode, setMode] = React.useState<ViewMode>('month')
+    const [selectedPerson, setSelectedPerson] = React.useState<any>(null)
+    const [isSheetOpen, setIsSheetOpen] = React.useState(false)
 
     const daysOfWeek = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
 
@@ -103,87 +110,22 @@ export function ClientBirthdaysCalendar({ data }: ClientBirthdaysCalendarProps) 
                                 </div>
                                 <div className="space-y-1">
                                     {dayBirthdays.slice(0, 3).map((person) => (
-                                        <TooltipProvider key={person.id}>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <div className="flex items-center gap-1.5 bg-red-50 dark:bg-red-950/20 px-2 py-1 rounded-lg border border-red-100 dark:border-red-900/30 cursor-pointer hover:bg-red-100 transition-all overflow-hidden group">
-                                                        <Avatar className="w-4 h-4 rounded-md">
-                                                            <AvatarImage src={person.avatar_url} />
-                                                            <AvatarFallback className="text-[8px] bg-red-600 text-white">{person.member_name.charAt(0)}</AvatarFallback>
-                                                        </Avatar>
-                                                        <span className="text-[10px] font-bold text-red-600 dark:text-red-400 truncate">
-                                                            {person.member_name.split(' ').pop()}
-                                                        </span>
-                                                    </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent 
-                                                    className="p-0 border-none shadow-2xl rounded-[24px] bg-white dark:bg-slate-900 overflow-hidden w-72 animate-in zoom-in-95 duration-200"
-                                                    side="top"
-                                                    sideOffset={8}
-                                                >
-                                                    <div className="relative">
-                                                        {/* Header Decor */}
-                                                        <div className="absolute top-0 left-0 right-0 h-2 bg-red-600" />
-                                                        
-                                                        <div className="p-5">
-                                                            <div className="flex items-center gap-4 mb-5">
-                                                                <Avatar className="w-14 h-14 rounded-2xl border-4 border-white dark:border-slate-800 shadow-lg shadow-red-100 dark:shadow-none">
-                                                                    <AvatarImage src={person.avatar_url} className="object-cover" />
-                                                                    <AvatarFallback className="bg-red-600 text-white font-bold text-xl">
-                                                                        {person.member_name.charAt(0)}
-                                                                    </AvatarFallback>
-                                                                </Avatar>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className="text-base font-bold text-black dark:text-white leading-tight mb-1 truncate">
-                                                                        {person.member_name}
-                                                                    </p>
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                                                                            {person.id}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl mb-5">
-                                                                <div className="flex items-center justify-between text-xs">
-                                                                    <span className="text-slate-500 font-medium">Số điện thoại:</span>
-                                                                    <span className="text-black dark:text-white font-semibold">{person.phone}</span>
-                                                                </div>
-                                                                <div className="flex items-center justify-between text-xs">
-                                                                    <span className="text-slate-500 font-medium">Ngày sinh:</span>
-                                                                    <span className="text-red-600 dark:text-red-400 font-bold">
-                                                                        {new Date(person.dob).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex items-center justify-between text-xs">
-                                                                    <span className="text-slate-500 font-medium">Chi nhánh:</span>
-                                                                    <span className="text-black dark:text-white font-semibold truncate max-w-[120px]">
-                                                                        {person.branches?.name || 'Hệ thống'}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex gap-2.5">
-                                                                <Button 
-                                                                    className="flex-1 h-11 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-100 dark:shadow-none" 
-                                                                    onClick={() => window.open(`tel:${person.phone}`)}
-                                                                >
-                                                                    <Phone className="w-4 h-4 mr-2" /> Gọi điện
-                                                                </Button>
-                                                                <Button 
-                                                                    variant="outline"
-                                                                    className="flex-1 h-11 rounded-xl text-xs font-bold border-emerald-100 dark:border-emerald-900/30 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20" 
-                                                                    onClick={() => window.open(`https://zalo.me/${person.phone}`, '_blank')}
-                                                                >
-                                                                    <MessageSquare className="w-4 h-4 mr-2" /> Zalo
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
+                                        <div 
+                                            key={person.id}
+                                            onClick={() => {
+                                                setSelectedPerson(person)
+                                                setIsSheetOpen(true)
+                                            }}
+                                            className="flex items-center gap-1.5 bg-white/60 dark:bg-red-950/20 px-1.5 py-1 rounded-lg border border-red-100/50 dark:border-red-900/30 cursor-pointer hover:bg-white hover:shadow-sm transition-all overflow-hidden group active:scale-95"
+                                        >
+                                            <Avatar className="w-4 h-4 rounded-md shrink-0">
+                                                <AvatarImage src={person.avatar_url} />
+                                                <AvatarFallback className="text-[8px] bg-red-600 text-white font-bold">{person.member_name.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <span className="text-[10px] font-bold text-red-600 dark:text-red-400 truncate">
+                                                {person.member_name.split(' ').pop()}
+                                            </span>
+                                        </div>
                                     ))}
                                     {dayBirthdays.length > 3 && (
                                         <p className="text-[9px] text-slate-400 pl-1 font-medium italic">+{dayBirthdays.length - 3} người khác</p>
@@ -223,14 +165,21 @@ export function ClientBirthdaysCalendar({ data }: ClientBirthdaysCalendarProps) 
                             </div>
                             <div className="space-y-3">
                                 {dayBirthdays.map((person) => (
-                                    <div key={person.id} className="flex items-center gap-3 p-2 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                                        <Avatar className="w-8 h-8 rounded-lg shadow-sm">
+                                    <div 
+                                        key={person.id}
+                                        onClick={() => {
+                                            setSelectedPerson(person)
+                                            setIsSheetOpen(true)
+                                        }}
+                                        className="flex items-center gap-3 p-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-95"
+                                    >
+                                        <Avatar className="w-10 h-10 rounded-xl shadow-sm">
                                             <AvatarImage src={person.avatar_url} />
-                                            <AvatarFallback>{person.member_name.charAt(0)}</AvatarFallback>
+                                            <AvatarFallback className="bg-red-600 text-white font-bold">{person.member_name.charAt(0)}</AvatarFallback>
                                         </Avatar>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[11px] font-semibold text-black dark:text-white truncate leading-none mb-1">{person.member_name}</p>
-                                            <p className="text-[9px] text-slate-950 dark:text-slate-400 font-medium">{person.pt_name || 'Hệ thống'}</p>
+                                            <p className="text-xs font-bold text-black dark:text-white truncate leading-none mb-1.5">{person.member_name}</p>
+                                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{person.pt_name || person.position || 'Hệ thống'}</p>
                                         </div>
                                     </div>
                                 ))}
@@ -292,7 +241,7 @@ export function ClientBirthdaysCalendar({ data }: ClientBirthdaysCalendarProps) 
     }
 
     return (
-         <Card className="border-none shadow-sm rounded-[32px] overflow-hidden bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 flex flex-col min-h-[700px]">
+         <Card className="border-none shadow-sm rounded-[32px] overflow-hidden bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 flex flex-col min-h-[900px]">
             {/* Calendar Header */}
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
@@ -352,6 +301,13 @@ export function ClientBirthdaysCalendar({ data }: ClientBirthdaysCalendarProps) 
                 {mode === 'week' && renderWeekGrid()}
                 {mode === 'quarter' && renderQuarterGrid()}
             </div>
+
+            {/* Birthday Details Sheet */}
+            <BirthdayDetailsSheet 
+                person={selectedPerson} 
+                open={isSheetOpen} 
+                onOpenChange={setIsSheetOpen} 
+            />
          </Card>
     )
 }

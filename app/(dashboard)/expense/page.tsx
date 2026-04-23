@@ -348,36 +348,40 @@ export default function ExpensePage() {
                                     className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2"
                                 >
                                     <div className="flex flex-col lg:flex-row gap-2 items-stretch lg:items-center pt-2 lg:pt-0">
-                                        <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center">
-                                            <Select value={branchFilter} onValueChange={setBranchFilter}>
-                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs sm:text-sm lg:w-40 px-3">
-                                                    <SelectValue placeholder="Chi nhánh" />
-                                                </SelectTrigger>
-                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                    <SelectItem value="all">Tất cả chi nhánh</SelectItem>
-                                                    {branches?.map((branch: any) => (
-                                                        <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                        <div className="flex flex-row gap-2">
+                                            <div className="flex-1 lg:w-40">
+                                                <Select value={branchFilter} onValueChange={setBranchFilter}>
+                                                    <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-[11px] sm:text-sm w-full px-2 sm:px-3">
+                                                        <SelectValue placeholder="Chi nhánh" />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                        <SelectItem value="all">Tất cả chi nhánh</SelectItem>
+                                                        {branches?.map((branch: any) => (
+                                                            <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
 
-                                            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs sm:text-sm lg:w-40 px-3">
-                                                    <SelectValue placeholder="Danh mục" />
-                                                </SelectTrigger>
-                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                    <SelectItem value="all">Tất cả danh mục</SelectItem>
-                                                    {categories?.map((cat: any) => (
-                                                        <SelectItem key={cat.id} value={cat.nam}>{cat.nam}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <div className="flex-1 lg:w-40">
+                                                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                                                    <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-[11px] sm:text-sm w-full px-2 sm:px-3">
+                                                        <SelectValue placeholder="Danh mục" />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                        <SelectItem value="all">Tất cả danh mục</SelectItem>
+                                                        {categories?.map((cat: any) => (
+                                                            <SelectItem key={cat.id} value={cat.nam}>{cat.nam}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 lg:flex lg:flex-row gap-2 items-center">
+                                        <div className="flex flex-col lg:flex-row gap-2 items-stretch lg:items-center">
                                             <div className="flex items-center gap-2">
                                                 <Select value={quickDateFilter} onValueChange={handleQuickDateChange}>
-                                                    <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs sm:text-sm lg:w-40 px-3">
+                                                    <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-[11px] sm:text-sm w-[110px] sm:w-[130px] lg:w-40 px-2 sm:px-3">
                                                         <SelectValue placeholder="Thời gian" />
                                                     </SelectTrigger>
                                                     <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
@@ -413,28 +417,34 @@ export default function ExpensePage() {
                                                 </div>
                                             </div>
 
-                                            <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
-                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs sm:text-sm lg:w-40 px-3">
-                                                    <SelectValue placeholder="Hình thức" />
-                                                </SelectTrigger>
-                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                    <SelectItem value="all">Tất cả hình thức</SelectItem>
-                                                    {['Tiền mặt', 'Chuyển khoản', 'Thẻ'].map(m => (
-                                                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <div className="flex flex-row gap-2">
+                                                <div className="flex-1 lg:w-40">
+                                                    <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+                                                        <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-[11px] sm:text-sm w-full px-2 sm:px-3">
+                                                            <SelectValue placeholder="Hình thức" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                            <SelectItem value="all">Tất cả hình thức</SelectItem>
+                                                            {['Tiền mặt', 'Chuyển khoản', 'Thẻ'].map(m => (
+                                                                <SelectItem key={m} value={m}>{m}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
 
-                                            <Select value={settlementFilter} onValueChange={setSettlementFilter}>
-                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-xs sm:text-sm lg:w-40 px-3">
-                                                    <SelectValue placeholder="Kết toán" />
-                                                </SelectTrigger>
-                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                    <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                                                    <SelectItem value="Chưa kết toán">Chưa kết toán</SelectItem>
-                                                    <SelectItem value="Đã kết toán">Đã kết toán</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                                <div className="flex-1 lg:w-40">
+                                                    <Select value={settlementFilter} onValueChange={setSettlementFilter}>
+                                                        <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 focus:ring-rose-500 text-[11px] sm:text-sm w-full px-2 sm:px-3">
+                                                            <SelectValue placeholder="Kết toán" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                            <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                                                            <SelectItem value="Chưa kết toán">Chưa kết toán</SelectItem>
+                                                            <SelectItem value="Đã kết toán">Đã kết toán</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </motion.div>

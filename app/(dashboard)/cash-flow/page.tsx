@@ -103,6 +103,7 @@ export default function CashFlowPage() {
     const [customerSearchTerm, setCustomerSearchTerm] = React.useState('')
     const [customerOpen, setCustomerOpen] = React.useState(false)
     const [isRefreshing, setIsRefreshing] = React.useState(false)
+    const [showMobileFilters, setShowMobileFilters] = React.useState(false)
 
     const { data: cashFlowResult, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['cash-flow', startDate, endDate, branchId, paymentMethod, customerId],
@@ -289,7 +290,7 @@ export default function CashFlowPage() {
                 <div className="grid grid-cols-1 gap-4">
                     {/* Time Range Selector */}
                     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800 p-4 shadow-sm flex flex-col lg:flex-row lg:items-center gap-6">
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2 flex-1">
                             {[
                                 { label: 'Tất cả', id: 'all' },
                                 { label: 'Tuần này', id: 'thisWeek' },
@@ -302,13 +303,25 @@ export default function CashFlowPage() {
                                     variant="ghost"
                                     onClick={() => handleQuickFilter(p.id as any)}
                                     className={cn(
-                                        "h-9 rounded-xl px-4 text-[13px] font-semibold bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all active:scale-95",
-                                        ((p.id === 'all' && !startDate) || (p.id !== 'all' && startDate === format(startOfMonth(new Date()), 'yyyy-MM-dd') && p.id === 'thisMonth')) && "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                        "h-9 rounded-xl px-3 sm:px-4 text-[12px] sm:text-[13px] font-semibold bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all active:scale-95",
+                                        ((p.id === 'all' && !startDate && !endDate) || (p.id !== 'all' && startDate && p.id === 'thisMonth')) && "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white"
                                     )}
                                 >
                                     {p.label}
                                 </Button>
                             ))}
+
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                                className={cn(
+                                    "lg:hidden h-9 w-9 rounded-xl border-slate-200 dark:border-slate-800 transition-all ml-auto",
+                                    showMobileFilters ? "bg-indigo-50 text-indigo-600 border-indigo-200" : "bg-white dark:bg-slate-900"
+                                )}
+                            >
+                                <Filter className="w-4 h-4" />
+                            </Button>
                         </div>
 
                         <div className="flex items-center gap-3 lg:ml-auto">
@@ -334,145 +347,158 @@ export default function CashFlowPage() {
                     </div>
 
                     {/* Secondary Filters */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                        {/* Branch Filter */}
-                        <div className="space-y-1.5">
-                            <label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 ml-1">Chi nhánh</label>
-                            <Select value={branchId} onValueChange={setBranchId}>
-                                <SelectTrigger className="h-10 rounded-xl border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 text-[13px] font-semibold">
-                                    <SelectValue placeholder="Chọn chi nhánh" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl">
-                                    <SelectItem value="all">Tất cả chi nhánh</SelectItem>
-                                    {branches?.map((b: any) => (
-                                        <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Transaction Type Filter */}
-                        <div className="space-y-1.5">
-                            <label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 ml-1">Khoản Thu/Chi</label>
-                            <Select value={transactionType} onValueChange={setTransactionType}>
-                                <SelectTrigger className="h-10 rounded-xl border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 text-[13px] font-semibold">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl">
-                                    <SelectItem value="all">Tất cả khoản</SelectItem>
-                                    <SelectItem value="revenue">Khoản thu (In)</SelectItem>
-                                    <SelectItem value="expense">Khoản chi (Out)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                         {/* Payment Method Filter */}
-                         <div className="space-y-1.5">
-                            <label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 ml-1">Hình thức</label>
-                            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                                <SelectTrigger className="h-10 rounded-xl border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 text-[13px] font-semibold">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl">
-                                    <SelectItem value="all">Tất cả hình thức</SelectItem>
-                                    <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
-                                    <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
-                                    <SelectItem value="Thẻ">Thẻ</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Customer Filter */}
-                        <div className="space-y-1.5">
-                            <label className="text-[11px] font-semibold text-slate-900 dark:text-slate-300 ml-1">Khách hàng</label>
-                            <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        aria-expanded={customerOpen}
-                                        className="h-10 w-full rounded-xl border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 text-[13px] font-semibold justify-between px-3"
-                                    >
-                                        <span className="truncate">
-                                            {customerId === 'all' ? 'Tất cả khách hàng' : 
-                                             clients?.find((c: any) => c.id === customerId)?.member_name || 'Chọn khách hàng'}
-                                        </span>
-                                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[300px] p-0 rounded-2xl border-slate-100 dark:border-slate-800 shadow-2xl" align="start">
-                                    <div className="p-3 border-b border-slate-50 dark:border-slate-800">
-                                        <div className="relative">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                                            <Input
-                                                placeholder="Tìm theo tên, SĐT..."
-                                                value={customerSearchTerm}
-                                                onChange={(e) => setCustomerSearchTerm(e.target.value)}
-                                                className="h-9 pl-9 rounded-xl border-none bg-slate-50 dark:bg-slate-900 text-[13px] font-medium focus-visible:ring-0"
-                                            />
-                                        </div>
-                                    </div>
-                                    <ScrollArea className="h-72">
-                                        <div className="p-1">
-                                            <button
-                                                onClick={() => {
-                                                    setCustomerId('all')
-                                                    setCustomerOpen(false)
-                                                }}
-                                                className={cn(
-                                                    "w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-[12px] font-semibold transition-colors",
-                                                    customerId === 'all' ? "bg-slate-900 text-white dark:bg-white dark:text-black" : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
-                                                )}
-                                            >
-                                                <div className="w-4 h-4 flex items-center justify-center">
-                                                    {customerId === 'all' && <Check className="w-3 h-3" />}
-                                                </div>
-                                                Tất cả khách hàng
-                                            </button>
-                                            {filteredClients?.slice(0, 50).map((c: any) => (
-                                                <button
-                                                    key={c.id}
-                                                    onClick={() => {
-                                                        setCustomerId(c.id)
-                                                        setCustomerOpen(false)
-                                                    }}
-                                                    className={cn(
-                                                        "w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-[12px] font-semibold transition-colors mt-0.5",
-                                                        customerId === c.id ? "bg-slate-900 text-white dark:bg-white dark:text-black" : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
-                                                    )}
-                                                >
-                                                    <div className="w-4 h-4 flex items-center justify-center">
-                                                        {customerId === c.id && <Check className="w-3 h-3" />}
-                                                    </div>
-                                                    <div className="flex flex-col items-start text-left truncate">
-                                                        <span className="truncate">{c.member_name}</span>
-                                                        <span className="text-[10px] opacity-70">{c.phone || 'Không có SĐT'}</span>
-                                                    </div>
-                                                </button>
-                                            ))}
-                                            {filteredClients?.length === 0 && (
-                                                <div className="p-8 text-center bg-slate-50/50 dark:bg-slate-900/50 rounded-xl m-2">
-                                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Không tìm thấy</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </ScrollArea>
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-
-                        {/* Refresh Button */}
-                        <div className="flex items-end">
-                            <Button
-                                onClick={() => refetch()}
-                                className="h-10 w-full rounded-xl bg-slate-900 dark:bg-white text-white dark:text-black font-semibold text-[13px] hover:opacity-90 active:scale-95 transition-all"
-                                disabled={isLoading}
+                    <AnimatePresence>
+                        {(showMobileFilters || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
+                            <motion.div
+                                initial={typeof window !== 'undefined' && window.innerWidth < 1024 ? { height: 0, opacity: 0 } : false}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="flex flex-col lg:flex-row gap-3 overflow-hidden lg:overflow-visible"
                             >
-                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Filter className="w-4 h-4 mr-2" />}
-                                Lọc dữ liệu
-                            </Button>
-                        </div>
-                    </div>
+                                <div className="flex flex-row gap-3">
+                                    {/* Branch Filter */}
+                                    <div className="space-y-1.5 flex-1 lg:flex-none lg:w-48">
+                                        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Chi nhánh</label>
+                                        <Select value={branchId} onValueChange={setBranchId}>
+                                            <SelectTrigger className="h-10 w-full rounded-xl border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 text-[11px] sm:text-[13px] font-semibold">
+                                                <SelectValue placeholder="Chọn" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl">
+                                                <SelectItem value="all">Tất cả chi nhánh</SelectItem>
+                                                {branches?.map((b: any) => (
+                                                    <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {/* Transaction Type Filter */}
+                                    <div className="space-y-1.5 flex-1 lg:flex-none lg:w-44">
+                                        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Khoản Thu/Chi</label>
+                                        <Select value={transactionType} onValueChange={setTransactionType}>
+                                            <SelectTrigger className="h-10 w-full rounded-xl border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 text-[11px] sm:text-[13px] font-semibold">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl">
+                                                <SelectItem value="all">Tất cả khoản</SelectItem>
+                                                <SelectItem value="revenue">Khoản thu (In)</SelectItem>
+                                                <SelectItem value="expense">Khoản chi (Out)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-row gap-3">
+                                     {/* Payment Method Filter */}
+                                     <div className="space-y-1.5 flex-1 lg:flex-none lg:w-44">
+                                        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Hình thức</label>
+                                        <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                                            <SelectTrigger className="h-10 w-full rounded-xl border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 text-[11px] sm:text-[13px] font-semibold">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl">
+                                                <SelectItem value="all">Tất cả hình thức</SelectItem>
+                                                <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
+                                                <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
+                                                <SelectItem value="Thẻ">Thẻ</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {/* Customer Filter */}
+                                    <div className="space-y-1.5 flex-1 lg:flex-none lg:w-56">
+                                        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Khách hàng</label>
+                                        <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    aria-expanded={customerOpen}
+                                                    className="h-10 w-full rounded-xl border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 text-[11px] sm:text-[13px] font-semibold justify-between px-3"
+                                                >
+                                                    <span className="truncate">
+                                                        {customerId === 'all' ? 'Tất cả' : 
+                                                         clients?.find((c: any) => c.id === customerId)?.member_name || 'Chọn'}
+                                                    </span>
+                                                    <ChevronDown className="ml-1 h-3.5 w-3.5 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[300px] p-0 rounded-2xl border-slate-100 dark:border-slate-800 shadow-2xl" align="start">
+                                                <div className="p-3 border-b border-slate-50 dark:border-slate-800">
+                                                    <div className="relative">
+                                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                                        <Input
+                                                            placeholder="Tìm theo tên, SĐT..."
+                                                            value={customerSearchTerm}
+                                                            onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                                                            className="h-9 pl-9 rounded-xl border-none bg-slate-50 dark:bg-slate-900 text-[13px] font-medium focus-visible:ring-0"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <ScrollArea className="h-72">
+                                                    <div className="p-1">
+                                                        <button
+                                                            onClick={() => {
+                                                                setCustomerId('all')
+                                                                setCustomerOpen(false)
+                                                            }}
+                                                            className={cn(
+                                                                "w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-[12px] font-semibold transition-colors",
+                                                                customerId === 'all' ? "bg-slate-900 text-white dark:bg-white dark:text-black" : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                                            )}
+                                                        >
+                                                            <div className="w-4 h-4 flex items-center justify-center">
+                                                                {customerId === 'all' && <Check className="w-3 h-3" />}
+                                                            </div>
+                                                            Tất cả khách hàng
+                                                        </button>
+                                                        {filteredClients?.slice(0, 50).map((c: any) => (
+                                                            <button
+                                                                key={c.id}
+                                                                onClick={() => {
+                                                                    setCustomerId(c.id)
+                                                                    setCustomerOpen(false)
+                                                                }}
+                                                                className={cn(
+                                                                    "w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-[12px] font-semibold transition-colors mt-0.5",
+                                                                    customerId === c.id ? "bg-slate-900 text-white dark:bg-white dark:text-black" : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                                                )}
+                                                            >
+                                                                <div className="w-4 h-4 flex items-center justify-center">
+                                                                    {customerId === c.id && <Check className="w-3 h-3" />}
+                                                                </div>
+                                                                <div className="flex flex-col items-start text-left truncate">
+                                                                    <span className="truncate">{c.member_name}</span>
+                                                                    <span className="text-[10px] opacity-70">{c.phone || 'Không có SĐT'}</span>
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                        {filteredClients?.length === 0 && (
+                                                            <div className="p-8 text-center bg-slate-50/50 dark:bg-slate-900/50 rounded-xl m-2">
+                                                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Không tìm thấy</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </ScrollArea>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                </div>
+
+                                {/* Refresh Button */}
+                                <div className="flex items-end">
+                                    <Button
+                                        onClick={() => refetch()}
+                                        className="h-10 w-full lg:w-40 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-black font-bold text-[13px] hover:opacity-90 active:scale-95 transition-all"
+                                        disabled={isLoading}
+                                    >
+                                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Filter className="w-4 h-4 mr-2" />}
+                                        Lọc dữ liệu
+                                    </Button>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
 

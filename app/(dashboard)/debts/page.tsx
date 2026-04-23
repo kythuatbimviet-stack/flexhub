@@ -522,83 +522,89 @@ export default function DebtPage() {
                                     animate={{ height: 'auto', opacity: 1 }}
                                     exit={{ height: 0, opacity: 0 }}
                                     className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2">
-                                    <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
-                                        <Select value={branchFilter} onValueChange={setBranchFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-40 px-3 shadow-none">
-                                                <SelectValue placeholder="Chi nhánh" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                <SelectItem value="all">Tất cả chi nhánh</SelectItem>
-                                                {branches.map((branch: any) => (
-                                                    <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                    <div className="flex flex-col lg:flex-row gap-2 items-stretch lg:items-center pt-2 lg:pt-0">
+                                        <div className="flex flex-row gap-2">
+                                            <Select value={branchFilter} onValueChange={setBranchFilter}>
+                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-[11px] sm:text-sm w-full lg:w-40 px-2 sm:px-3 shadow-none">
+                                                    <SelectValue placeholder="Chi nhánh" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                    <SelectItem value="all">Tất cả chi nhánh</SelectItem>
+                                                    {branches.map((branch: any) => (
+                                                        <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
 
-                                        <Select value={methodFilter} onValueChange={setMethodFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-40 px-3 shadow-none">
-                                                <SelectValue placeholder="Hình thức" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                <SelectItem value="all">Tất cả hình thức</SelectItem>
-                                                <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
-                                                <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                            <Select value={methodFilter} onValueChange={setMethodFilter}>
+                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-[11px] sm:text-sm w-full lg:w-40 px-2 sm:px-3 shadow-none">
+                                                    <SelectValue placeholder="Hình thức" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                    <SelectItem value="all">Tất cả hình thức</SelectItem>
+                                                    <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
+                                                    <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
 
-                                        <Select value={dateQuickFilter} onValueChange={setDateQuickFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-40 px-3 shadow-none">
-                                                <SelectValue placeholder="Thời gian" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                <SelectItem value="all">Tất cả thời gian</SelectItem>
-                                                <SelectItem value="thisWeek">Tuần này</SelectItem>
-                                                <SelectItem value="thisMonth">Tháng này</SelectItem>
-                                                <SelectItem value="lastWeek">Tuần trước</SelectItem>
-                                                <SelectItem value="lastMonth">Tháng trước</SelectItem>
-                                                <SelectItem value="nextWeek">Tuần tới</SelectItem>
-                                                <SelectItem value="nextMonth">Tháng tới</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="flex flex-row gap-2">
+                                            <Select value={dateQuickFilter} onValueChange={setDateQuickFilter}>
+                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-[11px] sm:text-sm w-full lg:w-40 px-2 sm:px-3 shadow-none">
+                                                    <SelectValue placeholder="Thời gian" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                    <SelectItem value="all">Tất cả thời gian</SelectItem>
+                                                    <SelectItem value="thisWeek">Tuần này</SelectItem>
+                                                    <SelectItem value="thisMonth">Tháng này</SelectItem>
+                                                    <SelectItem value="lastWeek">Tuần trước</SelectItem>
+                                                    <SelectItem value="lastMonth">Tháng trước</SelectItem>
+                                                    <SelectItem value="nextWeek">Tuần tới</SelectItem>
+                                                    <SelectItem value="nextMonth">Tháng tới</SelectItem>
+                                                </SelectContent>
+                                            </Select>
 
-                                        <div className="flex items-center gap-1 h-9 px-2 rounded-lg border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 col-span-2 lg:col-span-1 min-w-[200px]">
-                                            <div className="flex items-center gap-1 flex-1">
-                                                <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                                                <input 
-                                                    type="date" 
-                                                    value={startDateFilter} 
-                                                    onChange={(e) => {setStartDateFilter(e.target.value); setDateQuickFilter('all')}}
-                                                    className="bg-transparent border-none outline-none text-[10px] text-gray-600 dark:text-gray-300 w-full"
-                                                />
-                                            </div>
-                                            <span className="text-gray-300 dark:text-gray-700 text-[10px]">-</span>
-                                            <div className="flex items-center gap-1 flex-1">
-                                                <input 
-                                                    type="date" 
-                                                    value={endDateFilter} 
-                                                    onChange={(e) => {setEndDateFilter(e.target.value); setDateQuickFilter('all')}}
-                                                    className="bg-transparent border-none outline-none text-[10px] text-gray-600 dark:text-gray-300 w-full text-right"
-                                                />
+                                            <div className="flex items-center gap-1 h-9 px-2 rounded-lg border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 w-full lg:w-auto min-w-[200px]">
+                                                <div className="flex items-center gap-1 flex-1">
+                                                    <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                                    <input 
+                                                        type="date" 
+                                                        value={startDateFilter} 
+                                                        onChange={(e) => {setStartDateFilter(e.target.value); setDateQuickFilter('all')}}
+                                                        className="bg-transparent border-none outline-none text-[10px] text-gray-600 dark:text-gray-300 w-full"
+                                                    />
+                                                </div>
+                                                <span className="text-gray-300 dark:text-gray-700 text-[10px]">-</span>
+                                                <div className="flex items-center gap-1 flex-1">
+                                                    <input 
+                                                        type="date" 
+                                                        value={endDateFilter} 
+                                                        onChange={(e) => {setEndDateFilter(e.target.value); setDateQuickFilter('all')}}
+                                                        className="bg-transparent border-none outline-none text-[10px] text-gray-600 dark:text-gray-300 w-full text-right"
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-40 px-3 shadow-none">
-                                                <SelectValue placeholder="Trạng thái" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                                                <SelectItem value="Chưa thanh toán">Chưa thanh toán</SelectItem>
-                                                <SelectItem value="Thanh toán một phần">Thanh toán một phần</SelectItem>
-                                                <SelectItem value="Đã thanh toán">Đã thanh toán</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="flex flex-row gap-2">
+                                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-[11px] sm:text-sm w-full lg:w-40 px-2 sm:px-3 shadow-none">
+                                                    <SelectValue placeholder="Trạng thái" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                    <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                                                    <SelectItem value="Chưa thanh toán">Chưa thanh toán</SelectItem>
+                                                    <SelectItem value="Thanh toán một phần">Thanh toán một phần</SelectItem>
+                                                    <SelectItem value="Đã thanh toán">Đã thanh toán</SelectItem>
+                                                </SelectContent>
+                                            </Select>
 
-                                        <Button variant="ghost" onClick={clearFilters}
-                                            className="h-9 px-3 rounded-lg text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/20 border border-transparent hover:border-amber-100 transition-all col-span-2 lg:col-span-1 justify-center">
-                                            <RotateCcw className="w-4 h-4 mr-2 lg:mr-0" />
-                                            <span className="lg:hidden text-sm font-medium">Làm mới bộ lọc</span>
-                                        </Button>
+                                            <Button variant="ghost" onClick={clearFilters}
+                                                className="h-9 px-3 rounded-lg text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 transition-all w-full lg:w-auto justify-center">
+                                                <RotateCcw className="w-4 h-4 mr-2" />
+                                                <span className="text-sm font-medium">Làm mới</span>
+                                            </Button>
+                                        </div>
                                     </div>
                                 </motion.div>
                             )}

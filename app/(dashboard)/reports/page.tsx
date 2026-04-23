@@ -275,62 +275,46 @@ export default function ReportsPage() {
             </AnimatePresence>
 
             <div className="space-y-8 font-inter pb-12">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                                <LayoutDashboard className="w-5 h-5 text-red-600 dark:text-red-400" />
+                {/* Header Section */}
+                <div className="flex flex-col gap-6">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2.5">
+                                <div className="p-2.5 bg-[#007AFF]/10 rounded-xl">
+                                    <LayoutDashboard className="w-5 h-5 text-[#007AFF]" />
+                                </div>
+                                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50 tracking-tight">Báo cáo tổng quan</h1>
                             </div>
-                            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-50 tracking-tight">Tổng quan Eva's Fit ERP</h1>
+                            <p className="text-[13px] text-gray-500 font-medium ml-12">Theo dõi chỉ số kinh doanh và hiệu suất hệ thống Eva's Fit ERP</p>
                         </div>
+
                     </div>
 
-                    {/* Global Filters */}
-                    <div className="flex flex-wrap items-center gap-3">
-                        {/* Database Status Debug Indicator */}
-                        <div className="flex items-center gap-4 px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800">
-                            <div className="flex flex-col">
-                                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Trạng thái dữ liệu</span>
-                                <div className="flex gap-3 text-[10px] font-bold text-gray-600 dark:text-gray-400">
-                                    <span title="Contracts" className="flex items-center gap-1">
-                                        <FileText className="w-3 h-3 text-red-500" />
-                                        {metrics?.counts?.contracts || 0}
-                                    </span>
-                                    <span title="Revenue" className="flex items-center gap-1">
-                                        <DollarSign className="w-3 h-3 text-emerald-500" />
-                                        {metrics?.counts?.revenue || 0}
-                                    </span>
-                                    <span title="Debts" className="flex items-center gap-1">
-                                        <Activity className="w-3 h-3 text-amber-500" />
-                                        {metrics?.counts?.debts || 0}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 bg-white dark:bg-gray-900 p-1 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                    {/* Filter Toolbar */}
+                    <div className="flex flex-wrap items-center gap-3 p-2 bg-white/50 dark:bg-gray-900/50 backdrop-blur-md rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                        <div className="flex items-center gap-2 bg-gray-100/80 dark:bg-gray-800/80 px-3 py-1.5 rounded-xl border border-gray-200/50 dark:border-gray-700/50">
+                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
                             <input
                                 type="date"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
-                                className="bg-transparent border-none text-[10px] font-semibold focus:ring-0 px-2 py-1 outline-none"
+                                className="bg-transparent border-none text-[11px] font-bold focus:ring-0 px-1 py-0 outline-none w-24"
                             />
-                            <span className="text-gray-300">-</span>
+                            <span className="text-gray-300">→</span>
                             <input
                                 type="date"
                                 value={endDate}
                                 onChange={(e) => setEndDate(e.target.value)}
-                                className="bg-transparent border-none text-[10px] font-semibold focus:ring-0 px-2 py-1 outline-none"
+                                className="bg-transparent border-none text-[11px] font-bold focus:ring-0 px-1 py-0 outline-none w-24"
                             />
                         </div>
 
                         <Select onValueChange={handleQuickFilterChange}>
-                            <SelectTrigger className="w-[140px] h-9 rounded-xl text-[11px] font-semibold bg-white dark:bg-gray-900 border-gray-100">
-                                <Filter className="w-3 h-3 mr-2 text-gray-400" />
-                                <SelectValue placeholder="Thời gian" />
+                            <SelectTrigger className="w-[180px] h-9 rounded-xl text-[11px] font-bold bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+                                <Filter className="w-3.5 h-3.5 mr-2 text-[#007AFF]" />
+                                <SelectValue placeholder="Khoảng thời gian" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-xl border-gray-100">
+                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800 shadow-xl">
                                 <SelectItem value="this-week">Tuần này</SelectItem>
                                 <SelectItem value="last-week">Tuần trước</SelectItem>
                                 <SelectItem value="next-week">Tuần tới</SelectItem>
@@ -341,36 +325,32 @@ export default function ReportsPage() {
                         </Select>
 
                         <Select value={branchId} onValueChange={setBranchId}>
-                            <SelectTrigger className="w-[140px] h-9 rounded-xl text-[11px] font-semibold">
-                                <SelectValue placeholder="Chi nhánh" />
+                            <SelectTrigger className="w-[200px] h-9 rounded-xl text-[11px] font-bold bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+                                <Building2 className="w-3.5 h-3.5 mr-2 text-[#007AFF]" />
+                                <SelectValue placeholder="Tất cả chi nhánh" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-xl border-gray-100">
+                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800 shadow-xl">
                                 <SelectItem value="all">Tất cả chi nhánh</SelectItem>
                                 {branchesList.map((b: any) => (
                                     <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
-
-{/* <Button variant="outline" className="rounded-xl px-5 h-9 text-[11px] font-bold border-gray-200 dark:border-gray-800 transition-all hover:bg-gray-50 dark:hover:bg-gray-800">
-                            <Calendar className="w-3.5 h-3.5 mr-2" />
-                            Xuất báo cáo
-                        </Button> */}
                     </div>
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
                     {/* 1. Tabs List at the VERY TOP of content */}
                     <div className="w-full overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-                        <TabsList className="inline-flex h-12 items-center justify-start rounded-2xl bg-gray-50/80 dark:bg-gray-900/50 p-1 text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-gray-800 shrink-0 min-w-max">
-                            <TabsTrigger value="customers" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Khách hàng</TabsTrigger>
-                            <TabsTrigger value="routes" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all whitespace-nowrap text-gray-900 dark:text-gray-100">Tiến trình thay đổi</TabsTrigger>
-                            <TabsTrigger value="contracts" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Hợp đồng</TabsTrigger>
-                            <TabsTrigger value="debts" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Công nợ</TabsTrigger>
-                            <TabsTrigger value="revenue" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Doanh thu</TabsTrigger>
-                            <TabsTrigger value="expenses" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Chi phí</TabsTrigger>
-                            <TabsTrigger value="cashflow" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100">Dòng tiền</TabsTrigger>
-                            <TabsTrigger value="branch-pt" className="rounded-xl px-4 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-red-600 data-[state=active]:shadow-sm transition-all text-gray-900 dark:text-gray-100 whitespace-nowrap">Chi nhánh & Nhân sự</TabsTrigger>
+                        <TabsList className="inline-flex h-11 items-center justify-start rounded-xl bg-gray-100/80 dark:bg-gray-800/50 p-1 text-gray-500 border-none shrink-0 min-w-max shadow-inner">
+                            <TabsTrigger value="customers" className="rounded-lg px-6 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-[#007AFF] data-[state=active]:shadow-md transition-all duration-200 text-gray-600 dark:text-gray-300">Khách hàng</TabsTrigger>
+                            <TabsTrigger value="routes" className="rounded-lg px-6 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-[#007AFF] data-[state=active]:shadow-md transition-all duration-200 whitespace-nowrap text-gray-600 dark:text-gray-300">Tiến trình thay đổi</TabsTrigger>
+                            <TabsTrigger value="contracts" className="rounded-lg px-6 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-[#007AFF] data-[state=active]:shadow-md transition-all duration-200 text-gray-600 dark:text-gray-300">Hợp đồng</TabsTrigger>
+                            <TabsTrigger value="debts" className="rounded-lg px-6 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-[#007AFF] data-[state=active]:shadow-md transition-all duration-200 text-gray-600 dark:text-gray-300">Công nợ</TabsTrigger>
+                            <TabsTrigger value="revenue" className="rounded-lg px-6 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-[#007AFF] data-[state=active]:shadow-md transition-all duration-200 text-gray-600 dark:text-gray-300">Doanh thu</TabsTrigger>
+                            <TabsTrigger value="expenses" className="rounded-lg px-6 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-[#007AFF] data-[state=active]:shadow-md transition-all duration-200 text-gray-600 dark:text-gray-300">Chi phí</TabsTrigger>
+                            <TabsTrigger value="cashflow" className="rounded-lg px-6 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-[#007AFF] data-[state=active]:shadow-md transition-all duration-200 text-gray-600 dark:text-gray-300">Dòng tiền</TabsTrigger>
+{/* <TabsTrigger value="branch-pt" className="rounded-lg px-6 py-2 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-[#007AFF] data-[state=active]:shadow-md transition-all duration-200 text-gray-600 dark:text-gray-300 whitespace-nowrap">Chi nhánh & Nhân sự</TabsTrigger> */}
                         </TabsList>
                     </div>
 
@@ -939,112 +919,9 @@ export default function ReportsPage() {
                     </TabsContent>
 
                     {/* --- Tab Content: Chi nhánh & Nhân sự --- */}
-                    <TabsContent value="branch-pt" className="space-y-8 focus-visible:outline-none">
-                        <div className="grid gap-6 md:grid-cols-2">
-                            <ChartCard title="Doanh thu theo Chi nhánh" description="So sánh tổng doanh thu giữa các cơ sở">
-                                <BarChartComponent
-                                    data={branchPersonnel?.branches.map((p: any) => ({ name: p.branchName, value: p.revenue || 0, actualValue: p.actualRevenue || p.revenue }))}
-                                    dataKey="actualValue"
-                                />
-                            </ChartCard>
-                            <ChartCard title="Cân nặng giảm theo Chi nhánh" description="Tổng số cân nặng khách hàng đã giảm được trong tháng theo cơ sở">
-                                <BarChartComponent
-                                    data={branchPersonnel?.branches.map((p: any) => ({ name: p.branchName, value: p.weightLoss }))}
-                                    dataKey="value"
-                                    color="#10b981"
-                                />
-                            </ChartCard>
-                        </div>
-
-                        <div className="grid gap-6 md:grid-cols-1">
-                            <Card className="border-none shadow-sm rounded-3xl p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-900">
-                                <div className="mb-8 flex items-center justify-between">
-                                    <div>
-                                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Hiệu suất tìm kiếm Lead của Nhân sự</h3>
-                                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest mt-1">Nguồn: Facebook, Tiktok, Outdoor, PR, Tự kiếm</p>
-                                    </div>
-                                    <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-xl">
-                                        <Target className="w-5 h-5 text-red-500" />
-                                    </div>
-                                </div>
-                                <div className="h-[400px] w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={branchPersonnel?.ptPerformance || []} layout="vertical" margin={{ left: 60, right: 20 }}>
-                                            <CartesianGrid strokeDasharray="3 3" horizontal={false} strokeOpacity={0.1} />
-                                            <XAxis type="number" hide />
-                                            <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 500, fill: '#000' }} width={100} />
-                                            <Tooltip
-                                                cursor={{ fill: '#f8fafc' }}
-                                                contentStyle={{ borderRadius: '16px', border: 'none', fontSize: '11px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 500 }}
-                                            />
-                                            <Bar dataKey="leads.Facebook" stackId="a" fill="#2563eb" name="Facebook" barSize={18} radius={[0, 0, 0, 0]} />
-                                            <Bar dataKey="leads.tiktok" stackId="a" fill="#000000" name="TikTok" />
-                                            <Bar dataKey="leads.Outdoor" stackId="a" fill="#10b981" name="Outdoor" />
-                                            <Bar dataKey="leads.PR" stackId="a" fill="#f59e0b" name="PR" />
-                                            <Bar dataKey="leads.Tự kiếm" stackId="a" fill="#ef4444" name="Tự kiếm" radius={[0, 6, 6, 0]} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </Card>
-                        </div>
-
-                        <div className="grid gap-6 md:grid-cols-2">
-                            <Card className="border-none shadow-sm rounded-3xl p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-900">
-                                <div className="flex items-center justify-between mb-8">
-                                    <div>
-                                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Tổng cân nặng giảm cho KH</h3>
-                                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest mt-1">Thành tích PT trong tháng</p>
-                                    </div>
-                                    <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
-                                        <Scale className="w-5 h-5 text-emerald-500" />
-                                    </div>
-                                </div>
-                                <div className="space-y-5">
-                                    {branchPersonnel?.ptPerformance?.slice(0, 6).map((pt: any, i: number) => (
-                                        <div key={pt.name} className="flex items-center justify-between group">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-9 h-9 rounded-2xl bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center text-xs font-bold text-gray-900 dark:text-gray-100 border border-gray-100 dark:border-gray-800 group-hover:bg-red-50 group-hover:text-red-600 transition-colors">{i + 1}</div>
-                                                <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{pt.name}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{pt.totalWeightLoss.toFixed(1)} <span className="text-[10px] font-medium text-gray-400">kg</span></span>
-                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Card>
-
-                            <Card className="border-none shadow-sm rounded-3xl p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-900">
-                                <div className="flex items-center justify-between mb-8">
-                                    <div>
-                                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Kỷ lục giảm cân (Năm)</h3>
-                                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest mt-1">Mức giảm lớn nhất của 1 KH</p>
-                                    </div>
-                                    <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
-                                        <Zap className="w-5 h-5 text-yellow-500" />
-                                    </div>
-                                </div>
-                                <div className="space-y-5">
-                                    {([...(branchPersonnel?.ptPerformance || [])])
-                                        .sort((a: any, b: any) => b.maxWeightLoss - a.maxWeightLoss)
-                                        .slice(0, 6)
-                                        .map((pt: any, i: number) => (
-                                            <div key={pt.name} className="flex items-center justify-between group">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-9 h-9 rounded-2xl bg-yellow-50 dark:bg-yellow-900/20 flex items-center justify-center text-xs font-bold text-yellow-700 border border-yellow-100 dark:border-yellow-900/30">{i + 1}</div>
-                                                    <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{pt.name}</span>
-                                                </div>
-                                                <div className="flex flex-col items-end">
-                                                    <span className="text-xs font-bold text-gray-900 dark:text-gray-100">-{pt.maxWeightLoss.toFixed(1)} kg</span>
-                                                    <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">Bestseller</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                </div>
-                            </Card>
-                        </div>
-                    </TabsContent>
+                    {/* <TabsContent value="branch-pt" className="space-y-8 focus-visible:outline-none">
+                        ...
+                    </TabsContent> */}
                 </Tabs>
 
                 {activeTab !== 'routes' && activeTab !== 'expenses' && activeTab !== 'cashflow' && (
@@ -1096,20 +973,20 @@ export default function ReportsPage() {
 
 function StatCard({ title, value, subValue, icon: Icon, color, bgColor, trend }: any) {
     return (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <Card className="border-none shadow-sm dark:shadow-none rounded-2xl overflow-hidden group hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-900">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase">{title}</CardTitle>
-                    <div className={`${bgColor} ${color} p-2 rounded-xl`}>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }}>
+            <Card className="border-none shadow-sm dark:shadow-none rounded-xl overflow-hidden group hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-900 border border-gray-100/50 dark:border-gray-800/50">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                    <CardTitle className="text-[11px] font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase">{title}</CardTitle>
+                    <div className={`${bgColor} ${color} p-2.5 rounded-xl transition-transform group-hover:scale-110 duration-300`}>
                         <Icon className="h-4 w-4" />
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1 font-inter">{value}</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1 tracking-tight">{value}</div>
                     <div className="flex items-center justify-between">
-                        <p className="text-[11px] text-gray-500 font-medium">{subValue}</p>
+                        <p className="text-[11px] text-gray-500 font-medium line-clamp-1">{subValue}</p>
                         {trend !== undefined && (
-                            <div className={`flex items-center text-[10px] font-bold ${trend >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                            <div className={`flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md ${trend >= 0 ? 'text-[#34C759] bg-[#34C759]/10' : 'text-[#FF3B30] bg-[#FF3B30]/10'}`}>
                                 {trend >= 0 ? <ArrowUpRight className="w-3 h-3 mr-0.5" /> : <ArrowDownRight className="w-3 h-3 mr-0.5" />}
                                 {Math.abs(trend).toFixed(1)}%
                             </div>
@@ -1123,10 +1000,10 @@ function StatCard({ title, value, subValue, icon: Icon, color, bgColor, trend }:
 
 function ChartCard({ title, description, children, className }: any) {
     return (
-        <Card className={`border-none shadow-sm dark:shadow-none rounded-3xl p-6 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 ${className}`}>
-            <div className="mb-6">
-                <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</CardTitle>
-                <CardDescription className="text-[10px] text-gray-400 font-medium uppercase tracking-tight">{description}</CardDescription>
+        <Card className={`border-none shadow-md dark:shadow-none rounded-2xl p-7 bg-white dark:bg-gray-900 border border-gray-100/50 dark:border-gray-800/50 ${className}`}>
+            <div className="mb-7">
+                <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100 tracking-tight">{title}</CardTitle>
+                <CardDescription className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1.5 opacity-80">{description}</CardDescription>
             </div>
             <div className="h-[200px] w-full">{children}</div>
         </Card>
@@ -1134,51 +1011,54 @@ function ChartCard({ title, description, children, className }: any) {
 }
 
 function PieChartComponent({ data, centerText, centerSubtext = 'Tổng cộng' }: any) {
-    const COLORS = ['#ef4444', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6']
+    const COLORS = ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#5856D6']
     return (
         <div className="h-full w-full relative">
             <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                    <Pie data={data} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                    <Pie data={data} cx="50%" cy="50%" innerRadius={65} outerRadius={85} paddingAngle={4} dataKey="value" stroke="none">
                         {data.map((_: any, index: number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', fontSize: '11px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                    <Tooltip 
+                        contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '11px', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 600 }} 
+                        itemStyle={{ padding: '2px 0' }}
+                    />
                 </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-xl font-bold leading-none text-gray-900 dark:text-gray-100">{centerText}</span>
-                <span className="text-[9px] text-gray-400 font-bold uppercase mt-1 tracking-widest">{centerSubtext}</span>
+                <span className="text-2xl font-bold leading-none text-gray-900 dark:text-gray-100 tracking-tight">{centerText}</span>
+                <span className="text-[9px] text-gray-400 font-bold uppercase mt-1.5 tracking-[0.1em]">{centerSubtext}</span>
             </div>
         </div>
     )
 }
 
-function BarChartComponent({ data, dataKey, layout = 'horizontal', color = '#ef4444' }: any) {
+function BarChartComponent({ data, dataKey, layout = 'horizontal', color = '#007AFF' }: any) {
     return (
         <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} layout={layout} margin={{ left: layout === 'vertical' ? 40 : 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+            <BarChart data={data} layout={layout} margin={{ left: layout === 'vertical' ? 40 : 0, top: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} />
                 {layout === 'horizontal' ? (
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280', fontWeight: 500 }} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} dy={5} />
                 ) : (
-                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280', fontWeight: 500 }} width={80} />
+                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} width={80} />
                 )}
                 {layout === 'horizontal' ? <YAxis hide /> : <XAxis type="number" hide />}
                 <Tooltip
-                    cursor={{ fill: '#f8fafc' }}
-                    contentStyle={{ borderRadius: '16px', border: 'none', fontSize: '11px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 500 }}
+                    cursor={{ fill: '#f1f5f9', opacity: 0.4 }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '11px', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 600 }}
                 />
-                <Bar dataKey={dataKey} fill={color} radius={layout === 'horizontal' ? [6, 6, 0, 0] : [0, 6, 6, 0]} barSize={layout === 'horizontal' ? 20 : 15}>
+                <Bar dataKey={dataKey} fill={color} radius={layout === 'horizontal' ? [4, 4, 0, 0] : [0, 4, 4, 0]} barSize={layout === 'horizontal' ? 24 : 16}>
                     <LabelList
                         dataKey={dataKey}
-                        position="top"
+                        position={layout === 'horizontal' ? "top" : "right"}
                         formatter={(val: any) => {
                             const num = Number(val) || 0
-                            if (num >= 1000000) return `${(num / 1000000).toFixed(1)} Tr`
-                            if (num >= 1000) return `${(num / 1000).toFixed(1)} K`
+                            if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+                            if (num >= 1000) return `${(num / 1000).toFixed(0)}K`
                             return num
                         }}
-                        style={{ fontSize: 9, fontWeight: 600, fill: '#64748b' }}
+                        style={{ fontSize: 10, fontWeight: 700, fill: '#64748b', opacity: 0.9 }}
                     />
                 </Bar>
             </BarChart>
@@ -1186,23 +1066,23 @@ function BarChartComponent({ data, dataKey, layout = 'horizontal', color = '#ef4
     )
 }
 
-function AreaChartComponent({ data, dataKey, color = '#3b82f6', unit = 'kg', label = 'Cân nặng TB', valueFormatter }: any) {
+function AreaChartComponent({ data, dataKey, color = '#007AFF', unit = 'kg', label = 'Cân nặng TB', valueFormatter }: any) {
     return (
         <div className="h-full w-full">
             <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data}>
+                <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                         <linearGradient id={`colorValue-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                            <stop offset="5%" stopColor={color} stopOpacity={0.2} />
                             <stop offset="95%" stopColor={color} stopOpacity={0} />
                         </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" strokeOpacity={0.4} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" strokeOpacity={0.3} />
                     <XAxis
                         dataKey="name"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                        tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }}
                         dy={10}
                         tickFormatter={(val) => {
                             if (typeof val === 'string' && val.length <= 3) return val
@@ -1217,9 +1097,9 @@ function AreaChartComponent({ data, dataKey, color = '#3b82f6', unit = 'kg', lab
                     <YAxis
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                        tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }}
                         domain={['auto', 'auto']}
-                        width={40}
+                        width={45}
                         tickFormatter={(val) => {
                             if (val >= 1000000) return `${(val / 1000000).toFixed(0)}M`
                             if (val >= 1000) return `${(val / 1000).toFixed(0)}K`
@@ -1227,7 +1107,7 @@ function AreaChartComponent({ data, dataKey, color = '#3b82f6', unit = 'kg', lab
                         }}
                     />
                     <Tooltip
-                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 500 }}
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 600 }}
                         formatter={(val: any, name: any, entry: any) => {
                             const countLabel = entry?.payload?.contractCount !== undefined ? ` (${entry.payload.contractCount} HĐ)` : ''
                             const valueLabel = valueFormatter ? valueFormatter(Number(val) || 0) : `${(Number(val) || 0).toFixed(1)} ${unit}`
@@ -1241,15 +1121,15 @@ function AreaChartComponent({ data, dataKey, color = '#3b82f6', unit = 'kg', lab
     )
 }
 
-function LineChartComponent({ data, dataKey }: any) {
+function LineChartComponent({ data, dataKey, color = '#007AFF' }: any) {
     return (
         <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280', fontWeight: 500 }} />
+            <LineChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} dy={5} />
                 <YAxis hide />
-                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', fontSize: '11px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 500 }} />
-                <Line type="monotone" dataKey={dataKey} stroke="#2563eb" strokeWidth={3} dot={{ r: 4, fill: '#2563eb', strokeWidth: 0 }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', fontSize: '11px', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 600 }} />
+                <Line type="monotone" dataKey={dataKey} stroke={color} strokeWidth={3} dot={{ r: 4, fill: color, strokeWidth: 0 }} activeDot={{ r: 6, strokeWidth: 0, fill: color }} />
             </LineChart>
         </ResponsiveContainer>
     )

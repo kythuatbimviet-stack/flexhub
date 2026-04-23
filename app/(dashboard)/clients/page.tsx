@@ -642,39 +642,43 @@ export default function ClientsPage() {
                                     initial={typeof window !== 'undefined' && window.innerWidth < 1024 ? { height: 0, opacity: 0 } : false}
                                     animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                                     className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2">
-                                    <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
-                                        <Select value={branchFilter} onValueChange={setBranchFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3">
-                                                <SelectValue placeholder="Chi nhánh" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                {(permissions.canViewAllBranches || allowedBranches.length > 1) && (
-                                                    <SelectItem value="all">{permissions.canViewAllBranches ? 'Tất cả Chi nhánh' : 'Tất cả chi nhánh'}</SelectItem>
-                                                )}
-                                                {allowedBranches.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                        {(isAdmin || isCEO || isManager || isBranchManager) && (
-                                            <Select value={ptFilter} onValueChange={setPtFilter} disabled={permissions.isStaffOnly}>
-                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3">
-                                                    <SelectValue placeholder="PT" />
+                                    <div className="flex flex-col lg:flex-row gap-2 items-stretch lg:items-center pt-2 lg:pt-0">
+                                        <div className="flex flex-row gap-2">
+                                            <Select value={branchFilter} onValueChange={setBranchFilter}>
+                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-[11px] sm:text-sm w-full lg:w-44 px-2 sm:px-3">
+                                                    <SelectValue placeholder="Chi nhánh" />
                                                 </SelectTrigger>
                                                 <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                    <SelectItem value="all">Tất cả PT</SelectItem>
-                                                    {ptOptions.map((pt: any) => <SelectItem key={pt} value={pt}>{pt}</SelectItem>)}
+                                                    {(permissions.canViewAllBranches || allowedBranches.length > 1) && (
+                                                        <SelectItem value="all">{permissions.canViewAllBranches ? 'Tất cả Chi nhánh' : 'Tất cả chi nhánh'}</SelectItem>
+                                                    )}
+                                                    {allowedBranches.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
-                                        )}
-                                        <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3">
-                                                <SelectValue placeholder="Nguồn khách" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                <SelectItem value="all">Tất cả Nguồn</SelectItem>
-                                                {sourceOptions.map((s: any) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                        <SortPopover />
+                                            {(isAdmin || isCEO || isManager || isBranchManager) && (
+                                                <Select value={ptFilter} onValueChange={setPtFilter} disabled={permissions.isStaffOnly}>
+                                                    <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-[11px] sm:text-sm w-full lg:w-44 px-2 sm:px-3">
+                                                        <SelectValue placeholder="PT" />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                        <SelectItem value="all">Tất cả PT</SelectItem>
+                                                        {ptOptions.map((pt: any) => <SelectItem key={pt} value={pt}>{pt}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-row gap-2">
+                                            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-[11px] sm:text-sm w-full lg:w-44 px-2 sm:px-3">
+                                                    <SelectValue placeholder="Nguồn khách" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                    <SelectItem value="all">Tất cả Nguồn</SelectItem>
+                                                    {sourceOptions.map((s: any) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                            <SortPopover />
+                                        </div>
                                         <Button variant="ghost" onClick={clearFilters}
                                             className="h-9 px-3 rounded-lg text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-transparent hover:border-red-100 transition-all col-span-2 lg:col-span-1 justify-center">
                                             <RotateCcw className="w-4 h-4 mr-2 lg:mr-0" />

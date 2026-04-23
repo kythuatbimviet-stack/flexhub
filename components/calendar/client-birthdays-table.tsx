@@ -13,14 +13,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Phone, MessageSquare, User } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { BirthdayDetailsSheet } from './birthday-details-sheet'
 
 interface ClientBirthdaysTableProps {
     data: any[]
 }
 
 export function ClientBirthdaysTable({ data }: ClientBirthdaysTableProps) {
+    const [selectedPerson, setSelectedPerson] = React.useState<any>(null)
+    const [isSheetOpen, setIsSheetOpen] = React.useState(false)
+
     return (
-        <motion.div
+        <>
+            <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="bg-white dark:bg-gray-900 rounded-[32px] overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm"
@@ -42,17 +47,23 @@ export function ClientBirthdaysTable({ data }: ClientBirthdaysTableProps) {
                         return (
                             <TableRow key={person.id} className="group border-gray-100 dark:border-gray-800 hover:bg-slate-50/50 transition-colors">
                                 <TableCell className="py-4 pl-8">
-                                    <div className="flex items-center gap-3">
-                                        <Avatar className="w-10 h-10 rounded-xl border border-slate-100">
-                                            <AvatarImage src={person.avatar_url} />
-                                            <AvatarFallback className="bg-slate-100 text-slate-950 font-medium">
-                                                {person.member_name.charAt(0)}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <span className="text-sm font-semibold text-black dark:text-white">
-                                            {person.member_name}
-                                        </span>
-                                    </div>
+                                        <div 
+                                            className="flex items-center gap-3 cursor-pointer group/name" 
+                                            onClick={() => {
+                                                setSelectedPerson(person)
+                                                setIsSheetOpen(true)
+                                            }}
+                                        >
+                                            <Avatar className="w-10 h-10 rounded-xl border border-slate-100 transition-transform group-hover/name:scale-110">
+                                                <AvatarImage src={person.avatar_url} />
+                                                <AvatarFallback className="bg-slate-100 text-slate-950 font-medium">
+                                                    {person.member_name.charAt(0)}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <span className="text-sm font-semibold text-black dark:text-white group-hover/name:text-red-600 transition-colors">
+                                                {person.member_name}
+                                            </span>
+                                        </div>
                                 </TableCell>
                                 <TableCell>
                                     <span className="text-xs font-medium text-slate-950 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">
@@ -99,6 +110,13 @@ export function ClientBirthdaysTable({ data }: ClientBirthdaysTableProps) {
                     })}
                 </TableBody>
             </Table>
-        </motion.div>
+            </motion.div>
+
+            <BirthdayDetailsSheet 
+                person={selectedPerson} 
+                open={isSheetOpen} 
+                onOpenChange={setIsSheetOpen} 
+            />
+        </>
     )
 }

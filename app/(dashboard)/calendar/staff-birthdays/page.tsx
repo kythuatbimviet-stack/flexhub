@@ -314,14 +314,15 @@ function StaffBirthdayCard({ person, index }: { person: any, index: number }) {
             <Card className={cn("border-none shadow-sm dark:shadow-none rounded-[32px] overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-white dark:bg-slate-900 border-2", isToday ? "border-blue-100 dark:border-blue-900/30" : "border-transparent")}>
                 <CardContent className="p-6">
                     <div className="flex items-center gap-4 mb-5 relative">
-                        <Avatar className="w-16 h-16 rounded-[22px] border-4 border-white dark:border-slate-800 shadow-xl shadow-blue-50/50">
+                        <Avatar className="w-16 h-16 rounded-[22px] border-4 border-white dark:border-slate-800 shadow-xl shadow-blue-50/50 dark:shadow-none">
                             <AvatarImage src={person.avatar_url} className="object-cover" />
                             <AvatarFallback className="bg-slate-100 text-black font-semibold text-2xl">{person.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                             <h3 className="text-[15px] font-semibold text-black dark:text-white leading-tight truncate tracking-tight">{person.name}</h3>
-                            <div className="flex items-center gap-1.5 mt-1">
-                                <span className="text-[10px] font-medium text-black dark:text-white/80 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-full">#{person.id.slice(-4).toUpperCase()}</span>
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                <span className="text-[10px] font-medium text-black dark:text-white/80 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-full truncate max-w-[120px]">{person.email}</span>
+                                <span className="text-[10px] font-medium text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-0.5 rounded-full">{person.department || 'Nhân sự'}</span>
                                 {isToday && <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />}
                             </div>
                         </div>

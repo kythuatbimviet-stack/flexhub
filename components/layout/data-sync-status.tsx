@@ -144,17 +144,7 @@ export function DataSyncStatus() {
         <TooltipProvider>
             <div className="flex items-center gap-1">
                 {/* Sync status label */}
-                <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-medium text-gray-400 dark:text-gray-500 select-none">
-                    <span
-                        className={cn(
-                            'w-1.5 h-1.5 rounded-full transition-colors',
-                            isGlobalFetching
-                                ? 'bg-amber-400 animate-pulse'
-                                : 'bg-emerald-400'
-                        )}
-                    />
-                    {isManualLoading ? (isRefreshing ? 'Đang ưu tiên đồng bộ...' : 'Đang đồng bộ...') : `Cập nhật ${relativeTime}`}
-                </div>
+
 
                 {/* Hard Refresh button */}
                 <Tooltip>

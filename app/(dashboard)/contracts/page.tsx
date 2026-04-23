@@ -435,7 +435,7 @@ export default function ContractsPage() {
                 .replace(/[đĐ]/g, 'd')
                 .trim()
         }
-        
+
         // [FIX] Group-aware Search: Nếu có search, xác định tập hợp các Client ID khớp
         let matchingClientIds = new Set<string>()
         if (debouncedSearch) {
@@ -815,35 +815,37 @@ export default function ContractsPage() {
                                     animate={{ height: 'auto', opacity: 1 }}
                                     exit={{ height: 0, opacity: 0 }}
                                     className="overflow-hidden lg:overflow-visible lg:flex lg:flex-row lg:items-center gap-2">
-                                    <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 items-center pt-2 lg:pt-0">
-                                        <Select value={branchFilter} onValueChange={setBranchFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3 shadow-none">
-                                                <SelectValue placeholder="Chi nhánh" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                {(permissions.canViewAllBranches || allowedBranches.length > 1) && (
-                                                    <SelectItem value="all">{permissions.canViewAllBranches ? 'Tất cả chi nhánh' : 'Tất cả chi nhánh'}</SelectItem>
-                                                )}
-                                                {allowedBranches.map((branch: any) => (
-                                                    <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                    <div className="flex flex-col lg:flex-row gap-2 items-stretch lg:items-center pt-2 lg:pt-0">
+                                        <div className="flex flex-row gap-2">
+                                            <Select value={branchFilter} onValueChange={setBranchFilter}>
+                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-[11px] sm:text-sm w-full lg:w-44 px-2 sm:px-3 shadow-none">
+                                                    <SelectValue placeholder="Chi nhánh" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                    {(permissions.canViewAllBranches || allowedBranches.length > 1) && (
+                                                        <SelectItem value="all">{permissions.canViewAllBranches ? 'Tất cả chi nhánh' : 'Tất cả chi nhánh'}</SelectItem>
+                                                    )}
+                                                    {allowedBranches.map((branch: any) => (
+                                                        <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
 
-                                        <Select value={ptFilter} onValueChange={setPtFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3 shadow-none">
-                                                <SelectValue placeholder="PT phụ trách" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
-                                                <SelectItem value="all">Tất cả PT</SelectItem>
-                                                {ptOptions.map((pt: string) => (
-                                                    <SelectItem key={pt} value={pt}>{pt}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                            <Select value={ptFilter} onValueChange={setPtFilter}>
+                                                <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-[11px] sm:text-sm w-full lg:w-44 px-2 sm:px-3 shadow-none">
+                                                    <SelectValue placeholder="PT phụ trách" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
+                                                    <SelectItem value="all">Tất cả PT</SelectItem>
+                                                    {ptOptions.map((pt: string) => (
+                                                        <SelectItem key={pt} value={pt}>{pt}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
 
                                         <Select value={contractTypeFilter} onValueChange={setContractTypeFilter}>
-                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-xs sm:text-sm lg:w-44 px-3 shadow-none">
+                                            <SelectTrigger className="h-9 rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-[11px] sm:text-sm w-[49%] lg:w-44 px-2 sm:px-3 shadow-none">
                                                 <SelectValue placeholder="Loại hợp đồng" />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl border-gray-100 dark:border-gray-800">
@@ -870,7 +872,7 @@ export default function ContractsPage() {
                         <div className="flex flex-col sm:flex-row items-center justify-between px-3 py-3 border-t border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-800/10 gap-4 mt-1 rounded-b-xl">
                             <div className="flex items-center gap-4">
                                 <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap">
-                                    <span className="text-gray-900 dark:text-gray-100 font-black">{totalCount}</span> khách hàng
+                                    <span className="text-black-900 dark:text-gray-100 font-black">{totalCount}</span> khách hàng
                                 </div>
                                 <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(parseInt(v))}>
                                     <SelectTrigger className="h-7 w-16 rounded-lg border-gray-100 dark:border-gray-800 text-[10px] font-bold focus:ring-red-500 bg-white dark:bg-gray-800">
@@ -1176,7 +1178,7 @@ export default function ContractsPage() {
                                                                                                         {contract.status === 'Hết hạn HĐ' ? (
                                                                                                             <div className="flex items-center gap-1.5">
                                                                                                                 <ClipboardCheck className={cn(
-                                                                                                                    "w-2.5 h-2.5", 
+                                                                                                                    "w-2.5 h-2.5",
                                                                                                                     contract.closure_status ? "text-emerald-500" : "text-amber-500"
                                                                                                                 )} />
                                                                                                                 <span className={cn(
@@ -1189,20 +1191,20 @@ export default function ContractsPage() {
                                                                                                         ) : (
                                                                                                             <div className="flex items-center gap-1.5">
                                                                                                                 <Mail className={cn(
-                                                                                                                    "w-2.5 h-2.5", 
-                                                                                                                    (contract.sendemail && contract.sendemail !== 'trigger_email') ? "text-emerald-500" : 
-                                                                                                                    contract.sendemail === 'trigger_email' ? "text-amber-500 animate-pulse" : "text-gray-300"
+                                                                                                                    "w-2.5 h-2.5",
+                                                                                                                    (contract.sendemail && contract.sendemail !== 'trigger_email') ? "text-emerald-500" :
+                                                                                                                        contract.sendemail === 'trigger_email' ? "text-amber-500 animate-pulse" : "text-gray-300"
                                                                                                                 )} />
                                                                                                                 <div className="flex flex-col">
                                                                                                                     <span className={cn(
                                                                                                                         "text-[10px] font-bold tracking-tight uppercase leading-none",
-                                                                                                                        (contract.sendemail && contract.sendemail !== 'trigger_email') ? "text-emerald-600" : 
-                                                                                                                        contract.sendemail === 'trigger_email' ? "text-amber-600" : "text-gray-400"
+                                                                                                                        (contract.sendemail && contract.sendemail !== 'trigger_email') ? "text-emerald-600" :
+                                                                                                                            contract.sendemail === 'trigger_email' ? "text-amber-600" : "text-gray-400"
                                                                                                                     )}>
-                                                                                                                        {contract.sendemail === 'trigger_email' ? "Đang gửi..." : 
-                                                                                                                         (contract.sendemail && contract.sendemail !== 'trigger_email') ? "Đã gửi email" : "Chưa gửi email"}
+                                                                                                                        {contract.sendemail === 'trigger_email' ? "Đang gửi..." :
+                                                                                                                            (contract.sendemail && contract.sendemail !== 'trigger_email') ? "Đã gửi email" : "Chưa gửi email"}
                                                                                                                     </span>
-                                                                                                                    
+
                                                                                                                     {contract.sendemail && contract.sendemail !== 'trigger_email' && (() => {
                                                                                                                         try {
                                                                                                                             const d = new Date(contract.sendemail)
@@ -1213,7 +1215,7 @@ export default function ContractsPage() {
                                                                                                                                     </span>
                                                                                                                                 )
                                                                                                                             }
-                                                                                                                        } catch (e) {}
+                                                                                                                        } catch (e) { }
                                                                                                                         return null
                                                                                                                     })()}
                                                                                                                 </div>
