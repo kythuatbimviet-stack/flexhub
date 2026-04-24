@@ -514,7 +514,7 @@ export function ContractDetailsSheet({
                     member_address: client.address || '', // Lấy từ 'address' của Client
                     // [ĐỒNG BỘ DỮ LIỆU] Lấy CCCD từ hồ sơ khách hàng nếu có. 
                     // Nếu hợp đồng đã có dữ liệu CCCD, ưu tiên giữ lại dữ liệu hiện tại của hợp đồng.
-                    id_number: prev.id_number || client.id_number || '', 
+                    id_number: prev.id_number || client.id_number || '',
                     trainer_name: client.pt_name || '',
                     dob: (client.dob || client.date_of_birth) ? (client.dob || client.date_of_birth).split('T')[0] : '',
                     avatar_url: client.avatar_url || '',
@@ -1042,10 +1042,16 @@ export function ContractDetailsSheet({
                                                     <span className="font-medium text-sm">{generatingPdf ? 'Đang chuẩn bị...' : 'Xuất lại hợp đồng'}</span>
                                                 </DropdownMenuItem>
                                                 {formData.contract_file_url && formData.contract_file_url !== 'create_contract' && (
-                                                    <DropdownMenuItem onClick={() => window.open(`/contracts/preview-gdoc/${encodeURIComponent(formData.id)}`, '_blank')} className="gap-2.5 py-2.5 rounded-xl focus:bg-slate-50 dark:focus:bg-slate-900 cursor-pointer">
-                                                        <ExternalLink className="w-4 h-4 text-emerald-500" />
-                                                        <span className="font-medium text-sm">Mở hợp đồng</span>
-                                                    </DropdownMenuItem>
+                                                    <>
+                                                        <DropdownMenuItem onClick={() => window.open(`/contracts/preview-gdoc/${encodeURIComponent(formData.id)}`, '_blank')} className="gap-2.5 py-2.5 rounded-xl focus:bg-slate-50 dark:focus:bg-slate-900 cursor-pointer">
+                                                            <ExternalLink className="w-4 h-4 text-emerald-500" />
+                                                            <span className="font-medium text-sm">Mở hợp đồng</span>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => window.open(formData.contract_file_url, '_blank')} className="gap-2.5 py-2.5 rounded-xl focus:bg-slate-50 dark:focus:bg-slate-900 cursor-pointer">
+                                                            <FileText className="w-4 h-4 text-blue-500" />
+                                                            <span className="font-medium text-sm">Mở trực tiếp PDF</span>
+                                                        </DropdownMenuItem>
+                                                    </>
                                                 )}
                                                 <DropdownMenuItem onClick={() => setShowXNTTDialog(true)} className="gap-2.5 py-2.5 rounded-xl focus:bg-orange-50 dark:focus:bg-orange-950/20 cursor-pointer">
                                                     <CreditCard className="w-4 h-4 text-orange-500" />
@@ -1440,7 +1446,7 @@ export function ContractDetailsSheet({
                     {/* Section: Chỉ số sức khỏe */}
                     <ContractCardSection title="CHỈ SỐ SỨC KHỎE" icon={Hash}>
                         <div className="space-y-5">
-                            <ContractDetailRow label="Tình trạng sức khỏe" value={formData.medical_conditions} name="medical_conditions" icon={Activity} {...sharedRowProps} />
+                            {/* <ContractDetailRow label="Tình trạng sức khỏe" value={formData.medical_conditions} name="medical_conditions" icon={Activity} {...sharedRowProps} /> */}
                             <ContractDetailRow label="Tình trạng bệnh lý" value={formData.medical_condition} name="medical_condition" icon={FileText} {...sharedRowProps} />
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <ContractDetailRow label="Chiều cao (cm)" value={formData.initial_height} name="initial_height" type="text" icon={Hash} {...sharedRowProps} />
@@ -1865,14 +1871,16 @@ export function ContractDetailsSheet({
                                     Xuất lại hợp đồng
                                 </Button>
                                 {formData.contract_file_url && formData.contract_file_url !== 'create_contract' && (
-                                    <Button
-                                        onClick={() => window.open(`/contracts/preview-gdoc/${encodeURIComponent(formData.id)}`, '_blank')}
-                                        variant="ghost"
-                                        className="rounded-xl h-11 px-4 font-bold text-[13px] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all font-inter"
-                                        title="Xem bản xem trước PDF (Print Preview)"
-                                    >
-                                        <ExternalLink className="w-4 h-4" />
-                                    </Button>
+                                    <div className="flex items-center gap-1">
+                                        <Button
+                                            onClick={() => window.open(formData.contract_file_url, '_blank')}
+                                            variant="ghost"
+                                            className="rounded-xl h-11 px-2 font-bold text-[13px] text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all font-inter"
+                                            title="Mở trực tiếp file hợp đồng"
+                                        >
+                                            <FileText className="w-4 h-4" />
+                                        </Button>
+                                    </div>
                                 )}
                                 {formData.status === 'Chờ ký HĐ' && !isCreateMode && hasAccess && (
                                     <Button

@@ -411,7 +411,7 @@ export function AddRevenueSheet({
                         </div>
                         <div className="flex flex-col text-left">
                             <SheetTitle className="text-sm font-semibold text-slate-900 leading-tight">
-                                {isEdit ? 'Sửa khoản thu' : 'Ghi nhận thu'}
+                                {isEdit ? 'SỬA KHOẢN THU' : 'GHI NHẬN THU'}
                             </SheetTitle>
                             <SheetDescription className="text-[10px] font-medium text-slate-500 hidden sm:block">
                                 {isEdit ? 'Cập nhật thông tin giao dịch' : 'Điền thông tin giao dịch'}
@@ -734,75 +734,86 @@ export function AddRevenueSheet({
                                         SỐ TIỀN
                                     </h3>
                                 </div>
-                                        <FormField
-                                            control={form.control}
-                                            name="amount"
-                                            render={({ field }) => (
-                                                <FormItem className="space-y-1">
-                                                    <FormLabel className="text-[11px] font-semibold text-slate-900">Số tiền (VND)</FormLabel>
-                                                    <FormControl>
-                                                        <div className="relative">
-                                                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
-                                                            <Input
-                                                                type="text"
-                                                                placeholder="0"
-                                                                value={field.value ? Number(field.value).toLocaleString('vi-VN') : ''}
-                                                                onChange={(e) => {
-                                                                    const val = e.target.value.replace(/\./g, '').replace(/,/g, '')
-                                                                    if (val === '' || !isNaN(Number(val))) {
-                                                                        field.onChange(val === '' ? 0 : Number(val))
-                                                                    }
-                                                                }}
-                                                                className="rounded-xl border-slate-200 bg-white dark:bg-slate-900 pl-10 h-11 focus:ring-emerald-500 text-[17px] font-bold text-emerald-600"
-                                                            />
-                                                        </div>
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <FormField
-                                                control={form.control}
-                                                name="tax_rate"
-                                                render={({ field }) => (
-                                                    <FormItem className="space-y-1">
-                                                        <FormLabel className="text-[11px] font-semibold text-slate-900 flex justify-between">
-                                                            Thuế suất (%)
-                                                            <span className="text-orange-600">Trừ thuế</span>
-                                                        </FormLabel>
-                                                        <FormControl>
-                                                            <div className="relative">
-                                                                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500" />
-                                                                <Input
-                                                                    type="number"
-                                                                    placeholder="0"
-                                                                    {...field}
-                                                                    onChange={(e) => field.onChange(Number(e.target.value))}
-                                                                    className="rounded-xl border-slate-200 bg-white dark:bg-slate-900 pl-10 h-11 focus:ring-orange-500 text-[15px] font-bold text-orange-600"
-                                                                />
-                                                            </div>
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <div className="space-y-1">
-                                                <Label className="text-[11px] font-semibold text-slate-900">Thực tế (Sau thuế)</Label>
-                                                <div className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center px-4">
-                                                    <span className="text-[15px] font-bold text-slate-700 dark:text-slate-300">
-                                                        {(() => {
-                                                            const amt = form.watch('amount') || 0
-                                                            const tax = form.watch('tax_rate') || 0
-                                                            return (amt * (1 - tax / 100)).toLocaleString('vi-VN')
-                                                        })()}
-                                                        <span className="ml-1 text-[11px] font-medium opacity-60">đ</span>
-                                                    </span>
+                                <FormField
+                                    control={form.control}
+                                    name="amount"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-1">
+                                            <FormLabel className="text-[11px] font-semibold text-slate-900">Số tiền (VND)</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
+                                                    <Input
+                                                        type="text"
+                                                        placeholder="0"
+                                                        value={field.value ? Number(field.value).toLocaleString('vi-VN') : ''}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.replace(/\./g, '').replace(/,/g, '')
+                                                            if (val === '' || !isNaN(Number(val))) {
+                                                                field.onChange(val === '' ? 0 : Number(val))
+                                                            }
+                                                        }}
+                                                        className="rounded-xl border-slate-200 bg-white dark:bg-slate-900 pl-10 h-11 focus:ring-emerald-500 text-[17px] font-bold text-emerald-600"
+                                                    />
                                                 </div>
-                                            </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="tax_rate"
+                                        render={({ field }) => (
+                                            <FormItem className="space-y-1">
+                                                <FormLabel className="text-[11px] font-semibold text-slate-900 flex justify-between">
+                                                    Thuế suất (%)
+                                                    <span className="text-orange-600">Trừ thuế</span>
+                                                </FormLabel>
+                                                <FormControl>
+                                                    <div className="relative">
+                                                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500" />
+                                                        <Input
+                                                            type="text"
+                                                            inputMode="decimal"
+                                                            placeholder="0"
+                                                            value={field.value === 0 ? '' : String(field.value)}
+                                                            onBlur={field.onBlur}
+                                                            name={field.name}
+                                                            ref={field.ref}
+                                                            onChange={(e) => {
+                                                                const raw = e.target.value
+                                                                if (raw === '' || raw === '.') {
+                                                                    field.onChange(0)
+                                                                } else if (!isNaN(Number(raw))) {
+                                                                    field.onChange(Number(raw))
+                                                                }
+                                                            }}
+                                                            className="rounded-xl border-slate-200 bg-white dark:bg-slate-900 pl-10 h-11 focus:ring-orange-500 text-[15px] font-bold text-orange-600"
+                                                        />
+                                                    </div>
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <div className="space-y-1">
+                                        <Label className="text-[11px] font-semibold text-slate-900">Thực tế (Sau thuế)</Label>
+                                        <div className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center px-4">
+                                            <span className="text-[15px] font-bold text-slate-700 dark:text-slate-300">
+                                                {(() => {
+                                                    const amt = form.watch('amount') || 0
+                                                    const tax = form.watch('tax_rate') || 0
+                                                    return (amt * (1 - tax / 100)).toLocaleString('vi-VN')
+                                                })()}
+                                                <span className="ml-1 text-[11px] font-medium opacity-60">đ</span>
+                                            </span>
                                         </div>
+                                    </div>
+                                </div>
                                 <FormField
                                     control={form.control}
                                     name="recorded_at"
@@ -823,59 +834,37 @@ export function AddRevenueSheet({
 
                             {/* Section: Xác nhận thanh toán */}
                             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-md bg-orange-50 flex items-center justify-center">
-                                            <FileText className="w-3.5 h-3.5 text-orange-600" />
-                                        </div>
-                                        <h3 className="text-[12px] font-semibold text-orange-600">
-                                            Xác nhận thanh toán
-                                        </h3>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-md bg-orange-50 flex items-center justify-center">
+                                        <FileText className="w-3.5 h-3.5 text-orange-600" />
                                     </div>
-                                    <FormField
-                                        control={form.control}
-                                        name="send_xntt"
-                                        render={({ field }) => (
-                                            <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                                                <FormControl>
-                                                    <Checkbox
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                        className="h-5 w-5 rounded-md border-slate-300 data-[state=checked]:bg-orange-600 data-[state=checked]:border-none text-white"
-                                                    />
-                                                </FormControl>
-                                                <FormLabel className="text-[12px] font-medium text-slate-600 cursor-pointer">
-                                                    Gửi Email (XNTT)
-                                                </FormLabel>
-                                            </FormItem>
-                                        )}
-                                    />
+                                    <h3 className="text-[12px] font-semibold text-orange-600">
+                                        Xác nhận thanh toán
+                                    </h3>
                                 </div>
 
-                                {form.watch('send_xntt') && (
-                                    <FormField
-                                        control={form.control}
-                                        name="xntt_email"
-                                        render={({ field }) => (
-                                            <FormItem className="space-y-1 animate-in fade-in slide-in-from-top-2">
-                                                <FormLabel className="text-[11px] font-semibold text-slate-900">Email nhận XNTT</FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        placeholder="Vui lòng nhập email khách hàng..."
-                                                        {...field}
-                                                        className="rounded-xl border-slate-200 bg-white h-11 text-sm font-medium text-slate-700"
-                                                    />
-                                                </FormControl>
-                                                {!field.value && (
-                                                    <p className="text-[10px] text-red-500 font-medium">
-                                                        * Cần có email để gửi xác nhận.
-                                                    </p>
-                                                )}
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                )}
+                                <FormField
+                                    control={form.control}
+                                    name="xntt_email"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-1">
+                                            <FormLabel className="text-[11px] font-semibold text-slate-900">Email nhận XNTT</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Vui lòng nhập email khách hàng..."
+                                                    {...field}
+                                                    className="rounded-xl border-slate-200 bg-white h-11 text-sm font-medium text-slate-700"
+                                                />
+                                            </FormControl>
+                                            {!field.value && (
+                                                <p className="text-[10px] text-red-500 font-medium">
+                                                    * Cần có email để gửi xác nhận.
+                                                </p>
+                                            )}
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                             </div>
                         </form>
                     </Form>

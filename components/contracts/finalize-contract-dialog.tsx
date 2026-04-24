@@ -170,7 +170,7 @@ export function FinalizeContractDialog({
         setLoading(true)
         try {
             const paidUpfront = Number(values.paid_upfront.replace(/\./g, ''))
-            
+
             if (paidUpfront > totalAmountNum) {
                 form.setError('paid_upfront', {
                     type: 'manual',
@@ -317,10 +317,34 @@ export function FinalizeContractDialog({
                             </h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField
+                                    control={form.control}
+                                    name="paid_upfront"
+                                    render={({ field }) => (
+                                        <FormItem className="md:col-span-2">
+                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Số tiền trả trước (VNĐ)</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="0"
+                                                    {...field}
+                                                    value={field.value ? Number(field.value.toString().replace(/\./g, '')).toLocaleString('vi-VN').replace(/,/g, '.') : ''}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.replace(/\./g, '')
+                                                        if (/^\d*$/.test(val)) {
+                                                            field.onChange(val)
+                                                        }
+                                                    }}
+                                                    className="rounded-xl border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/20 h-14 text-2xl font-black text-blue-600 dark:text-blue-400 focus:bg-white dark:focus:bg-gray-800 tracking-tight"
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                                 <div className="space-y-1 pt-2">
                                     <p className="text-[10px] text-gray-500 font-medium tracking-tight uppercase underline decoration-gray-200 underline-offset-4 mb-1">Giá trị hợp đồng</p>
-                                    <p className="text-2xl font-bold text-gray-950 dark:text-white leading-none tracking-tight">
-                                        {totalAmountNum.toLocaleString('vi-VN')} <span className="text-sm font-normal text-gray-400">VNĐ</span>
+                                    <p className="text-xl font-bold text-purple-600 dark:text-purple-400 leading-none tracking-tight">
+                                        {totalAmountNum.toLocaleString('vi-VN')} <span className="text-sm font-normal text-purple-400">VNĐ</span>
                                     </p>
                                 </div>
                                 <FormField
@@ -341,30 +365,6 @@ export function FinalizeContractDialog({
                                                     <SelectItem value="Thẻ tín dụng">Thẻ tín dụng</SelectItem>
                                                 </SelectContent>
                                             </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="paid_upfront"
-                                    render={({ field }) => (
-                                        <FormItem className="md:col-span-2">
-                                            <FormLabel className="text-[10px] text-gray-600 dark:text-gray-400 font-medium tracking-tight">Số tiền trả trước (VNĐ)</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    placeholder="0"
-                                                    {...field}
-                                                    value={field.value ? Number(field.value.toString().replace(/\./g, '')).toLocaleString('vi-VN').replace(/,/g, '.') : ''}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value.replace(/\./g, '')
-                                                        if (/^\d*$/.test(val)) {
-                                                            field.onChange(val)
-                                                        }
-                                                    }}
-                                                    className="rounded-xl border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 h-11 font-medium text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-800"
-                                                />
-                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}

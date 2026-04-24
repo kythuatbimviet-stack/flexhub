@@ -1227,6 +1227,20 @@ export default function ContractsPage() {
                                                                                             <TableCell className="text-right pr-4">
                                                                                                 <div className="flex items-center justify-end gap-0.5">
                                                                                                     <Button variant="ghost" size="icon"
+                                                                                                        onClick={(e) => { 
+                                                                                                            e.stopPropagation(); 
+                                                                                                            if (contract.contract_file_url) {
+                                                                                                                window.open(contract.contract_file_url, '_blank');
+                                                                                                            } else {
+                                                                                                                toast.error('HĐ này chưa có file hoặc chưa được xuất file');
+                                                                                                            }
+                                                                                                        }}
+                                                                                                        className="w-7 h-7 rounded-lg text-blue-600 hover:bg-blue-50"
+                                                                                                        title="Mở link file hợp đồng"
+                                                                                                    >
+                                                                                                        <ExternalLink className="h-3.5 w-3.5" />
+                                                                                                    </Button>
+                                                                                                    <Button variant="ghost" size="icon"
                                                                                                         onClick={(e) => { e.stopPropagation(); setSelectedContract(contract); setIsDetailsOpen(true) }}
                                                                                                         className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-50">
                                                                                                         <Edit2 className="h-3.5 w-3.5" />

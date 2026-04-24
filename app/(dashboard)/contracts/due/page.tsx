@@ -977,13 +977,13 @@ export default function DueContractsPage() {
                                                                 <span className="font-bold text-gray-400 min-w-[20px]">
                                                                     BĐ:
                                                                 </span>{" "}
-                                                                {contract.initial_weight}kg
+                                                                {Number(contract.initial_weight || 0).toFixed(1)}kg
                                                             </div>
                                                             <div className="flex items-center gap-1 font-medium">
                                                                 <span className="font-bold text-gray-400 min-w-[20px]">
                                                                     KT:
                                                                 </span>{" "}
-                                                                {contract.final_weight}kg
+                                                                {Number(contract.final_weight || 0).toFixed(1)}kg
                                                             </div>
                                                             <div
                                                                 className={cn(
@@ -1001,8 +1001,8 @@ export default function DueContractsPage() {
                                                                     <>
                                                                         <ChevronDown className="w-2.5 h-2.5" />
                                                                         Giảm{" "}
-                                                                        {Number(contract.initial_weight || 0) -
-                                                                            Number(contract.final_weight || 0)}
+                                                                        {(Number(contract.initial_weight || 0) -
+                                                                            Number(contract.final_weight || 0)).toFixed(1)}
                                                                         kg
                                                                     </>
                                                                 ) : (
@@ -1012,7 +1012,7 @@ export default function DueContractsPage() {
                                                                         {Math.abs(
                                                                             Number(contract.initial_weight || 0) -
                                                                             Number(contract.final_weight || 0),
-                                                                        )}
+                                                                        ).toFixed(1)}
                                                                         kg
                                                                     </>
                                                                 )}
@@ -1095,24 +1095,6 @@ export default function DueContractsPage() {
                                                             <ClosureStatusBadge
                                                                 status={contract.closure_status}
                                                             />
-                                                            {contract.final_weight && (
-                                                                <div className="flex flex-col text-[10px] bg-gray-50 dark:bg-gray-800/50 p-1.5 rounded-lg border border-gray-100 dark:border-gray-800/50">
-                                                                    <div className="flex items-center justify-between gap-2 border-b border-gray-100 dark:border-gray-800 pb-1 mb-1">
-                                                                        <span className="text-gray-400 font-medium">BĐ: {contract.initial_weight}kg</span>
-                                                                        <span className="text-gray-900 dark:text-gray-100 font-bold">KT: {contract.final_weight}kg</span>
-                                                                    </div>
-                                                                    <div className={cn(
-                                                                        "flex items-center gap-1 font-bold",
-                                                                        Number(contract.initial_weight || 0) - Number(contract.final_weight || 0) > 0
-                                                                            ? "text-emerald-600 dark:text-emerald-400"
-                                                                            : "text-amber-600 dark:text-amber-400"
-                                                                    )}>
-                                                                        {Number(contract.initial_weight || 0) - Number(contract.final_weight || 0) > 0 ? <ChevronDown className="w-2.5 h-2.5" /> : <ChevronUp className="w-2.5 h-2.5" />}
-                                                                        {Number(contract.initial_weight || 0) - Number(contract.final_weight || 0) > 0 ? "Giảm" : "Tăng"}{" "}
-                                                                        {Math.abs(Number(contract.initial_weight || 0) - Number(contract.final_weight || 0))}kg
-                                                                    </div>
-                                                                </div>
-                                                            )}
                                                         </div>
                                                     </TableCell>
                                                 )}

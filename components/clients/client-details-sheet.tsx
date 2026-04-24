@@ -58,6 +58,7 @@ import {
     BadgeCheck,
     ChevronRight,
     Loader2,
+    ExternalLink
 } from 'lucide-react'
 import {
     Avatar,
@@ -116,7 +117,7 @@ const ClientCardSection = ({ title, icon: Icon, children }: any) => (
 
 const ClientInfoRow = ({ label, value, name, type = "text", options, isEditing, formData, onChange, onSelectChange }: any) => {
     const listId = options && type !== 'select' ? `${name}-list` : undefined;
-    const requiredNames = ['member_name', 'phone', 'branch_id', 'status', 'assigned_pt', 'pt_name', 'height', 'weight', 'source'];
+    const requiredNames = ['member_name', 'branch_id', 'status', 'assigned_pt', 'pt_name', 'height', 'weight', 'source'];
     return (
         <div className="space-y-1">
             <Label className="text-xs font-medium text-slate-600 dark:text-slate-200">
@@ -1227,7 +1228,21 @@ export function ClientDetailsSheet({ client, open, onOpenChange, onSuccess }: Cl
                                                                 {contract.package_name || 'Gói tập mặc định'}
                                                             </h4>
                                                         </div>
-                                                        <div className="text-right">
+                                                        <div className="text-right flex flex-col items-end gap-1">
+                                                            {contract.contract_file_url && (
+                                                                <Button
+                                                                    size="icon"
+                                                                    variant="ghost"
+                                                                    className="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-50 transition-all active:scale-95"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        window.open(contract.contract_file_url, '_blank');
+                                                                    }}
+                                                                    title="Mở file hợp đồng"
+                                                                >
+                                                                    <ExternalLink className="w-4 h-4" />
+                                                                </Button>
+                                                            )}
                                                             <div className="text-sm font-bold text-slate-900 dark:text-white">
                                                                 {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(contract.total_amount || 0)}
                                                             </div>
