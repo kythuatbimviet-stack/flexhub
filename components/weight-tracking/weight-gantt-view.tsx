@@ -304,7 +304,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
         let list = clients
             .map(client => {
                 const clientContracts = contracts.filter(con => con.client_id === client.id)
-                
+
                 // Tìm tất cả các hợp đồng còn hiệu lực
                 const activeContracts = clientContracts.filter(contract => {
                     const contractEndDate = contract.end_date ? new Date(contract.end_date) : null
@@ -320,7 +320,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                 if (activeContracts.length === 0) return null
 
                 // Lấy hợp đồng mới nhất trong số các hợp đồng đang hiệu lực
-                const latestActive = [...activeContracts].sort((a, b) => 
+                const latestActive = [...activeContracts].sort((a, b) =>
                     new Date(b.created_at || b.start_date).getTime() - new Date(a.created_at || a.start_date).getTime()
                 )[0]
 
@@ -439,6 +439,77 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                 isMobile && "flex-col gap-3 py-3"
             )}>
                 <div className={cn("flex items-center gap-3", isMobile && "w-full flex-col")}>
+                    {!isMobile && (
+                        <AnimatePresence>
+                            {selectedClientId && selectedDate && (
+                                <motion.div
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-0.5 shadow-sm"
+                                >
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mr-1">Tần suất:</span>
+                                    <TooltipProvider>
+                                        <div className="flex items-center gap-1">
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        size="sm"
+                                                        className="h-7 w-7 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
+                                                        onClick={() => handleUpdateStatus('Y')}
+                                                    >
+                                                        Y
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent className="bg-emerald-600 text-white border-none text-[11px] font-medium">
+                                                    Y (Tập): Xanh lá
+                                                </TooltipContent>
+                                            </Tooltip>
+
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        size="sm"
+                                                        className="h-7 w-7 rounded-md bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
+                                                        onClick={() => handleUpdateStatus('N')}
+                                                    >
+                                                        N
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent className="bg-rose-600 text-white border-none text-[11px] font-medium">
+                                                    N (Nghỉ): Đỏ
+                                                </TooltipContent>
+                                            </Tooltip>
+
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        size="sm"
+                                                        className="h-7 w-8 rounded-md bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
+                                                        onClick={() => handleUpdateStatus('TĐ')}
+                                                    >
+                                                        T
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent className="bg-amber-600 text-white border-none text-[11px] font-medium">
+                                                    T (Tự tập): Cam
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </div>
+                                    </TooltipProvider>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 w-7 rounded-md text-slate-300 hover:text-red-500 p-0 ml-1"
+                                        onClick={() => handleUpdateStatus(null)}
+                                        title="Xóa"
+                                    >
+                                        <RotateCcw className="w-3 h-3" />
+                                    </Button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    )}
                     <div className={cn("relative", isMobile && "w-full")}>
                         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                         <Input
@@ -580,7 +651,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                     ) : (
                         <>
                             <Select value={filterBranch} onValueChange={setFilterBranch}>
-                                <SelectTrigger className={cn("h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none shrink-0", isMobile ? "w-32" : "w-48")}>
+                                <SelectTrigger className={cn("h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none shrink-0", isMobile ? "w-32" : "w-36")}>
                                     <div className="flex items-center gap-2 overflow-hidden">
                                         <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                         <SelectValue placeholder="Chi nhánh" />
@@ -595,7 +666,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                             </Select>
 
                             <Select value={filterPT} onValueChange={setFilterPT}>
-                                <SelectTrigger className={cn("h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none shrink-0", isMobile ? "w-32" : "w-48")}>
+                                <SelectTrigger className={cn("h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none shrink-0", isMobile ? "w-32" : "w-36")}>
                                     <div className="flex items-center gap-2 overflow-hidden">
                                         <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                         <SelectValue placeholder="PT" />
@@ -610,7 +681,7 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                             </Select>
 
                             <Select value={sortByWeight} onValueChange={(val: any) => setSortByWeight(val)}>
-                                <SelectTrigger className={cn("h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none shrink-0", isMobile ? "w-32" : "w-48")}>
+                                <SelectTrigger className={cn("h-9 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs shadow-none shrink-0", isMobile ? "w-32" : "w-40")}>
                                     <div className="flex items-center gap-2 overflow-hidden">
                                         <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                         <SelectValue placeholder="Sắp xếp" />
@@ -641,76 +712,6 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                 <div className={cn("flex items-center gap-2", isMobile && "w-full justify-between border-t border-slate-100 dark:border-slate-800 pt-2")}>
                     {!isMobile && (
                         <>
-                            <AnimatePresence>
-                                {selectedClientId && selectedDate && (
-                                    <motion.div
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: 20 }}
-                                        className="flex items-center gap-1.5 mr-2 pr-4 border-r border-slate-200 dark:border-slate-800"
-                                    >
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Tần suất:</span>
-                                        <TooltipProvider>
-                                            <div className="flex items-center gap-1.5">
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            size="sm"
-                                                            className="h-8 w-8 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
-                                                            onClick={() => handleUpdateStatus('Y')}
-                                                        >
-                                                            Y
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent className="bg-emerald-600 text-white border-none text-[11px] font-medium">
-                                                        Y (Tập): Hiển thị màu xanh
-                                                    </TooltipContent>
-                                                </Tooltip>
-
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            size="sm"
-                                                            className="h-8 w-8 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
-                                                            onClick={() => handleUpdateStatus('N')}
-                                                        >
-                                                            N
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent className="bg-rose-600 text-white border-none text-[11px] font-medium">
-                                                        N (Nghỉ): Hiển thị màu đỏ
-                                                    </TooltipContent>
-                                                </Tooltip>
-
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            size="sm"
-                                                            className="h-8 w-10 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs p-0 shadow-sm transition-transform active:scale-95"
-                                                            onClick={() => handleUpdateStatus('TĐ')}
-                                                        >
-                                                            T
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent className="bg-amber-600 text-white border-none text-[11px] font-medium">
-                                                        TT (Tự tập): Hiển thị màu cam
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </div>
-                                        </TooltipProvider>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-500 p-0"
-                                            onClick={() => handleUpdateStatus(null)}
-                                            title="Xóa trạng thái"
-                                        >
-                                            <RotateCcw className="w-3.5 h-3.5" />
-                                        </Button>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -719,13 +720,13 @@ export function WeightGanttView({ records, clients, contracts, onSuccess }: Weig
                                 className="h-8 gap-2 text-xs border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 transition-all"
                             >
                                 <Edit3 className="w-3.5 h-3.5" />
-                                <span>Chỉnh sửa</span>
+                                <span>Sửa</span>
                             </Button>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" size="sm" className="h-8 gap-2 text-xs border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
                                         <Settings2 className="w-3.5 h-3.5" />
-                                        <span>Tùy chỉnh cột</span>
+                                        <span>Tùy chỉnh</span>
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-56 p-2" align="end">

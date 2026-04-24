@@ -2,13 +2,15 @@
 
 import * as React from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Cloud, FileText, Loader2, Printer, RefreshCw, ExternalLink, Download, MessageSquare, Mail } from 'lucide-react'
+import { ArrowLeft, Cloud, FileText, Loader2, Printer, RefreshCw, ExternalLink, Download, MessageSquare, Mail, BadgeCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { fetchContractById, updateContract, shareContractViaZalo, shareContractViaEmail } from '@/app/actions/contracts'
 import { createClient } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { EmailShareDialog } from '@/components/contracts/email-share-dialog'
 import { ZaloShareDialog } from '@/components/contracts/zalo-share-dialog'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 
 export default function GDocPreviewPage() {
   const rawId = useParams<{ id: string }>().id
@@ -23,6 +25,8 @@ export default function GDocPreviewPage() {
   const [emailDialogOpen, setEmailDialogOpen] = React.useState(false)
   const [zaloDialogOpen, setZaloDialogOpen] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [autoSendEmail, setAutoSendEmail] = React.useState(false)
+  const [finalizing, setFinalizing] = React.useState(false)
 
   const loadData = React.useCallback(async () => {
     try {
@@ -146,6 +150,35 @@ export default function GDocPreviewPage() {
     setEmailDialogOpen(true)
   }
 
+  const handleFinalizeReview = async () => {
+    if (!contract) return
+    if (!confirm('Xác nhận hoàn tất Review hợp đồng này?')) return
+
+    setFinalizing(true)
+    try {
+      const updates: any = { status: 'Đã Review' }
+      
+      // Nếu tick chọn tự động gửi email
+      if (autoSendEmail) {
+        updates.sendemail = 'trigger_email'
+      }
+
+      const res = await updateContract(id, updates)
+      if (res.success) {
+        toast.success(autoSendEmail ? 'Đã Review và đang yêu cầu gửi email khách hàng!' : 'Đã xác nhận Review thành công!')
+        setContract((prev: any) => ({ ...prev, ...updates }))
+        // Refresh data to be sure
+        loadData()
+      } else {
+        toast.error(res.error || 'Lỗi khi xác nhận Review')
+      }
+    } catch (e: any) {
+      toast.error(e.message)
+    } finally {
+      setFinalizing(false)
+    }
+  }
+
   const getEmbedUrl = (url?: string) => {
     if (!url) return ''
     if (url.includes('drive.google.com/file/d/')) {
@@ -210,7 +243,35 @@ export default function GDocPreviewPage() {
         </div>
 
         <div className="flex items-center gap-2">
-           <Button
+          {contract?.status === 'Chờ Review' && (
+            <div className="flex items-center gap-4 mr-4 px-4 py-1.5 bg-orange-50 dark:bg-orange-950/20 rounded-2xl border border-orange-100 dark:border-orange-900/30">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="autoSendEmail" 
+                  checked={autoSendEmail}
+                  onCheckedChange={(checked) => setAutoSendEmail(checked === true)}
+                  className="border-orange-300 data-[state=checked]:bg-orange-600 data-[state=checked]:border-orange-600"
+                />
+                <Label 
+                  htmlFor="autoSendEmail"
+                  className="text-[11px] font-bold text-orange-700 dark:text-orange-400 cursor-pointer select-none"
+                >
+                  Tự gửi email khách hàng sau khi review
+                </Label>
+              </div>
+              <div className="w-px h-6 bg-orange-200 dark:bg-orange-800" />
+              <Button
+                onClick={handleFinalizeReview}
+                disabled={finalizing || generating}
+                className="rounded-xl h-9 px-6 text-[12px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-100 dark:shadow-none transition-all active:scale-95"
+              >
+                {finalizing ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <BadgeCheck className="w-3.5 h-3.5 mr-2" />}
+                Chốt Review
+              </Button>
+            </div>
+          )}
+
+          <Button
             variant="outline"
             onClick={handleRegenerate}
             disabled={generating}

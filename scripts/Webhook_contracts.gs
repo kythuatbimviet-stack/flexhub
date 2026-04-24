@@ -17,7 +17,7 @@ function doPost(e) {
       }
       
       webapp_guiemail(
-        payload.subject || "Thông tin từ Eva's Fit", 
+        payload.subject || "Thông tin từ Eva's Fit Việt Nam", 
         payload.email, 
         pdfBlob, 
         payload.name || "Quý khách", 
@@ -54,7 +54,7 @@ function doPost(e) {
     if (isZaloReq || isEmailReq) {
       console.log("Processing sharing request for contract ID: " + record.id + " | EmailReq: " + isEmailReq);
       const contract = fetchFullContractData(record.id);
-      const branchName = (contract.branches && contract.branches.name) || "Eva's Fit";
+      const branchName = "Eva's Fit Việt Nam";
       
       const fileId = extractFileIdFromUrl(contract.contract_file_url);
       let pdfBlob = null;
@@ -103,7 +103,7 @@ function doPost(e) {
     if (isXNTTReq) {
       try {
         const xnttData = JSON.parse(record.sendemail_xntt);
-        const branchNameXNTT = (record.branches && record.branches.name) || "Eva's Fit";
+        const branchNameXNTT = "Eva's Fit Việt Nam";
 
         tg_log("XNTT", "Gửi XNTT", "To: " + xnttData.email);
         GmailApp.sendEmail(xnttData.email, xnttData.subject, "", {
@@ -252,9 +252,9 @@ function buildFullPlaceholders(contract) {
   data["{{payment_method}}"] = c.payment_method || "Tiền mặt";
 
   // --- CENTER/BRANCH CATEGORY ---
-  data["{{center_name}}"] = br.name || c.facility_name || "TRUNG TÂM LADY FIT";
-  data["{{center_short_name}}"] = br.short_name || c.short_name || "LADY FIT";
-  data["{{branch_name}}"] = br.name || "";
+  data["{{center_name}}"] = "Eva's Fit Việt Nam";
+  data["{{center_short_name}}"] = "Eva's Fit Việt Nam";
+  data["{{branch_name}}"] = "Eva's Fit Việt Nam";
   data["{{center_address}}"] = br.center_address || br.address || c.address || "";
   data["{{center_phone}}"] = c.center_phone || br.center_phone || br.phone || "";
   data["{{representative_phone}}"] = c.representative_phone || "";
@@ -431,15 +431,15 @@ function webapp_guiemail(subject, email, pdfBlob, client_name, contract, customM
     }
 
     // Default system email body
-    const branchName = (contract && contract.branches && contract.branches.name) || "Eva's Fit";
+    const branchName = "Eva's Fit Việt Nam";
     const htmlBody = emailMessage ? 
       `<div style="font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6; white-space: pre-wrap;">${emailMessage}</div>` :
       `<div style="font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6;">
           <p>${branchName} xin chào chị <strong>${client_name}</strong>,</p>
-          <p>Cảm ơn chị đã tin tưởng và lựa chọn tập luyện cùng Eva's Fit.</p>
+          <p>Cảm ơn chị đã tin tưởng và lựa chọn tập luyện cùng Eva's Fit Việt Nam.</p>
           <p>Vui lòng xem chi tiết thông tin đính kèm.</p>
           <br>
-          <p>Trân trọng,<br><strong>Đội ngũ ${branchName}</strong></p>
+          <p>Trân trọng,<br><strong>${branchName}</strong></p>
       </div>`;
 
     const mailOptions = {

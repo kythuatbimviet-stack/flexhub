@@ -37,15 +37,15 @@ export function EmailShareDialog({
 
   React.useEffect(() => {
     if (open && contractData) {
-      const branchName = contractData.facility_name || "Eva's Fit"
+      const branchName = "Eva's Fit Việt Nam"
       setEmail(contractData.clients?.email || '')
       setSubject(`Hợp đồng ${contractData.clients?.member_name || ''} - ${branchName}`)
       setMessage(
-        `Trung tâm ${branchName} xin chào chị ${contractData.clients?.member_name || 'Hội viên'},\n\n` +
-        `Cảm ơn chị đã tin tưởng và lựa chọn Eva's Fit.\n\n` +
-        `Đây là biên nhận và hợp đồng của chị tại ${branchName}. Mọi thông tin chi tiết chị vui lòng kiểm tra trong file PDF đính kèm.\n\n` +
+        `${branchName} xin chào chị ${contractData.clients?.member_name || 'Hội viên'},\n\n` +
+        `Cảm ơn chị đã tin tưởng và lựa chọn tập luyện cùng Eva's Fit Việt Nam.\n\n` +
+        `Đây là biên nhận và hợp đồng của chị. Mọi thông tin chi tiết chị vui lòng kiểm tra trong file PDF đính kèm.\n\n` +
         `Nếu cần hỗ trợ thêm, chị có thể phản hồi lại email này.\n\n` +
-        `Trân trọng,\nĐội ngũ ${branchName}`
+        `Trân trọng,\n${branchName}`
       )
     }
   }, [open, contractData])

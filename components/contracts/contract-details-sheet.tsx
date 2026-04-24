@@ -93,13 +93,16 @@ import { TrendingDown, TrendingUp, Minus, ClipboardCheck, RefreshCw, PauseCircle
 import { useQuery } from '@tanstack/react-query'
 
 // ─── Component con nằm NGOÀI component cha để tránh re-mount khi state thay đổi ───
-const ContractCardSection = ({ title, icon: Icon, children }: any) => (
+const ContractCardSection = ({ title, icon: Icon, children, action }: any) => (
     <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-50 dark:border-slate-800/50">
-            <div className="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-950/30 flex items-center justify-center text-red-600 dark:text-red-400 shrink-0">
-                {Icon && <Icon className="w-4 h-4" />}
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50 dark:border-slate-800/50">
+            <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-950/30 flex items-center justify-center text-red-600 dark:text-red-400 shrink-0">
+                    {Icon && <Icon className="w-4 h-4" />}
+                </div>
+                <h3 className="text-sm font-medium text-slate-900 dark:text-white tracking-tight">{title}</h3>
             </div>
-            <h3 className="text-sm font-medium text-slate-900 dark:text-white tracking-tight">{title}</h3>
+            {action}
         </div>
         {children}
     </div>
@@ -199,7 +202,7 @@ export function ContractDetailsSheet({
     const [loading, setLoading] = React.useState(false)
     const [isLoadingFullData, setIsLoadingFullData] = React.useState(false)
     const [formData, setFormData] = React.useState<any>({})
-    const { permissions, user: currentUser, isLoading: permsLoading, isCEO, isManager, isBranchManager } = usePermissions()
+    const { permissions, user: currentUser, isLoading: permsLoading, isCEO, isManager, isBranchManager, isAdmin } = usePermissions()
     const avatarInputRef = React.useRef<HTMLInputElement>(null)
     const prevContractIdRef = React.useRef<string | null>(null)
     const [generatingId, setGeneratingId] = React.useState(false)
@@ -1252,11 +1255,28 @@ export function ContractDetailsSheet({
                         )}
                     </div>
                     {/* Section: Gửi Hợp đồng Khách hàng */}
-                    <ContractCardSection title="GỬI HỢP ĐỒNG" icon={Cloud}>
+                    <ContractCardSection
+                        title="GỬI HỢP ĐỒNG"
+                        icon={Cloud}
+                        action={
+                            formData.status === 'Chờ Review' && (isCEO || isManager || isBranchManager || isAdmin) && (
+                                <Button
+                                    onClick={() => window.open(`/contracts/preview-gdoc/${encodeURIComponent(formData.id)}`, '_blank')}
+                                    className="h-8 px-3 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg text-[11px] shadow-sm transition-all active:scale-95"
+                                >
+                                    <ExternalLink className="w-3 h-3 mr-1.5" />
+                                    Review Ngay
+                                </Button>
+                            )
+                        }
+                    >
                         {formData.status === 'Chờ Review' ? (
-                            <div className="flex flex-col items-center justify-center py-4 px-2 text-center bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
-                                <AlertCircle className="w-8 h-8 text-orange-500 mb-2 opacity-50" />
-                                <p className="text-xs font-medium text-slate-500">Hợp đồng đang chờ Review.<br />Chưa thể gửi Email/Zalo lúc này.</p>
+                            <div className="flex flex-col items-center justify-center py-6 px-4 text-center bg-orange-50/50 dark:bg-orange-950/10 rounded-2xl border border-dashed border-orange-200 dark:border-orange-800/50 transition-all">
+                                <AlertCircle className="w-8 h-8 text-orange-500 mb-3 opacity-80" />
+                                <div className="space-y-1">
+                                    <p className="text-[13px] font-bold text-orange-800 dark:text-orange-400">Hợp đồng đang chờ Review</p>
+                                    <p className="text-[11px] text-orange-600/70 dark:text-orange-500/60 font-medium leading-relaxed">Chưa thể gửi Email/Zalo lúc này.<br />Vui lòng kiểm tra và xác nhận nội dung trước.</p>
+                                </div>
                             </div>
                         ) : (
                             <div className="space-y-5">
@@ -1869,6 +1889,15 @@ export function ContractDetailsSheet({
                                         <Cloud className="w-4 h-4 mr-2 text-blue-500" />
                                     )}
                                     Xuất lại hợp đồng
+                                </Button>
+
+                                <Button
+                                    onClick={() => window.open(`/contracts/preview-gdoc/${encodeURIComponent(formData.id)}`, '_blank')}
+                                    variant="ghost"
+                                    className="rounded-xl h-11 px-2 font-bold text-[13px] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all font-inter"
+                                    title="Mở trực tiếp PDF"
+                                >
+                                    <ExternalLink className="w-4 h-4" />
                                 </Button>
                                 {formData.contract_file_url && formData.contract_file_url !== 'create_contract' && (
                                     <div className="flex items-center gap-1">
