@@ -1,0 +1,226 @@
+-- ============================================================
+-- NHÓM 2: CHƯƠNG TRÌNH & THƯ VIỆN PT
+-- ============================================================
+ 
+DROP TABLE IF EXISTS `programs`;
+CREATE TABLE `programs` (
+  `id`                  INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+  `created_by_pt_id`    INT UNSIGNED    NOT NULL               COMMENT 'PT tạo chương trình',
+  `name`                VARCHAR(200)    NOT NULL               COMMENT 'Tên chương trình',
+  `type`                ENUM(
+    'Functional','Body Weight','Upper-Lower',
+    'Full Body','P.H.A.T.','Lose Fat','Power','HIIT'
+  )                                     NOT NULL               COMMENT 'Loại chương trình',
+  `phase`               ENUM('Cơ bản','Phát triển','Duy trì')
+                                         NOT NULL DEFAULT 'Cơ bản' COMMENT 'Giai đoạn tập',
+  `target_level`        ENUM('Novice','Intermediate','Advance')
+                                         NOT NULL DEFAULT 'Novice',
+  `target_gender`       ENUM('Nam','Nữ','Cả hai')
+                                         NOT NULL DEFAULT 'Cả hai',
+  `goal`                ENUM(
+    'Giảm mỡ','Tăng cơ','Sức bền',
+    'Phục hồi','Sức mạnh','Linh hoạt','Tổng hợp'
+  )                                     NOT NULL               COMMENT 'Mục tiêu chính',
+  `duration_weeks`      TINYINT UNSIGNED                       COMMENT 'Số tuần của chương trình',
+  `days_per_week`       TINYINT UNSIGNED                       COMMENT 'Số buổi tập mỗi tuần',
+  `session_duration_min` SMALLINT UNSIGNED                     COMMENT 'Thời lượng mỗi buổi (phút)',
+  `calorie_burn_est`    SMALLINT UNSIGNED                      COMMENT 'Ước tính calo đốt/buổi',
+  `is_template`         TINYINT(1)      NOT NULL DEFAULT 0     COMMENT '1=template trong thư viện PT',
+  `is_public`           TINYINT(1)      NOT NULL DEFAULT 0     COMMENT '1=chia sẻ công khai toàn gym',
+  `version`             TINYINT UNSIGNED NOT NULL DEFAULT 1    COMMENT 'Phiên bản, tăng khi chỉnh sửa',
+  `cloned_from_id`      INT UNSIGNED                           COMMENT 'Clone từ program nào (self-ref)',
+  `thumbnail_url`       TEXT                                   COMMENT 'Ảnh bìa chương trình',
+  `description`         TEXT                                   COMMENT 'Mô tả chi tiết',
+  `created_at`          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_programs_pt`       (`created_by_pt_id`),
+  KEY `idx_programs_library`  (`is_template`, `is_public`, `goal`, `target_level`),
+  KEY `idx_programs_type`     (`type`, `phase`),
+  KEY `idx_programs_cloned`   (`cloned_from_id`),
+  CONSTRAINT `fk_programs_pt`
+    FOREIGN KEY (`created_by_pt_id`) REFERENCES `trainers` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_programs_clone`
+    FOREIGN KEY (`cloned_from_id`)   REFERENCES `programs` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Bảng chương trình tập luyện — vừa là template thư viện vừa là giáo án giao cho HV';
+ 
+-- ------------------------------------------------------------
+ 
+DROP TABLE IF EXISTS `program_tags`;
+CREATE TABLE `program_tags` (
+  `id`         SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`       VARCHAR(50)       NOT NULL  COMMENT 'Tên tag: "Không dụng cụ", "12 tuần", "HIIT"',
+  `color_hex`  VARCHAR(7)        NOT NULL DEFAULT '#888780' COMMENT 'Màu hiển thị: #7F77DD',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_tag_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Danh mục tag để phân loại chương trình';
+ 
+-- ------------------------------------------------------------
+ 
+DROP TABLE IF EXISTS `program_tag_map`;
+CREATE TABLE `program_tag_map` (
+  `program_id` INT UNSIGNED      NOT NULL,
+  `tag_id`     SMALLINT UNSIGNED NOT NULL,
+  PRIMARY KEY (`program_id`, `tag_id`),
+  CONSTRAINT `fk_tagmap_program`
+    FOREIGN KEY (`program_id`) REFERENCES `programs`     (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_tagmap_tag`
+    FOREIGN KEY (`tag_id`)     REFERENCES `program_tags` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Bảng nối N:M giữa programs và program_tags';
+ 
+-- ============================================================
+-- NHÓM 3: GIÁO ÁN & BÀI TẬP
+-- ============================================================
+ 
+DROP TABLE IF EXISTS `exercises`;
+CREATE TABLE `exercises` (
+  `id`           INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+  `name`         VARCHAR(150)    NOT NULL                COMMENT 'Tên bài tập: "Push Up", "Squat"',
+  `name_vi`      VARCHAR(150)                            COMMENT 'Tên tiếng Việt (nếu có)',
+  `category`     ENUM(
+    'Resistance','Cardio','Core',
+    'Plyometric','Flexibility','Functional'
+  )                              NOT NULL                COMMENT 'Phân loại bài tập',
+  `muscle_group` JSON                                    COMMENT 'Nhóm cơ: ["Chest","Triceps"]',
+  `equipment`    ENUM(
+    'Body Weight','Dumbbell','Barbell',
+    'Cable','Machine','Kettlebell','Resistance Band','Other'
+  )                              NOT NULL DEFAULT 'Body Weight',
+  `description`  TEXT                                    COMMENT 'Mô tả kỹ thuật thực hiện',
+  `demo_url`     TEXT                                    COMMENT 'Link video minh họa',
+  `created_at`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_exercises_category` (`category`),
+  KEY `idx_exercises_equipment` (`equipment`),
+  FULLTEXT KEY `ft_exercises_name` (`name`, `name_vi`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Thư viện bài tập dùng chung toàn hệ thống';
+ 
+-- ------------------------------------------------------------
+ 
+DROP TABLE IF EXISTS `workout_plans`;
+CREATE TABLE `workout_plans` (
+  `id`             INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+  `program_id`     INT UNSIGNED    NOT NULL               COMMENT 'Thuộc chương trình nào',
+  `day_label`      VARCHAR(50)     NOT NULL               COMMENT 'Nhãn buổi: "Day 1", "Upper 1"',
+  `day_of_week`    ENUM('Mon','Tue','Wed','Thu','Fri','Sat','Sun','Any')
+                                   NOT NULL DEFAULT 'Any' COMMENT 'Ngày trong tuần cố định (nếu có)',
+  `session_type`   ENUM(
+    'Resistance','Cardio','Core','Functional',
+    'Upper Body','Lower Body','Full Body','Rest'
+  )                                NOT NULL               COMMENT 'Loại buổi tập',
+  `warmup_notes`   TEXT                                   COMMENT 'Hướng dẫn khởi động',
+  `cooldown_notes` TEXT                                   COMMENT 'Hướng dẫn hạ nhiệt, giãn cơ',
+  `sort_order`     TINYINT UNSIGNED NOT NULL DEFAULT 0    COMMENT 'Thứ tự buổi trong tuần',
+  PRIMARY KEY (`id`),
+  KEY `idx_wplans_program` (`program_id`, `sort_order`),
+  CONSTRAINT `fk_wplans_program`
+    FOREIGN KEY (`program_id`) REFERENCES `programs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Các buổi tập trong một chương trình';
+ 
+-- ------------------------------------------------------------
+ 
+DROP TABLE IF EXISTS `workout_exercises`;
+CREATE TABLE `workout_exercises` (
+  `id`              INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+  `workout_plan_id` INT UNSIGNED    NOT NULL               COMMENT 'Thuộc buổi tập nào',
+  `exercise_id`     INT UNSIGNED    NOT NULL               COMMENT 'Bài tập nào',
+  `block`           VARCHAR(10)              DEFAULT NULL  COMMENT 'Khối: "A"=khởi động, "B"=chính, "C"=finisher',
+  `sets`            TINYINT UNSIGNED                       COMMENT 'Số set',
+  `reps`            VARCHAR(50)                            COMMENT 'Reps: "12","30 25 20","max out","30S"',
+  `duration_sec`    SMALLINT UNSIGNED                      COMMENT 'Thời gian thực hiện (giây)',
+  `tempo`           VARCHAR(20)                            COMMENT 'Nhịp độ: "2-0-2", "Explosive"',
+  `intensity`       VARCHAR(50)                            COMMENT 'Cường độ: "Body Weight","70% 1RM"',
+  `rest_sec_min`    SMALLINT UNSIGNED                      COMMENT 'Nghỉ tối thiểu (giây)',
+  `rest_sec_max`    SMALLINT UNSIGNED                      COMMENT 'Nghỉ tối đa (giây)',
+  `note`            TEXT                                   COMMENT 'Ghi chú kỹ thuật, biến thể bài tập',
+  `sort_order`      TINYINT UNSIGNED NOT NULL DEFAULT 0    COMMENT 'Thứ tự trong buổi',
+  PRIMARY KEY (`id`),
+  KEY `idx_wexercises_plan`     (`workout_plan_id`, `sort_order`),
+  KEY `idx_wexercises_exercise` (`exercise_id`),
+  CONSTRAINT `fk_wexercises_plan`
+    FOREIGN KEY (`workout_plan_id`) REFERENCES `workout_plans` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_wexercises_exercise`
+    FOREIGN KEY (`exercise_id`)     REFERENCES `exercises`      (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Chi tiết bài tập trong từng buổi tập (sets, reps, rest...)';
+ 
+-- ============================================================
+-- NHÓM 4: VẬN HÀNH & THEO DÕI
+-- ============================================================
+ 
+DROP TABLE IF EXISTS `client_programs`;
+CREATE TABLE `client_programs` (
+  `id`                INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+  `client_id`         INT UNSIGNED    NOT NULL               COMMENT 'Học viên được giao',
+  `program_id`        INT UNSIGNED    NOT NULL               COMMENT 'Chương trình được giao',
+  `assigned_by_pt_id` INT UNSIGNED    NOT NULL               COMMENT 'PT giao chương trình',
+  `start_date`        DATE            NOT NULL               COMMENT 'Ngày bắt đầu',
+  `end_date`          DATE                                   COMMENT 'Ngày kết thúc dự kiến',
+  `status`            ENUM('Active','Paused','Completed','Dropped')
+                                      NOT NULL DEFAULT 'Active',
+  `trainer_notes`     TEXT                                   COMMENT 'Ghi chú của PT khi giao',
+  `created_at`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_cprograms_client`  (`client_id`, `status`),
+  KEY `idx_cprograms_program` (`program_id`),
+  KEY `idx_cprograms_pt`      (`assigned_by_pt_id`),
+  CONSTRAINT `fk_cprograms_client`
+    FOREIGN KEY (`client_id`)         REFERENCES `clients`  (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_cprograms_program`
+    FOREIGN KEY (`program_id`)        REFERENCES `programs` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_cprograms_pt`
+    FOREIGN KEY (`assigned_by_pt_id`) REFERENCES `trainers` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Bảng giao chương trình cho học viên (lịch sử đầy đủ)';
+ 
+-- ------------------------------------------------------------
+ 
+DROP TABLE IF EXISTS `client_logs`;
+CREATE TABLE `client_logs` (
+  `id`                  INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+  `client_program_id`   INT UNSIGNED    NOT NULL               COMMENT 'Thuộc chương trình đang tập',
+  `workout_exercise_id` INT UNSIGNED    NOT NULL               COMMENT 'Bài tập được ghi nhận',
+  `log_date`            DATE            NOT NULL               COMMENT 'Ngày tập thực tế',
+  `actual_sets`         TINYINT UNSIGNED                       COMMENT 'Số set thực tế hoàn thành',
+  `actual_reps`         VARCHAR(50)                            COMMENT 'Reps thực tế từng set: "12 10 8"',
+  `weight_used_kg`      DECIMAL(6,2)                           COMMENT 'Trọng lượng sử dụng (kg)',
+  `rpe`                 TINYINT UNSIGNED                       COMMENT 'Rate of Perceived Exertion 1-10',
+  `trainer_note`        TEXT                                   COMMENT 'Nhận xét của PT sau buổi tập',
+  `created_at`          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_clogs_cprogram` (`client_program_id`, `log_date`),
+  KEY `idx_clogs_exercise` (`workout_exercise_id`),
+  CONSTRAINT `fk_clogs_cprogram`
+    FOREIGN KEY (`client_program_id`)   REFERENCES `client_programs`  (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_clogs_exercise`
+    FOREIGN KEY (`workout_exercise_id`) REFERENCES `workout_exercises` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `chk_clogs_rpe` CHECK (`rpe` BETWEEN 1 AND 10)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Nhật ký từng bài tập thực tế của học viên';
+ 
+-- ------------------------------------------------------------
+ 
+DROP TABLE IF EXISTS `program_ratings`;
+CREATE TABLE `program_ratings` (
+  `id`         INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+  `program_id` INT UNSIGNED    NOT NULL               COMMENT 'Template được đánh giá',
+  `trainer_id` INT UNSIGNED    NOT NULL               COMMENT 'PT thực hiện đánh giá',
+  `stars`      TINYINT UNSIGNED NOT NULL              COMMENT 'Số sao 1-5',
+  `comment`    TEXT                                   COMMENT 'Nhận xét về hiệu quả template',
+  `created_at` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_rating_pt_program` (`program_id`, `trainer_id`) COMMENT 'Mỗi PT chỉ đánh giá 1 lần/template',
+  KEY `idx_ratings_program` (`program_id`),
+  CONSTRAINT `fk_ratings_program`
+    FOREIGN KEY (`program_id`) REFERENCES `programs` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ratings_trainer`
+    FOREIGN KEY (`trainer_id`) REFERENCES `trainers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `chk_ratings_stars` CHECK (`stars` BETWEEN 1 AND 5)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Đánh giá của PT về các template trong thư viện';

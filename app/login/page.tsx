@@ -77,7 +77,7 @@ export default function LoginPage() {
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 text-white mb-12">
                         <span className="text-2xl font-bold tracking-tight">
-                            Eva's Fit <span className="text-red-600 dark:text-white font-semibold text-[10px] ml-1 px-2 py-0.5 bg-white dark:bg-red-900/30 rounded-full tracking-wider">CRM</span>
+                            Flex Hub <span className="text-red-600 dark:text-white font-semibold text-[10px] ml-1 px-2 py-0.5 bg-white dark:bg-red-900/30 rounded-full tracking-wider">CRM</span>
                         </span>
                     </div>
                 </div>
@@ -92,14 +92,14 @@ export default function LoginPage() {
                             Hệ thống quản lý phòng tập hiện đại.
                         </h1>
                         <p className="text-white/80 text-lg max-w-sm leading-relaxed">
-                            Tối ưu hóa quy trình, nâng cao trải nghiệm khách hàng và quản lý tài chính hiệu quả với Eva's Fit.
+                            Tối ưu hóa quy trình, nâng cao trải nghiệm khách hàng và quản lý tài chính hiệu quả với Flex Hub.
                         </p>
                     </motion.div>
                 </div>
 
                 <div className="relative z-10 flex items-center gap-4">
                     <div className="h-px w-12 bg-white/40" />
-                    <span className="text-white/40 text-xs tracking-[0.3em] uppercase font-medium">Eva's Fit Team Product</span>
+                    <span className="text-white/40 text-xs tracking-[0.3em] uppercase font-medium">Flex Hub Team Product</span>
                 </div>
             </div>
 

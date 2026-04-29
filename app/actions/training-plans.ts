@@ -1,0 +1,295 @@
+'use server'
+
+import { createClient, createAdminClient } from '@/lib/supabase-server'
+import { revalidatePath } from 'next/cache'
+
+export type Exercise = {
+    id: string
+    name: string
+    name_vi?: string
+    category: string
+    muscle_groups: string[]
+    equipment: string
+    description?: string
+    demo_url?: string
+}
+
+export type TrainingProgram = {
+    id: string
+    name: string
+    goal?: string
+    level?: string
+    duration_weeks?: number
+    is_template: boolean
+    is_public: boolean
+    created_by?: string
+    client_id?: string
+    created_at: string
+    updated_at: string
+    sessions?: TrainingSession[]
+}
+
+export type TrainingSession = {
+    id: string
+    program_id: string
+    day_label: string
+    sort_order: number
+    notes?: string
+    exercises?: SessionExercise[]
+}
+
+export type SessionExercise = {
+    id: string
+    session_id: string
+    exercise_id: string
+    exercise?: Exercise
+    sets?: string
+    reps?: string
+    rest_seconds?: number
+    intensity?: string
+    tempo?: string
+    notes?: string
+    sort_order: number
+}
+
+// Fetch all exercises from the library
+export async function fetchExercises() {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('exercises')
+        .select('*')
+        .order('name')
+    
+    if (error) return { success: false, error: error.message }
+    return { success: true, data }
+}
+
+// Fetch all program templates (PT library)
+export async function fetchProgramTemplates() {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('training_programs')
+        .select(`
+            *,
+            sessions:training_sessions(
+                *,
+                exercises:training_session_exercises(
+                    *,
+                    exercise:exercises(*)
+                )
+            )
+        `)
+        .eq('is_template', true)
+        .order('created_at', { ascending: false })
+    
+    if (error) return { success: false, error: error.message }
+    return { success: true, data }
+}
+
+// Fetch programs assigned to a specific client
+export async function fetchClientPrograms(clientId: string) {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+        .from('training_programs')
+        .select(`
+            *,
+            sessions:training_sessions(
+                *,
+                exercises:training_session_exercises(
+                    *,
+                    exercise:exercises(*)
+                )
+            )
+        `)
+        .eq('client_id', clientId)
+        .eq('is_template', false)
+        .order('created_at', { ascending: false })
+    
+    if (error) return { success: false, error: error.message }
+    return { success: true, data }
+}
+
+// Create a new program (Template)
+export async function createProgramTemplate(program: Partial<TrainingProgram>, sessions: any[]) {
+    const supabase = await createAdminClient()
+    
+    try {
+        // 1. Create the program
+        const { data: progData, error: progError } = await supabase
+            .from('training_programs')
+            .insert({ ...program, is_template: true })
+            .select()
+            .single()
+        
+        if (progError) throw progError
+
+        // 2. Create sessions and exercises
+        for (const session of sessions) {
+            const { data: sessData, error: sessError } = await supabase
+                .from('training_sessions')
+                .insert({
+                    program_id: progData.id,
+                    day_label: session.day_label,
+                    sort_order: session.sort_order,
+                    notes: session.notes
+                })
+                .select()
+                .single()
+            
+            if (sessError) throw sessError
+
+            if (session.exercises && session.exercises.length > 0) {
+                const exercisesToInsert = session.exercises.map((ex: any, idx: number) => ({
+                    session_id: sessData.id,
+                    exercise_id: ex.exercise_id,
+                    sets: ex.sets,
+                    reps: ex.reps,
+                    rest_seconds: ex.rest_seconds,
+                    intensity: ex.intensity,
+                    tempo: ex.tempo,
+                    notes: ex.notes,
+                    sort_order: idx
+                }))
+
+                const { error: exError } = await supabase
+                    .from('training_session_exercises')
+                    .insert(exercisesToInsert)
+                
+                if (exError) throw exError
+            }
+        }
+
+        revalidatePath('/training-plans')
+        return { success: true, data: progData }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+// Assign a template to a client (Cloning logic)
+export async function assignProgramToClient(templateId: string, clientId: string, ptName: string) {
+    const supabase = await createAdminClient()
+    
+    try {
+        // 1. Fetch template structure
+        const { data: template, error: fetchError } = await supabase
+            .from('training_programs')
+            .select(`
+                *,
+                sessions:training_sessions(
+                    *,
+                    exercises:training_session_exercises(*)
+                )
+            `)
+            .eq('id', templateId)
+            .single()
+        
+        if (fetchError) throw fetchError
+
+        // 2. Clone program info as an instance
+        const { data: newProg, error: progError } = await supabase
+            .from('training_programs')
+            .insert({
+                name: template.name,
+                goal: template.goal,
+                level: template.level,
+                duration_weeks: template.duration_weeks,
+                is_template: false,
+                is_public: false,
+                created_by: ptName,
+                client_id: clientId
+            })
+            .select()
+            .single()
+        
+        if (progError) throw progError
+
+        // 3. Clone sessions and exercises
+        for (const session of template.sessions) {
+            const { data: newSess, error: sessError } = await supabase
+                .from('training_sessions')
+                .insert({
+                    program_id: newProg.id,
+                    day_label: session.day_label,
+                    sort_order: session.sort_order,
+                    notes: session.notes
+                })
+                .select()
+                .single()
+            
+            if (sessError) throw sessError
+
+            if (session.exercises && session.exercises.length > 0) {
+                const clonedExercises = session.exercises.map((ex: any) => ({
+                    session_id: newSess.id,
+                    exercise_id: ex.exercise_id,
+                    sets: ex.sets,
+                    reps: ex.reps,
+                    rest_seconds: ex.rest_seconds,
+                    intensity: ex.intensity,
+                    tempo: ex.tempo,
+                    notes: ex.notes,
+                    sort_order: ex.sort_order
+                }))
+
+                const { error: exError } = await supabase
+                    .from('training_session_exercises')
+                    .insert(clonedExercises)
+                
+                if (exError) throw exError
+            }
+        }
+
+        // 4. Create assignment record
+        const { error: assignError } = await supabase
+            .from('client_training_assignments')
+            .insert({
+                client_id: clientId,
+                program_id: newProg.id,
+                pt_id: ptName,
+                start_date: new Date().toISOString().split('T')[0]
+            })
+        
+        if (assignError) throw assignError
+
+        revalidatePath('/training-plans')
+        revalidatePath(`/clients/detail/${clientId}`)
+        return { success: true, data: newProg }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+// Delete a program
+export async function deleteProgram(id: string) {
+    const supabase = await createAdminClient()
+    const { error } = await supabase
+        .from('training_programs')
+        .delete()
+        .eq('id', id)
+    
+    if (error) return { success: false, error: error.message }
+    revalidatePath('/training-plans')
+    return { success: true }
+}
+
+export async function bulkDeleteTrainingPrograms(ids: string[]) {
+    try {
+        const adminClient = await createAdminClient()
+        const { error } = await adminClient
+            .from('training_programs')
+            .delete()
+            .in('id', ids)
+
+        if (error) {
+            console.error('Bulk Delete Training Programs Error:', error)
+            return { success: false, error: error.message }
+        }
+
+        revalidatePath('/training-plans')
+        return { success: true }
+    } catch (error: any) {
+        console.error('Unexpected Bulk Delete Error:', error)
+        return { success: false, error: error.message }
+    }
+}

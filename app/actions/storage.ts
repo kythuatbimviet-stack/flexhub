@@ -85,3 +85,11 @@ export async function uploadImage(base64Data: string, fileName: string, bucket: 
         return { success: false, error: error.message || 'Lỗi khi upload ảnh' }
     }
 }
+
+/**
+ * Upload assessment image (postural / physical) to Supabase Storage
+ * Convenience wrapper around uploadImage targeting the 'assessments' bucket
+ */
+export async function uploadAssessmentImage(base64Data: string, fileName: string) {
+    return uploadImage(base64Data, fileName, 'assessments')
+}

@@ -19,7 +19,7 @@ export function MobileHeader() {
                     />
                 </div>
                 <span className="font-semibold text-lg tracking-tight text-gray-900 dark:text-white">
-                    Eva's Fit
+                    Flex Hub
                 </span>
             </div>
 

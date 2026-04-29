@@ -36,8 +36,8 @@ const play = Play({
 });
 
 export const metadata: Metadata = {
-  title: "Eva's Fit ERP",
-  description: "Hệ thống quản trị doanh nghiệp chuyên biệt cho Eva's Fit",
+  title: "Flex Hub ERP",
+  description: "Hệ thống quản trị doanh nghiệp chuyên biệt cho Flex Hub",
 };
 
 export default function RootLayout({

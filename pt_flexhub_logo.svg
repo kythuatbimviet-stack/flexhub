@@ -1,0 +1,83 @@
+<svg width="100%" viewBox="0 0 680 490" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">PT FlexHub Logo</title>
+  <desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Logo PT FlexHub với icon location pin và dumbbell, tông màu teal và coral</desc>
+
+  <defs>
+    <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1DE9C5"/>
+      <stop offset="100%" stop-color="#0EA5A0"/>
+    </linearGradient>
+    <linearGradient id="coralGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6B6B"/>
+      <stop offset="100%" stop-color="#C0392B"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1DE9C5"/>
+      <stop offset="50%" stop-color="#5DCAA5"/>
+      <stop offset="100%" stop-color="#FF6B6B"/>
+    </linearGradient>
+    <linearGradient id="pinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1DE9C5"/>
+      <stop offset="70%" stop-color="#0D9B8A"/>
+      <stop offset="100%" stop-color="#E74C3C"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  <mask id="imagine-text-gaps-nizq32" maskUnits="userSpaceOnUse"><rect x="0" y="0" width="680" height="490" fill="white"/><rect x="109.35066986083984" y="241.8874969482422" width="461.2986755371094" height="89.0018081665039" fill="black" rx="2"/><rect x="49.871543884277344" y="350.7219543457031" width="580.2569580078125" height="19.11143207550049" fill="black" rx="2"/></mask></defs>
+
+  <!-- Background subtle dark -->
+  <rect width="680" height="480" fill="#0F1923" rx="20" style="fill:rgb(15, 25, 35);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Decorative rings background -->
+  <circle cx="340" cy="160" r="140" fill="none" stroke="#1DE9C5" stroke-width="0.5" opacity="0.15" style="fill:none;stroke:rgb(29, 233, 197);color:rgb(0, 0, 0);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.15;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="340" cy="160" r="170" fill="none" stroke="#1DE9C5" stroke-width="0.5" opacity="0.08" style="fill:none;stroke:rgb(29, 233, 197);color:rgb(0, 0, 0);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.08;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Location Pin Shape -->
+  <!-- Pin outer circle -->
+  <circle cx="340" cy="130" r="72" fill="none" stroke="url(#pinGrad)" stroke-width="4" style="fill:none;color:rgb(0, 0, 0);stroke-width:4px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Pin inner circle -->
+  <circle cx="340" cy="130" r="55" fill="none" stroke="url(#pinGrad)" stroke-width="1.5" opacity="0.5" style="fill:none;color:rgb(0, 0, 0);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.5;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Pin point -->
+  <path d="M305 185 Q340 245 375 185" fill="none" stroke="url(#pinGrad)" stroke-width="4" stroke-linecap="round" style="fill:none;color:rgb(0, 0, 0);stroke-width:4px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Pin bottom drop shadow oval -->
+  <ellipse cx="340" cy="252" rx="22" ry="6" fill="url(#coralGrad)" opacity="0.5" style="stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.5;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Dumbbell icon inside pin -->
+  <!-- Left weight plate -->
+  <rect x="274" y="119" width="12" height="22" rx="3" fill="url(#tealGrad)" style="stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Left bar -->
+  <rect x="286" y="126" width="18" height="8" rx="2" fill="url(#tealGrad)" opacity="0.8" style="stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.8;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Center bar -->
+  <rect x="304" y="122" width="72" height="16" rx="4" fill="url(#tealGrad)" style="stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Right bar -->
+  <rect x="376" y="126" width="18" height="8" rx="2" fill="url(#tealGrad)" opacity="0.8" style="stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.8;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Right weight plate -->
+  <rect x="394" y="119" width="12" height="22" rx="3" fill="url(#tealGrad)" style="stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Dumbbell inner caps -->
+  <rect x="278" y="123" width="6" height="14" rx="2" fill="#0F1923" opacity="0.3" style="fill:rgb(15, 25, 35);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.3;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <rect x="396" y="123" width="6" height="14" rx="2" fill="#0F1923" opacity="0.3" style="fill:rgb(15, 25, 35);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.3;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- PT FLEXHUB main text -->
+  <text x="340" y="310" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-size="60" font-weight="900" letter-spacing="3" fill="url(#textGrad)" style="stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Arial Black&quot;, Impact, sans-serif;font-size:60px;font-weight:900;text-anchor:middle;dominant-baseline:auto">PT FLEXHUB</text>
+
+  <!-- Decorative line accents -->
+  <line x1="120" y1="325" x2="255" y2="325" stroke="url(#tealGrad)" stroke-width="1" opacity="0.6" mask="url(#imagine-text-gaps-nizq32)" style="fill:rgb(0, 0, 0);color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.6;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="425" y1="325" x2="560" y2="325" stroke="url(#coralGrad)" stroke-width="1" opacity="0.6" mask="url(#imagine-text-gaps-nizq32)" style="fill:rgb(0, 0, 0);color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.6;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Diamond accent -->
+  <polygon points="340,318 347,325 340,332 333,325" fill="url(#tealGrad)" opacity="0.8" style="stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.8;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Tagline -->
+  <text x="340" y="365" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="400" letter-spacing="4" fill="#5DCAA5" opacity="0.9" style="fill:rgb(93, 202, 165);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.9;font-family:Arial, sans-serif;font-size:13px;font-weight:400;text-anchor:middle;dominant-baseline:auto">CUNG CẤP HUẤN LUYỆN VIÊN · NÂNG CAO SỨC KHOẺ VIỆT</text>
+
+  <!-- Bottom accent bar -->
+  <rect x="260" y="390" width="160" height="2" rx="1" fill="url(#coralGrad)" opacity="0.5" style="stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.5;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+</svg>
