@@ -814,7 +814,7 @@ export function ContractDetailsSheet({
 
                 // [RÀNG BUỘC DỮ LIỆU] Bắt buộc nhập CCCD để đảm bảo tính ổn định và đầy đủ của hợp đồng.
                 // Nếu trường này trống, hệ thống sẽ chặn không cho lưu.
-                if (!formData.id_number || formData.id_number.trim() === '') {
+                if (!formData.id_number || String(formData.id_number).trim() === '') {
                     toast.error('Vui lòng nhập số CMND/CCCD của khách hàng')
                     setLoading(false)
                     return

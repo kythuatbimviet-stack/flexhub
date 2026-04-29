@@ -10,7 +10,8 @@ async function checkAdmin() {
     const { data: { user: authUser } } = await supabase.auth.getUser()
     if (!authUser?.email) return false
 
-    const { data: profile } = await supabase
+    const adminClient = await createAdminClient()
+    const { data: profile } = await adminClient
         .from('users')
         .select('*')
         .eq('email', authUser.email)
@@ -68,7 +69,8 @@ export async function createUser(user: any) {
                 return obj
             }, {})
 
-        const { data, error } = await supabase
+        const adminClient = await createAdminClient()
+        const { data, error } = await adminClient
             .from('users')
             .insert([sanitizedUser])
             .select()
@@ -146,9 +148,9 @@ export async function updateUser(id: string, updates: any) {
 
 export async function deleteUser(id: string) {
     if (!(await checkAdmin())) return { success: false, error: 'Chỉ Admin mới có quyền xóa người dùng' }
-    const supabase = await createClient()
+    const adminClient = await createAdminClient()
     try {
-        const { error } = await supabase
+        const { error } = await adminClient
             .from('users')
             .delete()
             .eq('id', id)
@@ -163,9 +165,9 @@ export async function deleteUser(id: string) {
 
 export async function bulkDeleteUsers(ids: string[]) {
     if (!(await checkAdmin())) return { success: false, error: 'Chỉ Admin mới có quyền xóa người dùng' }
-    const supabase = await createClient()
+    const adminClient = await createAdminClient()
     try {
-        const { error } = await supabase
+        const { error } = await adminClient
             .from('users')
             .delete()
             .in('id', ids)
