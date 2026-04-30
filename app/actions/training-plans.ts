@@ -54,36 +54,76 @@ export type SessionExercise = {
 
 // Fetch all exercises from the library
 export async function fetchExercises() {
-    const supabase = await createClient()
-    const { data, error } = await supabase
-        .from('exercises')
-        .select('*')
-        .order('name')
-    
-    if (error) return { success: false, error: error.message }
-    return { success: true, data }
+    try {
+        const supabase = await createAdminClient()
+        
+        // Debug check for key (internal log)
+        if (!process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY === 'placeholder') {
+            console.error('CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing or placeholder')
+            return { success: false, error: 'Hệ thống chưa cấu hình Service Role Key' }
+        }
+
+        const { data, error } = await supabase
+            .from('exercises')
+            .select('*')
+            .order('name')
+        
+        if (error) {
+            console.error('Supabase query error (exercises):', error)
+            return { success: false, error: error.message }
+        }
+        
+        if (!data) return { success: true, data: [] }
+
+        // Ensure robust data structure for client-side
+        const sanitizedData = data.map(ex => ({
+            ...ex,
+            muscle_groups: Array.isArray(ex.muscle_groups) ? ex.muscle_groups : [],
+            category: ex.category || 'Khác',
+            equipment: ex.equipment || 'Không có',
+            name_vi: ex.name_vi || ''
+        }))
+        
+        return { success: true, data: sanitizedData }
+    } catch (err: any) {
+        console.error('Unexpected error in fetchExercises:', err)
+        return { success: false, error: err.message }
+    }
 }
 
 // Fetch all program templates (PT library)
 export async function fetchProgramTemplates() {
-    const supabase = await createClient()
-    const { data, error } = await supabase
-        .from('training_programs')
-        .select(`
-            *,
-            sessions:training_sessions(
+    try {
+        const supabase = await createAdminClient()
+        
+        if (!process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY === 'placeholder') {
+            return { success: false, error: 'Hệ thống chưa cấu hình Service Role Key' }
+        }
+
+        const { data, error } = await supabase
+            .from('training_programs')
+            .select(`
                 *,
-                exercises:training_session_exercises(
+                sessions:training_sessions(
                     *,
-                    exercise:exercises(*)
+                    exercises:training_session_exercises(
+                        *,
+                        exercise:exercises(*)
+                    )
                 )
-            )
-        `)
-        .eq('is_template', true)
-        .order('created_at', { ascending: false })
-    
-    if (error) return { success: false, error: error.message }
-    return { success: true, data }
+            `)
+            .eq('is_template', true)
+            .order('created_at', { ascending: false })
+        
+        if (error) {
+            console.error('Supabase query error (templates):', error)
+            return { success: false, error: error.message }
+        }
+        return { success: true, data }
+    } catch (err: any) {
+        console.error('Unexpected error in fetchProgramTemplates:', err)
+        return { success: false, error: err.message }
+    }
 }
 
 // Fetch programs assigned to a specific client
@@ -161,6 +201,70 @@ export async function createProgramTemplate(program: Partial<TrainingProgram>, s
 
         revalidatePath('/training-plans')
         return { success: true, data: progData }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+// Update an existing program template
+export async function updateProgramTemplate(programId: string, program: Partial<TrainingProgram>, sessions: any[]) {
+    const supabase = await createAdminClient()
+    
+    try {
+        // 1. Update the program basic info
+        const { error: progError } = await supabase
+            .from('training_programs')
+            .update({ ...program, updated_at: new Date().toISOString() })
+            .eq('id', programId)
+        
+        if (progError) throw progError
+
+        // 2. Clean up existing sessions and exercises (Cascade delete handles exercises)
+        const { error: deleteError } = await supabase
+            .from('training_sessions')
+            .delete()
+            .eq('program_id', programId)
+        
+        if (deleteError) throw deleteError
+
+        // 3. Re-insert sessions and exercises
+        for (const session of sessions) {
+            const { data: sessData, error: sessError } = await supabase
+                .from('training_sessions')
+                .insert({
+                    program_id: programId,
+                    day_label: session.day_label,
+                    sort_order: session.sort_order,
+                    notes: session.notes
+                })
+                .select()
+                .single()
+            
+            if (sessError) throw sessError
+
+            if (session.exercises && session.exercises.length > 0) {
+                const exercisesToInsert = session.exercises.map((ex: any, idx: number) => ({
+                    session_id: sessData.id,
+                    exercise_id: ex.exercise_id,
+                    sets: ex.sets,
+                    reps: ex.reps,
+                    rest_seconds: ex.rest_seconds,
+                    intensity: ex.intensity,
+                    tempo: ex.tempo,
+                    notes: ex.notes,
+                    sort_order: idx
+                }))
+
+                const { error: exError } = await supabase
+                    .from('training_session_exercises')
+                    .insert(exercisesToInsert)
+                
+                if (exError) throw exError
+            }
+        }
+
+        revalidatePath('/training-plans')
+        return { success: true }
     } catch (error: any) {
         return { success: false, error: error.message }
     }

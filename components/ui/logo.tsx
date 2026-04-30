@@ -63,7 +63,7 @@ export function Logo({
             <Image
                 key={src}
                 src={src}
-                alt="Eva's Fit Logo"
+                alt="FlexHub Logo"
                 width={width || 800}
                 height={height || 800}
                 className="max-w-full max-h-full object-contain"

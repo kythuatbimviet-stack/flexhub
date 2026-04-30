@@ -34,14 +34,20 @@ import {
     SelectValue 
 } from '@/components/ui/select'
 
-import { fetchExercises, createProgramTemplate, type Exercise } from '@/app/actions/training-plans'
+import { 
+    fetchExercises, 
+    createProgramTemplate, 
+    updateProgramTemplate,
+    type Exercise 
+} from '@/app/actions/training-plans'
 import { cn } from '@/lib/utils'
 
 interface TrainingPlanBuilderProps {
     onSuccess: () => void
+    initialData?: any
 }
 
-export function TrainingPlanBuilder({ onSuccess }: TrainingPlanBuilderProps) {
+export function TrainingPlanBuilder({ onSuccess, initialData }: TrainingPlanBuilderProps) {
     const [loading, setLoading] = React.useState(false)
     const [activeTab, setActiveTab] = React.useState('0')
     const [mainStep, setMainStep] = React.useState('setup')
@@ -56,13 +62,55 @@ export function TrainingPlanBuilder({ onSuccess }: TrainingPlanBuilderProps) {
     const [sessions, setSessions] = React.useState<any[]>([
         { day_label: 'Ngày 1', sort_order: 0, notes: '', exercises: [] }
     ])
+
+    // Load initial data for editing or reset for creation
+    React.useEffect(() => {
+        if (initialData) {
+            setProgram({
+                name: initialData.name || '',
+                goal: initialData.goal || '',
+                level: initialData.level || 'Beginner',
+                duration_weeks: initialData.duration_weeks || 12,
+                is_public: initialData.is_public ?? true
+            })
+            
+            if (initialData.sessions && initialData.sessions.length > 0) {
+                const loadedSessions = initialData.sessions.map((s: any) => ({
+                    ...s,
+                    exercises: s.exercises?.map((e: any) => ({
+                        ...e,
+                        exercise_name: e.exercise?.name // Map nested exercise name for display
+                    })) || []
+                }))
+                // Sort sessions by sort_order
+                setSessions(loadedSessions.sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)))
+            }
+            setMainStep('setup')
+            setActiveTab('0')
+        } else {
+            // Reset to defaults for new plan
+            setProgram({
+                name: '',
+                goal: '',
+                level: 'Beginner',
+                duration_weeks: 12,
+                is_public: true
+            })
+            setSessions([
+                { day_label: 'Ngày 1', sort_order: 0, notes: '', exercises: [] }
+            ])
+            setMainStep('setup')
+            setActiveTab('0')
+        }
+    }, [initialData])
     const [activeAddingIdx, setActiveAddingIdx] = React.useState<number | null>(null)
 
-    const { data: exerciseLibrary = [] } = useQuery({
+    const { data: exerciseLibrary = [], isLoading, error } = useQuery({
         queryKey: ['exercises-library'],
         queryFn: async () => {
             const res = await fetchExercises()
-            return res.success ? (res.data as Exercise[]) : []
+            if (!res.success) throw new Error(res.error)
+            return res.data as Exercise[]
         }
     })
 
@@ -115,9 +163,15 @@ export function TrainingPlanBuilder({ onSuccess }: TrainingPlanBuilderProps) {
         
         try {
             setLoading(true)
-            const res = await createProgramTemplate(program, sessions)
+            let res;
+            if (initialData?.id) {
+                res = await updateProgramTemplate(initialData.id, program, sessions)
+            } else {
+                res = await createProgramTemplate(program, sessions)
+            }
+
             if (res.success) {
-                toast.success('Đã lưu giáo án mẫu thành công')
+                toast.success(initialData?.id ? 'Đã cập nhật giáo án thành công' : 'Đã lưu giáo án mẫu thành công')
                 onSuccess()
             } else {
                 toast.error('Lỗi: ' + res.error)
@@ -131,53 +185,53 @@ export function TrainingPlanBuilder({ onSuccess }: TrainingPlanBuilderProps) {
 
     return (
         <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-500">
-            {/* Top Action Bar - High-End Sticky Header */}
-            <div className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-1 py-3 mb-2 shrink-0">
-                <div className="flex items-center justify-between gap-3 max-w-full">
-                    {/* Header Left - Mobile: Segmented Control / Desktop: Title */}
-                    <div className="flex-1">
+            {/* Top Action Bar - Sticky Header */}
+            <div className="sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-3 sm:px-4 py-3 shrink-0">
+                <div className="flex items-center justify-between gap-3">
+                    {/* Left: Step Indicator (mobile) / Title (desktop) */}
+                    <div className="flex-1 min-w-0">
                         <div className="hidden md:flex flex-col">
                             <h3 className="text-base font-medium text-black dark:text-white leading-none">Thiết kế giáo án</h3>
                             <span className="text-[11px] text-black/60 dark:text-white/60 font-normal mt-1">Hệ thống xây dựng lộ trình tập luyện chuyên nghiệp</span>
                         </div>
-                        
-                        {/* Mobile Step Indicator - Premium Segmented Control */}
-                        <div className="flex md:hidden items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-fit">
-                            <button 
+
+                        {/* Mobile Step Indicator */}
+                        <div className="flex md:hidden items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                            <button
                                 onClick={() => setMainStep('setup')}
                                 className={cn(
-                                    "px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-300",
-                                    mainStep === 'setup' ? "bg-white dark:bg-slate-700 text-black dark:text-white shadow-sm scale-100" : "text-black/40 dark:text-white/40 scale-95 opacity-70"
+                                    "flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300",
+                                    mainStep === 'setup' ? "bg-white dark:bg-slate-700 text-black dark:text-white shadow-sm" : "text-black/40 dark:text-white/40"
                                 )}
                             >
-                                Thiết lập
+                                1. Thiết lập
                             </button>
-                            <button 
+                            <button
                                 onClick={() => setMainStep('sessions')}
                                 className={cn(
-                                    "px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-300",
-                                    mainStep === 'sessions' ? "bg-white dark:bg-slate-700 text-black dark:text-white shadow-sm scale-100" : "text-black/40 dark:text-white/40 scale-95 opacity-70"
+                                    "flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300",
+                                    mainStep === 'sessions' ? "bg-white dark:bg-slate-700 text-black dark:text-white shadow-sm" : "text-black/40 dark:text-white/40"
                                 )}
                             >
-                                Buổi tập
+                                2. Buổi tập
                             </button>
                         </div>
                     </div>
 
-                    {/* Header Right - Global Actions */}
-                    <div className="flex items-center gap-1.5">
-                        <Button 
-                            variant="ghost" 
+                    {/* Right: Actions */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        <Button
+                            variant="ghost"
                             type="button"
-                            className="rounded-xl font-medium text-black dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 h-9 px-3 text-xs"
+                            className="rounded-xl font-medium text-black dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 h-9 px-3 text-xs hidden sm:flex"
                             onClick={() => onSuccess()}
                         >
                             Hủy bỏ
                         </Button>
-                        <Button 
+                        <Button
                             onClick={handleSave}
                             disabled={loading}
-                            className="bg-[#FD5771] hover:bg-[#e44e65] text-white rounded-xl h-10 px-4 sm:px-6 font-medium shadow-md transition-all active:scale-95 gap-2"
+                            className="bg-[#FD5771] hover:bg-[#e44e65] text-white rounded-xl h-9 sm:h-10 px-3 sm:px-6 font-medium shadow-md transition-all active:scale-95 gap-1.5"
                         >
                             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                             <span className="text-xs sm:text-sm">Lưu giáo án</span>
@@ -186,9 +240,10 @@ export function TrainingPlanBuilder({ onSuccess }: TrainingPlanBuilderProps) {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-hidden">
-                <Tabs value={mainStep} onValueChange={setMainStep} className="h-full flex flex-col">
-                    <div className="hidden sm:block px-1 mb-4">
+            <div className="flex-1 overflow-y-auto">
+                <div className="px-3 sm:px-4 pb-20">
+                <Tabs value={mainStep} onValueChange={setMainStep} className="space-y-4">
+                    <div className="hidden sm:block pt-4">
                         <TabsList className="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl h-12 border-none">
                             <TabsTrigger value="setup" className="rounded-lg px-8 font-medium text-xs data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:text-black dark:data-[state=active]:text-white shadow-sm transition-all">
                                 1. Thiết lập chung
@@ -199,7 +254,7 @@ export function TrainingPlanBuilder({ onSuccess }: TrainingPlanBuilderProps) {
                         </TabsList>
                     </div>
 
-                    <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
+                    <div className="mt-4">
                         <TabsContent value="setup" className="mt-0 space-y-6 animate-in fade-in slide-in-from-left-2 duration-300">
                             <Card className="rounded-2xl border-none shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
                                 <div className="p-1 bg-red-600 w-full" />
@@ -316,61 +371,121 @@ export function TrainingPlanBuilder({ onSuccess }: TrainingPlanBuilderProps) {
                                                                         <Trash2 className="w-3.5 h-3.5" />
                                                                     </Button>
                                                                 </div>
-                                                                <div className="p-3 sm:p-5 grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-6 bg-white dark:bg-slate-900/50">
-                                                                    <div className="space-y-1.5 flex flex-col">
-                                                                        <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5 line-clamp-1">
-                                                                            <Hash className="w-3 h-3 text-black/40" /> <span className="hidden xs:inline">Sets</span>
-                                                                        </label>
-                                                                        <Input 
-                                                                            value={ex.sets}
-                                                                            onChange={e => updateExercise(sIdx, exIdx, 'sets', e.target.value)}
-                                                                            className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all text-center px-1 shadow-sm text-black dark:text-white"
-                                                                        />
-                                                                    </div>
-                                                                    <div className="space-y-1.5 flex flex-col">
-                                                                        <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5 line-clamp-1">
-                                                                            <ChevronRight className="w-3 h-3 text-black/40" /> <span className="hidden xs:inline">Reps</span>
-                                                                        </label>
-                                                                        <Input 
-                                                                            value={ex.reps}
-                                                                            onChange={e => updateExercise(sIdx, exIdx, 'reps', e.target.value)}
-                                                                            className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all text-center px-1 shadow-sm text-black dark:text-white"
-                                                                        />
-                                                                    </div>
-                                                                    <div className="space-y-1.5 flex flex-col">
-                                                                        <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5 line-clamp-1">
-                                                                            <Clock className="w-3 h-3 text-black/40" /> <span className="hidden xs:inline">Nghỉ</span>
-                                                                        </label>
-                                                                        <Input 
-                                                                            type="number"
-                                                                            value={ex.rest_seconds}
-                                                                            onChange={e => updateExercise(sIdx, exIdx, 'rest_seconds', parseInt(e.target.value))}
-                                                                            className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all text-center px-1 shadow-sm text-black dark:text-white"
-                                                                        />
-                                                                    </div>
-                                                                    <div className="space-y-1.5 flex flex-col col-span-1.5 sm:col-span-1">
-                                                                        <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5 line-clamp-1">
-                                                                            <Target className="w-3 h-3 text-black/40" /> <span className="hidden xs:inline">Cường độ</span>
-                                                                        </label>
-                                                                        <Input 
-                                                                            value={ex.intensity}
-                                                                            onChange={e => updateExercise(sIdx, exIdx, 'intensity', e.target.value)}
-                                                                            className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs placeholder:font-normal focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all px-3 shadow-sm text-black dark:text-white"
-                                                                            placeholder="70%"
-                                                                        />
-                                                                    </div>
-                                                                    <div className="space-y-1.5 flex flex-col col-span-1.5 sm:col-span-1">
-                                                                        <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5 line-clamp-1">
-                                                                            <PlusCircle className="w-3 h-3 text-black/40" /> <span className="hidden xs:inline">Tempo</span>
-                                                                        </label>
-                                                                        <Input 
-                                                                            value={ex.tempo}
-                                                                            onChange={e => updateExercise(sIdx, exIdx, 'tempo', e.target.value)}
-                                                                            className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs placeholder:font-normal focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all px-3 shadow-sm text-black dark:text-white"
-                                                                            placeholder="3-0-1"
-                                                                        />
-                                                                    </div>
-                                                                </div>
+                                                                 {/* Row 1: Sets, Reps, Nghỉ */}
+                                                                 <div className="p-3 sm:p-5 grid grid-cols-3 gap-2 sm:gap-0 sm:hidden bg-white dark:bg-slate-900/50">
+                                                                     <div className="space-y-1.5 flex flex-col">
+                                                                         <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5">
+                                                                             <Hash className="w-3 h-3 text-black/40" /> Sets
+                                                                         </label>
+                                                                         <Input 
+                                                                             value={ex.sets}
+                                                                             onChange={e => updateExercise(sIdx, exIdx, 'sets', e.target.value)}
+                                                                             className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all text-center px-1 shadow-sm text-black dark:text-white"
+                                                                         />
+                                                                     </div>
+                                                                     <div className="space-y-1.5 flex flex-col">
+                                                                         <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5">
+                                                                             <ChevronRight className="w-3 h-3 text-black/40" /> Reps
+                                                                         </label>
+                                                                         <Input 
+                                                                             value={ex.reps}
+                                                                             onChange={e => updateExercise(sIdx, exIdx, 'reps', e.target.value)}
+                                                                             className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all text-center px-1 shadow-sm text-black dark:text-white"
+                                                                         />
+                                                                     </div>
+                                                                     <div className="space-y-1.5 flex flex-col">
+                                                                         <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5">
+                                                                             <Clock className="w-3 h-3 text-black/40" /> Nghỉ
+                                                                         </label>
+                                                                         <Input 
+                                                                             type="number"
+                                                                             value={ex.rest_seconds}
+                                                                             onChange={e => updateExercise(sIdx, exIdx, 'rest_seconds', parseInt(e.target.value))}
+                                                                             className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all text-center px-1 shadow-sm text-black dark:text-white"
+                                                                         />
+                                                                     </div>
+                                                                 </div>
+                                                                 {/* Row 2 mobile: Cường độ, Tempo */}
+                                                                 <div className="px-3 pb-3 grid grid-cols-2 gap-2 sm:hidden bg-white dark:bg-slate-900/50">
+                                                                     <div className="space-y-1.5 flex flex-col">
+                                                                         <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5">
+                                                                             <Target className="w-3 h-3 text-black/40" /> Cường độ
+                                                                         </label>
+                                                                         <Input 
+                                                                             value={ex.intensity}
+                                                                             onChange={e => updateExercise(sIdx, exIdx, 'intensity', e.target.value)}
+                                                                             className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs placeholder:font-normal focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all px-3 shadow-sm text-black dark:text-white"
+                                                                             placeholder="70%"
+                                                                         />
+                                                                     </div>
+                                                                     <div className="space-y-1.5 flex flex-col">
+                                                                         <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5">
+                                                                             <PlusCircle className="w-3 h-3 text-black/40" /> Tempo
+                                                                         </label>
+                                                                         <Input 
+                                                                             value={ex.tempo}
+                                                                             onChange={e => updateExercise(sIdx, exIdx, 'tempo', e.target.value)}
+                                                                             className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs placeholder:font-normal focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all px-3 shadow-sm text-black dark:text-white"
+                                                                             placeholder="3-0-1"
+                                                                         />
+                                                                     </div>
+                                                                 </div>
+                                                                 {/* Desktop: all 5 fields in 1 row */}
+                                                                 <div className="hidden sm:grid p-5 grid-cols-5 gap-6 bg-white dark:bg-slate-900/50">
+                                                                     <div className="space-y-1.5 flex flex-col">
+                                                                         <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5">
+                                                                             <Hash className="w-3 h-3 text-black/40" /> Sets
+                                                                         </label>
+                                                                         <Input 
+                                                                             value={ex.sets}
+                                                                             onChange={e => updateExercise(sIdx, exIdx, 'sets', e.target.value)}
+                                                                             className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all text-center px-1 shadow-sm text-black dark:text-white"
+                                                                         />
+                                                                     </div>
+                                                                     <div className="space-y-1.5 flex flex-col">
+                                                                         <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5">
+                                                                             <ChevronRight className="w-3 h-3 text-black/40" /> Reps
+                                                                         </label>
+                                                                         <Input 
+                                                                             value={ex.reps}
+                                                                             onChange={e => updateExercise(sIdx, exIdx, 'reps', e.target.value)}
+                                                                             className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all text-center px-1 shadow-sm text-black dark:text-white"
+                                                                         />
+                                                                     </div>
+                                                                     <div className="space-y-1.5 flex flex-col">
+                                                                         <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5">
+                                                                             <Clock className="w-3 h-3 text-black/40" /> Nghỉ
+                                                                         </label>
+                                                                         <Input 
+                                                                             type="number"
+                                                                             value={ex.rest_seconds}
+                                                                             onChange={e => updateExercise(sIdx, exIdx, 'rest_seconds', parseInt(e.target.value))}
+                                                                             className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all text-center px-1 shadow-sm text-black dark:text-white"
+                                                                         />
+                                                                     </div>
+                                                                     <div className="space-y-1.5 flex flex-col">
+                                                                         <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5">
+                                                                             <Target className="w-3 h-3 text-black/40" /> Cường độ
+                                                                         </label>
+                                                                         <Input 
+                                                                             value={ex.intensity}
+                                                                             onChange={e => updateExercise(sIdx, exIdx, 'intensity', e.target.value)}
+                                                                             className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs placeholder:font-normal focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all px-3 shadow-sm text-black dark:text-white"
+                                                                             placeholder="70%"
+                                                                         />
+                                                                     </div>
+                                                                     <div className="space-y-1.5 flex flex-col">
+                                                                         <label className="text-[11px] font-medium text-black dark:text-white ml-1 flex items-center gap-1.5">
+                                                                             <PlusCircle className="w-3 h-3 text-black/40" /> Tempo
+                                                                         </label>
+                                                                         <Input 
+                                                                             value={ex.tempo}
+                                                                             onChange={e => updateExercise(sIdx, exIdx, 'tempo', e.target.value)}
+                                                                             className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border-none font-medium text-xs placeholder:font-normal focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white transition-all px-3 shadow-sm text-black dark:text-white"
+                                                                             placeholder="3-0-1"
+                                                                         />
+                                                                     </div>
+                                                                 </div>
                                                             </Card>
                                                         ))}
 
@@ -400,6 +515,7 @@ export function TrainingPlanBuilder({ onSuccess }: TrainingPlanBuilderProps) {
                         </TabsContent>
                     </div>
                 </Tabs>
+                </div>
             </div>
         </div>
     )
@@ -408,14 +524,16 @@ export function TrainingPlanBuilder({ onSuccess }: TrainingPlanBuilderProps) {
 function InlineExercisePicker({ onSelect, exerciseLibrary, onClose }: { onSelect: (ex: Exercise) => void, exerciseLibrary: Exercise[], onClose: () => void }) {
     const [search, setSearch] = React.useState('')
 
-    const filtered = exerciseLibrary.filter(ex => 
-        ex.name.toLowerCase().includes(search.toLowerCase()) ||
-        ex.name_vi?.toLowerCase().includes(search.toLowerCase())
-    )
+    const filtered = exerciseLibrary.filter(ex => {
+        const name = ex.name || ''
+        const nameVi = ex.name_vi || ''
+        return name.toLowerCase().includes(search.toLowerCase()) ||
+               nameVi.toLowerCase().includes(search.toLowerCase())
+    })
 
     return (
-        <div className="space-y-4 p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between gap-4 mb-2">
+        <div className="space-y-3 p-3 sm:p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between gap-4 mb-1">
                 <div className="flex items-center gap-2">
                     <Dumbbell className="w-4 h-4 text-[#FD5771]" />
                     <span className="text-xs font-semibold text-black dark:text-white uppercase tracking-wider">Thư viện bài tập</span>
@@ -431,13 +549,19 @@ function InlineExercisePicker({ onSelect, exerciseLibrary, onClose }: { onSelect
                     placeholder="Tìm nhanh bài tập..." 
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="pl-10 h-11 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl font-medium shadow-sm transition-all focus:ring-1 focus:ring-[#FD5771]"
+                    className="pl-10 h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl font-medium shadow-sm transition-all focus:ring-1 focus:ring-[#FD5771]"
                     autoFocus
                 />
             </div>
 
-            <div className="max-h-[300px] overflow-y-auto pr-2 space-y-1 no-scrollbar">
-                {filtered.length === 0 ? (
+            <div className="max-h-[240px] sm:max-h-[300px] overflow-y-auto pr-1 space-y-0.5 no-scrollbar">
+                {isLoading ? (
+                    <div className="py-8 text-center text-xs text-black/40 animate-pulse">Đang tải bài tập...</div>
+                ) : error ? (
+                    <div className="py-8 text-center text-xs text-red-500 bg-red-50 rounded-lg">
+                        {(error as any).message || 'Lỗi tải dữ liệu'}
+                    </div>
+                ) : filtered.length === 0 ? (
                     <div className="py-8 text-center text-xs text-black/40 dark:text-white/40 italic">
                         Không tìm thấy bài tập phù hợp
                     </div>

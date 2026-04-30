@@ -29,11 +29,11 @@ export function InBodyReportView({ data, client, onEdit, onDelete, isPrintMode =
 
     return (
         <div className={cn(
-            "bg-[#f2f2f7] p-4 sm:p-8 font-inter text-black", 
+            "bg-[#f2f2f7] p-3 sm:p-8 font-inter text-black", 
             isPrintMode ? "bg-white p-0 print:p-0" : ""
         )}>
             {!isPrintMode && (
-                <div className="max-w-[850px] mx-auto mb-6 flex flex-wrap justify-between items-center gap-3 no-print">
+                <div className="max-w-[850px] mx-auto mb-4 sm:mb-6 flex flex-wrap justify-between items-center gap-2 no-print">
                     <div className="flex items-center gap-2">
                         <Info className="w-4 h-4 text-black" />
                         <span className="text-[10px] font-medium text-black/60 tracking-widest">Báo cáo InBody</span>
@@ -43,7 +43,7 @@ export function InBodyReportView({ data, client, onEdit, onDelete, isPrintMode =
                             variant="outline" 
                             size="sm" 
                             onClick={onEdit} 
-                            className="rounded-xl gap-2 font-medium h-10 border-black/10 bg-white hover:bg-slate-50 text-black px-5 transition-all"
+                            className="rounded-xl gap-2 font-medium h-9 border-black/10 bg-white hover:bg-slate-50 text-black px-3 sm:px-5 transition-all"
                         >
                             <Edit className="w-4 h-4" /> Sửa
                         </Button>
@@ -51,17 +51,15 @@ export function InBodyReportView({ data, client, onEdit, onDelete, isPrintMode =
                             variant="outline" 
                             size="sm" 
                             onClick={onDelete} 
-                            className="rounded-xl gap-2 font-medium h-10 border-black/10 bg-white hover:bg-slate-50 text-red-600 px-5 transition-all"
+                            className="rounded-xl gap-2 font-medium h-9 border-black/10 bg-white hover:bg-slate-50 text-red-600 px-3 sm:px-5 transition-all"
                         >
                             <Trash2 className="w-4 h-4" /> Xóa
                         </Button>
-                        <div className="w-px h-10 bg-black/10 mx-1" />
-                        
                         <Button 
                             variant="default" 
                             size="sm" 
                             onClick={handleOpenPrintPage} 
-                            className="rounded-xl gap-2 font-medium h-10 bg-black hover:bg-slate-900 text-white shadow-md px-5 sm:px-8 transition-all"
+                            className="rounded-xl gap-2 font-medium h-9 bg-black hover:bg-slate-900 text-white shadow-md px-3 sm:px-8 transition-all"
                         >
                             <FileText className="w-4 h-4" />
                             <span className="hidden sm:inline">Xuất / In PDF (A4)</span>
@@ -109,7 +107,7 @@ export function InBodyReportView({ data, client, onEdit, onDelete, isPrintMode =
                                         <div className="text-[10px] text-[#ffd60a] font-medium mt-2 opacity-60 tracking-tight text-white/60">FlexHub Fitness — Hệ thống quản trị tập luyện chuyên sâu</div>
                                     </div>
                                 </div>
-                                <div className="bg-white border-b border-black/5 p-4 sm:p-6 sm:px-12 flex flex-wrap gap-x-6 sm:gap-x-12 gap-y-4 justify-center sm:justify-start">
+                                <div className="bg-white border-b border-black/5 p-3 sm:p-6 sm:px-12 flex flex-wrap gap-x-4 sm:gap-x-12 gap-y-3 justify-start">
                                     <KpiItem label="Cân nặng" value={`${data.weight || 0} kg`} />
                                     <KpiItem label="BMI" value={data.bmi || '—'} />
                                     <KpiItem label="Cơ xương" value={`${data.smm || 0} kg`} />
@@ -124,11 +122,11 @@ export function InBodyReportView({ data, client, onEdit, onDelete, isPrintMode =
                     <tbody className="bg-white">
                         <tr>
                             <td className="p-0 border-none">
-                                <div className="p-4 sm:p-10 sm:pb-12 space-y-8 sm:space-y-12 bg-white text-black">
+                                <div className="p-3 sm:p-10 sm:pb-12 space-y-6 sm:space-y-12 bg-white text-black">
                                     {/* ① Phân tích thành phần cơ thể */}
-                                    <section className="space-y-10">
+                                    <section className="space-y-6 sm:space-y-10">
                                         <SectionTitle title="Phân tích thành phần cơ thể" />
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-12 gap-y-10">
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 sm:gap-x-12 gap-y-6 sm:gap-y-10">
                                             <Gauge 
                                                 label="Nước cơ thể" 
                                                 value={data.body_water} 

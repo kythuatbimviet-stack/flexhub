@@ -13,12 +13,12 @@ import { fetchClients } from '@/app/actions/clients'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Label } from '@/components/ui/label'
-import { 
-    Select, 
-    SelectContent, 
-    SelectItem, 
-    SelectTrigger, 
-    SelectValue 
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
 } from '@/components/ui/select'
 
 interface TrainingRoadmapBuilderProps {
@@ -32,15 +32,15 @@ const DEFAULT_PHASES: Partial<RoadmapPhase>[] = [
     { phase_number: 3, phase_title: 'TỐI ƯU HÓA KẾT QUẢ', primary_goal: '', supplementary_goal: '', methodology: '', expected_results: '', total_time: '1 Tháng', total_sessions: '12 Buổi' },
 ]
 
-const TagInput = ({ 
-    value, 
-    onChange, 
-    placeholder, 
+const TagInput = ({
+    value,
+    onChange,
+    placeholder,
     label,
     icon: Icon
-}: { 
-    value: string, 
-    onChange: (val: string) => void, 
+}: {
+    value: string,
+    onChange: (val: string) => void,
     placeholder: string,
     label?: string,
     icon?: any
@@ -73,23 +73,23 @@ const TagInput = ({
                     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block">{label}</label>
                 </div>
             )}
-            
+
             {tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 px-0.5">
                     {tags.map((tag, i) => (
                         <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700 group transition-all hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm">
                             {tag}
-                            <X 
-                                className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-red-500 transition-colors" 
-                                onClick={() => removeTag(i)} 
+                            <X
+                                className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-red-500 transition-colors"
+                                onClick={() => removeTag(i)}
                             />
                         </span>
                     ))}
                 </div>
             )}
-            
+
             <div className="flex gap-2">
-                <Input 
+                <Input
                     value={inputValue}
                     onChange={e => {
                         const val = e.target.value
@@ -108,14 +108,14 @@ const TagInput = ({
                     placeholder={placeholder}
                     className="h-11 rounded-xl border-slate-200 dark:border-slate-800 focus:ring-red-500/20 bg-white dark:bg-slate-900/50"
                 />
-                <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => addTag()} 
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => addTag()}
                     className="h-11 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-[#FD5771]/10 hover:text-[#FD5771] border border-slate-200 dark:border-slate-800 shrink-0 px-5 font-bold text-xs transition-all active:scale-95"
                 >
-                    THÊM
+                    Thêm
                 </Button>
             </div>
         </div>
@@ -132,8 +132,8 @@ export function TrainingRoadmapBuilder({ onSuccess, initialData }: TrainingRoadm
     })
 
     const [phases, setPhases] = React.useState<Partial<RoadmapPhase>[]>(
-        initialData?.phases && initialData.phases.length > 0 
-            ? [...initialData.phases].sort((a,b) => a.phase_number - b.phase_number)
+        initialData?.phases && initialData.phases.length > 0
+            ? [...initialData.phases].sort((a, b) => a.phase_number - b.phase_number)
             : DEFAULT_PHASES
     )
 
@@ -178,15 +178,15 @@ export function TrainingRoadmapBuilder({ onSuccess, initialData }: TrainingRoadm
             <Card className="p-6 border-none shadow-sm rounded-xl bg-white dark:bg-slate-900">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
-                    <div className="space-y-2">
-                        <TagInput 
-                            label="Mục tiêu tổng quát"
-                            icon={Target}
-                            placeholder="Ví dụ: Giảm mỡ, Tăng cơ... (Enter để thêm)"
-                            value={roadmapData.goal}
-                            onChange={(val) => setRoadmapData({ ...roadmapData, goal: val })}
-                        />
-                    </div>
+                        <div className="space-y-2">
+                            <TagInput
+                                label="Mục tiêu tổng quát"
+                                icon={Target}
+                                placeholder="Ví dụ: Giảm mỡ, Tăng cơ... (Enter để thêm)"
+                                value={roadmapData.goal}
+                                onChange={(val) => setRoadmapData({ ...roadmapData, goal: val })}
+                            />
+                        </div>
                     </div>
                     <div className="space-y-4 text-left">
                         <div className="flex items-center gap-2 mb-2">
@@ -210,13 +210,13 @@ export function TrainingRoadmapBuilder({ onSuccess, initialData }: TrainingRoadm
                                 </Select>
                             </div>
                         )}
-                        <Input 
+                        <Input
                             placeholder="Ví dụ: 3 Tháng / 36 Buổi"
                             value={roadmapData.duration_overall}
                             onChange={(e) => setRoadmapData({ ...roadmapData, duration_overall: e.target.value })}
                             className="h-11 rounded-xl border-slate-200 dark:border-slate-800 focus:ring-red-500/20"
                         />
-                        <p className="text-[10px] text-slate-400 font-medium italic mt-2">* Thông tin này hiển thị ở đầu bảng lộ trình.</p>
+                        <p className="text-[10px] text-slate-400 font-medium mt-2">* Thông tin này hiển thị ở đầu bảng lộ trình.</p>
                     </div>
                 </div>
             </Card>
@@ -226,15 +226,15 @@ export function TrainingRoadmapBuilder({ onSuccess, initialData }: TrainingRoadm
                 <div className="flex items-center justify-between px-2">
                     <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-red-500" />
-                        Chi tiết các giai đoạn
+                        Giai đoạn
                     </h3>
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid grid-cols-3 h-14 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-1 gap-2">
                         {phases.map((_, idx) => (
-                            <TabsTrigger 
-                                key={idx} 
+                            <TabsTrigger
+                                key={idx}
                                 value={idx.toString()}
                                 className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-sm font-bold text-xs uppercase tracking-tight"
                             >
@@ -251,19 +251,19 @@ export function TrainingRoadmapBuilder({ onSuccess, initialData }: TrainingRoadm
                                     <div className="space-y-6">
                                         <div className="space-y-2">
                                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Tiêu đề giai đoạn</label>
-                                            <Input 
+                                            <Input
                                                 value={phase.phase_title}
                                                 onChange={(e) => handlePhaseChange(idx, 'phase_title', e.target.value)}
                                                 className="h-11 rounded-xl font-bold uppercase tracking-tight text-blue-600 border-slate-200 dark:border-slate-800"
                                             />
                                         </div>
-                                        <TagInput 
+                                        <TagInput
                                             label="Mục tiêu chính"
                                             placeholder="VD: Cải thiện tư thế... (Enter để thêm)"
                                             value={phase.primary_goal || ''}
                                             onChange={(val) => handlePhaseChange(idx, 'primary_goal', val)}
                                         />
-                                        <TagInput 
+                                        <TagInput
                                             label="Mục tiêu bổ sung"
                                             placeholder="VD: Cardio, Sức bền... (Enter để thêm)"
                                             value={phase.supplementary_goal || ''}
@@ -273,14 +273,14 @@ export function TrainingRoadmapBuilder({ onSuccess, initialData }: TrainingRoadm
 
                                     {/* Methodology & Expected Results */}
                                     <div className="space-y-6">
-                                        <TagInput 
+                                        <TagInput
                                             label="Phương pháp thực hiện"
                                             icon={Dumbbell}
                                             placeholder="VD: Dropset, HIIT... (Enter để thêm)"
                                             value={phase.methodology || ''}
                                             onChange={(val) => handlePhaseChange(idx, 'methodology', val)}
                                         />
-                                        <TagInput 
+                                        <TagInput
                                             label="Kết quả dự kiến"
                                             icon={Flag}
                                             placeholder="VD: -2kg mỡ, +1cm bắp tay... (Enter để thêm)"
@@ -295,9 +295,9 @@ export function TrainingRoadmapBuilder({ onSuccess, initialData }: TrainingRoadm
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
                                             <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Thời gian giai đoạn</label>
+                                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Thời gian</label>
                                         </div>
-                                        <Input 
+                                        <Input
                                             value={phase.total_time}
                                             onChange={(e) => handlePhaseChange(idx, 'total_time', e.target.value)}
                                             className="h-11 rounded-xl uppercase font-bold border-slate-200 dark:border-slate-800"
@@ -309,7 +309,7 @@ export function TrainingRoadmapBuilder({ onSuccess, initialData }: TrainingRoadm
                                             <Hash className="w-3.5 h-3.5 text-slate-400" />
                                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Số buổi tập</label>
                                         </div>
-                                        <Input 
+                                        <Input
                                             value={phase.total_sessions}
                                             onChange={(e) => handlePhaseChange(idx, 'total_sessions', e.target.value)}
                                             className="h-11 rounded-xl uppercase font-bold border-slate-200 dark:border-slate-800"
@@ -325,7 +325,7 @@ export function TrainingRoadmapBuilder({ onSuccess, initialData }: TrainingRoadm
 
             {/* Actions Bar */}
             <div className="fixed bottom-0 left-0 lg:left-72 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 p-4 flex items-center justify-center z-50 transition-all duration-300">
-                <Button 
+                <Button
                     onClick={() => mutation.mutate()}
                     disabled={mutation.isPending || !isValid}
                     className="w-full max-w-md h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-200 dark:shadow-none active:scale-95 transition-all gap-2"

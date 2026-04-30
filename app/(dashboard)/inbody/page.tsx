@@ -650,11 +650,14 @@ export default function InBodyManagementPage() {
             <Sheet open={!!selectedRecord} onOpenChange={(open) => !open && setSelectedRecord(null)}>
                 <SheetContent 
                     side="right" 
-                    resizable={true} 
-                    defaultWidth={900} 
-                    maxWidth={1400}
+                    resizable={isMounted && window.innerWidth >= 640} 
+                    defaultWidth={isMounted && window.innerWidth < 640 ? undefined : 900} 
+                    maxWidth={isMounted && window.innerWidth < 640 ? undefined : 1400}
                     showCloseButton={false}
-                    className="p-0 border-none shadow-2xl bg-slate-50 flex flex-col h-full gap-0 overflow-hidden"
+                    className={cn(
+                        "p-0 border-none shadow-2xl bg-slate-50 flex flex-col h-full gap-0 overflow-hidden",
+                        isMounted && window.innerWidth < 640 ? "!w-full !max-w-full" : ""
+                    )}
                 >
                     <SheetHeader className="p-4 sm:px-8 bg-white border-b flex flex-row items-center justify-between shrink-0">
                         <SheetTitle className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
