@@ -51,8 +51,8 @@ import {
 } from '@/components/ui/sheet'
 
 import { fetchProgramTemplates, deleteProgram, bulkDeleteTrainingPrograms } from '@/app/actions/training-plans'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { ExerciseLibrary } from '@/components/training-plans/exercise-library'
 import { TrainingPlanBuilder } from '@/components/training-plans/training-plan-builder'
 
@@ -60,14 +60,12 @@ function TrainingPlansContent() {
     const searchParams = useSearchParams()
     const tabParam = searchParams.get('tab')
     const queryClient = useQueryClient()
+    const isMobile = useIsMobile()
     const [searchQuery, setSearchQuery] = React.useState('')
     const [activeTab, setActiveTab] = React.useState('library')
     const [isBuilderOpen, setIsBuilderOpen] = React.useState(false)
     const [selectedTemplate, setSelectedTemplate] = React.useState<any>(null)
     const [selectedIds, setSelectedIds] = React.useState<string[]>([])
-    const [isMounted, setIsMounted] = React.useState(false)
-
-    React.useEffect(() => { setIsMounted(true) }, [])
 
     // Sync tab when URL parameter changes
     React.useEffect(() => {
@@ -405,27 +403,21 @@ function TrainingPlansContent() {
             <Sheet open={isBuilderOpen} onOpenChange={setIsBuilderOpen}>
                 <SheetContent 
                     side="right" 
-                    resizable={isMounted && window.innerWidth >= 640}
-                    defaultWidth={isMounted && window.innerWidth < 640 ? undefined : 760}
-                    minWidth={isMounted && window.innerWidth < 640 ? undefined : 320}
-                    maxWidth={isMounted && window.innerWidth < 640 ? undefined : 1200}
+                    resizable={!isMobile}
+                    defaultWidth={760}
+                    minWidth={360}
+                    maxWidth={1200}
                     showCloseButton={false}
-                    className={cn(
-                        "p-0 flex flex-col font-inter overflow-hidden border-l border-slate-100 dark:border-slate-800 shadow-2xl",
-                        isMounted && window.innerWidth < 640 ? "!w-full !max-w-full" : "sm:max-w-[800px]"
-                    )}
+                    className="w-full p-0 flex flex-col font-inter overflow-hidden border-l border-slate-100 dark:border-slate-800 shadow-2xl"
                 >
-                    <ScrollArea className="flex-1 h-full">
-                        <div className="p-0">
-                            <TrainingPlanBuilder 
-                                initialData={selectedTemplate}
-                                onSuccess={() => {
-                                    setIsBuilderOpen(false)
-                                    queryClient.invalidateQueries({ queryKey: ['training-program-templates'] })
-                                }} 
-                            />
-                        </div>
-                    </ScrollArea>
+                    <TrainingPlanBuilder 
+                        initialData={selectedTemplate}
+                        onSuccess={() => {
+                            setIsBuilderOpen(false)
+                            queryClient.invalidateQueries({ queryKey: ['training-program-templates'] })
+                        }} 
+                        onClose={() => setIsBuilderOpen(false)}
+                    />
                 </SheetContent>
             </Sheet>
         </div>

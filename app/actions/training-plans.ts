@@ -91,6 +91,87 @@ export async function fetchExercises() {
     }
 }
 
+// Create a new exercise
+export async function createExercise(exercise: Partial<Exercise>) {
+    try {
+        const supabase = await createAdminClient()
+        const { data, error } = await supabase
+            .from('exercises')
+            .insert({
+                ...exercise,
+                created_at: new Date().toISOString()
+            })
+            .select()
+            .single()
+
+        if (error) throw error
+        revalidatePath('/exercise-library')
+        return { success: true, data }
+    } catch (err: any) {
+        console.error('Error creating exercise:', err)
+        return { success: false, error: err.message }
+    }
+}
+
+// Update an existing exercise
+export async function updateExercise(id: string, exercise: Partial<Exercise>) {
+    try {
+        const supabase = await createAdminClient()
+        const { data, error } = await supabase
+            .from('exercises')
+            .update({
+                ...exercise,
+                // updated_at: new Date().toISOString() // exercises table doesn't have updated_at yet, sticking to what exists
+            })
+            .eq('id', id)
+            .select()
+            .single()
+
+        if (error) throw error
+        revalidatePath('/exercise-library')
+        return { success: true, data }
+    } catch (err: any) {
+        console.error('Error updating exercise:', err)
+        return { success: false, error: err.message }
+    }
+}
+
+// Delete an exercise
+export async function deleteExercise(id: string) {
+    try {
+        const supabase = await createAdminClient()
+        const { error } = await supabase
+            .from('exercises')
+            .delete()
+            .eq('id', id)
+
+        if (error) throw error
+        revalidatePath('/exercise-library')
+        return { success: true }
+    } catch (err: any) {
+        console.error('Error deleting exercise:', err)
+        return { success: false, error: err.message }
+    }
+}
+
+// Bulk delete exercises
+export async function bulkDeleteExercises(ids: string[]) {
+    try {
+        const supabase = await createAdminClient()
+        const { error } = await supabase
+            .from('exercises')
+            .delete()
+            .in('id', ids)
+
+        if (error) throw error
+        revalidatePath('/exercise-library')
+        return { success: true }
+    } catch (err: any) {
+        console.error('Error bulk deleting exercises:', err)
+        return { success: false, error: err.message }
+    }
+}
+
 // Fetch all program templates (PT library)
 export async function fetchProgramTemplates() {
     try {

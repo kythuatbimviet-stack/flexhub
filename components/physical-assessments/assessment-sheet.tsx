@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -43,6 +44,7 @@ import {
     Save,
     Image as ImageIcon,
     Calendar as CalendarIcon,
+    Loader2,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -124,6 +126,7 @@ export function AssessmentSheet({
     onSuccess?: () => void
 }) {
     const queryClient = useQueryClient()
+    const isMobile = useIsMobile()
     const [loading, setLoading] = React.useState(false)
     const [searchQuery, setSearchQuery] = React.useState('')
 
@@ -212,40 +215,53 @@ export function AssessmentSheet({
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent 
                 side="right" 
-                className="p-0 flex flex-col h-full gap-0 font-inter overflow-hidden border-none shadow-2xl w-full sm:w-[850px]"
-                resizable={true}
+                className="w-full p-0 flex flex-col h-full gap-0 font-inter overflow-hidden border-none shadow-2xl"
+                resizable={!isMobile}
                 defaultWidth={850}
-                minWidth={320}
+                minWidth={360}
                 maxWidth={1200}
+                showCloseButton={false}
             >
-                <div className="px-6 py-5 border-b shrink-0 flex items-center justify-between bg-white dark:bg-slate-950 z-10">
-                    <div className="space-y-0.5">
-                        <SheetTitle className="text-xl font-medium text-black dark:text-white flex items-center gap-2 tracking-tight">
-                            <ClipboardList className="w-6 h-6 text-[#FD5771]" />
-                            Đánh giá sai lệch
+                {/* Header */}
+                <div className="px-4 sm:px-6 py-3 border-b shrink-0 flex items-center gap-3 bg-white dark:bg-slate-950 z-10">
+                    <div className="flex-1 min-w-0">
+                        <SheetTitle className="text-base font-medium text-black dark:text-white flex items-center gap-2">
+                            <ClipboardList className="w-4 h-4 text-[#FD5771] shrink-0" />
+                            <span className="truncate">Đánh giá sai lệch</span>
                         </SheetTitle>
-                        <SheetDescription className="text-sm text-black/60 dark:text-white/60 font-normal">
+                        <SheetDescription className="text-[11px] text-black/50 dark:text-white/50 mt-0.5 ml-6">
                             Chi tiết sai lệch hội viên.
                         </SheetDescription>
                     </div>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-full h-8 w-8 text-black/60 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-                    >
-                        <X className="h-5 w-5" />
-                    </Button>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                            type="button"
+                            disabled={loading}
+                            onClick={() => form.handleSubmit(onSubmit)()}
+                            className="bg-black hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-black text-white rounded-xl px-4 font-medium h-9 text-xs gap-1.5 shadow-md transition-all active:scale-[0.98]"
+                        >
+                            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                            <span className="hidden sm:inline">{loading ? 'Đang lưu...' : 'Lưu'}</span>
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => onOpenChange(false)}
+                            className="rounded-full h-9 w-9 text-black/50 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="flex-1 flex flex-col min-h-0 bg-[#F9FAFB] dark:bg-slate-900/50">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
                             <ScrollArea className="flex-1 min-h-0">
-                                <div className="p-6 space-y-6 pb-12">
+                                <div className="p-4 sm:p-6 space-y-5 pb-8">
                                     {/* Header Controls */}
-                                    <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-sm">
-                                        <div className="grid grid-cols-1 sm:grid-cols-[450px_1fr] gap-6">
+                                    <div className="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-sm">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <FormField
                                                 control={form.control}
                                                 name="contract_id"
@@ -399,24 +415,24 @@ export function AssessmentSheet({
                                 </div>
                             </ScrollArea>
                             
-                            <div className="px-6 py-5 border-t bg-white dark:bg-slate-950/80 backdrop-blur-md shrink-0 flex items-center justify-between gap-4 z-10 sm:justify-end">
+                            <div className="px-4 sm:px-6 py-3 border-t bg-white dark:bg-slate-950/80 backdrop-blur-md shrink-0 flex items-center justify-between gap-3 z-10 sm:justify-end">
                                 <Button 
                                     variant="ghost" 
                                     type="button" 
                                     onClick={() => onOpenChange(false)} 
-                                    className="rounded-xl font-medium h-12 px-8 text-black/70 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-slate-800 flex-1 sm:flex-none"
+                                    className="rounded-xl font-medium h-10 px-4 text-sm text-black/60 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-slate-800 flex-1 sm:flex-none"
                                 >
                                     Hủy bỏ
                                 </Button>
                                 <Button 
                                     type="submit" 
                                     disabled={loading} 
-                                    className="bg-black hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-black text-white rounded-xl px-12 font-medium h-12 transition-all shadow-xl flex items-center gap-3 flex-1 sm:justify-center sm:flex-none active:scale-[0.98]"
+                                    className="bg-black hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-black text-white rounded-xl px-6 font-medium h-10 text-sm transition-all shadow-lg flex items-center gap-2 flex-1 sm:justify-center sm:flex-none active:scale-[0.98]"
                                 >
                                     {loading ? 'Đang lưu...' : (
                                         <>
-                                            <Save className="w-5 h-5" />
-                                            Lưu kết quả đánh giá
+                                            <Save className="w-4 h-4" />
+                                            Lưu kết quả
                                         </>
                                     )}
                                 </Button>
@@ -496,12 +512,12 @@ function AssessmentSegment({ name, label, form }: { name: string, label: string,
     }
 
     return (
-        <div className="space-y-8 p-6 sm:p-8 border rounded-[32px] bg-white dark:bg-slate-950 shadow-sm border-slate-100 transition-all overflow-hidden relative group">
+        <div className="space-y-6 p-4 sm:p-6 border rounded-2xl bg-white dark:bg-slate-950 shadow-sm border-slate-100 overflow-hidden">
             <div className="flex items-center gap-2 border-l-4 border-red-500 pl-4 py-0.5">
                 <h3 className="text-[15px] font-medium text-black dark:text-white tracking-tight">{label}</h3>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-8">
                     <div className="space-y-4">
                         <div className="flex flex-wrap gap-3">
@@ -511,7 +527,7 @@ function AssessmentSegment({ name, label, form }: { name: string, label: string,
                                     control={form.control}
                                     name={flag.key as any}
                                     render={({ field }) => (
-                                        <FormItem className="flex items-center space-x-3 space-y-0 rounded-[20px] border border-slate-100 p-5 bg-[#F9FAFB] hover:bg-white hover:border-slate-300 hover:shadow-md transition-all duration-300 cursor-pointer flex-1 min-w-[200px]">
+                                        <FormItem className="flex items-center space-x-3 space-y-0 rounded-xl border border-slate-100 p-4 bg-[#F9FAFB] hover:bg-white hover:border-slate-300 hover:shadow-sm transition-all duration-200 cursor-pointer flex-1 min-w-[160px]">
                                             <FormControl>
                                                 <Checkbox
                                                     checked={field.value}

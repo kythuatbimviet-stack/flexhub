@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -64,6 +65,7 @@ export function NutritionFoodDialog({
     onSuccess?: () => void
 }) {
     const queryClient = useQueryClient()
+    const isMobile = useIsMobile()
     const [loading, setLoading] = React.useState(false)
     const [imageUrl, setImageUrl] = React.useState('')
 
@@ -157,45 +159,43 @@ export function NutritionFoodDialog({
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent 
                 side="right" 
-                resizable={true}
+                resizable={!isMobile}
                 defaultWidth={500}
-                minWidth={440}
+                minWidth={360}
                 maxWidth={800}
-                className="p-0 flex flex-col h-full gap-0 font-inter overflow-hidden border-none shadow-2xl"
+                showCloseButton={false}
+                className="w-full p-0 flex flex-col h-full gap-0 font-inter overflow-hidden border-none shadow-2xl"
             >
-                <div className="px-6 py-5 border-b shrink-0 flex items-center justify-between bg-white dark:bg-slate-900 z-10 transition-colors">
-                    <div className="space-y-0.5">
-                        <SheetTitle className="text-xl font-semibold text-black dark:text-white flex items-center gap-2 tracking-tight">
-                            <Utensils className="w-5 h-5 text-[#FD5771]" />
-                            {initialData ? 'Cập nhật thực phẩm' : 'Thêm thực phẩm mới'}
+                {/* Header */}
+                <div className="px-4 sm:px-6 py-3 border-b shrink-0 flex items-center gap-3 bg-white dark:bg-slate-900 z-10">
+                    <div className="flex-1 min-w-0">
+                        <SheetTitle className="text-base font-semibold text-black dark:text-white flex items-center gap-2">
+                            <Utensils className="w-4 h-4 text-[#FD5771] shrink-0" />
+                            <span className="truncate">{initialData ? 'Cập nhật thực phẩm' : 'Thêm thực phẩm mới'}</span>
                         </SheetTitle>
-                        <SheetDescription className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                            Chi tiết thông tin dữ liệu dinh dưỡng.
+                        <SheetDescription className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 ml-6">
+                            Dữ liệu dinh dưỡng / 100g.
                         </SheetDescription>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Button 
-                            variant="ghost" 
-                            size="sm"
-                            type="button" 
-                            onClick={() => onOpenChange(false)} 
-                            className="rounded-xl font-semibold h-9 px-4 text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                        >
-                            Hủy bỏ
-                        </Button>
+                    <div className="flex items-center gap-2 shrink-0">
                         <Button 
                             size="sm"
                             type="button"
                             disabled={loading}
                             onClick={() => form.handleSubmit(onSubmit)()}
-                            className="bg-black dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-100 rounded-xl px-6 font-semibold h-9 transition-all active:scale-95 shadow-lg"
+                            className="bg-black dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-100 rounded-xl px-4 font-semibold h-9 text-xs transition-all active:scale-95 shadow-md gap-1.5"
                         >
-                            {loading ? '...' : (
-                                <>
-                                    <Save className="w-3.5 h-3.5 mr-2" />
-                                    Lưu dữ liệu
-                                </>
-                            )}
+                            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                            <span className="hidden xs:inline sm:inline">{loading ? 'Đang lưu...' : 'Lưu'}</span>
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="icon"
+                            type="button" 
+                            onClick={() => onOpenChange(false)} 
+                            className="h-9 w-9 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+                        >
+                            <X className="w-4 h-4" />
                         </Button>
                     </div>
                 </div>
@@ -204,13 +204,13 @@ export function NutritionFoodDialog({
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
                         <ScrollArea className="flex-1 min-h-0">
-                            <div className="p-6 space-y-6">
+                            <div className="p-4 sm:p-6 space-y-5">
                                 {/* Image Upload Component */}
                                 <div className="space-y-3">
-                                    <FormLabel className="text-[13px] font-semibold text-slate-900 dark:text-slate-100 ml-1">Hình ảnh thực phẩm</FormLabel>
+                                    <FormLabel className="text-[13px] font-medium text-slate-700 dark:text-slate-300 ml-1">Hình ảnh thực phẩm</FormLabel>
                                     <div className="relative group">
                                         {form.watch('image_base64') ? (
-                                            <div className="relative aspect-video rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm">
+                                            <div className="relative h-36 sm:aspect-video sm:h-auto rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm">
                                                 <img 
                                                     src={form.watch('image_base64')!} 
                                                     alt="Food Preview" 
@@ -243,7 +243,7 @@ export function NutritionFoodDialog({
                                         ) : (
                                             <label 
                                                 htmlFor="food-image-upload"
-                                                className="flex flex-col items-center justify-center aspect-video rounded-3xl border-2 border-dashed border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-900 hover:border-[#FD5771]/20 cursor-pointer transition-all group"
+                                                className="flex flex-col items-center justify-center h-32 sm:aspect-video sm:h-auto rounded-2xl border-2 border-dashed border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-900 hover:border-[#FD5771]/20 cursor-pointer transition-all group"
                                             >
                                                 <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                                                     <Camera className="w-6 h-6 text-slate-300 group-hover:text-black dark:group-hover:text-white" />
@@ -304,7 +304,7 @@ export function NutritionFoodDialog({
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <FormField
                                         control={form.control}
                                         name="food_type"

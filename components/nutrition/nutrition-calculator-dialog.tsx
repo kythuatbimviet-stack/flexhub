@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -42,7 +43,8 @@ import {
     TrendingDown,
     TrendingUp,
     ChevronRight,
-    ChevronLeft
+    ChevronLeft,
+    Loader2
 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { fetchClients } from '@/app/actions/clients'
@@ -221,53 +223,90 @@ export function NutritionCalculatorDialog({
         }
     }
 
+    const isMobile = useIsMobile()
+
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent 
                 side="right" 
-                resizable={true}
+                resizable={!isMobile}
                 defaultWidth={750}
-                minWidth={500}
+                minWidth={380}
                 maxWidth={1200}
-                className="p-0 flex flex-col font-inter border-none shadow-2xl"
+                showCloseButton={false}
+                className="w-full p-0 flex flex-col font-inter border-none shadow-2xl"
             >
-                <div className="p-6 border-b shrink-0 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
-                    <div>
-                        <SheetTitle className="uppercase font-bold text-xl flex items-center gap-2 text-black dark:text-white">
-                            <Calculator className="w-6 h-6 text-red-600" />
-                            {initialData ? 'Cập nhật phân tích' : 'Thiết kế dinh dưỡng mới'}
+                <div className="px-4 sm:px-6 py-3 border-b shrink-0 flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50">
+                    <div className="flex-1 min-w-0">
+                        <SheetTitle className="font-semibold text-base flex items-center gap-2 text-black dark:text-white">
+                            <Calculator className="w-5 h-5 text-red-600 shrink-0" />
+                            <span className="truncate text-sm sm:text-base">{initialData ? 'Cập nhật phân tích' : 'Thiết kế dinh dưỡng mới'}</span>
                         </SheetTitle>
-                        <SheetDescription className="text-slate-500 dark:text-slate-400">Phân tích chỉ số sinh học và tính toán Macro mục tiêu.</SheetDescription>
+                        <SheetDescription className="text-slate-400 dark:text-slate-500 text-[11px] mt-0.5 ml-7">Tính toán Macro mục tiêu.</SheetDescription>
+                    </div>
+                    {/* Header action buttons — luôn hiển thị, quan trọng trên mobile */}
+                    <div className="flex items-center gap-2 shrink-0">
+                        {step < 3 ? (
+                            <Button
+                                type="button"
+                                onClick={() => setStep(s => s + 1)}
+                                className="h-9 px-4 rounded-xl bg-black dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-100 font-semibold text-xs gap-1.5 transition-all active:scale-95"
+                            >
+                                Tiếp tục
+                                <ChevronRight className="w-3.5 h-3.5" />
+                            </Button>
+                        ) : (
+                            <Button
+                                type="button"
+                                onClick={form.handleSubmit(onSubmit)}
+                                disabled={loading}
+                                className="h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs gap-1.5 shadow-md shadow-red-100 dark:shadow-none transition-all active:scale-95"
+                            >
+                                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                                {loading ? 'Đang lưu...' : 'Lưu'}
+                            </Button>
+                        )}
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onOpenChange(false)}
+                            className="h-9 w-9 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 shrink-0"
+                        >
+                            <X className="w-4 h-4" />
+                        </Button>
                     </div>
                 </div>
 
                 <div className="flex-1 overflow-hidden flex flex-col">
                     {/* Stepper Header */}
-                    <div className="px-6 py-4 flex items-center justify-between border-b bg-white dark:bg-slate-950">
+                    <div className="px-4 sm:px-6 py-3 flex items-center border-b bg-white dark:bg-slate-950">
                         {[1, 2, 3].map((s) => (
-                            <div key={s} className="flex items-center gap-2">
-                                <div className={cn(
-                                    "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
-                                    step === s ? "bg-red-600 text-white shadow-lg shadow-red-200 dark:shadow-none" : 
-                                    step > s ? "bg-emerald-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
-                                )}>
-                                    {s}
+                            <React.Fragment key={s}>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    <div className={cn(
+                                        "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
+                                        step === s ? "bg-red-600 text-white shadow-md shadow-red-200 dark:shadow-none" : 
+                                        step > s ? "bg-emerald-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                                    )}>
+                                        {s}
+                                    </div>
+                                    <span className={cn(
+                                        "text-[10px] font-semibold hidden xs:inline sm:inline tracking-wide",
+                                        step === s ? "text-slate-900 dark:text-white" : "text-slate-400"
+                                    )}>
+                                        {s === 1 ? 'Chỉ số' : s === 2 ? 'Vận động' : 'Kết quả'}
+                                    </span>
                                 </div>
-                                <span className={cn(
-                                    "text-xs font-bold uppercase tracking-wider hidden sm:inline",
-                                    step === s ? "text-slate-900 dark:text-white" : "text-slate-400"
-                                )}>
-                                    {s === 1 ? 'Chỉ số đầu vào' : s === 2 ? 'Vận động & Mục tiêu' : 'Kết quả Macro'}
-                                </span>
-                                {s < 3 && <div className="w-8 h-px bg-slate-200 dark:bg-slate-800 ml-2" />}
-                            </div>
+                                {s < 3 && <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800 mx-2 min-w-[12px]" />}
+                            </React.Fragment>
                         ))}
                     </div>
 
                     <Form {...form}>
                         <form className="flex-1 flex flex-col overflow-hidden">
                             <ScrollArea className="flex-1">
-                                <div className="p-6">
+                                <div className="p-4 sm:p-6">
                                     <AnimatePresence mode="wait">
                                         {step === 1 && (
                                             <motion.div 
@@ -277,7 +316,7 @@ export function NutritionCalculatorDialog({
                                                 exit={{ opacity: 0, x: -20 }}
                                                 className="space-y-6"
                                             >
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                     <FormField
                                                         control={form.control}
                                                         name="client_id"
@@ -353,7 +392,7 @@ export function NutritionCalculatorDialog({
                                                     />
                                                 </div>
 
-                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 sm:p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
                                                     <FormField
                                                         control={form.control}
                                                         name="gender"
@@ -384,7 +423,7 @@ export function NutritionCalculatorDialog({
                                                         <Scale className="w-4 h-4" />
                                                         Số đo các vòng (Dùng cho Navy Formula)
                                                     </h4>
-                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                                         <FormInput form={form} name="waist_circumference" label="Vòng eo" suffix="cm" />
                                                         <FormInput form={form} name="neck_circumference" label="Vòng cổ" suffix="cm" />
                                                         {values.gender === 'Nữ' && (
@@ -455,7 +494,7 @@ export function NutritionCalculatorDialog({
                                                         <Activity className="w-4 h-4" />
                                                         Mức độ vận động & tập luyện
                                                     </h4>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                         <FormField
                                                             control={form.control}
                                                             name="activity_level"
@@ -488,7 +527,7 @@ export function NutritionCalculatorDialog({
                                                         />
                                                         <FormInput form={form} name="rt_ee" label="Calo tiêu thụ mỗi buổi tập" suffix="kcal" />
                                                     </div>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                         <FormInput form={form} name="training_sessions_per_week" label="Số buổi tập / tuần" suffix="buổi" />
                                                         <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border space-y-2 flex flex-col justify-center">
                                                             <div className="flex justify-between items-center">
@@ -541,7 +580,7 @@ export function NutritionCalculatorDialog({
                                                             )}
                                                         />
 
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                             <FormInput form={form} name="protein_per_kg" label="Protein (g / kg trọng lượng)" suffix="g/kg" />
                                                             <FormInput form={form} name="fat_percentage" label="Tỷ lệ chất béo trong chất ăn (%)" suffix="%" />
                                                         </div>
@@ -558,21 +597,21 @@ export function NutritionCalculatorDialog({
                                                 exit={{ opacity: 0, scale: 0.95 }}
                                                 className="space-y-8"
                                             >
-                                                <div className="text-center space-y-2">
-                                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase">Kết quả thiết kế Macro</h3>
-                                                    <p className="text-sm text-slate-500 font-medium tracking-tight">Dành cho mục tiêu {values.energy_delta_percentage < 0 ? 'GIẢM MỠ' : values.energy_delta_percentage > 0 ? 'TĂNG CƠ' : 'DUY TRÌ'}</p>
+                                                <div className="text-center space-y-1">
+                                                    <h3 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white">Kết quả thiết kế Macro</h3>
+                                                    <p className="text-xs sm:text-sm text-slate-500 font-medium">Mục tiêu: {values.energy_delta_percentage < 0 ? 'Giảm mỡ' : values.energy_delta_percentage > 0 ? 'Tăng cơ' : 'Duy trì'}</p>
                                                 </div>
 
                                                 <div className="relative group">
-                                                    <div className="absolute -inset-1.5 bg-gradient-to-r from-red-600 to-orange-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition" />
-                                                    <div className="relative p-8 rounded-3xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex flex-col items-center">
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Tổng năng lượng nạp hàng ngày</span>
-                                                        <span className="text-5xl font-black text-red-600 dark:text-red-400 tabular-nums">{Math.round(calorieTarget).toLocaleString()}</span>
-                                                        <span className="text-lg font-bold text-slate-400 mt-1 uppercase tracking-wider">Kcal / Ngày</span>
+                                                    <div className="absolute -inset-1.5 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl sm:rounded-3xl blur opacity-20 group-hover:opacity-35 transition" />
+                                                    <div className="relative p-5 sm:p-8 rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex flex-col items-center">
+                                                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1">Tổng năng lượng nạp hàng ngày</span>
+                                                        <span className="text-4xl sm:text-5xl font-black text-red-600 dark:text-red-400 tabular-nums">{Math.round(calorieTarget).toLocaleString()}</span>
+                                                        <span className="text-sm sm:text-lg font-semibold text-slate-400 mt-1">Kcal / Ngày</span>
                                                     </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                <div className="grid grid-cols-3 gap-3 sm:gap-6">
                                                     <MacroCard label="Protein" value={macros.proteinGrams} unit="g" color="blue" subtitle={`${(macros.proteinGrams * 4 / calorieTarget * 100).toFixed(1)}%`} />
                                                     <MacroCard label="Fat" value={macros.fatGrams} unit="g" color="orange" subtitle={`${(macros.fatGrams * 9 / calorieTarget * 100).toFixed(1)}%`} />
                                                     <MacroCard label="Carbohydrate" value={macros.carbGrams} unit="g" color="emerald" subtitle={`${(macros.carbGrams * 4 / calorieTarget * 100).toFixed(1)}%`} />
@@ -593,29 +632,29 @@ export function NutritionCalculatorDialog({
                                 </div>
                             </ScrollArea>
 
-                            <div className="p-4 border-t bg-white dark:bg-slate-950 flex items-center justify-between gap-4 shrink-0">
-                                {step > 1 && (
-                                    <Button variant="ghost" type="button" onClick={() => setStep(s => s - 1)} className="rounded-xl font-bold h-11 px-6">
-                                        <ChevronLeft className="w-4 h-4 mr-2" />
+                            <div className="px-4 py-3 border-t bg-white dark:bg-slate-950 flex items-center justify-between gap-3 shrink-0">
+                                {step > 1 ? (
+                                    <Button variant="ghost" type="button" onClick={() => setStep(s => s - 1)} className="rounded-xl font-semibold h-10 px-3 sm:px-5 text-sm shrink-0">
+                                        <ChevronLeft className="w-4 h-4 mr-1" />
                                         Quay lại
                                     </Button>
-                                )}
+                                ) : <div />}
                                 
                                 {step < 3 ? (
                                     <Button 
                                         type="button" 
                                         onClick={() => setStep(s => s + 1)} 
-                                        className="bg-black dark:bg-white text-white dark:text-black hover:bg-slate-900 dark:hover:bg-slate-100 rounded-xl px-10 font-bold h-11 ml-auto"
+                                        className="bg-black dark:bg-white text-white dark:text-black hover:bg-slate-900 dark:hover:bg-slate-100 rounded-xl px-5 sm:px-8 font-semibold h-10 text-sm"
                                     >
                                         Tiếp tục
-                                        <ChevronRight className="w-4 h-4 ml-2" />
+                                        <ChevronRight className="w-4 h-4 ml-1" />
                                     </Button>
                                 ) : (
                                     <Button 
                                         type="button"
                                         onClick={form.handleSubmit(onSubmit)} 
                                         disabled={loading} 
-                                        className="bg-red-600 hover:bg-red-700 text-white rounded-xl px-12 font-bold h-11 ml-auto shadow-lg shadow-red-200 dark:shadow-none transition-all active:scale-95"
+                                        className="bg-red-600 hover:bg-red-700 text-white rounded-xl px-5 sm:px-8 font-semibold h-10 text-sm shadow-lg shadow-red-200 dark:shadow-none transition-all active:scale-95"
                                     >
                                         {loading ? 'Đang lưu...' : 'Lưu thiết kế'}
                                     </Button>
@@ -675,13 +714,13 @@ function MacroCard({ label, value, unit, color, subtitle }: { label: string, val
     }
 
     return (
-        <div className={cn("p-6 rounded-3xl border flex flex-col items-center text-center space-y-1 group hover:shadow-lg transition-all duration-300", colors[color])}>
-            <span className="text-[10px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">{label}</span>
-            <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-black tabular-nums leading-none">{Math.round(value)}</span>
-                <span className="text-xs font-bold uppercase tracking-tight">{unit}</span>
+        <div className={cn("p-3 sm:p-6 rounded-2xl sm:rounded-3xl border flex flex-col items-center text-center space-y-1 group hover:shadow-lg transition-all duration-300", colors[color])}>
+            <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider opacity-60 group-hover:opacity-100 transition-opacity">{label}</span>
+            <div className="flex items-baseline gap-0.5 sm:gap-1">
+                <span className="text-xl sm:text-3xl font-black tabular-nums leading-none">{Math.round(value)}</span>
+                <span className="text-[10px] sm:text-xs font-semibold uppercase">{unit}</span>
             </div>
-            <span className="text-[10px] font-black px-2 mt-1 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-black/5 dark:border-white/5 opacity-80">{subtitle}</span>
+            <span className="text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 mt-0.5 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-black/5 dark:border-white/5 opacity-80">{subtitle}</span>
         </div>
     )
 }

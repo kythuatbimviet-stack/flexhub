@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -107,6 +108,7 @@ export function PosturalAssessmentSheet({
     initialData
 }: PosturalAssessmentSheetProps) {
     const queryClient = useQueryClient()
+    const isMobile = useIsMobile()
     const [isUploading, setIsUploading] = React.useState<string | null>(null)
     const [searchQuery, setSearchQuery] = React.useState('')
 
@@ -370,34 +372,47 @@ export function PosturalAssessmentSheet({
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
-                className="p-0 flex flex-col h-full gap-0 font-inter overflow-hidden border-l border-black/[0.06] shadow-2xl"
-                resizable={true}
+                className="w-full p-0 flex flex-col h-full gap-0 font-inter overflow-hidden border-l border-black/[0.06] shadow-2xl"
+                resizable={!isMobile}
                 defaultWidth={680}
-                minWidth={320}
+                minWidth={360}
                 maxWidth={1100}
                 showCloseButton={false}
             >
                 {/* ── Header ───────────────────────────────────────────────── */}
-                <div className="px-4 sm:px-6 py-4 border-b border-black/[0.06] shrink-0 flex items-center gap-3 bg-white dark:bg-slate-950 z-10">
-                    <div className="w-8 h-8 rounded-[9px] bg-[#FD5771]/10 flex items-center justify-center shrink-0">
+                <div className="px-4 sm:px-6 py-3 border-b border-black/[0.06] shrink-0 flex items-center gap-3 bg-white dark:bg-slate-950 z-10">
+                    <div className="w-7 h-7 rounded-lg bg-[#FD5771]/10 flex items-center justify-center shrink-0">
                         <ClipboardList className="w-4 h-4 text-[#FD5771]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <SheetTitle className="text-[15px] font-medium text-black dark:text-white leading-tight">
+                        <SheetTitle className="text-[14px] font-medium text-black dark:text-white leading-tight">
                             Đánh giá sai lệch
                         </SheetTitle>
-                        <SheetDescription className="text-[11px] text-black/60 dark:text-white/60 font-normal mt-0.5">
+                        <SheetDescription className="text-[11px] text-black/50 dark:text-white/50 font-normal mt-0.5">
                             {initialData ? 'Chỉnh sửa bản ghi đánh giá' : 'Tạo bản ghi đánh giá mới'}
                         </SheetDescription>
                     </div>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-full h-8 w-8 text-black/60 hover:text-black hover:bg-black/[0.05] shrink-0"
-                    >
-                        <X className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        <Button
+                            type="button"
+                            onClick={form.handleSubmit(onSubmit)}
+                            disabled={saveMutation.isPending}
+                            className="bg-black hover:bg-slate-800 text-white rounded-xl px-3 font-medium h-9 text-xs gap-1.5 shadow-md transition-all active:scale-[0.98]"
+                        >
+                            <Save className="w-3.5 h-3.5 shrink-0" />
+                            <span className="hidden sm:inline">
+                                {saveMutation.isPending ? 'Đang lưu...' : initialData ? 'Cập nhật' : 'Lưu'}
+                            </span>
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onOpenChange(false)}
+                            className="rounded-full h-9 w-9 text-black/50 hover:text-black hover:bg-black/[0.05] shrink-0"
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
 
                 {/* ── Body ─────────────────────────────────────────────────── */}
@@ -405,7 +420,7 @@ export function PosturalAssessmentSheet({
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
                             <ScrollArea className="flex-1 min-h-0">
-                                <div className="p-4 sm:p-5 space-y-4 pb-20">
+                                <div className="p-4 sm:p-5 space-y-4 pb-6">
 
                                     {/* ── Meta controls: client + date ─────── */}
                                     <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-black/[0.07] dark:border-white/[0.07] space-y-3">

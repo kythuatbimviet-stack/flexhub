@@ -44,10 +44,11 @@ import { cn } from '@/lib/utils'
 
 interface TrainingPlanBuilderProps {
     onSuccess: () => void
+    onClose?: () => void
     initialData?: any
 }
 
-export function TrainingPlanBuilder({ onSuccess, initialData }: TrainingPlanBuilderProps) {
+export function TrainingPlanBuilder({ onSuccess, onClose, initialData }: TrainingPlanBuilderProps) {
     const [loading, setLoading] = React.useState(false)
     const [activeTab, setActiveTab] = React.useState('0')
     const [mainStep, setMainStep] = React.useState('setup')
@@ -236,12 +237,24 @@ export function TrainingPlanBuilder({ onSuccess, initialData }: TrainingPlanBuil
                             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                             <span className="text-xs sm:text-sm">Lưu giáo án</span>
                         </Button>
+                        {/* Close button - visible on mobile when no cancel button */}
+                        {onClose && (
+                            <Button
+                                variant="ghost"
+                                type="button"
+                                size="icon"
+                                className="h-9 w-9 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 sm:hidden"
+                                onClick={onClose}
+                            >
+                                <X className="w-4 h-4" />
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>
 
             <div className="flex-1 overflow-y-auto">
-                <div className="px-3 sm:px-4 pb-20">
+                <div className="px-3 sm:px-4 pb-6 sm:pb-8">
                 <Tabs value={mainStep} onValueChange={setMainStep} className="space-y-4">
                     <div className="hidden sm:block pt-4">
                         <TabsList className="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl h-12 border-none">

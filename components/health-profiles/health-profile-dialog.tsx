@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -41,6 +42,7 @@ import {
     Activity,
     Save,
     X,
+    Loader2,
 } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -114,6 +116,7 @@ export function HealthProfileDialog({
     onSuccess?: () => void
 }) {
     const queryClient = useQueryClient()
+    const isMobile = useIsMobile()
     const [loading, setLoading] = React.useState(false)
     const [searchQuery, setSearchQuery] = React.useState('')
 
@@ -316,37 +319,51 @@ export function HealthProfileDialog({
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent 
                 side="right" 
-                resizable={true}
+                resizable={!isMobile}
                 defaultWidth={750}
-                minWidth={320}
+                minWidth={360}
                 maxWidth={1000}
-                className="p-0 flex flex-col h-full gap-0 font-inter overflow-hidden border-none shadow-2xl w-full sm:w-[750px]"
+                showCloseButton={false}
+                className="w-full p-0 flex flex-col h-full gap-0 font-inter overflow-hidden border-none shadow-2xl"
             >
-                <div className="px-6 py-5 border-b shrink-0 flex items-center justify-between bg-white dark:bg-slate-950 z-10">
-                    <div className="space-y-0.5">
-                        <SheetTitle className="text-xl font-medium text-black dark:text-white flex items-center gap-2">
-                            <HeartPulse className="w-5 h-5 text-[#FD5771]" />
-                            {initialData ? 'Cập nhật hồ sơ' : 'Hồ sơ sức khỏe mới'}
+                {/* Header */}
+                <div className="px-4 sm:px-6 py-3 border-b shrink-0 flex items-center gap-3 bg-white dark:bg-slate-950 z-10">
+                    <div className="flex-1 min-w-0">
+                        <SheetTitle className="text-base font-medium text-black dark:text-white flex items-center gap-2">
+                            <HeartPulse className="w-4 h-4 text-[#FD5771] shrink-0" />
+                            <span className="truncate">{initialData ? 'Cập nhật hồ sơ' : 'Hồ sơ sức khỏe mới'}</span>
                         </SheetTitle>
-                        <SheetDescription className="text-sm text-black/60 dark:text-white/60 font-normal">
-                            Lưu trữ thói quen và số đo cơ thể của hội viên.
+                        <SheetDescription className="text-[11px] text-black/50 dark:text-white/50 mt-0.5 ml-6">
+                            Thói quen và số đo cơ thể của hội viên.
                         </SheetDescription>
                     </div>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-full h-8 w-8 text-black/60 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-                    >
-                        <X className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                            size="sm"
+                            type="button"
+                            disabled={loading}
+                            onClick={() => form.handleSubmit(onSubmit)()}
+                            className="bg-[#FD5771] hover:bg-[#E0485F] text-white rounded-xl px-4 font-medium h-9 text-xs gap-1.5 shadow-sm transition-all active:scale-[0.98]"
+                        >
+                            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                            <span className="hidden sm:inline">{loading ? 'Đang lưu...' : 'Lưu'}</span>
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => onOpenChange(false)}
+                            className="rounded-full h-9 w-9 text-black/50 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="flex-1 flex flex-col min-h-0">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
                         <ScrollArea className="flex-1 min-h-0">
-                            <div className="p-6 space-y-8 pb-10">
+                            <div className="p-4 sm:p-6 space-y-6 pb-6">
                                 {/* Contract Selection */}
                                 <div className="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                                     <FormField
@@ -361,7 +378,7 @@ export function HealthProfileDialog({
                                                             <SelectValue placeholder="Chọn hợp đồng để tạo hồ sơ..." />
                                                         </SelectTrigger>
                                                     </FormControl>
-                                                    <SelectContent className="max-h-[300px] w-[350px] sm:w-[500px]">
+                                                    <SelectContent className="max-h-[300px] w-[min(90vw,500px)]">
                                                         <div className="p-2 border-b sticky top-0 bg-white dark:bg-slate-950 z-10">
                                                             <Input 
                                                                 placeholder="Tìm theo tên, SĐT hoặc mã hợp đồng..." 
@@ -445,7 +462,7 @@ export function HealthProfileDialog({
                                             <div className="flex items-center gap-2 border-l-2 border-[#FD5771] pl-3">
                                                 <h3 className="text-sm font-medium text-black dark:text-white">Lịch trình & Thói quen</h3>
                                             </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 border rounded-2xl bg-white dark:bg-slate-950 shadow-sm border-slate-100">
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 sm:p-5 border rounded-2xl bg-white dark:bg-slate-950 shadow-sm border-slate-100">
                                                 <FormField control={form.control} name="wake_time" render={({ field }) => (
                                                     <FormItem><FormLabel className="text-[13px] font-medium text-black dark:text-white">Giờ thức dậy</FormLabel><FormControl><Input type="time" step="60" {...field} value={field.value || ''} className="h-10 rounded-lg text-sm border-slate-200" /></FormControl></FormItem>
                                                 )} />
@@ -546,7 +563,7 @@ export function HealthProfileDialog({
                                                 )} />
                                             </div>
 
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 p-5 border rounded-2xl bg-white dark:bg-slate-950 shadow-sm border-slate-100">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 p-4 sm:p-5 border rounded-2xl bg-white dark:bg-slate-950 shadow-sm border-slate-100">
                                                  <FormField control={form.control} name="medical_cardiovascular" render={({ field }) => (
                                                     <FormItem><FormLabel className="text-[11px] font-medium text-black dark:text-white tracking-tight">Tim mạch</FormLabel><FormControl><TagInput name="medical_cardiovascular" placeholder="Nhập tình trạng..." /></FormControl></FormItem>
                                                 )} />
@@ -602,13 +619,13 @@ export function HealthProfileDialog({
                             </div>
                              </ScrollArea>
 
-                             <div className="px-6 py-4 border-t shrink-0 flex items-center justify-between gap-3 bg-white dark:bg-slate-950 z-10 sm:justify-end">
+                             <div className="px-4 sm:px-6 py-3 border-t shrink-0 flex items-center justify-between gap-3 bg-white dark:bg-slate-950 z-10 sm:justify-end">
                                 <Button 
                                     variant="ghost" 
                                     size="sm"
                                     type="button" 
                                     onClick={() => onOpenChange(false)} 
-                                    className="rounded-xl font-medium h-11 px-6 text-black/70 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-slate-800 flex-1 sm:flex-none"
+                                    className="rounded-xl font-medium h-10 px-4 text-sm text-black/60 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-slate-800 flex-1 sm:flex-none"
                                 >
                                     Hủy bỏ
                                 </Button>
@@ -617,7 +634,7 @@ export function HealthProfileDialog({
                                     type="button"
                                     disabled={loading}
                                     onClick={() => form.handleSubmit(onSubmit)()}
-                                    className="bg-[#FD5771] hover:bg-[#E0485F] text-white rounded-xl px-8 font-medium h-11 shadow-sm transition-all active:scale-[0.98] flex-1 sm:flex-none"
+                                    className="bg-[#FD5771] hover:bg-[#E0485F] text-white rounded-xl px-6 font-medium h-10 shadow-sm transition-all active:scale-[0.98] flex-1 sm:flex-none text-sm"
                                 >
                                     {loading ? 'Đang lưu...' : (
                                         <>
