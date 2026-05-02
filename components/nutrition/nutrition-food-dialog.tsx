@@ -35,7 +35,7 @@ import {
     Loader2
 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { createNutritionFood, updateNutritionFood, downloadImageAsBase64 } from '@/app/actions/nutrition-foods'
+import { createNutritionFood, updateNutritionFood, downloadImageAsBase64, fetchNutritionFoodById } from '@/app/actions/nutrition-foods'
 import { cn } from '@/lib/utils'
 
 const foodSchema = z.object({
@@ -67,11 +67,12 @@ export function NutritionFoodDialog({
     const queryClient = useQueryClient()
     const isMobile = useIsMobile()
     const [loading, setLoading] = React.useState(false)
+    const [fetchingFull, setFetchingFull] = React.useState(false)
     const [imageUrl, setImageUrl] = React.useState('')
 
     const form = useForm<FoodValues>({
         resolver: zodResolver(foodSchema),
-        defaultValues: initialData || {
+        defaultValues: {
             food_type: '',
             food_group: '',
             protein: 0,
@@ -84,10 +85,29 @@ export function NutritionFoodDialog({
         }
     })
 
-    // Update form when initialData changes
+    // Khi dialog mở để edit: fetch đầy đủ record (kể cả image_base64)
+    // Khi tạo mới: reset form về default
     React.useEffect(() => {
-        if (open) {
-            form.reset(initialData || {
+        if (!open) return
+
+        if (initialData?.id) {
+            setFetchingFull(true)
+            fetchNutritionFoodById(initialData.id).then(res => {
+                const data = res.success ? res.data : initialData
+                form.reset(data || {
+                    food_type: '',
+                    food_group: '',
+                    protein: 0,
+                    carbs: 0,
+                    fat: 0,
+                    fiber: 0,
+                    unit: '100g',
+                    conversion_factor: 1,
+                    image_base64: null,
+                })
+            }).finally(() => setFetchingFull(false))
+        } else {
+            form.reset({
                 food_type: '',
                 food_group: '',
                 protein: 0,
@@ -99,7 +119,7 @@ export function NutritionFoodDialog({
                 image_base64: null,
             })
         }
-    }, [open, initialData, form])
+    }, [open, initialData?.id])
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -164,24 +184,27 @@ export function NutritionFoodDialog({
                 minWidth={360}
                 maxWidth={800}
                 showCloseButton={false}
-                className="w-full p-0 flex flex-col h-full gap-0 font-inter overflow-hidden border-none shadow-2xl"
+                className="w-full p-0 flex flex-col h-[100dvh] gap-0 font-inter overflow-hidden border-none shadow-2xl"
             >
                 {/* Header */}
                 <div className="px-4 sm:px-6 py-3 border-b shrink-0 flex items-center gap-3 bg-white dark:bg-slate-900 z-10">
                     <div className="flex-1 min-w-0">
                         <SheetTitle className="text-base font-semibold text-black dark:text-white flex items-center gap-2">
-                            <Utensils className="w-4 h-4 text-[#FD5771] shrink-0" />
+                            {fetchingFull
+                                ? <Loader2 className="w-4 h-4 text-slate-400 animate-spin shrink-0" />
+                                : <Utensils className="w-4 h-4 text-[#FD5771] shrink-0" />
+                            }
                             <span className="truncate">{initialData ? 'Cập nhật thực phẩm' : 'Thêm thực phẩm mới'}</span>
                         </SheetTitle>
                         <SheetDescription className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 ml-6">
-                            Dữ liệu dinh dưỡng / 100g.
+                            {fetchingFull ? 'Đang tải dữ liệu...' : 'Dữ liệu dinh dưỡng / 100g.'}
                         </SheetDescription>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                         <Button 
                             size="sm"
                             type="button"
-                            disabled={loading}
+                            disabled={loading || fetchingFull}
                             onClick={() => form.handleSubmit(onSubmit)()}
                             className="bg-black dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-100 rounded-xl px-4 font-semibold h-9 text-xs transition-all active:scale-95 shadow-md gap-1.5"
                         >
@@ -200,10 +223,9 @@ export function NutritionFoodDialog({
                     </div>
                 </div>
 
-                <div suppressHydrationWarning className="flex-1 flex flex-col min-h-0">
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
-                        <ScrollArea className="flex-1 min-h-0">
+                <div suppressHydrationWarning className="flex-1 overflow-y-auto min-h-0">
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0">
                             <div className="p-4 sm:p-6 space-y-5">
                                 {/* Image Upload Component */}
                                 <div className="space-y-3">
@@ -423,9 +445,8 @@ export function NutritionFoodDialog({
                                     />
                                 </div>
                             </div>
-                        </ScrollArea>
-                    </form>
-                </Form>
+                        </form>
+                    </Form>
                 </div>
             </SheetContent>
         </Sheet>

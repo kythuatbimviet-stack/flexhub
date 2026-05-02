@@ -13,7 +13,8 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: '1mb',
+      // Tăng giới hạn để hỗ trợ import Excel nhiều thực phẩm (mặc định 1mb không đủ)
+      bodySizeLimit: '10mb',
     },
   },
   // [SEC] HTTP Security Headers

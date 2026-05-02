@@ -246,6 +246,7 @@ export default function TrainingRoadmapPage() {
                         </div>
                         <TrainingRoadmapBuilder 
                             initialData={currentRoadmap} 
+                            onCancel={() => setIsBuilding(false)}
                             onSuccess={() => {
                                 setIsBuilding(false)
                                 refetch()

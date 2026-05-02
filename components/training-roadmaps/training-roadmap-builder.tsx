@@ -23,6 +23,7 @@ import {
 
 interface TrainingRoadmapBuilderProps {
     onSuccess?: () => void
+    onCancel?: () => void
     initialData?: TrainingRoadmap
 }
 
@@ -122,7 +123,7 @@ const TagInput = ({
     )
 }
 
-export function TrainingRoadmapBuilder({ onSuccess, initialData }: TrainingRoadmapBuilderProps) {
+export function TrainingRoadmapBuilder({ onSuccess, onCancel, initialData }: TrainingRoadmapBuilderProps) {
     const queryClient = useQueryClient()
     const [selectedClientId, setSelectedClientId] = React.useState<string>(initialData?.client_id || '')
     const [activeTab, setActiveTab] = React.useState('0')
@@ -173,7 +174,7 @@ export function TrainingRoadmapBuilder({ onSuccess, initialData }: TrainingRoadm
     const isValid = selectedClientId && roadmapData.goal && phases.every(p => p.phase_title && p.primary_goal)
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+        <div className="space-y-6 animate-in fade-in duration-500 pb-[140px] lg:pb-24">
             {/* Main Info Card */}
             <Card className="p-6 border-none shadow-sm rounded-xl bg-white dark:bg-slate-900">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -323,12 +324,24 @@ export function TrainingRoadmapBuilder({ onSuccess, initialData }: TrainingRoadm
                 </Tabs>
             </div>
 
-            {/* Actions Bar */}
-            <div className="fixed bottom-0 left-0 lg:left-72 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 p-4 flex items-center justify-center z-50 transition-all duration-300">
+            {/* Actions Bar — sits above MobileNav on mobile (bottom-[60px]), flush at bottom on desktop */}
+            <div className="fixed bottom-[60px] lg:bottom-0 left-0 lg:left-72 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 px-4 py-3 flex items-center gap-3 justify-center z-50 transition-all duration-300">
+                {onCancel && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={onCancel}
+                        className="h-12 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold px-5 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 transition-all gap-2 shrink-0"
+                    >
+                        <X className="w-4 h-4" />
+                        <span className="hidden sm:inline">Đóng</span>
+                        <span className="sm:hidden">Đóng</span>
+                    </Button>
+                )}
                 <Button
                     onClick={() => mutation.mutate()}
                     disabled={mutation.isPending || !isValid}
-                    className="w-full max-w-md h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-200 dark:shadow-none active:scale-95 transition-all gap-2"
+                    className="flex-1 max-w-md h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-200 dark:shadow-none active:scale-95 transition-all gap-2"
                 >
                     {mutation.isPending ? (
                         <>

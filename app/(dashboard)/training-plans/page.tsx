@@ -410,6 +410,15 @@ function TrainingPlansContent() {
                     showCloseButton={false}
                     className="w-full p-0 flex flex-col font-inter overflow-hidden border-l border-slate-100 dark:border-slate-800 shadow-2xl"
                 >
+                    {/* Hidden title for screen reader accessibility (Radix UI requirement) */}
+                    <SheetHeader className="sr-only">
+                        <SheetTitle>
+                            {selectedTemplate ? 'Chỉnh sửa giáo án tập luyện' : 'Tạo giáo án tập luyện mới'}
+                        </SheetTitle>
+                        <SheetDescription>
+                            Xây dựng và quản lý chương trình tập luyện chuyên sâu
+                        </SheetDescription>
+                    </SheetHeader>
                     <TrainingPlanBuilder 
                         initialData={selectedTemplate}
                         onSuccess={() => {

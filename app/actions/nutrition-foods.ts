@@ -6,9 +6,11 @@ import { revalidatePath } from 'next/cache'
 export async function fetchNutritionFoods() {
     try {
         const supabase = await createClient()
+        // Loại bỏ image_base64 khỏi danh sách để tránh vượt giới hạn 1MB body của Server Actions
+        // image_base64 chỉ được fetch khi cần hiển thị/edit từng record riêng lẻ
         const { data, error } = await supabase
             .from('nutrition_foods')
-            .select('*')
+            .select('id, food_group, food_type, protein, carbs, fat, fiber, unit, conversion_factor, image_base64, created_at, updated_at')
             .order('food_group', { ascending: true })
             .order('food_type', { ascending: true })
 
@@ -20,6 +22,28 @@ export async function fetchNutritionFoods() {
         return { success: true, data }
     } catch (error: any) {
         console.error('Unexpected Fetch Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+// Fetch đầy đủ một record (bao gồm image_base64) — dùng cho dialog chỉnh sửa
+export async function fetchNutritionFoodById(id: string) {
+    try {
+        const supabase = await createClient()
+        const { data, error } = await supabase
+            .from('nutrition_foods')
+            .select('*')
+            .eq('id', id)
+            .single()
+
+        if (error) {
+            console.error('Fetch Nutrition Food By ID Error:', error)
+            return { success: false, error: error.message }
+        }
+
+        return { success: true, data }
+    } catch (error: any) {
+        console.error('Unexpected Fetch By ID Error:', error)
         return { success: false, error: error.message }
     }
 }
